@@ -2256,3 +2256,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Scheduler mac dinh chay 16:30 Asia/Ho_Chi_Minh, sau khi thi truong dong; ngay nghi le khong bi gan nham thanh phien dang co.
 - Da them test cho Chu Nhat va ngay nghi le cau hinh; scheduler test pass **5/5**.
 - Da restart backend de nap logic moi. Provider outage van duoc ghi la coverage gap rieng, khong bi che thanh ngay nghi le.
+
+## Xac minh HPG EOD tren cac luong - 2026-09-26
+
+- HPG ban dau van tra EOD 24-09 (`20.800`) do chua nam trong nhom backfill canary, du database da co session 25-09 cho mot so ma khac.
+- Da backfill rieng HPG cho 25-09 thanh cong; API danh sach va detail hien tra `20.650`, `price_updated_at=2026-09-25`, detail history dat 25-09 o dong moi nhat.
+- Quote intraday HPG tra rong ngay 26-09 vi la thu Bay; day la trang thai ngoai phien, khong ghi de EOD bang gia khong xac dinh.
+- Live UI verifier timeout khi cho intraday ngoai phien; can chay lai trong phien giao dich. Khong xem timeout nay la bang chung API EOD sai.
