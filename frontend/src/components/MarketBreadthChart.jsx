@@ -39,7 +39,7 @@ export default function MarketBreadthChart({ stocks = [], quotes = {} }) {
 
   return <section className="panel market-breadth-panel" aria-labelledby="market-breadth-heading">
     <div className="panel-header market-breadth-header">
-      <div><h3 id="market-breadth-heading">Độ rộng thị trường</h3><p className="muted-text">{stocks.length} mã trong vũ trụ · {summary.quoted}/{stocks.length} mã có quote intraday · cập nhật gần nhất {formatDateTime(summary.latestQuoteAt)}</p></div>
+      <div><h3 id="market-breadth-heading">Độ rộng thị trường</h3><p className="muted-text">{stocks.length} mã trong vi trụ · {summary.quoted}/{stocks.length} mã có quote intraday · cập nhật gần nhất {formatDateTime(summary.latestQuoteAt)}</p></div>
       <span className="chip neutral"><span className={summary.averageChange != null && summary.averageChange < 0 ? 'negative' : 'positive'}>{summary.averageChange == null ? 'Chưa đủ dữ liệu' : `Biến động bình quân ${summary.averageChange >= 0 ? '+' : ''}${summary.averageChange.toFixed(2)}%`}</span></span>
     </div>
     <div className="breadth-counts">{categories.map((category) => <article className={`breadth-count ${category.color}`} key={category.key}><span>{category.label}</span><strong>{summary[category.key].count}</strong><small>{summary.classified ? `${(summary[category.key].count / summary.classified * 100).toFixed(1)}% số mã` : 'Chưa có dữ liệu'}</small></article>)}</div>
