@@ -2214,3 +2214,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da quet string literal va template literal trong bundle feature-rich, sua cac cum con loi: `Vong phan hoi`, `Hit rate TB cac dot`, `Ngay de xuat`, `Tai khoan`, `San xuat cong nghiep`, `Loai giao dich`, `Gia tham chieu`, `Tren/Duoi may`, `Tang`, `Bien dong binh quan`, `Nguon chua xac nhan` va cac chuoi RSI/bieu do.
 - Da sua ca text dong trong template literal va label giao dich con sot; khong thay doi logic/runtime.
 - Kiem chung: `node --check` pass, `check:bundle` pass, marker feature recommendation workbench va expert guidance van con day du; bundle dang phuc vu tiep tuc giu nguyen.
+
+## Kiem chung chong hoi quy bundle UI - 2026-09-25
+
+- Buoc tiep theo da thuc hien: kiem chung bundle feature-rich sau cac dot sua tieng Viet, thay vi build lai tu source rollback lam mat tinh nang.
+- Frontend service tests **14/14 pass**; encoding check pass tren 18 source files; `check:bundle` pass; node syntax check `index-CJ9TdbTJ.js` pass.
+- Bundle van co cac marker Recommendation Workbench va Expert Guidance; khong thay doi asset runtime trong dot kiem chung.
+- Build reproducibility van la backlog rieng: source `App.jsx` rollback chua dong bo hoan toan voi bundle feature-rich; khong dung safe build de thay the asset dang phuc vu cho den khi source parity duoc phuc hoi.
