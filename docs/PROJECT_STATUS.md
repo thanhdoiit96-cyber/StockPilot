@@ -2221,3 +2221,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Frontend service tests **14/14 pass**; encoding check pass tren 18 source files; `check:bundle` pass; node syntax check `index-CJ9TdbTJ.js` pass.
 - Bundle van co cac marker Recommendation Workbench va Expert Guidance; khong thay doi asset runtime trong dot kiem chung.
 - Build reproducibility van la backlog rieng: source `App.jsx` rollback chua dong bo hoan toan voi bundle feature-rich; khong dung safe build de thay the asset dang phuc vu cho den khi source parity duoc phuc hoi.
+
+## Chuan hoa encoding component source truoc source parity - 2026-09-25
+
+- Tiep tuc buoc phuc hoi build reproducible: da lam sach mojibake va escape Unicode trong `RecommendationWorkbench.jsx`, `RecommendationTracking.jsx` va `MarketBreadthChart.jsx`.
+- Source component hien dung chuoi UTF-8 that (vi du `Xu huong gia`, `Gia tham chieu`, `Khong co ban de xuat`), khong con chuoi `Ã`, `Â`, `â€”` trong cac file nay.
+- Kiem chung encoding check pass; esbuild tao bundle kiem tra tu `src/main.jsx` thanh cong va node syntax check pass. Bundle feature-rich dang phuc vu khong bi thay the.
+- Source `App.jsx` van can tiep tuc ghep workspace de xuat vao nhung component nay; chua coi source parity hoan tat.
