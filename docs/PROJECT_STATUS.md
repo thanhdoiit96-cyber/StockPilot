@@ -2228,3 +2228,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Source component hien dung chuoi UTF-8 that (vi du `Xu huong gia`, `Gia tham chieu`, `Khong co ban de xuat`), khong con chuoi `Ã`, `Â`, `â€”` trong cac file nay.
 - Kiem chung encoding check pass; esbuild tao bundle kiem tra tu `src/main.jsx` thanh cong va node syntax check pass. Bundle feature-rich dang phuc vu khong bi thay the.
 - Source `App.jsx` van can tiep tuc ghep workspace de xuat vao nhung component nay; chua coi source parity hoan tat.
+
+## Khoi phuc source navigation De xuat - 2026-09-26
+
+- Da ghep `RecommendationWorkbench` vao `frontend/src/App.jsx`, them muc `De xuat` tren sidebar va ket noi du lieu de xuat moi nhat cung lich su.
+- Nut them vao danh muc tu workspace de xuat da duoc noi voi form ghi nhan giao dich trong Danh muc ca nhan.
+- Kiem chung source bang encoding check, esbuild parity bundle va `node --check`; bundle feature-rich dang phuc vu van duoc giu nguyen.
+- Con backlog parity: dong bo day du phan chi tiet/phan tich va `RecommendationTracking` vao source truoc khi thay the dist dang chay.
