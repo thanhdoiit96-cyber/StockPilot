@@ -2235,3 +2235,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Nut them vao danh muc tu workspace de xuat da duoc noi voi form ghi nhan giao dich trong Danh muc ca nhan.
 - Kiem chung source bang encoding check, esbuild parity bundle va `node --check`; bundle feature-rich dang phuc vu van duoc giu nguyen.
 - Con backlog parity: dong bo day du phan chi tiet/phan tich va `RecommendationTracking` vao source truoc khi thay the dist dang chay.
+
+## Ket noi theo doi de xuat voi Danh muc - 2026-09-26
+
+- Da them `RecommendationTracking` vao trang Danh muc, doc `recommendation_entries` tu API portfolio de hien thi gia vao, gia hien tai va ket qua du bao.
+- Khi bam Them vao danh muc, `recommendation_context` duoc giu trong form giao dich va gui cung giao dich BUY; giao dich thu cong van giu gia tri null.
+- Source parity esbuild co marker tracking/context, node syntax check pass; frontend service tests **14/14 pass** va Playwright liet ke du 6 workflow.
+- Bundle feature-rich dang phuc vu khong bi thay the; can browser-run voi build source sau khi hoan tat parity cac phan detail/analysis con thieu.
