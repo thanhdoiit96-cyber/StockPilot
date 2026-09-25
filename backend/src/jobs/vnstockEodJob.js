@@ -8,7 +8,7 @@ const { eodCoverage } = require('../market-data/eodCoverage');
 const models = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
-function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 10 * * 1-5' } = {}) {
+function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5' } = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
   // fall back to intraday-only charts. Set VNSTOCK_EOD_ENABLED=false to opt out.
   if (process.env.VNSTOCK_EOD_ENABLED === 'false') return null;
@@ -18,8 +18,10 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
     running = true;
     const checkedAt = new Date();
     const window = defaultWindow(checkedAt);
-    // Monday targets Friday; holidays remain explicit unverified gaps.
-    const target = new Date(`${window.to}T00:00:00Z`);
+    // Run after the local market close and target the completed local session.
+    // On Saturday/Sunday, roll back to Friday; exchange holidays remain
+    // explicit coverage gaps instead of being guessed here.
+    const target = new Date(checkedAt.getTime() + 7 * 60 * 60 * 1000);
     while ([0, 6].includes(target.getUTCDay())) target.setUTCDate(target.getUTCDate() - 1);
     const sessionDate = target.toISOString().slice(0, 10);
     const evidence = { checked_at: checkedAt.toISOString(), session_date: sessionDate };
