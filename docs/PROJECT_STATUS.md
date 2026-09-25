@@ -2242,3 +2242,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khi bam Them vao danh muc, `recommendation_context` duoc giu trong form giao dich va gui cung giao dich BUY; giao dich thu cong van giu gia tri null.
 - Source parity esbuild co marker tracking/context, node syntax check pass; frontend service tests **14/14 pass** va Playwright liet ke du 6 workflow.
 - Bundle feature-rich dang phuc vu khong bi thay the; can browser-run voi build source sau khi hoan tat parity cac phan detail/analysis con thieu.
+
+## Sua lich EOD va xac minh phien 25-09 - 2026-09-26
+
+- Xac minh live: ngay 26-09-2026 la thu Bay, API intraday tra 0 quote cho FPT/VIC/VCB theo dung trang thai khong co phien giao dich.
+- Phat hien scheduler EOD cu chay 10:30 va luon nham ngay hom qua, nen sau thu Sau chi con 24-09. Da doi lich mac dinh sang 16:30 Asia/Ho_Chi_Minh va chon ngay giao dich da ket thuc; cuoi tuan lui ve thu Sau.
+- Backfill canary phien 25-09 thanh cong cho FPT, VIC, VCB, SSI, MWG; API FPT hien co `price_updated_at=2026-09-25` va market sessions den 25-09.
+- Test scheduler backend pass 4/4. Toan universe van can retry co kiem soat vi upstream co reset ket noi; khong danh dong canary voi coverage day du.

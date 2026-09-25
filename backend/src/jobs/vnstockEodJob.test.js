@@ -18,7 +18,7 @@ describe('vnstock EOD scheduler', () => {
   test('starts by default so daily EOD rows cannot be silently skipped', () => {
     delete process.env.VNSTOCK_EOD_ENABLED;
     expect(startVnstockEodJob({})).toBeTruthy();
-    expect(cron.schedule).toHaveBeenCalledWith('30 10 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
+    expect(cron.schedule).toHaveBeenCalledWith('30 16 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
   });
 
   test('supports an explicit opt-out', () => {
@@ -33,7 +33,7 @@ describe('vnstock EOD scheduler', () => {
     eodCoverage.mockResolvedValue({ symbols: 2, covered: 1, missing_symbols: ['BCG'] });
     const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() } });
     await task.callback();
-    expect(ingestVnstockEod).toHaveBeenNthCalledWith(2, expect.objectContaining({ symbols: ['BCG'], from: '2026-09-24', to: '2026-09-24' }));
+    expect(ingestVnstockEod).toHaveBeenNthCalledWith(2, expect.objectContaining({ symbols: ['BCG'], from: '2026-09-25', to: '2026-09-25' }));
     const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
     expect(saved.complete).toBe(false);
     expect(saved.after.missing_symbols).toEqual(['BCG']);
