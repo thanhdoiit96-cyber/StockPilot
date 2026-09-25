@@ -1,0 +1,37 @@
+{
+  "type": "market_data_coverage_probe",
+  "version": 1,
+  "status": "pass",
+  "provider": "vnstock",
+  "license": "personal_research_only",
+  "license_url": "https://vnstocks.com/onboard/giay-phep-su-dung",
+  "started_at": "2026-09-18T07:19:03.112Z",
+  "completed_at": "2026-09-18T07:19:16.699Z",
+  "query": {
+    "symbols": ["FPT", "VCB", "HPG", "PVS", "SHS", "CEO", "BSR", "OIL", "VGI"],
+    "from": "2026-09-11",
+    "to": "2026-09-17",
+    "interval": "1d"
+  },
+  "received": 45,
+  "accepted": 45,
+  "rejected": 0,
+  "covered_symbols": 9,
+  "expected_symbols": 9,
+  "coverage_ratio": 1,
+  "min_coverage": 0.95,
+  "min_sessions": 5,
+  "markets": {"HOSE": 3, "HNX": 3, "UPCOM": 3},
+  "results": [
+    {"symbol": "FPT", "market": "HOSE", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "VCB", "market": "HOSE", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "HPG", "market": "HOSE", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "PVS", "market": "HNX", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "SHS", "market": "HNX", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "CEO", "market": "HNX", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "BSR", "market": "UPCOM", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "OIL", "market": "UPCOM", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true},
+    {"symbol": "VGI", "market": "UPCOM", "records": 5, "sessions": 5, "first_observed_at": "2026-09-11T00:00:00.000Z", "last_observed_at": "2026-09-17T00:00:00.000Z", "pass": true}
+  ],
+  "errors": []
+}

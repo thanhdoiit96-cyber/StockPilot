@@ -1,0 +1,20 @@
+module.exports = (sequelize, DataTypes) => sequelize.define('MarketDataIngestionRun', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
+  provider: { type: DataTypes.STRING(80), allowNull: false },
+  source: { type: DataTypes.STRING(80), allowNull: false },
+  status: { type: DataTypes.STRING(20), allowNull: false },
+  interval: { type: DataTypes.STRING(10), allowNull: false },
+  from_date: DataTypes.DATEONLY,
+  to_date: DataTypes.DATEONLY,
+  symbols: { type: DataTypes.JSONB, allowNull: false },
+  received: { type: DataTypes.INTEGER, allowNull: false },
+  inserted: { type: DataTypes.INTEGER, allowNull: false },
+  updated: { type: DataTypes.INTEGER, allowNull: false },
+  skipped: { type: DataTypes.INTEGER, allowNull: false },
+  rejected: { type: DataTypes.INTEGER, allowNull: false },
+  errors: { type: DataTypes.JSONB, allowNull: false },
+  started_at: { type: DataTypes.DATE, allowNull: false },
+  completed_at: DataTypes.DATE,
+  created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
+}, { tableName: 'market_data_ingestion_runs', underscored: true, timestamps: false });

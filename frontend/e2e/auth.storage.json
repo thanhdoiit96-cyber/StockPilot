@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:4180",
+      "localStorage": [
+        {
+          "name": "market-auth",
+          "value": "{\"token\":\"e2e-token\",\"user\":{\"id\":\"e2e\",\"email\":\"e2e@example.com\",\"role\":\"admin\"}}"
+        }
+      ]
+    }
+  ]
+}

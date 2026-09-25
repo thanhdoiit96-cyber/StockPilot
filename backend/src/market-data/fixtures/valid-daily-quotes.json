@@ -1,0 +1,5 @@
+[
+  { "symbol": "FPT", "market": "HOSE", "open": "122.00", "high": "124.50", "low": "121.80", "close": "123.45", "volume": "1520000", "currency": "VND", "price_unit": "VND_PER_SHARE", "observed_at": "2026-09-17T09:15:00+07:00", "fetched_at": "2026-09-17T16:00:05Z", "interval": "1d", "dataset": "demo-market-2026-09-17" },
+  { "symbol": "VHM", "market": "HOSE", "open": "87.00", "high": "88.40", "low": "86.50", "close": "87.95", "volume": "830000", "currency": "VND", "price_unit": "VND_PER_SHARE", "observed_at": "2026-09-17T09:15:00+07:00", "fetched_at": "2026-09-17T16:00:05Z", "interval": "1d", "dataset": "demo-market-2026-09-17" },
+  { "symbol": "MWG", "market": "HOSE", "open": "53.80", "high": "54.60", "low": "53.40", "close": "54.20", "volume": "640000", "currency": "VND", "price_unit": "VND_PER_SHARE", "observed_at": "2026-09-17T09:15:00+07:00", "fetched_at": "2026-09-17T16:00:05Z", "interval": "1d", "dataset": "demo-market-2026-09-17" }
+]

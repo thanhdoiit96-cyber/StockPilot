@@ -1,0 +1,26 @@
+{
+  "name": "stock-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npm run check:encoding && node --test src/services/*.test.mjs",
+    "test:e2e": "playwright test",
+    "dev": "vite",
+    "build": "node scripts/safe-build.mjs",
+    "build:raw": "vite build",
+    "start": "vite preview",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "check:bundle": "node scripts/check-bundle-integrity.mjs",
+    "verify:live-analysis": "node scripts/verify-live-analysis.mjs",
+    "verify:release": "npm run test -- --runInBand && npm run check:bundle"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^5.0.0"
+  }
+}
