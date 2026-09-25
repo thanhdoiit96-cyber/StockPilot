@@ -1,0 +1,24 @@
+{
+  "run_date": "2026-09-18",
+  "provider_a": "vnstock",
+  "source_a": "vci",
+  "provider_b": "eodhd",
+  "source_b": "eodhd",
+  "symbols": ["FPT", "PVS"],
+  "from": "2026-09-11",
+  "to": "2026-09-17",
+  "price_scale": { "vnstock_input": "thousand VND", "canonical": "VND_PER_SHARE", "factor": 1000 },
+  "received_a": 10,
+  "received_b": 10,
+  "compared": 10,
+  "status": "fail",
+  "volume_policy": "normalized",
+  "close_policy": "normalized",
+  "counts": { "matched": 5, "volume_mismatch": 4, "matched_after_corporate_action": 1 },
+  "observations": [
+    "FPT closing prices matched on all 5 sessions; four volume rows differed materially.",
+    "PVS matched on 4 sessions. The 2026-09-11 close and raw volume differ by approximately 1.2x; normalized close and volume match within tolerance using EODHD split metadata 6/5 effective 2026-09-14, producing matched_after_corporate_action.",
+    "VCI exposes matched_volume/matched trading volume in its history contract, while EODHD documents volume as traded volume adjusted for splits. These fields are not treated as interchangeable."
+  ],
+  "limitations": ["internal research only", "no public redistribution authorization", "EODHD API key omitted"]
+}

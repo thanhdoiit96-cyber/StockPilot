@@ -1,0 +1,12 @@
+{
+  "provider": "vnstock",
+  "source": "vci",
+  "window": {"from": "2026-09-11", "to": "2026-09-17"},
+  "symbols": ["FPT", "MWG", "VHM"],
+  "received": 15,
+  "inserted": 15,
+  "updated": 0,
+  "skipped": 0,
+  "rejected": 0,
+  "verified_at": "2026-09-18T07:26:32.710Z"
+}

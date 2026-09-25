@@ -1,0 +1,197 @@
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const winston = require('winston');
+const { Sequelize } = require('sequelize');
+
+// Import services
+const CacheService = require('./services/cacheService');
+const CacheCleanupJob = require('./jobs/cacheCleanupJob');
+const startVnstockEodJob = require('./jobs/vnstockEodJob');
+const startRecommendationEvaluationJob = require('./jobs/recommendationEvaluationJob');
+const { startVnstockListingJob } = require('./jobs/vnstockListingJob');
+const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
+const marketDataController = require('./controllers/marketDataController');
+const authController = require('./controllers/authController');
+const watchlistController = require('./controllers/watchlistController');
+const portfolioController = require('./controllers/portfolioController');
+const recommendationController = require('./controllers/recommendationController');
+const requireAdmin = require('./middleware/requireAdmin');
+
+// Initialize Express app
+const app = express();
+
+// Logger configuration
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  ]
+});
+
+// Middleware
+app.use(helmet());
+app.use(cors({ origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(value => value.trim()) : '*' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || 60000),
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100)
+});
+app.use('/api/', limiter);
+
+// Database configuration
+const dbConfig = {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  dialect: 'postgres',
+  logging: false
+};
+
+// Initialize Sequelize
+const sequelize = new Sequelize(
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
+  {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    dialect: dbConfig.dialect,
+    logging: false
+  }
+);
+
+// Initialize Cache Service
+let cacheService;
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// AI gate status is read-only operational evidence; it never enables generative AI by itself.
+app.get('/api/ai-gate', (req, res) => {
+  try {
+    const evidenceDir = path.resolve(__dirname, '..', 'evidence');
+    const files = fs.existsSync(evidenceDir)
+      ? fs.readdirSync(evidenceDir).filter(file => /^ai-gate-\d{4}-\d{2}-\d{2}\.json$/.test(file)).sort().reverse()
+      : [];
+    if (!files.length) return res.json({ success: true, data: { status: 'unavailable', enabled: false, reasons: ['ai_gate_artifact_missing'] } });
+    const artifact = JSON.parse(fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8'));
+    return res.json({ success: true, data: { ...artifact, artifact: files[0], status: artifact.enabled ? 'enabled' : 'disabled' } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: `Không thể đọc trạng thái AI Gate: ${error.message}` });
+  }
+});
+
+// Cache stats endpoint
+app.get('/api/cache/stats', async (req, res) => {
+  try {
+    const stats = await cacheService.getStats();
+    res.json(stats);
+  } catch (error) {
+    logger.error('Error getting cache stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Cache clear endpoint
+app.post('/api/cache/clear', requireAdmin, async (req, res) => {
+  try {
+    await cacheService.clearAll();
+    res.json({ success: true, message: 'Cache cleared' });
+  } catch (error) {
+    logger.error('Error clearing cache:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  logger.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
+  });
+});
+
+// Initialize server
+const PORT = process.env.PORT || 5000;
+
+async function start() {
+  try {
+    // Test database connection
+    await sequelize.authenticate();
+    logger.info('[Database] Connected successfully');
+
+    // Initialize cache service
+    cacheService = new CacheService(sequelize);
+    logger.info('[Cache] Service initialized');
+
+    // Wire controllers with injected services
+    const stockController = require('./controllers/stockController')(cacheService);
+    app.use('/api/stocks', stockController);
+    app.use('/api/market-data', marketDataController);
+    app.use('/api/auth', authController);
+    app.use('/api/watchlist', watchlistController);
+    app.use('/api/portfolio', portfolioController);
+    app.use('/api/recommendations', recommendationController);
+    logger.info('[Routes] /api/stocks mounted');
+
+    // Start server
+    await new Promise((resolve, reject) => {
+      const server = app.listen(PORT);
+      server.once('error', reject);
+      server.once('listening', () => {
+        server.removeListener('error', reject);
+        resolve();
+      });
+    });
+    logger.info(`[Server] Running on port ${PORT}`);
+    logger.info(`[Environment] ${process.env.NODE_ENV}`);
+
+    // Schedule work only after the listener has started successfully.
+    CacheCleanupJob(cacheService);
+    logger.info('[Scheduler] Cache cleanup job initialized');
+    if (startVnstockEodJob({ cacheService, logger })) {
+      logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 10 * * 1-5'})`);
+    }
+    if (startRecommendationEvaluationJob({ logger })) {
+      logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5'})`);
+    }
+    if (startVnstockListingJob({ cacheService, logger })) {
+      logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);
+    }
+    if (startQuoteFreshnessJob({ logger })) {
+      logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
+    }
+  } catch (error) {
+    logger.error(error.code === 'EADDRINUSE'
+      ? `[Startup Error] Port ${PORT} is already in use. Choose another PORT or stop the intended server.`
+      : `[Startup Error] ${error.message}`);
+    process.exit(1);
+  }
+}
+
+// Start the server
+start();
+
+module.exports = app;

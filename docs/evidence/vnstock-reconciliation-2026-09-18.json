@@ -1,0 +1,12 @@
+{
+  "provider_a": "vnstock",
+  "source_a": "vci",
+  "provider_b": "vnstock",
+  "source_b": "kbs",
+  "status": "failed",
+  "window": {"from": "2026-09-11", "to": "2026-09-17"},
+  "symbols": ["FPT", "VCB", "HPG", "PVS", "SHS", "CEO", "BSR", "OIL", "VGI"],
+  "reason": "KBS upstream requests encountered TLS certificate errors, connection resets and the vnstock guest rate limit (20 requests/minute). No comparison result was treated as valid.",
+  "license_status": "internal_research_only",
+  "verified_at": "2026-09-18T08:17:37.656Z"
+}

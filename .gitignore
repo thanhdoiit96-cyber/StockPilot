@@ -1,0 +1,13 @@
+﻿node_modules/
+**/node_modules/
+playwright-report/
+**/playwright-report/
+test-results/
+**/test-results/
+backend/coverage/
+backend/evidence/
+backend/scripts/__pycache__/
+backend/*.err
+frontend/*-runtime.err
+*.log
+.env
