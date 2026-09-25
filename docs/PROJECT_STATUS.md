@@ -2249,3 +2249,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Phat hien scheduler EOD cu chay 10:30 va luon nham ngay hom qua, nen sau thu Sau chi con 24-09. Da doi lich mac dinh sang 16:30 Asia/Ho_Chi_Minh va chon ngay giao dich da ket thuc; cuoi tuan lui ve thu Sau.
 - Backfill canary phien 25-09 thanh cong cho FPT, VIC, VCB, SSI, MWG; API FPT hien co `price_updated_at=2026-09-25` va market sessions den 25-09.
 - Test scheduler backend pass 4/4. Toan universe van can retry co kiem soat vi upstream co reset ket noi; khong danh dong canary voi coverage day du.
+
+## Lich phien cuoi tuan va ngay nghi le - 2026-09-26
+
+- Da bo sung `completedSessionDate`: tu dong lui qua thu Bay/Chu Nhat va cac ngay trong `VNSTOCK_HOLIDAYS` (danh sach `YYYY-MM-DD` ngan cach bang dau phay).
+- Scheduler mac dinh chay 16:30 Asia/Ho_Chi_Minh, sau khi thi truong dong; ngay nghi le khong bi gan nham thanh phien dang co.
+- Da them test cho Chu Nhat va ngay nghi le cau hinh; scheduler test pass **5/5**.
+- Da restart backend de nap logic moi. Provider outage van duoc ghi la coverage gap rieng, khong bi che thanh ngay nghi le.

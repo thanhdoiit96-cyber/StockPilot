@@ -7,6 +7,7 @@ jest.mock('../services/recommendationPersistence', () => ({ generateRecommendati
 
 const cron = require('node-cron');
 const startVnstockEodJob = require('./vnstockEodJob');
+const { completedSessionDate } = startVnstockEodJob;
 const { ingestVnstockEod } = require('../market-data/vnstockEodIngestion');
 const { eodCoverage } = require('../market-data/eodCoverage');
 const fs = require('node:fs/promises');
@@ -14,6 +15,11 @@ const fs = require('node:fs/promises');
 describe('vnstock EOD scheduler', () => {
   const original = process.env.VNSTOCK_EOD_ENABLED;
   afterEach(() => { jest.clearAllMocks(); if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original; });
+
+  test('rolls Sunday and configured holidays back to the latest completed weekday', () => {
+    expect(completedSessionDate(new Date('2026-09-27T03:00:00.000Z'))).toBe('2026-09-25');
+    expect(completedSessionDate(new Date('2026-09-28T10:00:00.000Z'), new Set(['2026-09-28']))).toBe('2026-09-25');
+  });
 
   test('starts by default so daily EOD rows cannot be silently skipped', () => {
     delete process.env.VNSTOCK_EOD_ENABLED;
