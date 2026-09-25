@@ -121,6 +121,8 @@ Snapshot generation joins verified `ExternalFactor` rows by symbol (and global f
 
 The EOD scheduler audits persisted `vnstock` / `1d` rows for the target Vietnam session, then runs one additional ingestion pass for missing symbols for that exact date. Monday targets Friday; exchange holidays are not inferred and may remain unverified gaps. The existing daily cron is unchanged. Runs cannot overlap within the same server process; this is not a distributed lock.
 
+The scheduler runs at `30 16 * * 1-5` in `Asia/Ho_Chi_Minh` by default, after the regular session closes. It rolls Saturday/Sunday and dates listed in `VNSTOCK_HOLIDAYS` (comma-separated `YYYY-MM-DD` values) back to the latest completed weekday. Configure the holiday list for each calendar year so Tet, Hung Kings Commemoration, and observed national holidays do not trigger a false current-session ingest. A provider outage remains an explicit coverage gap and is not silently treated as a holiday.
+
 Sequential ingestion batches pause for `VNSTOCK_EOD_BATCH_DELAY_MS` (default 1000 ms). Exception retries use exponential backoff from `VNSTOCK_EOD_RETRY_DELAY_MS` (default 1500 ms), capped at 30 seconds. Partial-response fallback also waits before each symbol request. Scheduled evidence is written to `backend/evidence/eod-scheduled-<session>-<timestamp>.json`, including before/after coverage and missing symbols. Missing records are not proof of no trading. `audit:chart-history` now counts only Vnstock EOD, excluding intraday observations.
 
 Restart the backend to load scheduler changes after any active ingestion completes. No schema migration is required.
