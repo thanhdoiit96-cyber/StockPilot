@@ -2376,3 +2376,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - VIX thuoc nhom `previous_session`: listed HSX, co 427 ban ghi, ngay gan nhat truoc do la 2026-09-24.
 - VCI canary rieng cho VIX da tra hop le va insert 1 ban ghi phien 2026-09-25: close **12,650**, volume **19,201,700**.
 - Coverage tang tu **211/551** len **212/551**; VIX khong phai ma bi loai hay chua tung co lich su, ma la gap provider rieng cua phien moi.
+
+## Canary nhom previous-session tiep theo - 2026-09-26
+
+- Da thu 10 ma co latest EOD 24-09 bang VCI, batch 1 va stop-after 3 empty responses.
+- SJG khôi phuc thanh cong 1 ban ghi; 5 ma dau tien khac tra rong nen circuit-break da dung truoc khi tiep tuc tao tai.
+- Coverage tang **212/551 -> 213/551**; ket qua nay xac nhan gap co the khac nhau theo symbol, can retry don ma co gioi han thay vi chay batch lon.
