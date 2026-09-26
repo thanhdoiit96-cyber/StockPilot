@@ -2424,3 +2424,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da them `dist/assets/stale-volume-overlay.js` va nap trong `dist/index.html`.
 - Runtime overlay doc stock API, gan tooltip ngay phien va nhan `· cu` vao cot volume cho cac ma co `data_is_stale=true`; tu dong cap nhat moi 60 giay va theo doi thay doi bang MutationObserver.
 - Node syntax check pass; asset va index HTTP **200** tren port 4173.
+
+## Toi uu stale overlay khong tao request du - 2026-09-26
+
+- Overlay da chuyen sang doc `/api/stocks/data-quality` va dung `missing_symbols`, khong goi them `/api/stocks?pageSize=500`.
+- Test `overview bounds` pass **1/1**; overlay khong con lam xung dot voi request page-size cua UI.
