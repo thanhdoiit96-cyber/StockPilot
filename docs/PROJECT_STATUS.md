@@ -2412,3 +2412,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `observed_at=2026-09-25T00:00:00Z` hien thi thanh **07:00 gio Viet Nam** la moc cua ngay phien EOD, khong phai thoi diem ket thuc giao dich.
 - `fetched_at` moi la thoi diem worker lay du lieu. Vi du HPG du lieu phien 25-09 duoc lay luc `2026-09-25T17:21Z` (~00:21 ngay 26-09 gio Viet Nam); VIX duoc lay luc `2026-09-26T05:14Z`.
 - API bo sung `price_observed_at` de tach ro moc phien khoi `data_fetched_at`; khong coi moc 07:00 la thoi diem provider ket thuc lay volume.
+
+## UI hien thi moc phien va moc lay du lieu - 2026-09-26
+
+- Source Overview da doc `data_session_date`/`data_is_stale`; volume stale hien nhan `cu`, tooltip ghi ro ngay phien.
+- Nhan Nguon du lieu hien uu tien `data_fetched_at` voi nhan `Lay luc`, fallback ve `Phien` neu provider khong co fetched timestamp.
+- Esbuild syntax check cho `frontend/src/App.jsx` pass; khong chay build full de bao toan bundle feature-rich dang phuc vu.
