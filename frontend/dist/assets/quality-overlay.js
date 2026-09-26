@@ -2,7 +2,7 @@
   const id = 'market-data-quality-overlay'
   const style = 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 13px;border:1px solid rgba(245,158,11,.35);border-radius:10px;background:rgba(245,158,11,.08);color:#e5e7eb;font:12px system-ui,sans-serif'
   const render = data => {
-    const anchor = document.querySelector('.hero-panel')
+    const anchor = document.querySelector('.main-panel .topbar')
     if (!anchor || !data) return
     let banner = document.getElementById(id)
     if (!banner) { banner = document.createElement('div'); banner.id = id; anchor.parentElement.insertBefore(banner, anchor.nextSibling) }
