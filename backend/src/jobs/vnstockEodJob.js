@@ -46,9 +46,14 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
       const report = await ingestVnstockEod(options);
       evidence.ingestion = report;
       evidence.before_retry = await eodCoverage(models.sequelize, sessionDate, options.symbols || null);
-      if (evidence.before_retry.missing_symbols.length) {
-        evidence.retry = await ingestVnstockEod({ ...options,
-          symbols: evidence.before_retry.missing_symbols, from: sessionDate, to: sessionDate });
+      const retryPasses = Math.max(0, Number(process.env.VNSTOCK_EOD_GAP_RETRIES || 2));
+      evidence.retries = [];
+      let missingSymbols = evidence.before_retry.missing_symbols;
+      for (let pass = 1; pass <= retryPasses && missingSymbols.length; pass += 1) {
+        const retry = await ingestVnstockEod({ ...options, symbols: missingSymbols, from: sessionDate, to: sessionDate });
+        const coverage = await eodCoverage(models.sequelize, sessionDate, missingSymbols);
+        evidence.retries.push({ pass, requested: missingSymbols.length, ingestion: retry, remaining: coverage.missing_symbols.length });
+        missingSymbols = coverage.missing_symbols;
       }
       logger.info(`[Vnstock EOD] ${JSON.stringify(report)}`);
       if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {
