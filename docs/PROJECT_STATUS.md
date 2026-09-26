@@ -2322,3 +2322,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Overlay runtime da chuyen anchor tu hero Tong quan sang topbar cap ung dung; Tong quan, Chi tiet ma va Danh muc deu nhan cung mot quality status.
 - Browser regression Overview/sidebar **2/2 pass**; node syntax check overlay pass.
+
+## E2E quality banner tren ba page - 2026-09-26
+
+- Da them workflow E2E mock quality endpoint va kiem tra banner giu nguyen khi chuyen Tong quan -> Danh muc -> Chi tiet ma.
+- Test quality banner pass **1/1**; lan dau fail do assertion dung dang `25-09` thay vi ISO `2026-09-25`, da chuan hoa assertion theo payload API.
