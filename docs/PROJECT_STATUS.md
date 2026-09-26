@@ -2382,3 +2382,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da thu 10 ma co latest EOD 24-09 bang VCI, batch 1 va stop-after 3 empty responses.
 - SJG khôi phuc thanh cong 1 ban ghi; 5 ma dau tien khac tra rong nen circuit-break da dung truoc khi tiep tuc tao tai.
 - Coverage tang **212/551 -> 213/551**; ket qua nay xac nhan gap co the khac nhau theo symbol, can retry don ma co gioi han thay vi chay batch lon.
+
+## Ket luan canary ve ma thanh khoan thap - 2026-09-26
+
+- SDT/SFN/SKH/SMA/STC co volume phien gan nhat rat thap (100-800) va VCI tra response rong cho 25-09; SJG cung nhom nhung co observation va da khôi phuc duoc.
+- Khong du bang chung de xem response rong la provider outage cho tat ca ma; nhieu kha nang la `no_observation` do khong phat sinh giao dich, nhung van giu nhan stale cho den khi co xac nhan provider.
+- Khong chèn gia 24-09 thanh row 25-09. Quality gate tiep tuc phan biet covered, previous_session va stale/never_seen; UI khong danh dau gia cu la EOD moi.
