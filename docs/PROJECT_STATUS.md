@@ -2289,3 +2289,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Scheduler EOD nay tu dong lap toi da `VNSTOCK_EOD_GAP_RETRIES` pass (mac dinh 2) tren danh sach ma con thieu cua cung phien, sau moi pass audit lai coverage.
 - Neu VCI van timeout/reset, evidence giu `remaining` va quality endpoint tiep tuc `ready=false`; khong hien thi coverage ao.
 - Test scheduler pass **6/6**; backend da restart voi logic retry pass moi.
+
+## Hien thi quality gate tren UI - 2026-09-26
+
+- Source frontend da doc `/api/stocks/data-quality` va hien banner tren Tong quan: phien EOD, so ma covered/listed va so ma dang cho retry.
+- Banner phan biet `Dữ liệu EOD đã đủ` va `Dữ liệu EOD chưa đủ`, de nguoi dung khong nham snapshot stale la gia moi.
+- Source parity esbuild pass; frontend service tests **14/14 pass**; encoding check pass. Bundle feature-rich dang phuc vu chua thay the vi source parity tong the van dang tiep tuc.
