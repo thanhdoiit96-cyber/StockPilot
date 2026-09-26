@@ -106,9 +106,11 @@ module.exports = function(cacheService) {
     }
   });
 
-  const normalizeStock = (stock) => {
+  const normalizeStock = (stock, latestSessionDate = null) => {
     const priceRecord = stock.prices?.[0];
     const latestPrice = priceRecord?.close != null ? Number(priceRecord.close) : priceRecord?.price != null ? Number(priceRecord.price) : null;
+    const observedAt = priceRecord?.observed_at || priceRecord?.updated_at || null;
+    const dataSessionDate = observedAt ? new Date(observedAt).toISOString().slice(0, 10) : null;
 
     return {
       id: stock.id,
@@ -122,11 +124,13 @@ module.exports = function(cacheService) {
       sector_label: SECTOR_LABELS[sectorForStock(stock)] || 'Khác',
       market_cap: stock.market_cap != null ? Number(stock.market_cap) : 0,
       price: latestPrice,
-      price_updated_at: priceRecord?.observed_at || priceRecord?.updated_at || null,
+      price_updated_at: observedAt,
       change: null,
       volume: priceRecord?.volume != null ? Number(priceRecord.volume) : null,
       data_source: priceRecord?.provider || null,
       data_fetched_at: priceRecord?.fetched_at || null,
+      data_session_date: dataSessionDate,
+      data_is_stale: Boolean(latestSessionDate && dataSessionDate && dataSessionDate !== latestSessionDate),
       currency: priceRecord?.currency || null,
       price_unit: priceRecord?.price_unit || null
     };
@@ -161,11 +165,16 @@ module.exports = function(cacheService) {
       if (pinned.length) order.unshift([Stock.sequelize.literal(`CASE WHEN "Stock"."code" IN (${pinned.map(code => `'${code}'`).join(',')}) THEN 0 ELSE 1 END`), 'ASC']);
       if (sort !== 'code') order.push(['code', 'ASC']);
       const queryOptions = { where, include: [{ association: 'prices', separate: true, where: { observed_at: { [Op.not]: null } }, limit: 1, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] }], order, limit: pageSize, offset: (page - 1) * pageSize, distinct: true };
+      let latestSessionDate = null;
+      try {
+        const [sessionRows] = await Stock.sequelize.query("SELECT MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)::text AS session_date FROM stock_prices WHERE provider='vnstock' AND interval='1d' AND observed_at IS NOT NULL");
+        latestSessionDate = sessionRows?.[0]?.session_date || null;
+      } catch (_) { /* freshness metadata is additive; do not fail the stock list */ }
       const result = typeof Stock.findAndCountAll === 'function'
         ? await Stock.findAndCountAll(queryOptions)
         : { rows: await Stock.findAll(queryOptions), count: 0 };
 
-      const payload = result.rows.map(normalizeStock);
+      const payload = result.rows.map(stock => normalizeStock(stock, latestSessionDate));
       const pagination = { page, pageSize, total: result.count, totalPages: Math.max(1, Math.ceil(result.count / pageSize)), query, coverage, sector, sort, direction: direction.toLowerCase() };
       await cacheService.set(cacheKey, { data: payload, pagination }, 5, 'stock');
 

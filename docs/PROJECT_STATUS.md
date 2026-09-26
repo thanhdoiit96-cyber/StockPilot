@@ -2400,3 +2400,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Gap-retry scheduler da duoc nang cap: moi luot chi chon toi da 25 ma missing co volume phien gan nhat cao nhat (`VNSTOCK_EOD_GAP_RETRY_LIMIT`), thay vi gui toan bo danh sach.
 - Selection duoc ghi vao evidence (`selected_symbols`, `retry_limit`), van dung lock chung va circuit-break; backend da restart voi logic moi.
 - Test controller + scheduler pass **16/16**; coverage tai luc restart **245/551**, con **306**.
+
+## Danh dau stale cho gia va volume - 2026-09-26
+
+- Stock API da tra `data_session_date` va `data_is_stale` theo phien EOD moi nhat trong database.
+- Kiem tra STC: API van tra gia/volume gan nhat (`11,600`, `200`) nhung ghi ro `data_session_date=2026-09-24`, `data_is_stale=true`; khong con nham la volume cua 25-09.
+- Coverage EOD 25-09 hien co **245 row**, va ca 245 row deu co volume khac null/0; 306 ma con lai khong co volume cua phien 25-09.
