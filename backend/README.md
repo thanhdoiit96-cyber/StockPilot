@@ -89,6 +89,7 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count.
 - Stock list/detail responses carry `exchange`, `listing_status`, and `listing_checked_at` after migrations 013–014; the UI keeps delisted rows visible and shows the last metadata check on hover.
 - `GET /api/stocks/quotes?symbols=FPT,VCB`: up to 200 symbols through the shared VCI intraday service. At most three one-symbol worker requests run concurrently; overlapping page requests share per-symbol work. Responses return available quotes within an 8-second wait budget while bounded pending work can populate the cache.
+- `GET /api/stocks/data-quality?session=YYYY-MM-DD`: no-store quality gate for listed-symbol EOD coverage. It returns the selected/latest session, covered and missing counts, the missing symbol list, a `ready` flag, and live quote-provider health. Consumers must use this status before treating the EOD snapshot as complete.
 
 ## Personal portfolio and recommendation tracking
 
