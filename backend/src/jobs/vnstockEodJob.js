@@ -33,6 +33,24 @@ function completedSessionDate(checkedAt = new Date(), holidays = holidaySet()) {
   return target.toISOString().slice(0, 10);
 }
 
+async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit) {
+  if (!sequelize?.query || !symbols.length) return symbols.slice(0, limit);
+  const [rows] = await sequelize.query(`
+    SELECT s.code, COALESCE(previous.volume, 0)::numeric AS volume
+    FROM stocks s
+    LEFT JOIN LATERAL (
+      SELECT p.volume FROM stock_prices p
+      WHERE p.stock_id = s.id AND p.provider = 'vnstock' AND p.interval = '1d'
+        AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date < $2::date
+      ORDER BY p.observed_at DESC LIMIT 1
+    ) previous ON TRUE
+    WHERE s.code = ANY($1::text[])
+    ORDER BY volume DESC, s.code ASC
+    LIMIT $3
+  `, { bind: [symbols, sessionDate, limit] });
+  return rows.map(row => row.code);
+}
+
 function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 17-19 * * 1-5' } = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
   // fall back to intraday-only charts. Set VNSTOCK_EOD_ENABLED=false to opt out.
@@ -128,12 +146,14 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
     runtimeStatus.session_date = sessionDate;
     runtimeStatus.started_at = new Date().toISOString();
     runtimeStatus.last_error = null;
-    const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length };
+    const retryLimit = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT || 25));
+    const selectedSymbols = await prioritizeMissingSymbols(models.sequelize, sessionDate, coverage.missing_symbols, retryLimit);
+    const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length, selected: selectedSymbols.length, retry_limit: retryLimit, selected_symbols: selectedSymbols };
     try {
       const options = buildOptions(sessionDate);
       const passes = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_PASSES || 1));
       evidence.retries = [];
-      let missing = coverage.missing_symbols;
+      let missing = selectedSymbols;
       for (let pass = 1; pass <= passes && missing.length; pass += 1) {
         const ingestion = await ingestVnstockEod({ ...options, symbols: missing });
         const after = await eodCoverage(models.sequelize, sessionDate, missing);
