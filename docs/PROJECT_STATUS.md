@@ -2394,3 +2394,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Canary 10 ma thanh khoan cao dau tien khôi phuc **10/10** (TPB, VCI, VSC, VRE, YEG, VTP, VCG, VCK, VC3, VPI).
 - Dot mo rong 50 ma tiep theo khôi phuc them **32 ma** truoc khi VCI mo circuit; coverage tang **213/551 -> 245/551**, con **306 ma**.
 - Da dung tien trinh khi circuit mo; khong tiep tuc retry mù. Chien luoc tiep theo la tiep tuc theo nhom thanh khoan sau khi provider reset, voi batch nho va stop-after.
+
+## Scheduler retry uu tien thanh khoan - 2026-09-26
+
+- Gap-retry scheduler da duoc nang cap: moi luot chi chon toi da 25 ma missing co volume phien gan nhat cao nhat (`VNSTOCK_EOD_GAP_RETRY_LIMIT`), thay vi gui toan bo danh sach.
+- Selection duoc ghi vao evidence (`selected_symbols`, `retry_limit`), van dung lock chung va circuit-break; backend da restart voi logic moi.
+- Test controller + scheduler pass **16/16**; coverage tai luc restart **245/551**, con **306**.
