@@ -53,15 +53,38 @@ async function main() {
           if (attempts < 3) await new Promise(resolve => setTimeout(resolve, attempts * 5000));
         }
       }
-      if (!result) {
-        report.failures.push({ batch: Math.floor(offset / batchSize) + 1, symbols: batch, attempts: attempts - 1, error: lastError?.message || 'unknown provider error' });
-        continue;
+      const item = result ? { batch: Math.floor(offset / batchSize) + 1, symbols: batch, requested: batch.length, attempts, received: result.received,
+        inserted: result.inserted, updated: result.updated, skipped: result.skipped, rejected: result.rejected } : null;
+      if (item) {
+        report.batches.push(item);
+        for (const key of Object.keys(report.totals)) report.totals[key] += Number(item[key] || 0);
+        if (result.rejected) report.failures.push({ batch: item.batch, symbols: batch, error: `Provider records rejected: ${result.rejected}` });
       }
-      const item = { batch: Math.floor(offset / batchSize) + 1, symbols: batch, requested: batch.length, attempts, received: result.received,
-        inserted: result.inserted, updated: result.updated, skipped: result.skipped, rejected: result.rejected };
-      report.batches.push(item);
-      for (const key of Object.keys(report.totals)) report.totals[key] += Number(item[key] || 0);
-      if (result.rejected) report.failures.push({ batch: item.batch, symbols: batch, error: `Provider records rejected: ${result.rejected}` });
+      // A price-board response can be partial. Recover every missing symbol
+      // individually so one provider reset cannot leave a whole batch stale.
+      const fetched = new Set(result?.fetched_symbols || []);
+      const missingBatch = batch.filter(symbol => !fetched.has(symbol));
+      for (const symbol of missingBatch) {
+        let recovered = null;
+        let recoveryError = null;
+        for (let recoveryAttempt = 1; recoveryAttempt <= 2; recoveryAttempt += 1) {
+          try {
+            recovered = await ingestVnstockEod({ ...models, cacheService, symbols: [symbol], from: date, to: date, source: report.source,
+              env: { VNSTOCK_PROJECT_DIR: process.env.VNSTOCK_PROJECT_DIR || '.vnstock' } });
+            break;
+          } catch (error) {
+            recoveryError = error;
+            if (recoveryAttempt < 2) await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+        }
+        if (recovered) {
+          for (const key of Object.keys(report.totals)) report.totals[key] += Number(recovered[key] || 0);
+          report.batches.push({ batch: Math.floor(offset / batchSize) + 1, symbols: [symbol], fallback: true, requested: 1, attempts: 2,
+            received: recovered.received, inserted: recovered.inserted, updated: recovered.updated, skipped: recovered.skipped, rejected: recovered.rejected });
+        } else {
+          report.failures.push({ batch: Math.floor(offset / batchSize) + 1, symbols: [symbol], fallback: true, attempts: 2, error: recoveryError?.message || lastError?.message || 'symbol recovery failed' });
+        }
+      }
       if (offset + batchSize < symbols.length) await new Promise(resolve => setTimeout(resolve, 1000));
     }
   } catch (error) { report.error = error.message; }

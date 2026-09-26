@@ -2263,3 +2263,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da backfill rieng HPG cho 25-09 thanh cong; API danh sach va detail hien tra `20.650`, `price_updated_at=2026-09-25`, detail history dat 25-09 o dong moi nhat.
 - Quote intraday HPG tra rong ngay 26-09 vi la thu Bay; day la trang thai ngoai phien, khong ghi de EOD bang gia khong xac dinh.
 - Live UI verifier timeout khi cho intraday ngoai phien; can chay lai trong phien giao dich. Khong xem timeout nay la bang chung API EOD sai.
+
+## Audit va retry EOD toan universe - 2026-09-26
+
+- Audit phien 25-09 tren 624 ma cho thay chi 20 ma co du lieu truoc khi backfill; 531 ma listed thieu phien, 73 ma delisted duoc loai khoi muc tieu.
+- Backfill batch 10 + retry provider da ghi them 71 ma; nhom kiem chung 6 ma voi fallback moi deu thanh cong. Luot batch 3 toan phan bi dung sau nhieu timeout/reset upstream; audit sau do con 348 ma listed thieu.
+- Da sua `scripts/backfill-vnstock-session.cjs`: batch partial/failed bay gio tach symbol thieu va retry rieng, khong con coi partial response la thanh cong hoan toan. Evidence moi duoc ghi theo tung luot de tiep tuc an toan.
+- Coverage toan universe van chua dong; nguyen nhan con lai la upstream VCI reset/timeout voi nhieu ma thanh khoan thap. Cac ma co du lieu moi se hien EOD dung 25-09; ma chua co van phai hien ro ngay cap nhat cu va tiep tuc retry.
