@@ -125,6 +125,7 @@ module.exports = function(cacheService) {
       market_cap: stock.market_cap != null ? Number(stock.market_cap) : 0,
       price: latestPrice,
       price_updated_at: observedAt,
+      price_observed_at: observedAt,
       change: null,
       volume: priceRecord?.volume != null ? Number(priceRecord.volume) : null,
       data_source: priceRecord?.provider || null,

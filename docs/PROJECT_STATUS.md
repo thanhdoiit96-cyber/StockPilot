@@ -2406,3 +2406,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Stock API da tra `data_session_date` va `data_is_stale` theo phien EOD moi nhat trong database.
 - Kiem tra STC: API van tra gia/volume gan nhat (`11,600`, `200`) nhung ghi ro `data_session_date=2026-09-24`, `data_is_stale=true`; khong con nham la volume cua 25-09.
 - Coverage EOD 25-09 hien co **245 row**, va ca 245 row deu co volume khac null/0; 306 ma con lai khong co volume cua phien 25-09.
+
+## Phan biet gio phien va gio lay du lieu - 2026-09-26
+
+- `observed_at=2026-09-25T00:00:00Z` hien thi thanh **07:00 gio Viet Nam** la moc cua ngay phien EOD, khong phai thoi diem ket thuc giao dich.
+- `fetched_at` moi la thoi diem worker lay du lieu. Vi du HPG du lieu phien 25-09 duoc lay luc `2026-09-25T17:21Z` (~00:21 ngay 26-09 gio Viet Nam); VIX duoc lay luc `2026-09-26T05:14Z`.
+- API bo sung `price_observed_at` de tach ro moc phien khoi `data_fetched_at`; khong coi moc 07:00 la thoi diem provider ket thuc lay volume.
