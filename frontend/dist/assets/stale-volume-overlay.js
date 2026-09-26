@@ -2,10 +2,13 @@
   const cache = new Map()
   const load = async () => {
     try {
-      const response = await fetch('/api/stocks?page=1&pageSize=500', { cache: 'no-store' })
+      const response = await fetch('/api/stocks/data-quality', { cache: 'no-store' })
       if (!response.ok) return
       const payload = await response.json()
-      for (const item of payload.data || []) cache.set(String(item.code || '').toUpperCase(), item)
+      const quality = payload.data || {}
+      const missing = new Set((quality.missing_symbols || []).map(symbol => String(symbol).toUpperCase()))
+      cache.clear()
+      for (const symbol of missing) cache.set(symbol, { data_is_stale: true, data_session_date: quality.session_date })
       annotate()
     } catch (_) {}
   }
