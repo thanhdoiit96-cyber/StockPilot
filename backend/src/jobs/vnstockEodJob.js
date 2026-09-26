@@ -8,6 +8,12 @@ const { eodCoverage } = require('../market-data/eodCoverage');
 const models = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
+async function latestPersistedSession(sequelize) {
+  if (!sequelize?.query) return null;
+  const [rows] = await sequelize.query("SELECT MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)::text AS session_date FROM stock_prices WHERE provider = 'vnstock' AND interval = '1d' AND observed_at IS NOT NULL");
+  return rows?.[0]?.session_date || null;
+}
+
 function holidaySet(value = process.env.VNSTOCK_HOLIDAYS || '') {
   return new Set(String(value).split(',').map(item => item.trim()).filter(item => /^\d{4}-\d{2}-\d{2}$/.test(item)));
 }
@@ -54,6 +60,19 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
         const coverage = await eodCoverage(models.sequelize, sessionDate, missingSymbols);
         evidence.retries.push({ pass, requested: missingSymbols.length, ingestion: retry, remaining: coverage.missing_symbols.length });
         missingSymbols = coverage.missing_symbols;
+      }
+      // A later run can have no rows yet (weekend, holiday, or a provider
+      // outage). Repair the latest persisted session so old gaps do not wait
+      // forever for a user to report a stale symbol.
+      if (process.env.VNSTOCK_EOD_REPAIR_PREVIOUS !== 'false') {
+        const previousSession = await latestPersistedSession(models.sequelize);
+        if (previousSession && previousSession !== sessionDate) {
+          const previousCoverage = await eodCoverage(models.sequelize, previousSession, options.symbols || null);
+          if (previousCoverage.missing_symbols.length) {
+            const repair = await ingestVnstockEod({ ...options, symbols: previousCoverage.missing_symbols, from: previousSession, to: previousSession });
+            evidence.previous_session_repair = { session_date: previousSession, requested: previousCoverage.missing_symbols.length, ingestion: repair };
+          }
+        }
       }
       logger.info(`[Vnstock EOD] ${JSON.stringify(report)}`);
       if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {

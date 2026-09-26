@@ -2311,3 +2311,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Da chay browser regression cho Tong quan va sidebar tren bundle dang phuc vu: **2/2 pass**.
 - Overlay runtime syntax check pass; browser smoke script rieng bi Windows spawn EPERM khi launch Chrome, nhung E2E workflow chinh chay duoc trong quyen elevated.
+
+## Tu sua phien EOD truoc do - 2026-09-26
+
+- Scheduler da them previous-session repair: sau khi xu ly phien hien tai, tu tim phien EOD gan nhat da luu va retry cac ma missing cua phien do.
+- Co che nay bao phu cuoi tuan/ngay nghi/provider outage khi phien moi chua co record, tranh gap cu bi bo quen den khi nguoi dung bao lai.
+- Test scheduler pass **6/6**; backend da restart voi logic moi.
