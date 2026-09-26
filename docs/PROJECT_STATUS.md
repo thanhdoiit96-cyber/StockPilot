@@ -2306,3 +2306,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Da sua MutationObserver cua quality overlay de chi fetch khi banner chua ton tai; tranh vong lap tu viec observer tu bat mutation do chinh banner cap nhat.
 - Refresh dinh ky 60 giay van duoc giu; node syntax check pass.
+
+## Browser regression quality overlay - 2026-09-26
+
+- Da chay browser regression cho Tong quan va sidebar tren bundle dang phuc vu: **2/2 pass**.
+- Overlay runtime syntax check pass; browser smoke script rieng bi Windows spawn EPERM khi launch Chrome, nhung E2E workflow chinh chay duoc trong quyen elevated.
