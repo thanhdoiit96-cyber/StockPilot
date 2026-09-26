@@ -10,7 +10,9 @@
     banner.style.cssText = style + (data.ready ? ';border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)' : '')
     const retry = data.eod_retry || {}
     const runtime = retry.runtime || {}
-    const retryText = data.ready ? '' : `<small style="width:100%;color:#9ca3af">${runtime.running ? 'Đang retry provider' : `${data.missing} mã còn thiếu; gap-retry theo lịch ${retry.gap_schedule || retry.schedule || 'định kỳ'}`} (${retry.configured_passes ?? 2} lần/lượt).</small>`
+    const breakdown = data.missing_breakdown || {}
+    const breakdownText = data.ready ? '' : ` ${breakdown.previous_session || 0} mã có phiên trước, ${breakdown.stale_history || 0} mã có lịch sử cũ, ${breakdown.never_seen || 0} mã chưa từng có dữ liệu.`
+    const retryText = data.ready ? '' : `<small style="width:100%;color:#9ca3af">${runtime.running ? 'Đang retry provider' : `${data.missing} mã còn thiếu; gap-retry theo lịch ${retry.gap_schedule || retry.schedule || 'định kỳ'}`} (${retry.configured_passes ?? 2} lần/lượt).${breakdownText}</small>`
     banner.innerHTML = `<strong style="color:${data.ready ? '#4ade80' : '#fbbf24'}">${data.ready ? 'Dữ liệu EOD đã đủ' : 'Dữ liệu EOD chưa đủ'}</strong><span style="color:#9ca3af">Phiên ${data.session_date}: ${data.covered}/${data.listed} mã có dữ liệu.</span>${retryText}`
   }
   const load = async () => {
