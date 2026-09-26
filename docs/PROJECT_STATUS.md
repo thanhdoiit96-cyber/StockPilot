@@ -2334,3 +2334,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Retry EOD hien la co che theo lich (`30 16 * * 1-5` Asia/Ho_Chi_Minh), moi luot co mac dinh 2 pass retry symbol missing; evidence scheduler luu `last_run_at`, so pass va so ma con lai trong `eod_retry` de khong nham voi retry dang chay.
 - Quality overlay tren bundle dang phuc vu van poll 60 giay. Khi `session/covered/missing` thay doi, overlay phat event va reload mot lan de ca Tong quan, Danh muc va Chi tiet ma refetch EOD; source App cung lang nghe event, retry danh sach/chi tiet/analysis va nap lai portfolio.
 - Da chay `node --check` cho controller va overlay; test controller + scheduler pass **15/15**. Coverage van chua du do VCI reset/timeout, can tiep tuc retry/backfill khi provider on dinh.
+
+## Retry gap EOD dinh ky trong cung ngay - 2026-09-26
+
+- Scheduler EOD van chay luc `16:30`, dong thoi co them gap-retry cron `*/15 17-19 * * 1-5` de chi lay lai cac ma con thieu, khong lap lai toan bo universe.
+- Gap retry dung cung lock voi ingest chinh, co evidence rieng `eod-retry-*.json`, va API quality tra them runtime `running/phase/started_at/finished_at/last_error`.
+- Overlay hien thi "Dang retry provider" khi runtime dang chay; neu khong chay, hien lich retry thay vi ghi nham rang dang cho retry lien tuc.
+- Test controller + scheduler pass **16/16**; node syntax check pass. Chua co luot retry thuc te moi sau khi restart vi hom nay la thu Bay; can xac minh trong phien giao dich tiep theo.

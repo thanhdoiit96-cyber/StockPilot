@@ -8,6 +8,15 @@ const { eodCoverage } = require('../market-data/eodCoverage');
 const models = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
+const runtimeStatus = {
+  running: false,
+  phase: 'idle',
+  session_date: null,
+  started_at: null,
+  finished_at: null,
+  last_error: null
+};
+
 async function latestPersistedSession(sequelize) {
   if (!sequelize?.query) return null;
   const [rows] = await sequelize.query("SELECT MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)::text AS session_date FROM stock_prices WHERE provider = 'vnstock' AND interval = '1d' AND observed_at IS NOT NULL");
@@ -24,14 +33,28 @@ function completedSessionDate(checkedAt = new Date(), holidays = holidaySet()) {
   return target.toISOString().slice(0, 10);
 }
 
-function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5' } = {}) {
+function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 17-19 * * 1-5' } = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
   // fall back to intraday-only charts. Set VNSTOCK_EOD_ENABLED=false to opt out.
   if (process.env.VNSTOCK_EOD_ENABLED === 'false') return null;
   let running = false;
+  const buildOptions = sessionDate => ({
+    ...models,
+    cacheService,
+    symbols: process.env.VNSTOCK_SYMBOLS?.split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
+    from: sessionDate,
+    to: sessionDate,
+    source: process.env.VNSTOCK_SOURCE || 'vci',
+    marketBySymbol: JSON.parse(process.env.VNSTOCK_MARKETS || '{}'),
+    env: { VNSTOCK_PROJECT_DIR: process.env.VNSTOCK_PROJECT_DIR || '.vnstock' }
+  });
   const runOnce = async () => {
     if (running) { logger.info('[Vnstock EOD] Previous run still active; skipping overlap'); return; }
     running = true;
+    runtimeStatus.running = true;
+    runtimeStatus.phase = 'scheduled_ingest';
+    runtimeStatus.started_at = new Date().toISOString();
+    runtimeStatus.last_error = null;
     const checkedAt = new Date();
     const window = defaultWindow(checkedAt);
     // Run after the local market close and target the completed local session.
@@ -40,15 +63,8 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
     const sessionDate = completedSessionDate(checkedAt);
     const evidence = { checked_at: checkedAt.toISOString(), session_date: sessionDate };
     try {
-      const options = {
-        ...models,
-        cacheService,
-        symbols: process.env.VNSTOCK_SYMBOLS?.split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
-        from: window.from, to: sessionDate,
-        source: process.env.VNSTOCK_SOURCE || 'vci',
-        marketBySymbol: JSON.parse(process.env.VNSTOCK_MARKETS || '{}'),
-        env: { VNSTOCK_PROJECT_DIR: process.env.VNSTOCK_PROJECT_DIR || '.vnstock' }
-      };
+      const options = { ...buildOptions(sessionDate), from: window.from };
+      runtimeStatus.session_date = sessionDate;
       const report = await ingestVnstockEod(options);
       evidence.ingestion = report;
       evidence.before_retry = await eodCoverage(models.sequelize, sessionDate, options.symbols || null);
@@ -81,6 +97,7 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
       }
     } catch (error) {
       evidence.error = error.message;
+      runtimeStatus.last_error = error.message;
       logger.error(`[Vnstock EOD] ${error.stack || error.message}`);
     } finally {
       try {
@@ -94,14 +111,66 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
         logger.info(`[Vnstock EOD coverage] ${JSON.stringify(evidence.after)}`);
       } catch (error) { logger.error(`[Vnstock EOD evidence] ${error.message}`); }
       running = false;
+      runtimeStatus.running = false;
+      runtimeStatus.phase = 'idle';
+      runtimeStatus.finished_at = new Date().toISOString();
     }
     return evidence;
   };
+  const retryGaps = async () => {
+    if (running) { logger.info('[Vnstock EOD retry] Previous run still active; skipping overlap'); return null; }
+    const sessionDate = completedSessionDate(new Date());
+    const coverage = await eodCoverage(models.sequelize, sessionDate, process.env.VNSTOCK_SYMBOLS?.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) || null);
+    if (!coverage.missing_symbols.length) return { session_date: sessionDate, missing: 0, skipped: true };
+    running = true;
+    runtimeStatus.running = true;
+    runtimeStatus.phase = 'gap_retry';
+    runtimeStatus.session_date = sessionDate;
+    runtimeStatus.started_at = new Date().toISOString();
+    runtimeStatus.last_error = null;
+    const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length };
+    try {
+      const options = buildOptions(sessionDate);
+      const passes = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_PASSES || 1));
+      evidence.retries = [];
+      let missing = coverage.missing_symbols;
+      for (let pass = 1; pass <= passes && missing.length; pass += 1) {
+        const ingestion = await ingestVnstockEod({ ...options, symbols: missing });
+        const after = await eodCoverage(models.sequelize, sessionDate, missing);
+        evidence.retries.push({ pass, requested: missing.length, ingestion, remaining: after.missing_symbols.length });
+        missing = after.missing_symbols;
+      }
+      evidence.after = await eodCoverage(models.sequelize, sessionDate, options.symbols || null);
+      evidence.complete = evidence.after.missing_symbols.length === 0;
+      logger.info(`[Vnstock EOD retry] ${JSON.stringify(evidence.after)}`);
+      return evidence;
+    } catch (error) {
+      evidence.error = error.message;
+      runtimeStatus.last_error = error.message;
+      logger.error(`[Vnstock EOD retry] ${error.stack || error.message}`);
+      return evidence;
+    } finally {
+      try {
+        const directory = path.resolve(__dirname, '../../evidence');
+        await fs.mkdir(directory, { recursive: true });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        evidence.evidence_file = `eod-retry-${sessionDate}-${stamp}.json`;
+        await fs.writeFile(path.join(directory, evidence.evidence_file), JSON.stringify(evidence, null, 2));
+      } catch (error) { logger.error(`[Vnstock EOD retry evidence] ${error.message}`); }
+      running = false;
+      runtimeStatus.running = false;
+      runtimeStatus.phase = 'idle';
+      runtimeStatus.finished_at = new Date().toISOString();
+    }
+  };
   const task = cron.schedule(schedule, runOnce, { timezone: process.env.VNSTOCK_EOD_TIMEZONE || 'Asia/Ho_Chi_Minh' });
   task.runOnce = runOnce;
+  task.retryGaps = retryGaps;
+  task.retryTask = cron.schedule(retrySchedule, retryGaps, { timezone: process.env.VNSTOCK_EOD_TIMEZONE || 'Asia/Ho_Chi_Minh' });
   return task;
 }
 
 module.exports = startVnstockEodJob;
 module.exports.completedSessionDate = completedSessionDate;
+module.exports.getEodRetryStatus = () => ({ ...runtimeStatus });
 

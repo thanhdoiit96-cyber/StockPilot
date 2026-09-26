@@ -59,6 +59,18 @@ describe('vnstock EOD scheduler', () => {
     expect(JSON.parse(fs.writeFile.mock.calls[0][1]).retries).toHaveLength(2);
   });
 
+  test('exposes a scheduled gap retry task that only requests missing symbols', async () => {
+    ingestVnstockEod.mockResolvedValue({ received: 1 });
+    eodCoverage
+      .mockResolvedValueOnce({ symbols: 2, covered: 1, missing_symbols: ['VPB'] })
+      .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] })
+      .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() } });
+    await task.retryGaps();
+    expect(ingestVnstockEod).toHaveBeenCalledWith(expect.objectContaining({ symbols: ['VPB'], from: '2026-09-25', to: '2026-09-25' }));
+    expect(task.retryTask).toBeTruthy();
+  });
+
   test('prevents overlapping runs and records failures before releasing lock', async () => {
     delete process.env.VNSTOCK_EOD_ENABLED;
     let reject;
