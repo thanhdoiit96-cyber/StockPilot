@@ -22,6 +22,7 @@ async function main() {
   }
   const batchSize = Number(process.env.VNSTOCK_BACKFILL_BATCH_SIZE || 1);
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 10) throw new Error('VNSTOCK_BACKFILL_BATCH_SIZE must be between 1 and 10');
+  const stopAfter = Math.max(1, Number(process.env.VNSTOCK_BACKFILL_STOP_AFTER || 5));
 
   const stocks = await models.Stock.findAll({ attributes: ['code'], order: [['code', 'ASC']] });
   const universe = stocks.map(stock => stock.code);
@@ -33,10 +34,12 @@ async function main() {
   const symbols = requestedSymbols;
   if (!symbols.length) throw new Error('No existing stock symbols found; refusing to run an empty backfill');
   const before = await sessionCoverage(date);
-  const report = { date, provider: 'vnstock', source: process.env.VNSTOCK_SOURCE || 'vci', universe_symbols: universe.length, target_symbols: symbols, batch_size: batchSize,
+  const report = { date, provider: 'vnstock', source: process.env.VNSTOCK_SOURCE || 'vci', universe_symbols: universe.length, target_symbols: symbols, batch_size: batchSize, stop_after: stopAfter,
     before, batches: [], failures: [], totals: { received: 0, inserted: 0, updated: 0, skipped: 0, rejected: 0 }, error: null };
   const cacheService = new CacheService(models.sequelize);
 
+  let consecutiveNoData = 0;
+  let consecutiveFailures = 0;
   try {
     for (let offset = 0; offset < symbols.length; offset += batchSize) {
       const batch = symbols.slice(offset, offset + batchSize);
@@ -59,6 +62,11 @@ async function main() {
         report.batches.push(item);
         for (const key of Object.keys(report.totals)) report.totals[key] += Number(item[key] || 0);
         if (result.rejected) report.failures.push({ batch: item.batch, symbols: batch, error: `Provider records rejected: ${result.rejected}` });
+        consecutiveNoData = Number(result.received || 0) > 0 ? 0 : consecutiveNoData + 1;
+        consecutiveFailures = Number(result.rejected || 0) > 0 ? consecutiveFailures + 1 : 0;
+      } else {
+        consecutiveNoData += 1;
+        consecutiveFailures += 1;
       }
       // A price-board response can be partial. Recover every missing symbol
       // individually so one provider reset cannot leave a whole batch stale.
@@ -84,6 +92,10 @@ async function main() {
         } else {
           report.failures.push({ batch: Math.floor(offset / batchSize) + 1, symbols: [symbol], fallback: true, attempts: 2, error: recoveryError?.message || lastError?.message || 'symbol recovery failed' });
         }
+      }
+      if (consecutiveFailures >= stopAfter || consecutiveNoData >= stopAfter) {
+        report.stopped_early = { offset: offset + batch.length, reason: consecutiveFailures >= stopAfter ? 'consecutive_provider_failures' : 'consecutive_empty_provider_responses' };
+        break;
       }
       if (offset + batchSize < symbols.length) await new Promise(resolve => setTimeout(resolve, 1000));
     }
