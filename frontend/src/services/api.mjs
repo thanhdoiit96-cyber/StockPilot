@@ -42,6 +42,10 @@ export function stockQuotes(payload) {
   if (payload.success !== true || !payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data) || Object.values(payload.data).some(quote => !quote || !Number.isFinite(quote.price) || quote.price <= 0 || !quote.observed_at || !Number.isFinite(Date.parse(quote.fetched_at)))) throw new ApiError('Danh sách báo giá hiện tại trả về không đúng định dạng.')
   return payload.data
 }
+export function marketDataQuality(payload) {
+  if (payload.success !== true || !payload.data || typeof payload.data.session_date !== 'string' || !Number.isInteger(payload.data.listed) || !Number.isInteger(payload.data.covered) || !Number.isInteger(payload.data.missing) || !Array.isArray(payload.data.missing_symbols) || typeof payload.data.ready !== 'boolean') throw new ApiError('Trạng thái chất lượng dữ liệu trả về không đúng định dạng.')
+  return payload.data
+}
 export function stockAnalysis(payload) {
   if (payload.success !== true || !payload.data || !payload.data.indicators || typeof payload.data.observations !== 'number' || !payload.data.quality || !payload.data.risk_plan || !Array.isArray(payload.data.evaluation_factors) || !payload.data.horizon_advice || typeof payload.data.horizon_advice !== 'object' || !payload.data.expert_guidance || !Array.isArray(payload.data.expert_guidance.score_breakdown)) throw new ApiError('Phân tích kỹ thuật trả về không đúng định dạng.')
   return payload.data
