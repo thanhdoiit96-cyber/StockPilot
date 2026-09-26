@@ -2270,3 +2270,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Backfill batch 10 + retry provider da ghi them 71 ma; nhom kiem chung 6 ma voi fallback moi deu thanh cong. Luot batch 3 toan phan bi dung sau nhieu timeout/reset upstream; audit sau do con 348 ma listed thieu.
 - Da sua `scripts/backfill-vnstock-session.cjs`: batch partial/failed bay gio tach symbol thieu va retry rieng, khong con coi partial response la thanh cong hoan toan. Evidence moi duoc ghi theo tung luot de tiep tuc an toan.
 - Coverage toan universe van chua dong; nguyen nhan con lai la upstream VCI reset/timeout voi nhieu ma thanh khoan thap. Cac ma co du lieu moi se hien EOD dung 25-09; ma chua co van phai hien ro ngay cap nhat cu va tiep tuc retry.
+
+## Retry VPB EOD - 2026-09-26
+
+- VPB duoc xac minh thieu phien 25-09 va dang tra EOD 24-09 (`22.100`).
+- Retry rieng VPB thanh cong, them record phien 25-09; API hien tra gia `23.000`, `price_updated_at=2026-09-25`.
+- Cache stock da duoc invalidation boi backfill, nen Tong quan/Chi tiet va fallback Danh muc doc cung gia EOD moi.
