@@ -2359,3 +2359,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - VCI canary 20 ma tra 0 record EOD cho phien 25-09; mot so ma gap `fetch failed`.
 - KBS fallback da duoc thu tren cung danh sach nhung bi `SSLCertVerificationError` tai endpoint KBSEC va mot so connection reset; da dung canary, khong ghi du lieu khong xac minh.
 - Ket luan van hanh: giu missing cho den khi provider co the tra record hop le; khong dung gia 24-09 de lap vao phien 25-09. Can fix CA trust/worker KBS rieng truoc khi mo rong fallback.
+
+## Circuit-break cho backfill - 2026-09-26
+
+- Script `backfill-vnstock-session.cjs` tu dung sau 5 batch lien tiep provider loi hoac tra rong, luu `stopped_early` vao evidence va cho phep lan sau tiep tuc tu danh sach missing.
+- Muc nay ngan viec retry hang tram ma khi upstream dang mo circuit; co the dieu chinh bang `VNSTOCK_BACKFILL_STOP_AFTER` khi provider da on dinh.
