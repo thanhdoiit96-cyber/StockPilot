@@ -2327,3 +2327,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Da them workflow E2E mock quality endpoint va kiem tra banner giu nguyen khi chuyen Tong quan -> Danh muc -> Chi tiet ma.
 - Test quality banner pass **1/1**; lan dau fail do assertion dung dang `25-09` thay vi ISO `2026-09-25`, da chuan hoa assertion theo payload API.
+
+## Xac minh retry EOD va dong bo UI - 2026-09-26
+
+- Endpoint `/api/stocks/data-quality` hien dang tra ve phien `2026-09-25`: **204/551**, con **347** ma thieu. Provider intraday dang `ready`, khong co job retry EOD dang chay lien tuc tai thoi diem kiem tra.
+- Retry EOD hien la co che theo lich (`30 16 * * 1-5` Asia/Ho_Chi_Minh), moi luot co mac dinh 2 pass retry symbol missing; evidence scheduler luu `last_run_at`, so pass va so ma con lai trong `eod_retry` de khong nham voi retry dang chay.
+- Quality overlay tren bundle dang phuc vu van poll 60 giay. Khi `session/covered/missing` thay doi, overlay phat event va reload mot lan de ca Tong quan, Danh muc va Chi tiet ma refetch EOD; source App cung lang nghe event, retry danh sach/chi tiet/analysis va nap lai portfolio.
+- Da chay `node --check` cho controller va overlay; test controller + scheduler pass **15/15**. Coverage van chua du do VCI reset/timeout, can tiep tuc retry/backfill khi provider on dinh.

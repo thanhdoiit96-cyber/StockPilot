@@ -61,6 +61,20 @@ export default function App() {
   }), [portfolio, portfolioQuotes])
   const detail = useApiResource(selected?.id ? `/api/stocks/${encodeURIComponent(selected.id)}` : null, stockDetail)
   const analysis = useApiResource(selected?.id ? `/api/stocks/${encodeURIComponent(selected.id)}/analysis` : null, stockAnalysis)
+  useEffect(() => {
+    const refreshMarketData = () => {
+      marketQuality.retry()
+      stocksResource.retry()
+      detail.retry()
+      analysis.retry()
+      if (auth) {
+        requestJson('/api/portfolio', { token: auth.token }).then(payload => setPortfolio(payload.data)).catch(() => {})
+      }
+    }
+    window.addEventListener('stockpilot:market-data-quality', refreshMarketData)
+    const timer = window.setInterval(() => marketQuality.retry(), 60000)
+    return () => { window.removeEventListener('stockpilot:market-data-quality', refreshMarketData); window.clearInterval(timer) }
+  }, [auth, selected?.id])
   useEffect(() => { if (scrollY.current == null) return; const y = scrollY.current; scrollY.current = null; requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'auto' })) }, [search, sector, sort])
   const submitAuth = async (event) => { event.preventDefault(); try { const payload = await requestJson(`/api/auth/${authMode}`, { method: 'POST', body: authForm }); setAuth({ token: payload.token, user: payload.user }); setAuthForm({ email: '', password: '' }); setAuthMessage('') } catch (error) { setAuthMessage(error.message) } }
   const addWatch = async (event) => { event.preventDefault(); try { await requestJson('/api/watchlist', { method: 'POST', token: auth.token, body: { symbol: watchSymbol } }); const payload = await requestJson('/api/watchlist', { token: auth.token }); setWatchlist(payload.data || []); setWatchSymbol('') } catch (error) { setAuthMessage(error.message) } }
