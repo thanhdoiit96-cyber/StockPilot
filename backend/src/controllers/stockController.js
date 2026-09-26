@@ -7,6 +7,8 @@ const { evaluateInsightQuality } = require('../services/analysisQuality');
 const { buildRiskPlan } = require('../services/riskPlan');
 const { sectorFromIndustry, industryCondition } = require('../services/sectorClassifier');
 const { SECTOR_CODES, SECTOR_LABELS, CLASSIFIED_CODES, sectorForCode } = require('../services/sectorCatalog');
+const fs = require('node:fs');
+const path = require('node:path');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 
 module.exports = function(cacheService) {
@@ -45,6 +47,15 @@ module.exports = function(cacheService) {
       `, { bind: [requestedSession] });
       const summary = summaryRows[0] || { session_date: null, listed: 0, covered: 0, missing: 0, missing_symbols: [] };
       const health = liveQuoteService.health();
+      let lastEodRun = null;
+      try {
+        const evidenceDir = path.resolve(__dirname, '../../evidence');
+        const files = fs.existsSync(evidenceDir)
+          ? fs.readdirSync(evidenceDir).filter(file => file.startsWith(`eod-scheduled-${summary.session_date}-`) && file.endsWith('.json')).sort().reverse()
+          : [];
+        if (files[0]) lastEodRun = JSON.parse(fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8'));
+      } catch (_) { /* evidence is optional operational metadata */ }
+      const retryPasses = Math.max(0, Number(process.env.VNSTOCK_EOD_GAP_RETRIES || 2));
       const coveragePct = Number(summary.listed) ? Number((Number(summary.covered) / Number(summary.listed) * 100).toFixed(1)) : null;
       res.set('Cache-Control', 'no-store');
       return res.json({ success: true, data: {
@@ -55,7 +66,16 @@ module.exports = function(cacheService) {
         coverage_pct: coveragePct,
         missing_symbols: summary.missing_symbols || [],
         ready: Number(summary.missing || 0) === 0,
-        provider: health
+        provider: health,
+        eod_retry: {
+          mode: 'scheduled',
+          schedule: process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5',
+          configured_passes: retryPasses,
+          last_run_at: lastEodRun?.checked_at || null,
+          last_run_passes: Array.isArray(lastEodRun?.retries) ? lastEodRun.retries.length : 0,
+          last_run_remaining: lastEodRun?.after?.missing_symbols?.length ?? null,
+          last_run_complete: lastEodRun?.complete ?? null
+        }
       } });
     } catch (error) {
       console.error('[Stock Controller] Error checking market data quality:', error);
