@@ -20,6 +20,49 @@ module.exports = function(cacheService) {
     return res.json({ success: true, data, fallback: { key: 'other', label: 'Khác / chưa phân loại' } });
   });
 
+  router.get('/data-quality', async (req, res) => {
+    try {
+      const requestedSession = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.session || '')) ? String(req.query.session) : null;
+      const [summaryRows] = await Stock.sequelize.query(`
+        WITH listed AS (
+          SELECT id, code FROM stocks WHERE listing_status = 'listed'
+        ), latest AS (
+          SELECT COALESCE($1::date, MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)) AS session_date
+          FROM stock_prices WHERE provider = 'vnstock' AND interval = '1d' AND observed_at IS NOT NULL
+        ), coverage AS (
+          SELECT l.code, l.id, EXISTS (
+            SELECT 1 FROM stock_prices p WHERE p.stock_id = l.id AND p.provider = 'vnstock' AND p.interval = '1d'
+              AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = latest.session_date
+          ) AS covered
+          FROM listed l CROSS JOIN latest
+        )
+        SELECT latest.session_date::text AS session_date,
+          (SELECT COUNT(*)::int FROM listed) AS listed,
+          COUNT(*) FILTER (WHERE coverage.covered)::int AS covered,
+          COUNT(*) FILTER (WHERE NOT coverage.covered)::int AS missing,
+          ARRAY_REMOVE(ARRAY_AGG(coverage.code ORDER BY coverage.code) FILTER (WHERE NOT coverage.covered), NULL) AS missing_symbols
+        FROM latest CROSS JOIN coverage GROUP BY latest.session_date
+      `, { bind: [requestedSession] });
+      const summary = summaryRows[0] || { session_date: null, listed: 0, covered: 0, missing: 0, missing_symbols: [] };
+      const health = liveQuoteService.health();
+      const coveragePct = Number(summary.listed) ? Number((Number(summary.covered) / Number(summary.listed) * 100).toFixed(1)) : null;
+      res.set('Cache-Control', 'no-store');
+      return res.json({ success: true, data: {
+        session_date: summary.session_date,
+        listed: Number(summary.listed || 0),
+        covered: Number(summary.covered || 0),
+        missing: Number(summary.missing || 0),
+        coverage_pct: coveragePct,
+        missing_symbols: summary.missing_symbols || [],
+        ready: Number(summary.missing || 0) === 0,
+        provider: health
+      } });
+    } catch (error) {
+      console.error('[Stock Controller] Error checking market data quality:', error);
+      return res.status(500).json({ success: false, message: 'Unable to inspect market data quality' });
+    }
+  });
+
   const normalizeStock = (stock) => {
     const priceRecord = stock.prices?.[0];
     const latestPrice = priceRecord?.close != null ? Number(priceRecord.close) : priceRecord?.price != null ? Number(priceRecord.price) : null;

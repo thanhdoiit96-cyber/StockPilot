@@ -2276,3 +2276,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - VPB duoc xac minh thieu phien 25-09 va dang tra EOD 24-09 (`22.100`).
 - Retry rieng VPB thanh cong, them record phien 25-09; API hien tra gia `23.000`, `price_updated_at=2026-09-25`.
 - Cache stock da duoc invalidation boi backfill, nen Tong quan/Chi tiet va fallback Danh muc doc cung gia EOD moi.
+
+## Quality gate tu dong cho EOD/intraday - 2026-09-26
+
+- Da doi chieu mo hinh broker: tach realtime quote, EOD snapshot, timestamp/session va trang thai provider; SSI iData/FC cung phan tach intraday/EOD va co realtime streaming.
+- Da them `GET /api/stocks/data-quality?session=YYYY-MM-DD`: tra coverage listed, danh sach ma missing, `ready` va health provider, khong cache. API live hien bao phien 25-09: 551 listed, 204 covered, 347 missing.
+- Quality gate khong con phu thuoc vao viec nguoi dung nhin thay mot ma sai roi bao lai; monitor/UI co the doc mot nguon trang thai tap trung va chan viec coi snapshot chua du la day du.
+- Backend regression pass **106/106**; node syntax stock controller pass. Coverage du lieu van dang retry do upstream VCI reset/timeout, va `ready=false` duoc giu cho den khi audit dat du.
