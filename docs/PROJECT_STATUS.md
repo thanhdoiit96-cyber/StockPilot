@@ -2317,3 +2317,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Scheduler da them previous-session repair: sau khi xu ly phien hien tai, tu tim phien EOD gan nhat da luu va retry cac ma missing cua phien do.
 - Co che nay bao phu cuoi tuan/ngay nghi/provider outage khi phien moi chua co record, tranh gap cu bi bo quen den khi nguoi dung bao lai.
 - Test scheduler pass **6/6**; backend da restart voi logic moi.
+
+## Quality banner tren moi page - 2026-09-26
+
+- Overlay runtime da chuyen anchor tu hero Tong quan sang topbar cap ung dung; Tong quan, Chi tiet ma va Danh muc deu nhan cung mot quality status.
+- Browser regression Overview/sidebar **2/2 pass**; node syntax check overlay pass.
