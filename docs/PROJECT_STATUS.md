@@ -2353,3 +2353,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dot lon da dung khi VCI circuit mo (`5 consecutive failures`), tranh tiep tuc tao them timeout/reset.
 - Sau khi circuit reset, canary 5 ma da chay thanh cong (provider ready, khong co failure moi); coverage tai thoi diem nay **211/551**.
 - Dang chay canary tiep 20 ma voi batch 2; chi mo rong toan bo 340 ma neu canary khong mo circuit lai.
+
+## Kiem chung fallback KBS cho canary - 2026-09-26
+
+- VCI canary 20 ma tra 0 record EOD cho phien 25-09; mot so ma gap `fetch failed`.
+- KBS fallback da duoc thu tren cung danh sach nhung bi `SSLCertVerificationError` tai endpoint KBSEC va mot so connection reset; da dung canary, khong ghi du lieu khong xac minh.
+- Ket luan van hanh: giu missing cho den khi provider co the tra record hop le; khong dung gia 24-09 de lap vao phien 25-09. Can fix CA trust/worker KBS rieng truoc khi mo rong fallback.
