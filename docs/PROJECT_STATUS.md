@@ -2295,3 +2295,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Source frontend da doc `/api/stocks/data-quality` va hien banner tren Tong quan: phien EOD, so ma covered/listed va so ma dang cho retry.
 - Banner phan biet `Dữ liệu EOD đã đủ` va `Dữ liệu EOD chưa đủ`, de nguoi dung khong nham snapshot stale la gia moi.
 - Source parity esbuild pass; frontend service tests **14/14 pass**; encoding check pass. Bundle feature-rich dang phuc vu chua thay the vi source parity tong the van dang tiep tuc.
+
+## Dua quality gate vao bundle dang phuc vu - 2026-09-26
+
+- Da them `dist/assets/quality-overlay.js` vao `dist/index.html`; overlay doc quality endpoint va hien banner tren hero Tong quan cua bundle feature-rich dang chay.
+- Overlay tu refresh moi 60 giay, khong thay doi bundle React chính; neu provider con gap, nguoi dung thay ro phien EOD va so ma missing.
+- Kiem chung `node --check` pass; index va asset overlay tai HTTP 200 tren port 4173.
