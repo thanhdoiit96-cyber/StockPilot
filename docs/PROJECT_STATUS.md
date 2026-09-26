@@ -2347,3 +2347,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da khoi dong backfill co kiem soat cho danh sach missing hien tai, batch 3, moi batch co toi da 3 lan va fallback retry tung ma.
 - Coverage da tang tu **204/551** len **210/551** trong luc job dang chay; provider co luc reset ket noi nen van can giu lai danh sach failure de retry tiep.
 - Khong coi coverage hien tai la da hoan tat; can doi evidence `eod-backfill-2026-09-25-*.json` va audit lai endpoint quality sau khi job ket thuc.
+
+## Phan luong backfill theo circuit provider - 2026-09-26
+
+- Dot lon da dung khi VCI circuit mo (`5 consecutive failures`), tranh tiep tuc tao them timeout/reset.
+- Sau khi circuit reset, canary 5 ma da chay thanh cong (provider ready, khong co failure moi); coverage tai thoi diem nay **211/551**.
+- Dang chay canary tiep 20 ma voi batch 2; chi mo rong toan bo 340 ma neu canary khong mo circuit lai.
