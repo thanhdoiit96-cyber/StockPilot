@@ -12,5 +12,5 @@
   const load = async () => { try { const response = await fetch('/api/stocks/data-quality', { cache: 'no-store' }); if (response.ok) { const payload = await response.json(); render(payload.data) } } catch (_) {} }
   load()
   setInterval(load, 60000)
-  new MutationObserver(load).observe(document.body, { childList: true, subtree: true })
+  new MutationObserver(() => { if (!document.getElementById(id)) load() }).observe(document.body, { childList: true, subtree: true })
 })()
