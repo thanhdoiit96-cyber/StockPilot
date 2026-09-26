@@ -2370,3 +2370,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Quality endpoint da tra `missing_breakdown`: `previous_session`, `stale_history`, `never_seen` de phan biet gap provider cua phien moi voi ma chua tung co lich su.
 - Coverage hien tai **211/551**; 340 missing gom **163** ma co phien 24-09, **97** ma co lich su cu hon, **80** ma chua tung co EOD trong database.
 - Overlay hien thi phan loai nay de khong danh dong toan bo missing la cung mot loi retry.
+
+## Canary VIX phien 2026-09-25 - 2026-09-26
+
+- VIX thuoc nhom `previous_session`: listed HSX, co 427 ban ghi, ngay gan nhat truoc do la 2026-09-24.
+- VCI canary rieng cho VIX da tra hop le va insert 1 ban ghi phien 2026-09-25: close **12,650**, volume **19,201,700**.
+- Coverage tang tu **211/551** len **212/551**; VIX khong phai ma bi loai hay chua tung co lich su, ma la gap provider rieng cua phien moi.
