@@ -2341,3 +2341,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Gap retry dung cung lock voi ingest chinh, co evidence rieng `eod-retry-*.json`, va API quality tra them runtime `running/phase/started_at/finished_at/last_error`.
 - Overlay hien thi "Dang retry provider" khi runtime dang chay; neu khong chay, hien lich retry thay vi ghi nham rang dang cho retry lien tuc.
 - Test controller + scheduler pass **16/16**; node syntax check pass. Chua co luot retry thuc te moi sau khi restart vi hom nay la thu Bay; can xac minh trong phien giao dich tiep theo.
+
+## Backfill phien 2026-09-25 dang chay - 2026-09-26
+
+- Da khoi dong backfill co kiem soat cho danh sach missing hien tai, batch 3, moi batch co toi da 3 lan va fallback retry tung ma.
+- Coverage da tang tu **204/551** len **210/551** trong luc job dang chay; provider co luc reset ket noi nen van can giu lai danh sach failure de retry tiep.
+- Khong coi coverage hien tai la da hoan tat; can doi evidence `eod-backfill-2026-09-25-*.json` va audit lai endpoint quality sau khi job ket thuc.
