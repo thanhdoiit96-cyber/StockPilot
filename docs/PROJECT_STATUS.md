@@ -2418,3 +2418,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Source Overview da doc `data_session_date`/`data_is_stale`; volume stale hien nhan `cu`, tooltip ghi ro ngay phien.
 - Nhan Nguon du lieu hien uu tien `data_fetched_at` voi nhan `Lay luc`, fallback ve `Phien` neu provider khong co fetched timestamp.
 - Esbuild syntax check cho `frontend/src/App.jsx` pass; khong chay build full de bao toan bundle feature-rich dang phuc vu.
+
+## Dua stale volume vao bundle dang phuc vu - 2026-09-26
+
+- Da them `dist/assets/stale-volume-overlay.js` va nap trong `dist/index.html`.
+- Runtime overlay doc stock API, gan tooltip ngay phien va nhan `· cu` vao cot volume cho cac ma co `data_is_stale=true`; tu dong cap nhat moi 60 giay va theo doi thay doi bang MutationObserver.
+- Node syntax check pass; asset va index HTTP **200** tren port 4173.
