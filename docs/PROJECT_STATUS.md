@@ -2364,3 +2364,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Script `backfill-vnstock-session.cjs` tu dung sau 5 batch lien tiep provider loi hoac tra rong, luu `stopped_early` vao evidence va cho phep lan sau tiep tuc tu danh sach missing.
 - Muc nay ngan viec retry hang tram ma khi upstream dang mo circuit; co the dieu chinh bang `VNSTOCK_BACKFILL_STOP_AFTER` khi provider da on dinh.
+
+## Phan loai missing EOD theo lich su - 2026-09-26
+
+- Quality endpoint da tra `missing_breakdown`: `previous_session`, `stale_history`, `never_seen` de phan biet gap provider cua phien moi voi ma chua tung co lich su.
+- Coverage hien tai **211/551**; 340 missing gom **163** ma co phien 24-09, **97** ma co lich su cu hon, **80** ma chua tung co EOD trong database.
+- Overlay hien thi phan loai nay de khong danh dong toan bo missing la cung mot loi retry.

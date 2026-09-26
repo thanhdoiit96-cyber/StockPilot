@@ -47,6 +47,21 @@ module.exports = function(cacheService) {
         FROM latest CROSS JOIN coverage GROUP BY latest.session_date
       `, { bind: [requestedSession] });
       const summary = summaryRows[0] || { session_date: null, listed: 0, covered: 0, missing: 0, missing_symbols: [] };
+      const [breakdownRows] = summary.session_date ? await Stock.sequelize.query(`
+        WITH latest AS (
+          SELECT s.id, MAX((p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date) AS last_date
+          FROM stocks s LEFT JOIN stock_prices p ON p.stock_id = s.id AND p.provider = 'vnstock' AND p.interval = '1d'
+          WHERE s.listing_status = 'listed' AND NOT EXISTS (
+            SELECT 1 FROM stock_prices current_price WHERE current_price.stock_id = s.id AND current_price.provider = 'vnstock' AND current_price.interval = '1d'
+              AND (current_price.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = $1::date
+          ) GROUP BY s.id
+        )
+        SELECT COUNT(*) FILTER (WHERE last_date IS NULL)::int AS never_seen,
+          COUNT(*) FILTER (WHERE last_date = ($1::date - INTERVAL '1 day')::date)::int AS previous_session,
+          COUNT(*) FILTER (WHERE last_date < ($1::date - INTERVAL '1 day')::date)::int AS stale_history
+        FROM latest
+      `, { bind: [summary.session_date] }) : [[]];
+      const breakdown = breakdownRows?.[0] || { never_seen: 0, previous_session: 0, stale_history: 0 };
       const health = liveQuoteService.health();
       let lastEodRun = null;
       try {
@@ -66,6 +81,11 @@ module.exports = function(cacheService) {
         missing: Number(summary.missing || 0),
         coverage_pct: coveragePct,
         missing_symbols: summary.missing_symbols || [],
+        missing_breakdown: {
+          never_seen: Number(breakdown.never_seen || 0),
+          previous_session: Number(breakdown.previous_session || 0),
+          stale_history: Number(breakdown.stale_history || 0)
+        },
         ready: Number(summary.missing || 0) === 0,
         provider: health,
         eod_retry: {
