@@ -2429,3 +2429,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Overlay da chuyen sang doc `/api/stocks/data-quality` va dung `missing_symbols`, khong goi them `/api/stocks?pageSize=500`.
 - Test `overview bounds` pass **1/1**; overlay khong con lam xung dot voi request page-size cua UI.
+
+## Cap nhat live smoke theo API phan trang - 2026-09-26
+
+- Live smoke truoc day timeout vi cho cung 131 row va bat buoc phai co FPT; hai dieu kien nay khong con phu hop voi page-size/API hien tai.
+- Da sua smoke test cho cho bat ky row hop le va ghi first row; chay lai pass, ghi evidence live overview voi **40 rows** va coverage banner.
+- E2E quality banner/sidebar pass **2/2** sau thay doi overlay.

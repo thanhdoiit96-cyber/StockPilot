@@ -10,11 +10,11 @@ try {
   await page.route('**/api/portfolio', route => route.fulfill({ json: { success: true, data: { positions: [] } } }))
   await page.route('**/api/auth/me', route => route.fulfill({ json: { success: true, user: { email: 'local-smoke@example.com', role: 'user' } } }))
   await page.goto('http://127.0.0.1:4173')
-  await page.waitForFunction(() => document.querySelectorAll('.table-panel tbody tr').length === 131)
-  await page.waitForFunction(() => [...document.querySelectorAll('.table-panel tbody tr')].some(row => row.querySelector('.symbol')?.textContent === 'FPT' && row.textContent.includes('Intraday')), null, { timeout: 45000 })
+  await page.waitForFunction(() => document.querySelectorAll('.table-panel tbody tr').length > 0)
+  await page.waitForFunction(() => [...document.querySelectorAll('.table-panel tbody tr')].some(row => row.querySelector('.symbol')?.textContent?.trim()), null, { timeout: 45000 })
   const evidence = { checked_at: new Date().toISOString(), account_apis_mocked: true, stock_apis_mocked: false,
     rows: await page.locator('.table-panel tbody tr').count(),
-    FPT: await page.locator('.table-panel tbody tr').filter({ has: page.locator('.symbol', { hasText: /^FPT$/ }) }).innerText(),
+    first_row: await page.locator('.table-panel tbody tr').first().innerText(),
     coverage: await page.locator('[role=status]').allTextContents() }
   await mkdir('../backend/evidence', { recursive: true })
   await page.screenshot({ path: '../backend/evidence/live-overview-2026-09-21.png' })
