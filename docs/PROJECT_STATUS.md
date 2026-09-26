@@ -2301,3 +2301,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da them `dist/assets/quality-overlay.js` vao `dist/index.html`; overlay doc quality endpoint va hien banner tren hero Tong quan cua bundle feature-rich dang chay.
 - Overlay tu refresh moi 60 giay, khong thay doi bundle React chính; neu provider con gap, nguoi dung thay ro phien EOD va so ma missing.
 - Kiem chung `node --check` pass; index va asset overlay tai HTTP 200 tren port 4173.
+
+## On dinh quality overlay runtime - 2026-09-26
+
+- Da sua MutationObserver cua quality overlay de chi fetch khi banner chua ton tai; tranh vong lap tu viec observer tu bat mutation do chinh banner cap nhat.
+- Refresh dinh ky 60 giay van duoc giu; node syntax check pass.
