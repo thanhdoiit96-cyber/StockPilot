@@ -71,6 +71,7 @@ module.exports = function(cacheService) {
         eod_retry: {
           mode: 'scheduled',
           schedule: process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5',
+          gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 17-19 * * 1-5',
           configured_passes: retryPasses,
           last_run_at: lastEodRun?.checked_at || null,
           last_run_passes: Array.isArray(lastEodRun?.retries) ? lastEodRun.retries.length : 0,
