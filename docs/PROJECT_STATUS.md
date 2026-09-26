@@ -2283,3 +2283,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da them `GET /api/stocks/data-quality?session=YYYY-MM-DD`: tra coverage listed, danh sach ma missing, `ready` va health provider, khong cache. API live hien bao phien 25-09: 551 listed, 204 covered, 347 missing.
 - Quality gate khong con phu thuoc vao viec nguoi dung nhin thay mot ma sai roi bao lai; monitor/UI co the doc mot nguon trang thai tap trung va chan viec coi snapshot chua du la day du.
 - Backend regression pass **106/106**; node syntax stock controller pass. Coverage du lieu van dang retry do upstream VCI reset/timeout, va `ready=false` duoc giu cho den khi audit dat du.
+
+## Tu phuc hoi EOD sau quality gate - 2026-09-26
+
+- Scheduler EOD nay tu dong lap toi da `VNSTOCK_EOD_GAP_RETRIES` pass (mac dinh 2) tren danh sach ma con thieu cua cung phien, sau moi pass audit lai coverage.
+- Neu VCI van timeout/reset, evidence giu `remaining` va quality endpoint tiep tuc `ready=false`; khong hien thi coverage ao.
+- Test scheduler pass **6/6**; backend da restart voi logic retry pass moi.
