@@ -9,6 +9,7 @@ const { sectorFromIndustry, industryCondition } = require('../services/sectorCla
 const { SECTOR_CODES, SECTOR_LABELS, CLASSIFIED_CODES, sectorForCode } = require('../services/sectorCatalog');
 const fs = require('node:fs');
 const path = require('node:path');
+const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 
 module.exports = function(cacheService) {
@@ -74,7 +75,8 @@ module.exports = function(cacheService) {
           last_run_at: lastEodRun?.checked_at || null,
           last_run_passes: Array.isArray(lastEodRun?.retries) ? lastEodRun.retries.length : 0,
           last_run_remaining: lastEodRun?.after?.missing_symbols?.length ?? null,
-          last_run_complete: lastEodRun?.complete ?? null
+          last_run_complete: lastEodRun?.complete ?? null,
+          runtime: getEodRetryStatus()
         }
       } });
     } catch (error) {
