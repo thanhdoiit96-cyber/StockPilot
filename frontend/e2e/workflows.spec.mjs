@@ -31,6 +31,15 @@ test('market overview and price board are separate views', async ({ page }) => {
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.locator('.table-panel')).toBeVisible()
 })
+test('price board exposes a market timeline and navigation icon', async ({ page }) => {
+  await boot(page)
+  await expect(page.locator('.market-board-nav-item .nav-icon')).toBeVisible()
+  await expect(page.locator('.market-session-timeline')).toBeVisible()
+  await expect(page.locator('.market-session-slot')).toHaveCount(6)
+  await expect(page.locator('.market-session-timeline')).toContainText('Biến động trong ngày')
+  await expect(page.locator('.market-session-timeline')).toContainText('Giá')
+  await expect(page.locator('.market-session-timeline')).toContainText('Khối lượng')
+})
 test('overview table controls expose keyboard focus states', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)

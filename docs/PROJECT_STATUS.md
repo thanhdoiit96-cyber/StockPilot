@@ -2605,3 +2605,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Runtime source/dist va Playwright da duoc cap nhat de bao phu chuyen view, danh muc ca nhan, chi tiet ma va luong giao dich.
 - Kiem chung: cac nhom E2E lien quan den page split, breadth, portfolio va loading pass; `check:bundle` va `git diff --check` pass. `npm run build` van la han che da ghi nhan do safe-build source/dist parity.
 - Diem tiep tuc: khi khoi phuc day du source `App.jsx`, chuyen view runtime nay thanh route/view React chinh thuc va bo runtime injection.
+
+## Bo sung icon va nhip thi truong trong ngay - 2026-09-28
+
+- Them icon bieu do vao muc dieu huong `Bang gia`, dong bo voi che do sidebar mo/thu gon.
+- Them timeline 6 moc giao dich trong ngay (09:00, 10:00, 11:00, 13:00, 14:00, 14:45), hien thi song song bien dong gia va khoi luong; du lieu duoc tich luy tu cac snapshot quote trong phien va luu theo ngay trong session.
+- Ghi ro pham vi la danh sach dang hien thi, khong suy dien lich su khi provider chua tra du tick intraday; moc chua co du lieu hien thi trang thai trong.
+- Kiem chung: syntax runtime source/dist, bundle integrity, diff check va E2E page split/timeline pass. Build day du van theo han che source/dist parity da ghi nhan.
