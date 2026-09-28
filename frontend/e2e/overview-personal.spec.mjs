@@ -51,7 +51,7 @@ async function setup(page, { rejectTransaction = false } = {}) {
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
 
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {
-  await setup(page)
+  const state = await setup(page)
   await expect(page.locator('.overview-metrics .overview-metric')).toHaveCount(4)
   await expect(page.locator('.overview-metrics')).toContainText('Quote intraday')
   await expect(page.locator('.overview-metrics')).toContainText('Mã cá nhân')
@@ -70,6 +70,9 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-snapshot strong').nth(1)).toHaveText('+1')
   await expect(page.locator('.breadth-snapshot strong').nth(2)).toHaveText('100.0%')
   await expect(page.locator('.breadth-leaders .breadth-leader')).toHaveCount(3)
+  await page.locator('.sector-select').selectOption('technology')
+  await expect.poll(() => state.listRequests.some(params => params.get('sector') === 'technology')).toBe(true)
+  await expect(page.locator('.breadth-leaders .breadth-leader small').first()).toContainText('Nhóm ngành')
   await expect(page.locator('.breadth-disclaimer')).toContainText('không tách khối lượng chủ động')
   await expect(page.locator('.chart-panel, .portfolio-panel')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Lịch sử hiệu quả đề xuất' })).toHaveCount(0)

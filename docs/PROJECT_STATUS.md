@@ -2579,3 +2579,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them thao tac click va Enter/Space cho ma trong Top tang/giam/khoi luong: tu dong dien vao Tim co phieu, focus lai input va dua nguoi dung ve bang.
 - Top list runtime dung page size 40 cua danh sach hien tai, khong tao them request universe 500 hay pha vo gioi han request cua Overview; source component van tinh top theo universe/quote khi build parity duoc khoi phuc.
 - Kiem chung: acceptance breadth pass, request-bound test pass va bundle integrity/syntax runtime pass.
+
+## Them pham vi nhom nganh cho Top list - 2026-09-28
+
+- Top tang/giam/khoi luong dong bo voi select `Nhom nganh`; khi doi nganh, runtime tai lai cung endpoint `pageSize=40` voi tham so `sector` va cap nhat nhan pham vi tren tung bang.
+- Khi khong chon nganh, Top list ghi ro `Toan bo danh sach hien tai`; khong dung nhan `toan thi truong` khi request chi lay danh sach hien thi.
+- Kiem chung: acceptance breadth co chuyen nganh va xac nhan request `sector=technology`, bundle integrity va syntax runtime pass.
