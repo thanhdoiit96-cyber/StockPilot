@@ -26,12 +26,21 @@ test('data quality banner persists across overview, portfolio and detail pages',
 test('sidebar collapses to labelled icons and overview headers stay pinned', async ({ page }) => {
   await boot(page)
   const sidebarToggle = page.locator('.sidebar-toggle')
+  const toggleIsInsideSidebar = () => sidebarToggle.evaluate(button => {
+    const toggle = button.getBoundingClientRect()
+    const sidebar = button.closest('.sidebar').getBoundingClientRect()
+    return toggle.width >= 32 && toggle.height >= 32 && toggle.left >= sidebar.left && toggle.right <= sidebar.right
+  })
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Thu gọn thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')
+  await expect.poll(toggleIsInsideSidebar).toBe(true)
+  await sidebarToggle.focus()
+  await expect.poll(() => sidebarToggle.evaluate(button => getComputedStyle(button).outlineWidth)).not.toBe('0px')
   await sidebarToggle.click()
   await expect(page.locator('.dashboard-shell')).toHaveClass(/sidebar-collapsed/)
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Mở rộng thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'right')
+  await expect.poll(toggleIsInsideSidebar).toBe(true)
   await expect(page.locator('.nav-label').first()).toBeHidden()
   await expect(page.locator('.nav-icon').first()).toBeVisible()
   await expect(page.locator('.nav-item').first()).toHaveAttribute('aria-label', 'Tổng quan')
