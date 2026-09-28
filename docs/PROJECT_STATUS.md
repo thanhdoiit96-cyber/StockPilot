@@ -2466,3 +2466,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Thay vi them action moi, bo sung section `Cach doc trang thai du lieu` khong co nut: giai thich `Intraday`, `EOD` va `Du lieu cu`, dong thoi noi ro cac nhan nay mo ta do moi du lieu chu khong phai tin hieu mua ban.
 - Section moi dung grid 3 cot tren desktop, 1 cot tren man hinh hep; runtime tu go bo section khi roi Tong quan va tao lai khi quay ve, tranh ro ri UI sang page khac.
 - Release gate them marker `overview-data-guide`. Kiem chung: syntax/hash runtime va bundle integrity pass, live smoke tren 40 dong pass, acceptance section **1/1** va toan bo Playwright `overview` **12/12** pass.
+
+## Dua chu thich du lieu ve dung ngu canh - 2026-09-28
+
+- Bo section `Cach doc trang thai du lieu` o cuoi trang; section `Tiep tuc tu day` trung action van khong hien thi.
+- Dat giai thich Intraday/EOD/du lieu cu vao bieu tuong thong tin cua nguon. Moi bieu tuong canh khoi luong co tooltip theo dung loai du lieu cua dong va co the focus bang ban phim; nhan `cu` co tooltip/aria-label ghi ro phien du lieu cu.
+- Release gate chuyen marker tu section cu sang aria-label cua chu thich tai cho. Runtime source va asset phat hanh tiep tuc duoc doi chieu cung hash.
+- Kiem chung: syntax va bundle integrity pass; acceptance chu thich **1/1**, regression sidebar **1/1** va toan bo Playwright `overview` **12/12** pass. Fixture sidebar keo dai dung `dashboard-shell` de phep do sticky khong phu thuoc chieu cao section cu da bo.
+- M5/coverage EOD va source-parity/encoding cua `App.jsx` van la backlog rieng.
