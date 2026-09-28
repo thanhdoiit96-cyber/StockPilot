@@ -2520,3 +2520,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Giam `right` tu 8px xuong 4px de nut nam gan mep phai sidebar hon theo yeu cau giao dien, van giu vung bam 32x32px.
 - Live smoke responsive tiep tuc pass o 1440/1024/768/520px, ca mo va thu gon; nut van nam tron trong sidebar va khong tao overflow ngang.
+
+## Dua nut sidebar sat mep - 2026-09-28
+
+- Giam tiep `right` tu 4px xuong 0px de nut can mep phai sidebar, bot cam giac bi thut vao trong nhung van giu nguyen vung bam 32x32px.
