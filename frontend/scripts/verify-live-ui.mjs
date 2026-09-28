@@ -12,6 +12,15 @@ try {
   await page.goto('http://127.0.0.1:4173')
   await page.waitForFunction(() => document.querySelectorAll('.table-panel tbody tr').length > 0)
   await page.waitForFunction(() => [...document.querySelectorAll('.table-panel tbody tr')].some(row => row.querySelector('.symbol')?.textContent?.trim()), null, { timeout: 45000 })
+  const sidebarToggle = page.locator('.sidebar-toggle')
+  await sidebarToggle.locator('.sidebar-toggle-icon').waitFor({ state: 'visible' })
+  const sidebarToggleState = {
+    label: await sidebarToggle.getAttribute('aria-label'),
+    direction: await sidebarToggle.locator('.sidebar-toggle-icon').getAttribute('data-sidebar-direction')
+  }
+  if (sidebarToggleState.label !== 'Thu gọn thanh điều hướng' || sidebarToggleState.direction !== 'left') {
+    throw new Error(`Unexpected expanded sidebar toggle: ${JSON.stringify(sidebarToggleState)}`)
+  }
   const bottomPageSize = page.locator('.table-pagination .overview-page-size-control')
   const bottomResultCount = page.locator('.table-pagination .overview-pagination-count')
   await bottomPageSize.waitFor({ state: 'visible' })
@@ -75,6 +84,7 @@ try {
       value: await bottomPageSize.locator('select').inputValue(),
       result_count: await bottomResultCount.innerText()
     },
+    sidebar_toggle: sidebarToggleState,
     filter_alignment: filterAlignment,
     stale_volume_diagnostic: overlayDiagnostic,
     coverage: await page.locator('[role=status]').allTextContents() }

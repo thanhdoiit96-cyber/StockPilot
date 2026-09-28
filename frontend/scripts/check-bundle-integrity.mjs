@@ -43,4 +43,21 @@ const overviewChecks = [
 const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(overviewRuntime)).map(([label]) => label)
 if (missingOverview.length) throw new Error(`Runtime Tổng quan không đạt kiểm tra: ${missingOverview.join(', ')}`)
 
-console.log(`Bundle integrity passed: ${asset}; runtime: ${overviewRuntimeAsset}`)
+const sidebarRuntimeAsset = 'sidebar-toggle-icon.js'
+if (!html.includes(`/assets/${sidebarRuntimeAsset}`)) {
+  throw new Error(`Bundle không nạp runtime sidebar: ${sidebarRuntimeAsset}`)
+}
+const sidebarRuntimePath = path.join(root, 'dist/assets', sidebarRuntimeAsset)
+if (!fs.existsSync(sidebarRuntimePath)) {
+  throw new Error(`Thiếu runtime sidebar: ${sidebarRuntimeAsset}`)
+}
+const sidebarRuntime = fs.readFileSync(sidebarRuntimePath, 'utf8')
+const sidebarChecks = [
+  ['icon sidebar có hướng', /dataset\.sidebarDirection/],
+  ['nhãn thu gọn', /Thu gọn thanh điều hướng/],
+  ['nhãn mở rộng', /Mở rộng thanh điều hướng/]
+]
+const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(sidebarRuntime)).map(([label]) => label)
+if (missingSidebar.length) throw new Error(`Runtime sidebar không đạt kiểm tra: ${missingSidebar.join(', ')}`)
+
+console.log(`Bundle integrity passed: ${asset}; runtimes: ${overviewRuntimeAsset}, ${sidebarRuntimeAsset}`)
