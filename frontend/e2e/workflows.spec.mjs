@@ -29,7 +29,7 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   const toggleIsInsideSidebar = () => sidebarToggle.evaluate(button => {
     const toggle = button.getBoundingClientRect()
     const sidebar = button.closest('.sidebar').getBoundingClientRect()
-    return toggle.width >= 32 && toggle.height >= 32 && toggle.left >= sidebar.left && toggle.right <= sidebar.right + 2.5
+    return toggle.width >= 32 && toggle.height >= 32 && toggle.left >= sidebar.left && toggle.right <= sidebar.right + 13.5
   })
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Thu gọn thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')

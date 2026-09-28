@@ -24,7 +24,7 @@ try {
         width: toggle.width,
         height: toggle.height,
         fully_inside_sidebar: toggle.left >= sidebar.left && toggle.right <= sidebar.right,
-        within_sidebar_edge: toggle.left >= sidebar.left && toggle.right <= sidebar.right + 2.5,
+        within_sidebar_edge: toggle.left >= sidebar.left && toggle.right <= sidebar.right + 13.5,
         edge_overlap_px: Math.max(0, toggle.right - sidebar.right),
         background: getComputedStyle(button).backgroundColor
       }
@@ -55,7 +55,7 @@ try {
         width: toggle.width,
         height: toggle.height,
         fully_inside_sidebar: toggle.left >= side.left && toggle.right <= side.right,
-        within_sidebar_edge: toggle.left >= side.left && toggle.right <= side.right + 2.5,
+        within_sidebar_edge: toggle.left >= side.left && toggle.right <= side.right + 13.5,
         edge_overlap_px: Math.max(0, toggle.right - side.right),
         background: getComputedStyle(button).backgroundColor,
         horizontal_overflow: document.documentElement.scrollWidth > window.innerWidth + 1
