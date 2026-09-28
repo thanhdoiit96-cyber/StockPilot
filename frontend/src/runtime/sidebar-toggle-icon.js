@@ -8,12 +8,12 @@
     style.textContent = `
       .sidebar-toggle {
         top: 8px !important;
-        right: 4px !important;
+        right: 0 !important;
         width: 32px !important;
         height: 32px !important;
         font-size: 0;
       }
-      .sidebar.is-collapsed .sidebar-toggle { right: 4px !important; }
+      .sidebar.is-collapsed .sidebar-toggle { right: 0 !important; }
       .sidebar-toggle:focus-visible {
         border-color: var(--primary);
         outline: 2px solid rgba(94, 234, 212, .72);
