@@ -55,10 +55,58 @@
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
       .overview-next { display: none !important; }
+      .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
+      .table-panel .overview-original-result-count { display: none !important; }
+      .table-panel .table-pagination { flex-wrap: wrap; }
+      .overview-pagination-summary {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-right: auto;
+      }
+      .overview-pagination-count {
+        padding: 7px 10px;
+        border: 1px solid rgba(148, 163, 184, .16);
+        border-radius: 8px;
+        background: rgba(148, 163, 184, .06);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .overview-page-size-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .overview-page-size-control select {
+        min-width: 68px;
+        padding: 7px 28px 7px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+        font: inherit;
+        cursor: pointer;
+      }
+      .overview-page-size-control select:focus-visible {
+        border-color: var(--primary);
+        outline: 2px solid rgba(94, 234, 212, .38);
+        outline-offset: 2px;
+      }
       @media (max-width: 1100px) {
         .table-panel th:nth-child(2), .table-panel td:nth-child(2) { width: 21%; }
         .table-panel th:nth-child(7), .table-panel td:nth-child(7) { width: 20%; }
         .overview-analysis-action .overview-analysis-btn { white-space: normal; }
+      }
+      @media (max-width: 620px) {
+        .overview-pagination-summary {
+          flex-basis: 100%;
+          width: 100%;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          margin: 0 0 4px;
+        }
       }
       @media (prefers-reduced-motion: reduce) {
         .overview-analysis-action .overview-analysis-btn { transition: none; }
@@ -91,6 +139,57 @@
       badge.title = `Dữ liệu cũ: giá hoặc khối lượng thuộc phiên ${session}, chưa phải phiên chuẩn mới nhất.`
       badge.setAttribute('aria-label', badge.title)
     })
+    const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
+    const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')
+    const pagination = document.querySelector('.table-panel .table-pagination')
+    if (originalPageSize && pagination) {
+      const previousValue = originalPageSize.value
+      if (!originalPageSize.querySelector('option[value="40"]')) {
+        const option40 = new Option('40', '40')
+        const option50 = originalPageSize.querySelector('option[value="50"]')
+        originalPageSize.insertBefore(option40, option50)
+        if (!previousValue) originalPageSize.value = '40'
+      }
+      let summary = pagination.querySelector('.overview-pagination-summary')
+      if (!summary) {
+        summary = document.createElement('div')
+        summary.className = 'overview-pagination-summary'
+        pagination.prepend(summary)
+      }
+      if (originalResultCount) {
+        originalResultCount.classList.add('overview-original-result-count')
+        let bottomCount = summary.querySelector('.overview-pagination-count')
+        if (!bottomCount) {
+          bottomCount = document.createElement('span')
+          bottomCount.className = 'overview-pagination-count'
+          summary.append(bottomCount)
+        }
+        const countText = originalResultCount.textContent.trim()
+        if (bottomCount.textContent !== countText) bottomCount.textContent = countText
+      }
+      let bottomControl = summary.querySelector('.overview-page-size-control')
+      if (!bottomControl) {
+        bottomControl = document.createElement('label')
+        bottomControl.className = 'overview-page-size-control'
+        bottomControl.innerHTML = `<span>Số mã / trang</span><select aria-label="Số mã mỗi trang"></select>`
+        summary.append(bottomControl)
+        const bottomSelect = bottomControl.querySelector('select')
+        bottomSelect.addEventListener('change', event => {
+          const sourceSelect = bottomControl.sourceSelect
+          if (!sourceSelect) return
+          sourceSelect.value = event.target.value
+          sourceSelect.dispatchEvent(new Event('change', { bubbles: true }))
+        })
+      }
+      bottomControl.sourceSelect = originalPageSize
+      const bottomSelect = bottomControl.querySelector('select')
+      const optionSignature = Array.from(originalPageSize.options).map(option => `${option.value}:${option.textContent}`).join('|')
+      if (bottomSelect.dataset.options !== optionSignature) {
+        bottomSelect.replaceChildren(...Array.from(originalPageSize.options, option => option.cloneNode(true)))
+        bottomSelect.dataset.options = optionSignature
+      }
+      bottomSelect.value = originalPageSize.value
+    }
     document.querySelectorAll('.overview-assessment').forEach(container => {
       if (!container.classList.contains(enhancedClass)) container.classList.add(enhancedClass)
       const button = container.querySelector('.overview-analysis-btn')

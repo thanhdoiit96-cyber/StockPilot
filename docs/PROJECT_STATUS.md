@@ -2474,3 +2474,17 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Release gate chuyen marker tu section cu sang aria-label cua chu thich tai cho. Runtime source va asset phat hanh tiep tuc duoc doi chieu cung hash.
 - Kiem chung: syntax va bundle integrity pass; acceptance chu thich **1/1**, regression sidebar **1/1** va toan bo Playwright `overview` **12/12** pass. Fixture sidebar keo dai dung `dashboard-shell` de phep do sticky khong phu thuoc chieu cao section cu da bo.
 - M5/coverage EOD va source-parity/encoding cua `App.jsx` van la backlog rieng.
+
+## Sap xep lai bo chon so ma moi trang - 2026-09-28
+
+- Dua bo chon `So ma / trang` tu cum tim kiem/loc phia tren xuong hang phan trang ben duoi bang; dat ben trai, tach ro voi cum Trang/Truoc/Sau ben phai.
+- Tren man hinh hep, bo chon chiem mot hang rieng de khong chen cac nut phan trang. Select moi dong bo hai chieu voi select React goc va tiep tuc dung luong cap nhat page-size hien co.
+- Release gate them marker `overview-page-size-control`; Playwright kiem tra vi tri moi, an control cu va request page-size sau khi thay doi.
+- Kiem chung truoc steering tiep theo: syntax/hash runtime, bundle integrity, acceptance page-size **1/1** va Playwright `overview` **12/12** pass.
+
+## Gom thong tin hien thi vao hang phan trang - 2026-09-28
+
+- Chuyen `Hien thi n/tong ma` khoi thanh tim kiem/loc xuong cum ben trai hang phan trang, dat canh `So ma / trang`; cum Trang/Truoc/Sau giu ben phai.
+- Bo sung tuy chon `40` vao select vi Overview dang dung page-size mac dinh 40; tranh tinh trang UI hien 25 trong khi request/so dong thuc te la 40.
+- Tren man hinh hep, cum dem va page-size chiem tron mot hang truoc cac nut phan trang.
+- Kiem chung: syntax/hash runtime va bundle integrity pass; acceptance page-size/count **1/1**, Playwright `overview` **12/12** va live smoke pass. Live UI xac nhan `Hien thi 40/624 ma`, select `40`, request `pageSize=40`; anh evidence da duoc chup sau khi cuon den hang phan trang.
