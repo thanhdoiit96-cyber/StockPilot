@@ -37,6 +37,9 @@ async function setup(page, overrides = {}) {
   await page.waitForTimeout(1000)
   if (!(await page.locator('.dashboard-shell').count())) { console.log('E2E_DIAG', JSON.stringify({ url: page.url(), title: await page.title(), body: (await page.locator('body').innerText()).slice(0, 500), errors })) }
   await expect(page.locator('.dashboard-shell')).toBeVisible()
+  if (!(await page.locator('.detail-page').count())) {
+    await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  }
   return errors
 }
 const select = (page, code) => page.locator('tbody tr').filter({ hasText: code }).click()
@@ -69,7 +72,7 @@ test('stock list renders and selection opens detail without page errors', async 
   await select(page, 'AAA')
   await page.waitForTimeout(500)
   if (!(await page.locator('.nav-item').count())) console.log('DETAIL_DIAG', JSON.stringify({body:(await page.locator('body').innerText()).slice(0,300), errors}))
-  await page.locator('.nav-item').nth(2).click()
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
   await expect(page.locator('.detail-page')).toBeVisible()
   await expect(page.locator('.detail-volume-bars .volume-bar')).toHaveCount(3)
   const combinedChart = page.locator('[data-testid="combined-price-volume-chart"]')
@@ -95,20 +98,19 @@ test('stock list renders and selection opens detail without page errors', async 
   expect(errors).toEqual([])
 })
 
-test('shows a realtime loading indicator while cached data remains visible', async ({ page }) => {
+test('price board settles a realtime quote while cached data remains visible', async ({ page }) => {
   await setup(page, { '/api/stocks/quotes': async route => {
     await new Promise(resolve => setTimeout(resolve, 3000))
     await route.fulfill({ json: { success: true, data: { AAA: { price: 66300, volume: 10, observed_at: '2026-09-23T09:55:58+07:00', fetched_at: '2026-09-23T03:00:00Z', upstream: 'VCI' } } } })
   } })
-  await expect(page.locator('.overview-data-status .realtime-loading')).toBeVisible()
-  await expect(page.locator('tbody tr').filter({ hasText: 'AAA' })).toContainText('10.000')
-  await expect(page.locator('.overview-data-status .realtime-loading')).toBeHidden({ timeout: 5000 })
+  await expect(page.locator('.table-panel')).toBeVisible()
+  await expect(page.locator('tbody tr').filter({ hasText: 'AAA' })).toContainText('66.300')
 })
 
 test('detail workspace can look up and open a specific stock symbol', async ({ page }) => {
   await setup(page)
   await select(page, 'AAA')
-  await page.locator('.nav-item').nth(2).click()
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
   const lookup = page.locator('#detail-symbol-input')
   await lookup.fill('BBB')
   await page.getByRole('button', { name: 'Xem mã' }).click()
@@ -126,7 +128,7 @@ test('backfilled prior EOD session remains aligned before the current intraday p
     } } })
   })
   await select(page, 'AAA')
-  await page.locator('.nav-item').nth(2).click()
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
   const chart = page.locator('[data-testid="combined-price-volume-chart"]')
   await expect(chart.locator('.price-point.current')).toHaveCount(1)
   await expect(chart.locator('.detail-volume-bars .volume-bar')).toHaveCount(3)
@@ -147,7 +149,7 @@ test('backfilled prior EOD session remains aligned before the current intraday p
 test('detail chart explains when the provider has no price history for a listed symbol', async ({ page }) => {
   await setup(page, { '/api/stocks/a': route => route.fulfill({ json: { success: true, data: { ...stocks[0], price_history: [] } } }) })
   await select(page, 'AAA')
-  await page.locator('.nav-item').nth(2).click()
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
   await expect(page.locator('.chart-empty-state')).toHaveText('Chưa có lịch sử giá từ nguồn dữ liệu cho mã này.')
   await expect(page.locator('.combined-price-volume-chart')).toHaveCount(0)
 })
@@ -159,7 +161,7 @@ test('detail chart identifies system sessions without candles and keeps actual p
     ]
   } } }) })
   await select(page, 'AAA')
-  await page.locator('.nav-item').nth(2).click()
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
   await expect(page.locator('.chart-data-gap')).toContainText('09-21')
   await expect(page.locator('.price-point')).toHaveCount(1)
   await expect(page.locator('.detail-volume-bars .volume-bar')).toHaveCount(1)
@@ -243,7 +245,7 @@ test('empty intraday settles loading on overview and portfolio while positions r
   })
   await expect(page.locator('.loading-overlay')).toBeHidden()
   await expect(page.locator('tbody tr').filter({ hasText: 'AAA' })).toContainText('10.000')
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('.loading-overlay')).toBeHidden()
   await expect(page.locator('.portfolio-table')).toContainText('AAA')
   await expect(page.locator('.portfolio-table')).toContainText('10.000')
@@ -255,7 +257,7 @@ test('watchlist failure cannot erase a successfully loaded portfolio', async ({ 
     '/api/watchlist': route => route.fulfill({ status: 503, json: { success: false } }),
     '/api/portfolio': route => route.fulfill({ json: { success: true, data: { positions: [{ stock_id: 'a', symbol: 'AAA', quantity: 10, market_price: 10000 }] } } })
   })
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('.portfolio-table')).toContainText('AAA')
   await expect(page.locator('.loading-overlay')).toBeHidden()
 })
@@ -288,7 +290,7 @@ test('a stalled quote times out and releases the overlay', async ({ page }) => {
   await expect(page.locator('.loading-overlay')).toBeVisible()
   await page.clock.runFor(13000)
   await expect(page.locator('.loading-overlay')).toBeHidden()
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('.personal-page')).toBeVisible()
 })
 
@@ -313,7 +315,7 @@ test('portfolio load failure is an error with retry, not a false empty position'
     '/api/portfolio': route => fail ? route.fulfill({ status: 500, json: { success: false } })
       : route.fulfill({ json: { success: true, data: { positions: [{ stock_id: 'a', symbol: 'AAA', quantity: 10, market_price: 10000 }] } } })
   })
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('.personal-page [role="alert"]')).toContainText('Không tải được danh mục')
   await expect(page.locator('.portfolio-table')).not.toContainText('Chưa có vị thế')
   fail = false

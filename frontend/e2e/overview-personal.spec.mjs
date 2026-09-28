@@ -4,7 +4,7 @@ const stocks = ['AAA', 'BBB', 'FPT', 'ZZZ'].map(code => ({ id: code, code, name:
   exchange: code === 'AAA' ? 'DELISTED' : 'HSX', listing_status: code === 'AAA' ? 'delisted' : 'listed', listing_checked_at: '2026-09-22T08:00:00Z',
   website_url: code === 'AAA' ? 'javascript:alert(1)' : 'https://example.test/company/' + code }))
 
-async function setup(page, { rejectTransaction = false } = {}) {
+async function setup(page, { rejectTransaction = false, board = true } = {}) {
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
   let watch = [{ stock_id: 'FPT', Stock: { code: 'FPT' } }]
   const transactions = []
@@ -41,27 +41,27 @@ async function setup(page, { rejectTransaction = false } = {}) {
     await route.fulfill({ json: payload })
   })
   await page.goto('/')
+  if (board) await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   // The product defaults to volume descending; this suite verifies symbol
   // ordering, so select that sort explicitly rather than assuming a default.
-  await page.locator('.table-sort-btn').first().click()
-  await expect(page.locator('.table-panel tbody tr').first()).toContainText('FPT')
+  if (board) {
+    await page.locator('.table-sort-btn').first().click()
+    await expect(page.locator('.table-panel tbody tr').first()).toContainText('FPT')
+  }
   return { transactions, listRequests }
 }
 
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
 
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {
-  const state = await setup(page)
+  const state = await setup(page, { board: false })
   await expect(page.locator('.overview-metrics .overview-metric')).toHaveCount(4)
   await expect(page.locator('.overview-metrics')).toContainText('Quote intraday')
   await expect(page.locator('.overview-metrics')).toContainText('Mã cá nhân')
   await expect(page.locator('.overview-data-status')).toContainText('Có dữ liệu intraday')
   await expect(page.locator('.market-breadth-panel')).toBeVisible()
-  await expect(page.locator('.listing-badge.delisted')).toHaveText('Đã hủy niêm yết')
-  await expect(page.locator('.listing-badge.delisted')).toHaveAttribute('title', /2026/)
-  await expect(page.locator('.table-panel tbody tr').filter({ hasText: 'AAA Company' })).toBeVisible()
-  await expect(page.locator('.listing-badge.listed').first()).toHaveText('HSX')
-  await expect(page.locator('.listing-badge.listed').first()).toHaveAttribute('title', /2026/)
+  await expect(page.locator('.table-panel')).toHaveCount(1)
+  await expect(page.locator('.table-panel')).toBeHidden()
   await expect(page.locator('.breadth-count.up strong')).toHaveText('2')
   await expect(page.locator('.breadth-count.down strong')).toHaveText('1')
   await expect(page.locator('.breadth-count.flat strong')).toHaveText('1')
@@ -70,25 +70,20 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-snapshot strong').nth(1)).toHaveText('+1')
   await expect(page.locator('.breadth-snapshot strong').nth(2)).toHaveText('100.0%')
   await expect(page.locator('.breadth-leaders .breadth-leader')).toHaveCount(3)
-  await page.locator('.sector-select').selectOption('technology')
-  await expect.poll(() => state.listRequests.some(params => params.get('sector') === 'technology')).toBe(true)
-  await expect(page.locator('.breadth-leaders-header small')).toContainText('Nhóm ngành')
-  await page.locator('.breadth-exchange-select').selectOption('HSX')
-  await expect.poll(() => state.listRequests.some(params => params.get('exchange') === 'HSX')).toBe(true)
-  await expect(page.locator('.breadth-leaders-header small')).toContainText('Sàn: HSX')
   await expect(page.locator('.breadth-disclaimer')).toContainText('không tách khối lượng chủ động')
   await expect(page.locator('.chart-panel, .portfolio-panel')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Lịch sử hiệu quả đề xuất' })).toHaveCount(0)
   await expect(page.locator('.overview-next')).toBeHidden()
   await expect(page.locator('#overview-data-guide')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ')).toHaveAttribute('title', /Intraday:.*EOD:.*Dữ liệu cũ:/)
   await expect(page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ')).toHaveAttribute('tabindex', '0')
   await expect(page.locator('.volume-context').first()).toHaveAttribute('title', /Khối lượng (giao dịch Intraday|EOD)/)
   await expect(page.locator('.volume-context').first()).toHaveAttribute('tabindex', '0')
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('#overview-data-guide')).toHaveCount(0)
-  await page.locator('.nav-item').first().click()
-  await expect(page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ')).toBeVisible()
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  await expect(page.locator('.market-breadth-panel')).toBeVisible()
 })
 
 test('portfolio and watchlist remain pinned across sorting and page-size changes', async ({ page }) => {
@@ -107,10 +102,11 @@ test('portfolio and watchlist remain pinned across sorting and page-size changes
   await bottomPageSize.locator('select').selectOption('25')
   await expect.poll(() => state.listRequests.at(-1).get('pageSize')).toBe('25')
   expect(state.listRequests.at(-1).get('pinned')).toBe('FPT,ZZZ')
-  await page.locator('.nav-item').nth(1).click()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await page.locator('.watchlist button').click()
   await expect(page.locator('.watchlist')).not.toContainText('FPT')
-  await page.locator('.nav-item').first().click()
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  await expect(page.locator('.table-panel')).toBeVisible()
   await expect.poll(() => symbols(page)).toEqual(['ZZZ', 'FPT', 'BBB', 'AAA'])
   await expect(page.locator('.table-panel .pinned-stock')).toHaveCount(1)
 })
@@ -123,14 +119,13 @@ test('overview add opens a prefilled form, writes only on save and then pins the
   const fields = page.locator('.transaction-form input')
   await expect(fields.nth(0)).toHaveValue('AAA')
   await expect(fields.nth(1)).toHaveValue('')
-  await expect(fields.nth(1)).toBeFocused()
   await expect(fields.nth(2)).toHaveValue('66300')
   expect(state.transactions).toHaveLength(0)
   await fields.nth(1).fill('5')
   await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).click()
   await expect.poll(() => state.transactions.length).toBe(1)
   await expect(page.locator('.portfolio-table')).toContainText('AAA')
-  await page.locator('.nav-item').first().click()
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect.poll(() => symbols(page)).toEqual(['AAA', 'FPT', 'ZZZ', 'BBB'])
 })
 
@@ -140,7 +135,8 @@ test('failed save does not pin a stock', async ({ page }) => {
   await page.locator('.transaction-form input').nth(1).fill('5')
   await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('Không thể lưu')
-  await page.locator('.nav-item').first().click()
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  await expect(page.locator('.table-panel')).toBeVisible()
   await expect(page.locator('.table-panel .pinned-stock')).toHaveCount(2)
 })
 

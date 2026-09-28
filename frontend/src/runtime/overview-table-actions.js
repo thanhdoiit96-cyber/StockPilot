@@ -65,7 +65,10 @@
       .breadth-leader > strong, .breadth-leader > small { display: block; }.breadth-leader > strong { font-size: 12px; }.breadth-leader > small { margin-top: 3px; color: var(--muted); font-size: 10px; }
       .breadth-leader ol { display: grid; gap: 5px; margin: 10px 0 0; padding-left: 17px; color: var(--muted); font-size: 11px; }.breadth-leader li { display: flex; justify-content: space-between; gap: 8px; padding-left: 2px; }.breadth-leader li span { color: var(--text); font-weight: 700; }.breadth-leader li b { font-variant-numeric: tabular-nums; }.breadth-leader > p { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
       .breadth-leader li span[data-breadth-symbol] { cursor: pointer; border-radius: 4px; }.breadth-leader li span[data-breadth-symbol]:hover, .breadth-leader li span[data-breadth-symbol]:focus-visible { color: var(--primary); outline: 2px solid rgba(94, 234, 212, .5); outline-offset: 2px; }
-      .breadth-exchange-select { min-width: 96px; }
+      .breadth-exchange-select { min-width: 96px; border: 1px solid var(--border); border-radius: 8px; padding: 7px 28px 7px 10px; color: var(--text); background: var(--panel); font: inherit; font-size: .8rem; }
+      .dashboard-shell:not(.market-board-active) .table-panel { display: none !important; }
+      .dashboard-shell.market-board-active .main-panel > :not(.topbar):not(.table-panel) { display: none !important; }
+      .market-board-nav-item { position: relative; }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; }.breadth-leaders-header { align-items: stretch; flex-direction: column; } }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
@@ -217,6 +220,43 @@
 
   const enhance = () => {
     installStyles()
+  const shell = document.querySelector('.dashboard-shell')
+  const nav = document.querySelector('.nav')
+  if (shell && !shell.dataset.marketNavigationBound) {
+    shell.dataset.marketNavigationBound = '1'
+    shell.addEventListener('click', event => {
+      if (event.target.closest('.market-board-nav-item')) return
+      if (event.target.closest('.nav-item, .detail-analysis-btn, .table-panel tbody tr, [aria-label*="Thêm"]')) shell.classList.remove('market-board-active')
+    })
+  }
+    let boardNav = nav?.querySelector('.market-board-nav-item')
+    if (nav && !boardNav) {
+      boardNav = document.createElement('button')
+      boardNav.type = 'button'
+      boardNav.className = 'nav-item market-board-nav-item'
+      boardNav.textContent = 'Bảng giá'
+      boardNav.setAttribute('aria-label', 'Bảng giá')
+      nav.insertBefore(boardNav, nav.children[1] || null)
+      boardNav.addEventListener('click', () => {
+        nav.querySelector('.nav-item:not(.market-board-nav-item)')?.click()
+        window.setTimeout(() => {
+          shell?.classList.add('market-board-active')
+          boardNav.classList.add('active')
+          boardNav.setAttribute('aria-current', 'page')
+        }, 0)
+        nav.querySelector('.nav-item:not(.market-board-nav-item).active')?.classList.remove('active')
+      })
+    }
+    if (shell && !shell.classList.contains('market-board-active')) boardNav?.removeAttribute('aria-current')
+    nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => {
+      if (item.dataset.marketViewBound) return
+      item.dataset.marketViewBound = '1'
+      item.addEventListener('click', () => {
+        shell?.classList.remove('market-board-active')
+        boardNav?.classList.remove('active')
+        boardNav?.removeAttribute('aria-current')
+      })
+    })
     document.querySelectorAll('.table-panel thead th').forEach(header => {
       if (header.textContent.trim() === 'Nhận định') header.textContent = 'Phân tích'
     })
