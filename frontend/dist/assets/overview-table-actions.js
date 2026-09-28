@@ -72,6 +72,24 @@
     document.querySelectorAll('.table-panel thead th').forEach(header => {
       if (header.textContent.trim() === 'Nhận định') header.textContent = 'Phân tích'
     })
+    document.querySelectorAll('.listing-badge.delisted').forEach(badge => {
+      if (badge.textContent.trim() === 'Hủy niêm yết') badge.textContent = 'Đã hủy niêm yết'
+    })
+    const nextActions = document.querySelectorAll('.overview-next button')
+    const portfolioAction = nextActions[0]
+    if (portfolioAction?.textContent.trim() === 'Chi tiết mã đang chọn') {
+      portfolioAction.textContent = 'Mở danh mục cá nhân'
+      if (!portfolioAction.dataset.portfolioActionBound) {
+        portfolioAction.dataset.portfolioActionBound = '1'
+        portfolioAction.addEventListener('click', event => {
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          const portfolioNav = [...document.querySelectorAll('.nav-item')]
+            .find(item => item.textContent.includes('Danh mục cá nhân'))
+          portfolioNav?.click()
+        }, true)
+      }
+    }
     document.querySelectorAll('.overview-assessment').forEach(container => {
       if (!container.classList.contains(enhancedClass)) container.classList.add(enhancedClass)
       const button = container.querySelector('.overview-analysis-btn')
