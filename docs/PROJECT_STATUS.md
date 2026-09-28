@@ -2537,3 +2537,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dao mau hai trang thai: sidebar mo dung mau sidebar ben trai, sidebar thu gon dung mau pane ben phai; loai bo vien nut.
 - Cap nhat nguong geometry cua acceptance/live smoke theo overlap toi da 13.5px.
 - Dieu chinh lai mau theo yeu cau cuoi: sidebar mo dung mau pane ben phai, sidebar thu gon dung mau sidebar ben trai.
+
+## Kiem tra hoi quy sau khi hoan thien sidebar - 2026-09-28
+
+- Chay lai Playwright nhom `overview`: **12/12**; bao gom filter/search, phan tich chuyen sau, portfolio/watchlist va sidebar.
+- Live smoke tiep tuc dat o 1440/1024/768/520px: nut 32x32px, overlap desktop/tablet 12px thuc te, khong horizontal overflow; mau mo `rgba(8,17,33,.96)`, mau thu gon `rgba(9,14,24,.96)`.
+- Bundle integrity pass; trang thai hien tai da san sang de chuyen sang buoc tiep theo: ra soat kha nang tiep can va thao tac ban phim cho cac control trong bang co phieu.
