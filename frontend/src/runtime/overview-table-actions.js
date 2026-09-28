@@ -168,11 +168,11 @@
   }
 
   let leadersLoading = false
-  const loadBreadthLeaders = async (breadth) => {
+  const loadBreadthLeaders = async (breadth, sector = '') => {
     if (leadersLoading || breadth.querySelector('.breadth-leaders')) return
     leadersLoading = true
     try {
-      const response = await fetch('/api/stocks?page=1&pageSize=40&q=&sector=&sort=volume&direction=desc&pinned=', { cache: 'no-store' })
+      const response = await fetch(`/api/stocks?page=1&pageSize=40&q=&sector=${encodeURIComponent(sector)}&sort=volume&direction=desc&pinned=`, { cache: 'no-store' })
       const payload = await response.json()
       const rows = Array.isArray(payload?.data) ? payload.data : []
       const byChange = rows.filter(row => Number.isFinite(Number(row.change)))
@@ -180,8 +180,9 @@
       const lists = [['Top tăng', byChange.sort((a, b) => Number(b.change) - Number(a.change)).slice(0, 5), 'change'], ['Top giảm', byChange.sort((a, b) => Number(a.change) - Number(b.change)).slice(0, 5), 'change'], ['Top khối lượng', byVolume.sort((a, b) => Number(b.volume) - Number(a.volume)).slice(0, 5), 'volume']]
       const wrapper = document.createElement('div')
       wrapper.className = 'breadth-leaders'
+      wrapper.dataset.sector = sector
       wrapper.setAttribute('aria-label', 'Các mã dẫn dắt thị trường')
-      wrapper.innerHTML = lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>Trong danh sách hiện tại</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')
+      wrapper.innerHTML = lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>${sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ danh sách hiện tại'}</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')
       breadth.querySelector('.breadth-snapshot')?.after(wrapper)
       wrapper.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {
         const symbol = symbolNode.textContent.trim()
@@ -252,7 +253,18 @@
       snapshot.innerHTML = `<div><span>A/D ratio</span><strong>${ratio}</strong><small>Tăng / giảm</small></div><div><span>Chênh lệch A−D</span><strong class="${spread >= 0 ? 'positive' : 'negative'}">${spread > 0 ? '+' : ''}${spread}</strong><small>Mã tăng trừ mã giảm</small></div><div><span>Đã phân loại</span><strong>${classifiedPercent}%</strong><small>${classified ? 'Dựa trên mã có biến động' : 'Chưa có dữ liệu'}</small></div>`
       breadth.querySelector('.breadth-counts')?.after(snapshot)
     }
-    if (breadth && !breadth.querySelector('.breadth-leaders')) loadBreadthLeaders(breadth)
+    const sectorSelect = document.querySelector('.sector-select')
+    const selectedSector = sectorSelect?.value || ''
+    const existingLeaders = breadth?.querySelector('.breadth-leaders')
+    if (existingLeaders && existingLeaders.dataset.sector !== selectedSector) existingLeaders.remove()
+    if (breadth && !breadth.querySelector('.breadth-leaders')) loadBreadthLeaders(breadth, selectedSector)
+    if (sectorSelect && !sectorSelect.dataset.breadthScopeBound) {
+      sectorSelect.dataset.breadthScopeBound = '1'
+      sectorSelect.addEventListener('change', () => {
+        breadth?.querySelector('.breadth-leaders')?.remove()
+        if (breadth) loadBreadthLeaders(breadth, sectorSelect.value || '')
+      })
+    }
     document.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {
       if (symbolNode.dataset.breadthBound) return
       const symbol = symbolNode.textContent.trim()
