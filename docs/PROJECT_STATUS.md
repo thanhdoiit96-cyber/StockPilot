@@ -2443,3 +2443,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `verify-live-ui.mjs` ghi trang da kiem tra, so badge, ma missing hien thi va cac request phan trang; smoke se fail neu co ma missing hien thi ma so badge khong khop.
 - Kiem chung: syntax overlay/smoke pass, bundle integrity pass, frontend service tests **14/14** pass va E2E quality banner/sidebar **2/2** pass. `npm test` day du van dung o encoding gate do mojibake co san trong `frontend/src/App.jsx`; khong xem test dich vu truc tiep la xac nhan source parity.
 - M5 va moc 500 ma EOD van mo; thay doi nay chi sua cach trinh bay stale, khong bo sung du lieu provider hay thay doi coverage.
+
+## Rut gon cot Phan tich tren Tong quan - 2026-09-28
+
+- Bo khoi giao dien bang cac nhan nhan dinh tinh nhu `Di ngang` va mo ta `Bien do hep...`, vi chung khong phan anh bien dong lien tuc cua co phieu.
+- Doi tieu de cot `Nhan dinh` thanh `Phan tich`; can lai do rong bang va dat nut `Phan tich chuyen sau` o giua cot hanh dong voi icon bieu do, hover/focus va nhan truy cap ro rang.
+- Nut van giu luong cu: dung propagation cua row, chon dung ma, dat co `analysis-requested:*` va mo trang Chi tiet ma de tai phan tich ky thuat.
+- Hanh vi duoc luu trong `src/runtime/overview-table-actions.js` va nap vao dist dang phuc vu ma khong thay bundle feature-rich chinh. Live smoke 40 dong xac nhan first row khong con hai chuoi nhan dinh tinh va asset runtime tra HTTP 200.
+- Kiem chung: runtime source va shipped asset cung hash, syntax va bundle integrity pass; Playwright targeted cho cot Phan tich/luong click **1/1** pass. Nhom regression `overview` dat **11/12**; test con lai la mismatch co san giua copy bundle `Huy niem yet` va assertion `Da huy niem yet`, khong lien quan thay doi nay. Source-parity/encoding cua `App.jsx` van la backlog rieng.

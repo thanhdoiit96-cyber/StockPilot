@@ -8,6 +8,7 @@
 | [src/App.jsx](src/App.jsx) | Dashboard, chọn cổ phiếu, tải API, biểu đồ minh họa, danh mục và chat demo |
 | [src/services/api.mjs](src/services/api.mjs) | Kiểm tra HTTP/JSON và cấu trúc dữ liệu cổ phiếu, hủy request và bỏ qua phản hồi cũ |
 | [src/hooks/useApiResource.js](src/hooks/useApiResource.js) | Trạng thái tải/lỗi/dữ liệu theo URL, retry, cleanup khi đổi lựa chọn hoặc unmount |
+| [src/runtime/overview-table-actions.js](src/runtime/overview-table-actions.js) | Chuẩn hóa cột hành động Phân tích trên bảng Tổng quan của bundle đang phục vụ |
 | [src/styles.css](src/styles.css) | Giao diện |
 | [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc localhost:5000 |
 
@@ -23,7 +24,7 @@ Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ
 
 ## Overview intraday quotes
 
-The overview defaults to 200 rows per page, showing all 131 currently stored stocks. It requests one VCI price-board snapshot for the entire page and polls again 30 seconds after completion. Leaving the view or changing the list aborts the request. Missing or failed quotes fall back to labeled EOD. The coverage counter reports how many rows have quotes.
+The overview defaults to 40 rows per page. It requests bounded VCI price-board snapshots for the active list and polls again 30 seconds after completion. Leaving the view or changing the list aborts the request. Missing or failed quotes fall back to labeled EOD. The coverage counter reports how many rows have quotes.
 
 Valid snapshots show VND per share, percentage change against the provider's reference price, accumulated session volume, source-update time in Vietnam time and fetch time. Source-update time is not labeled as an exact trade timestamp. Both overview and detail consume the same price-board adapter. This is polling of a potentially delayed source, not streaming tick data.
 
@@ -36,6 +37,8 @@ Nút **Thêm vào danh mục** mở form ghi nhận giao dịch với mã, loạ
 `SourceLink` hiển thị liên kết HTTP/HTTPS với URL đầy đủ trong tooltip mặc định của trình duyệt khi hover. Áp dụng cho URL doanh nghiệp/nguồn nếu có trong payload, giấy phép quote và nguồn yếu tố bên ngoài. Liên kết mở tab mới; click không kích hoạt hành vi chọn dòng cổ phiếu. URL thiếu hoặc giao thức không an toàn được hiển thị dưới dạng văn bản thường.
 
 Bảng dùng hàng compact, đổi nền và hiển thị cursor khi rê chuột. Metadata ngày giờ/giấy phép trong ô nguồn được rút thành biểu tượng `ⓘ`; hover hoặc focus biểu tượng để xem tooltip mà không chiếm chiều cao hàng.
+
+Cột **Phân tích** không hiển thị nhãn xu hướng hoặc mô tả biến động tĩnh trên từng dòng. Nút **Phân tích chuyên sâu** là hành động duy nhất trong cột này; nút mở Chi tiết mã và chủ động yêu cầu tải phân tích kỹ thuật mới cho mã được chọn.
 
 Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy) và lịch sử đánh giá ngoài mẫu. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
 
