@@ -2459,3 +2459,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `check:bundle` nay bat buoc `dist/index.html` nap `overview-table-actions.js`, asset ton tai va co marker cot Phan tich, aria label phan tich va copy huy niem yet. Runtime source va asset phat hanh duoc doi chieu cung hash.
 - Kiem chung cuoi: syntax pass, bundle integrity pass (`index-CJ9TdbTJ.js` + runtime), test acceptance tung loi **1/1** pass va toan bo nhom Playwright `overview` **12/12** pass.
 - M5/coverage EOD va source-parity/encoding cua `App.jsx` van la cac backlog rieng; gate nay chi dong nghiem thu UI Tong quan.
+
+## Thay section Tiep tuc tu day bang chu thich du lieu - 2026-09-28
+
+- Bo toan bo section `Tiep tuc tu day` khoi giao dien Tong quan vi hai action da co o dau trang va khong tao them luong nghiep vu.
+- Thay vi them action moi, bo sung section `Cach doc trang thai du lieu` khong co nut: giai thich `Intraday`, `EOD` va `Du lieu cu`, dong thoi noi ro cac nhan nay mo ta do moi du lieu chu khong phai tin hieu mua ban.
+- Section moi dung grid 3 cot tren desktop, 1 cot tren man hinh hep; runtime tu go bo section khi roi Tong quan va tao lai khi quay ve, tranh ro ri UI sang page khac.
+- Release gate them marker `overview-data-guide`. Kiem chung: syntax/hash runtime va bundle integrity pass, live smoke tren 40 dong pass, acceptance section **1/1** va toan bo Playwright `overview` **12/12** pass.
