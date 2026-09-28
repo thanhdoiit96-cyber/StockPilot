@@ -40,6 +40,12 @@ test('price board exposes a market timeline and navigation icon', async ({ page 
   await expect(page.locator('.market-session-timeline')).toContainText('Giá')
   await expect(page.locator('.market-session-timeline')).toContainText('Khối lượng')
 })
+test('price board remains selected after refresh', async ({ page }) => {
+  await boot(page)
+  await page.reload()
+  await expect(page.locator('.market-board-nav-item')).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('.table-panel')).toBeVisible()
+})
 test('overview table controls expose keyboard focus states', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)
