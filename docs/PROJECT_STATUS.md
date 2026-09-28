@@ -2561,3 +2561,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Giu cap nhat theo DOM/runtime de bundle dang phuc vu hien tai hien thi dung sau khi quote thay doi; source component cung da duoc cap nhat de giu parity cho lan build hop le tiep theo.
 - Kiem chung: bundle integrity pass; Playwright nhom `overview` **13/13** pass, trong do co assertion gia tri snapshot voi fixture 2 tang/1 giam/1 dung gia.
 - Gioi han: `npm run build` van bi safe-build tu choi vi source `App.jsx` chua chua day du cac marker shipped; `check:encoding` van bao loi pre-existing tai `src/App.jsx`. Dist cu duoc giu nguyen va runtime snapshot da duoc cap nhat an toan.
+
+## Xay dung Org chart do rong thi truong - 2026-09-28
+
+- Tao `docs/MARKET_BREADTH_DESIGN.md` voi Mermaid Org chart moi: Toan canh nhanh, Cau phan do rong, Thanh khoan, Phan ra thi truong, Xu huong theo thoi gian va Chat luong du lieu.
+- Them ban do chi so/nguon du lieu va quy tac bo cuc responsive; cac nhanh phu chi hien thi khi provider co truong hop le, khong bien missing thanh so 0.
+- Cap nhat `docs/INDEX.md` va lien ket trong ROADMAP. Buoc tiep theo cua UI la Top tang/giam va Top khoi luong theo dung cau truc Org chart.
