@@ -432,6 +432,28 @@ Acceptance evidence: frontend production build, 12 unit tests, encoding guard an
 
 - Complete: restored the previously shipped frontend capabilities after the UI regression: initial and realtime loading feedback, user-weighted recommendation criteria with feedback history, 500-symbol market breadth, portfolio allocation donut, recommendation tracking, and semantic gain/loss colors. Frontend build and encoding checks pass; Playwright execution was blocked in this environment by child-process `spawn EPERM`.
 
+## Market breadth expansion plan — 2026-09-28
+
+### Đánh giá hiện trạng
+
+`MarketBreadthChart` hiện tính trên universe tối đa 500 mã và hiển thị ba nhóm tăng/giảm/đứng giá, tỷ trọng số mã, khối lượng phiên theo nhóm, biến động bình quân, độ phủ quote và thời điểm quan sát. Đây là nền tảng đúng, nhưng chưa cho biết độ rộng theo thời gian, sức mạnh tương đối của nhóm ngành, giá trị giao dịch, mức ảnh hưởng theo vốn hóa hay dòng tiền chủ động. Các trường không có trong quote hiện không được suy diễn.
+
+### Tham chiếu SSI và nguyên tắc áp dụng
+
+SSI iBoard tổ chức màn hình thị trường thành các lát cắt bổ sung: top tăng/giảm theo giá và phần trăm, top khối lượng/giá trị, giao dịch nước ngoài; tài liệu iBoard Pro còn mô tả dòng chảy thị trường (net flow) và bản đồ nhiệt theo ngành. Ứng dụng này sẽ mượn cấu trúc thông tin và cách ưu tiên khám phá, nhưng giữ cách trình bày riêng, không sao chép giao diện hay nhận diện SSI.
+
+### Lộ trình đề xuất
+
+1. **Mốc 1 — Breadth snapshot đáng tin cậy.** Bổ sung A/D ratio, chênh lệch tăng–giảm, tỷ lệ mã có dữ liệu, giá trị giao dịch nếu provider có trường này; thêm bộ lọc universe/sàn/ngành và các khối Top tăng, Top giảm, Top khối lượng, Top giá trị. Mỗi khối phải có `observed_at`, session key và trạng thái thiếu dữ liệu.
+2. **Mốc 2 — Độ rộng theo thời gian.** Tạo endpoint aggregate có cache cho các điểm trong phiên và EOD; hiển thị A/D line, breadth theo 1D/5D/20D, volume breadth và vùng cảnh báo khi độ rộng phân kỳ với chỉ số. Không vẽ đường nếu chuỗi quan sát không liên tục.
+3. **Mốc 3 — Ngành và bản đồ nhiệt.** Tổng hợp theo ngành với số mã tăng/giảm, giá trị giao dịch, độ rộng ngành và đóng góp chỉ số khi có market-cap/weight hợp lệ; cho phép nhấn một ngành để lọc danh sách cổ phiếu hiện hữu.
+4. **Mốc 4 — Dòng tiền có kiểm chứng.** Chỉ thêm net flow, giao dịch nước ngoài và tác động chỉ số khi backend/provider cung cấp aggressor side, foreign buy/sell và index weight. Không suy luận mua chủ động từ volume hoặc màu giá.
+5. **Mốc 5 — Hiệu năng và nghiệm thu.** Đo first usable paint, thời gian aggregate và refresh ở 300/500 mã; kiểm thử responsive, empty/partial/stale data, tooltip và accessibility. Chỉ đóng mốc khi dữ liệu live, mock và fallback được phân biệt rõ trong bằng chứng.
+
+### Thứ tự triển khai được chọn
+
+Ưu tiên Mốc 1 trước vì tận dụng quote contract hiện có và tạo giá trị ngay; sau đó Mốc 2 để biến snapshot thành công cụ theo dõi xu hướng. Mốc 3 là lớp khám phá ngành. Mốc 4 phụ thuộc dữ liệu provider và không nên chặn ba mốc đầu.
+
 - Complete: UI/UX context review across all investor pages. Page order is preserved, each page now has contextual topbar titles, and browser reload restores the active page and selected symbol through session storage. Continue with visual review at the 4180 preview after deployment.
 
 - Complete: simplified recommendation and shared page presentation. Recommendation flow now removes duplicate headings, groups criteria and actions, and uses a compact responsive grid. Shared page spacing and panel hierarchy are consistent. Resume 500-symbol expansion with universe/quote batching measurements at 300 and 500 records.
