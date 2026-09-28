@@ -58,6 +58,14 @@ describe('stock API', () => {
     expect(include).toMatchObject({ association: 'prices', separate: true, limit: 1, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] });
     expect(include.where.observed_at[Op.not]).toBe(null);
   });
+  test('filters stock lists by supported exchange and includes it in pagination', async () => {
+    Stock.findAll.mockResolvedValue([]);
+    const result = await request(app).get('/api/stocks').query({ exchange: 'hsx' });
+    expect(result.status).toBe(200);
+    expect(result.body.pagination.exchange).toBe('HSX');
+    expect(Stock.findAll.mock.calls[0][0].where).toEqual(expect.objectContaining({ exchange: 'HSX' }));
+    expect(cache.get.mock.calls[0][0]).toContain(':HSX:');
+  });
   test('limits detail history by market observation time, not import/update time', async () => {
     Stock.findByPk.mockResolvedValue({
       id: '123', code: 'ABC', name: 'Example', prices: [

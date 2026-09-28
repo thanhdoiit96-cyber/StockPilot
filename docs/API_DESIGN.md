@@ -10,7 +10,7 @@ Model metadata hiện là `short_term_rule_v2`, nhưng điểm hiện tại ch�
 
 ## Bổ sung đã triển khai — 2026-09-21
 
-- `GET /api/stocks` hỗ trợ `pinned=FPT,VCB`: ưu tiên mã trước sắp xếp/phân trang, vẫn áp dụng tìm kiếm/lọc ngành; danh sách ghim được đưa vào khóa cache. Đây là tùy chọn hiển thị, không phải bằng chứng quyền sở hữu. Contract hiện hành nằm trong [backend README](../backend/README.md).
+- `GET /api/stocks` hỗ trợ `pinned=FPT,VCB` và `exchange=HSX|HNX|UPCOM`: ưu tiên mã trước sắp xếp/phân trang, vẫn áp dụng tìm kiếm/lọc ngành/sàn; các tham số được đưa vào khóa cache. Đây là tùy chọn hiển thị, không phải bằng chứng quyền sở hữu. Contract hiện hành nằm trong [backend README](../backend/README.md).
 - `GET /api/stocks/:id/analysis` trả `source_url` (hoặc `null`) trong từng phần tử `data.external_factors.factors` đã xác minh.
 - Những ví dụ thiết kế bên dưới vẫn là đề xuất, không được xem là contract runtime chỉ vì bổ sung này đã triển khai.
 
