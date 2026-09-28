@@ -32,6 +32,44 @@ try {
       || !sidebarToggleState.geometry.fully_inside_sidebar) {
     throw new Error(`Unexpected expanded sidebar toggle: ${JSON.stringify(sidebarToggleState)}`)
   }
+  const responsiveViewports = [
+    { name: 'desktop', width: 1440, height: 1000 },
+    { name: 'tablet', width: 1024, height: 900 },
+    { name: 'compact', width: 768, height: 900 },
+    { name: 'mobile', width: 520, height: 900 }
+  ]
+  const responsiveSidebar = []
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(100)
+    const measure = async () => page.evaluate(() => {
+      const button = document.querySelector('.sidebar-toggle')
+      const sidebar = document.querySelector('.sidebar')
+      const toggle = button.getBoundingClientRect()
+      const side = sidebar.getBoundingClientRect()
+      return {
+        width: toggle.width,
+        height: toggle.height,
+        fully_inside_sidebar: toggle.left >= side.left && toggle.right <= side.right,
+        horizontal_overflow: document.documentElement.scrollWidth > window.innerWidth + 1
+      }
+    })
+    const expanded = await measure()
+    if (expanded.width < 32 || expanded.height < 32 || !expanded.fully_inside_sidebar || expanded.horizontal_overflow) {
+      throw new Error(`Responsive sidebar check failed at ${viewport.name}: ${JSON.stringify(expanded)}`)
+    }
+    await sidebarToggle.click()
+    await page.waitForFunction(() => document.querySelector('.dashboard-shell')?.classList.contains('sidebar-collapsed'))
+    const collapsed = await measure()
+    if (collapsed.width < 32 || collapsed.height < 32 || !collapsed.fully_inside_sidebar || collapsed.horizontal_overflow) {
+      throw new Error(`Collapsed responsive sidebar check failed at ${viewport.name}: ${JSON.stringify(collapsed)}`)
+    }
+    await sidebarToggle.click()
+    await page.waitForFunction(() => !document.querySelector('.dashboard-shell')?.classList.contains('sidebar-collapsed'))
+    responsiveSidebar.push({ name: viewport.name, width: viewport.width, expanded, collapsed })
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
   const bottomPageSize = page.locator('.table-pagination .overview-page-size-control')
   const bottomResultCount = page.locator('.table-pagination .overview-pagination-count')
   await bottomPageSize.waitFor({ state: 'visible' })
@@ -96,6 +134,7 @@ try {
       result_count: await bottomResultCount.innerText()
     },
     sidebar_toggle: sidebarToggleState,
+    responsive_sidebar: responsiveSidebar,
     filter_alignment: filterAlignment,
     stale_volume_diagnostic: overlayDiagnostic,
     coverage: await page.locator('[role=status]').allTextContents() }
