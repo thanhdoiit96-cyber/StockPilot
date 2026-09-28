@@ -2548,3 +2548,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Them acceptance cho o tim kiem, select nhom nganh va nut sap xep: ca ba nhan focus ring ro rang; nut sap xep la button native co `type="button"` va tooltip mo ta.
 - Day la buoc kiem tra tiep can cho cac control dang hien huu, khong thay doi logic du lieu hay giao dien.
+
+## Lap lo trinh nang cao do rong thi truong - 2026-09-28
+
+- Ra soat `MarketBreadthChart`: hien co snapshot tang/giảm/đứng giá, tỷ trọng mã, khối lượng phiên, biến động bình quân, độ phủ quote và thời điểm quan sát; chưa có chuỗi thời gian, ngành, giá trị giao dịch, đóng góp chỉ số hoặc dòng tiền chủ động.
+- Đối chiếu tài liệu chính thức SSI iBoard về top tăng/giảm, top khối lượng/giá trị, giao dịch nước ngoài, net flow và bản đồ nhiệt ngành; chuyển các ý tưởng phù hợp thành lộ trình 5 mốc trong `docs/ROADMAP.md`.
+- Bước triển khai được chọn: Mốc 1 bổ sung snapshot có A/D ratio, chênh lệch tăng–giảm, top lists và data-quality contract trước khi xây timeline hoặc heatmap.
