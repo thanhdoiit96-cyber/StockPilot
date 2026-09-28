@@ -40,7 +40,7 @@ Bảng dùng hàng compact, đổi nền và hiển thị cursor khi rê chuột
 
 Cột **Phân tích** không hiển thị nhãn xu hướng hoặc mô tả biến động tĩnh trên từng dòng. Nút **Phân tích chuyên sâu** là hành động duy nhất trong cột này; nút mở Chi tiết mã và chủ động yêu cầu tải phân tích kỹ thuật mới cho mã được chọn.
 
-Khối **Tiếp tục từ đây** dẫn sang Danh mục cá nhân; đường vào Đề xuất giữ ở CTA riêng. Trạng thái mã đã rời sàn dùng nhãn **Đã hủy niêm yết**. Release gate kiểm tra cả bundle chính và runtime Tổng quan để tránh phát hành thiếu các hành vi này.
+Khối **Tiếp tục từ đây** đã được bỏ vì trùng các action ở đầu trang. Vị trí cuối bảng dùng khối **Cách đọc trạng thái dữ liệu** không có CTA, giải thích Intraday, EOD và Dữ liệu cũ. Trạng thái mã đã rời sàn dùng nhãn **Đã hủy niêm yết**. Release gate kiểm tra cả bundle chính và runtime Tổng quan để tránh phát hành thiếu các hành vi này.
 
 Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy) và lịch sử đánh giá ngoài mẫu. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
 
