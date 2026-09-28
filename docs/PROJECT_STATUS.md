@@ -2612,4 +2612,5 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them timeline 6 moc giao dich trong ngay (09:00, 10:00, 11:00, 13:00, 14:00, 14:45), hien thi song song bien dong gia va khoi luong; du lieu duoc tich luy tu cac snapshot quote trong phien va luu theo ngay trong session.
 - Ghi ro pham vi la danh sach dang hien thi, khong suy dien lich su khi provider chua tra du tick intraday; moc chua co du lieu hien thi trang thai trong.
 - Luu view `Bang gia` trong session de F5 khong quay ve `Tong quan`; gom cac moc vao mot bieu do chung co truc thoi gian lien tuc, tach lop `Gia` va `KL`, dong thoi hien ngay giao dich hien tai.
+- Timeline tu dong ghi snapshot lai moi 30 giay khi dang o `Bang gia` va hien thi thoi diem cap nhat gan nhat; du lieu van chi dai dien cho quote ma ung dung dang co, khong thay the lich su intraday tu provider.
 - Kiem chung: syntax runtime source/dist, bundle integrity, diff check va E2E page split/timeline pass. Build day du van theo han che source/dist parity da ghi nhan.
