@@ -17,10 +17,10 @@
       }
       .sidebar.is-collapsed .sidebar-toggle { right: -13px !important; }
       .dashboard-shell:not(.sidebar-collapsed) .sidebar-toggle {
-        background: rgba(9, 14, 24, .96);
+        background: rgba(8, 17, 33, .96);
       }
       .dashboard-shell.sidebar-collapsed .sidebar-toggle {
-        background: rgba(8, 17, 33, .96);
+        background: rgba(9, 14, 24, .96);
       }
       @media (min-width: 801px) {
         .sidebar { overflow: visible !important; }

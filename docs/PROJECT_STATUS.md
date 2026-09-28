@@ -2536,3 +2536,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dua nut toggle desktop/tablet tu `right: -2px` sang `right: -13px` de tao do giao nhau ro hon voi pane ke ben; viewport <= 800px van giu nut trong sidebar.
 - Dao mau hai trang thai: sidebar mo dung mau sidebar ben trai, sidebar thu gon dung mau pane ben phai; loai bo vien nut.
 - Cap nhat nguong geometry cua acceptance/live smoke theo overlap toi da 13.5px.
+- Dieu chinh lai mau theo yeu cau cuoi: sidebar mo dung mau pane ben phai, sidebar thu gon dung mau sidebar ben trai.
