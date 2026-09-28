@@ -466,6 +466,8 @@ SSI iBoard tổ chức màn hình thị trường thành các lát cắt bổ su
 
 **Trạng thái 2026-09-28:** Backend đã có contract `exchange=HSX|HNX|UPCOM` và UI đã thêm bộ lọc Sàn cho Top list. Bộ lọc này chỉ thay đổi phạm vi ba Top list; bảng cổ phiếu chính vẫn giữ luồng lọc hiện tại.
 
+**Kiến trúc page:** Đã ghi thiết kế tách `Tổng quan` và `Bảng giá` trong [`docs/MARKET_PAGES_SPLIT_DESIGN.md`](MARKET_PAGES_SPLIT_DESIGN.md). Bước code tiếp theo là tạo view/route `market-board` dùng lại API và chuyển bảng hiện tại sang view đó trước khi đổi điều hướng.
+
 - Complete: UI/UX context review across all investor pages. Page order is preserved, each page now has contextual topbar titles, and browser reload restores the active page and selected symbol through session storage. Continue with visual review at the 4180 preview after deployment.
 
 - Complete: simplified recommendation and shared page presentation. Recommendation flow now removes duplicate headings, groups criteria and actions, and uses a compact responsive grid. Shared page spacing and panel hierarchy are consistent. Resume 500-symbol expansion with universe/quote batching measurements at 300 and 500 records.

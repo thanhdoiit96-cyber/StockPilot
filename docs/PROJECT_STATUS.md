@@ -2586,6 +2586,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khi khong chon nganh, Top list ghi ro `Toan bo danh sach hien tai`; khong dung nhan `toan thi truong` khi request chi lay danh sach hien thi.
 - Kiem chung: acceptance breadth co chuyen nganh va xac nhan request `sector=technology`, bundle integrity va syntax runtime pass.
 
+## Sap xep lai bo loc Top list va nghien cuu tach page - 2026-09-28
+
+- Dua select `Sàn cho Top list` vao header cua section Nhóm dẫn dắt; bo loc Nhom nganh van nam o khu vuc bang co phieu va ca hai tham so duoc gui rieng cho ranking request.
+- Top tang/Top giam hien thi nhan ro `Xếp theo % biến động`; Top khối lượng hien thi nhan `Xếp theo khối lượng`.
+- Tao `docs/MARKET_PAGES_SPLIT_DESIGN.md` voi Org chart page `Tổng quan` va `Bảng giá`, phan ranh gioi, shared query state va lo trinh route/view an toan. Chua tach route trong code de tranh pha vỡ source/dist parity.
+
 ## Them pham vi san cho Top list - 2026-09-28
 
 - Backend `GET /api/stocks` ho tro loc `exchange=HSX|HNX|UPCOM`, dua exchange vao where, cache key va pagination contract.
