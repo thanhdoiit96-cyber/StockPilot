@@ -2567,3 +2567,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Tao `docs/MARKET_BREADTH_DESIGN.md` voi Mermaid Org chart moi: Toan canh nhanh, Cau phan do rong, Thanh khoan, Phan ra thi truong, Xu huong theo thoi gian va Chat luong du lieu.
 - Them ban do chi so/nguon du lieu va quy tac bo cuc responsive; cac nhanh phu chi hien thi khi provider co truong hop le, khong bien missing thanh so 0.
 - Cap nhat `docs/INDEX.md` va lien ket trong ROADMAP. Buoc tiep theo cua UI la Top tang/giam va Top khoi luong theo dung cau truc Org chart.
+
+## Trien khai nhom Top trong do rong thi truong - 2026-09-28
+
+- Them ba nhom Top tang, Top giam va Top khoi luong, toi da 5 ma moi nhom; source component tinh tu universe/quote, runtime bundle co fallback lay universe 500 ma dang phuc vu.
+- Moi nhom hien thi pham vi `Trong universe dang theo doi`; khi khong co truong hop le thi hien empty state, khong gan gia tri 0 gia tao.
+- Kiem chung: syntax runtime, bundle integrity va acceptance breadth **1/1** pass. Gia tri giao dich, net flow va heatmap nganh van cho den khi provider co hop dong du lieu tuong ung.

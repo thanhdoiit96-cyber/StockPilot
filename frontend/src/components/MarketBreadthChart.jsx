@@ -37,6 +37,13 @@ export default function MarketBreadthChart({ stocks = [], quotes = {} }) {
     result.classifiedPercent = stocks.length ? result.classified / stocks.length * 100 : 0
     result.totalVolume = result.up.volume + result.down.volume + result.flat.volume
     result.maxVolume = Math.max(1, result.up.volume, result.down.volume, result.flat.volume)
+    const ranked = stocks.map((stock) => {
+      const quote = quotes[stock.symbol || stock.code] || {}
+      return { symbol: stock.symbol || stock.code, change: Number(quote.change ?? stock.change), volume: Number(quote.volume ?? stock.volume) }
+    }).filter(item => item.symbol)
+    result.topUp = ranked.filter(item => Number.isFinite(item.change)).sort((a, b) => b.change - a.change).slice(0, 5)
+    result.topDown = ranked.filter(item => Number.isFinite(item.change)).sort((a, b) => a.change - b.change).slice(0, 5)
+    result.topVolume = ranked.filter(item => Number.isFinite(item.volume) && item.volume > 0).sort((a, b) => b.volume - a.volume).slice(0, 5)
     return result
   }, [stocks, quotes])
 
@@ -50,6 +57,9 @@ export default function MarketBreadthChart({ stocks = [], quotes = {} }) {
       <div><span>A/D ratio</span><strong>{summary.adRatio == null ? '—' : summary.adRatio.toFixed(2)}</strong><small>Tăng / giảm</small></div>
       <div><span>Chênh lệch A−D</span><strong className={summary.spread >= 0 ? 'positive' : 'negative'}>{summary.spread > 0 ? '+' : ''}{summary.spread}</strong><small>Mã tăng trừ mã giảm</small></div>
       <div><span>Đã phân loại</span><strong>{summary.classifiedPercent.toFixed(1)}%</strong><small>{summary.unknown ? `${summary.unknown} mã thiếu biến động` : 'Đủ dữ liệu biến động'}</small></div>
+    </div>
+    <div className="breadth-leaders" aria-label="Các mã dẫn dắt thị trường">
+      {[['Top tăng', 'topUp', 'positive', 'change'], ['Top giảm', 'topDown', 'negative', 'change'], ['Top khối lượng', 'topVolume', 'neutral', 'volume']].map(([label, key, tone, field]) => <section className="breadth-leader" key={key}><strong>{label}</strong><small>Trong universe đang theo dõi</small>{summary[key].length ? <ol>{summary[key].map(item => <li key={item.symbol}><span>{item.symbol}</span><b className={tone}>{field === 'change' ? `${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%` : formatNumber(item.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
     </div>
     {summary.classified > 0 && <div className="breadth-distribution" role="img" aria-label={`Độ rộng: tăng ${summary.up.count}, giảm ${summary.down.count}, đứng giá ${summary.flat.count}`}>{categories.map((category) => <span key={category.key} className={`breadth-segment ${category.color}`} style={{ width: `${summary[category.key].count / summary.classified * 100}%` }} title={`${category.label}: ${summary[category.key].count}`} />)}</div>}
     <div className="breadth-volume-heading"><strong>Khối lượng phiên theo nhóm biến động</strong><span>{formatNumber(summary.totalVolume)} cổ phiếu</span></div>

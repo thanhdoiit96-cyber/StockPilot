@@ -69,6 +69,7 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-snapshot strong').nth(0)).toHaveText('2.00')
   await expect(page.locator('.breadth-snapshot strong').nth(1)).toHaveText('+1')
   await expect(page.locator('.breadth-snapshot strong').nth(2)).toHaveText('100.0%')
+  await expect(page.locator('.breadth-leaders .breadth-leader')).toHaveCount(3)
   await expect(page.locator('.breadth-disclaimer')).toContainText('không tách khối lượng chủ động')
   await expect(page.locator('.chart-panel, .portfolio-panel')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Lịch sử hiệu quả đề xuất' })).toHaveCount(0)
