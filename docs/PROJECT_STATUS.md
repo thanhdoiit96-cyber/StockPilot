@@ -2554,3 +2554,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Ra soat `MarketBreadthChart`: hien co snapshot tang/giảm/đứng giá, tỷ trọng mã, khối lượng phiên, biến động bình quân, độ phủ quote và thời điểm quan sát; chưa có chuỗi thời gian, ngành, giá trị giao dịch, đóng góp chỉ số hoặc dòng tiền chủ động.
 - Đối chiếu tài liệu chính thức SSI iBoard về top tăng/giảm, top khối lượng/giá trị, giao dịch nước ngoài, net flow và bản đồ nhiệt ngành; chuyển các ý tưởng phù hợp thành lộ trình 5 mốc trong `docs/ROADMAP.md`.
 - Bước triển khai được chọn: Mốc 1 bổ sung snapshot có A/D ratio, chênh lệch tăng–giảm, top lists và data-quality contract trước khi xây timeline hoặc heatmap.
+
+## Trien khai snapshot do rong thi truong - 2026-09-28
+
+- Them ba chi so snapshot vao `MarketBreadthChart` va runtime bundle: A/D ratio, chenh lech A−D va ty le ma da phan loai. Cac chi so chi dung count da co, khong suy dien dong tien hay gia tri giao dich.
+- Giu cap nhat theo DOM/runtime de bundle dang phuc vu hien tai hien thi dung sau khi quote thay doi; source component cung da duoc cap nhat de giu parity cho lan build hop le tiep theo.
+- Kiem chung: bundle integrity pass; Playwright nhom `overview` **13/13** pass, trong do co assertion gia tri snapshot voi fixture 2 tang/1 giam/1 dung gia.
+- Gioi han: `npm run build` van bi safe-build tu choi vi source `App.jsx` chua chua day du cac marker shipped; `check:encoding` van bao loi pre-existing tai `src/App.jsx`. Dist cu duoc giu nguyen va runtime snapshot da duoc cap nhat an toan.

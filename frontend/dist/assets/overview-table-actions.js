@@ -55,6 +55,11 @@
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
       .overview-next { display: none !important; }
+      .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
+      .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
+      .breadth-snapshot span, .breadth-snapshot small { color: var(--muted); font-size: 10px; }
+      .breadth-snapshot strong { font-size: 17px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
       .table-panel .overview-original-result-count { display: none !important; }
       .table-panel > .panel-header {
@@ -180,6 +185,25 @@
       badge.setAttribute('aria-label', badge.title)
     })
     document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
+    const breadth = document.querySelector('.market-breadth-panel')
+    const breadthCounts = breadth ? {
+      up: Number(breadth.querySelector('.breadth-count.up strong')?.textContent || 0),
+      down: Number(breadth.querySelector('.breadth-count.down strong')?.textContent || 0),
+      flat: Number(breadth.querySelector('.breadth-count.flat strong')?.textContent || 0)
+    } : null
+    breadth?.querySelector('.breadth-snapshot')?.remove()
+    if (breadth && breadthCounts && breadthCounts.up + breadthCounts.down + breadthCounts.flat > 0) {
+      const classified = breadthCounts.up + breadthCounts.down + breadthCounts.flat
+      const ratio = breadthCounts.down > 0 ? (breadthCounts.up / breadthCounts.down).toFixed(2) : '—'
+      const spread = breadthCounts.up - breadthCounts.down
+      const percentText = Array.from(breadth.querySelectorAll('.breadth-count small')).map(node => Number.parseFloat(node.textContent)).filter(Number.isFinite)
+      const classifiedPercent = percentText.length === 3 ? percentText.reduce((sum, value) => sum + value, 0).toFixed(1) : '—'
+      const snapshot = document.createElement('div')
+      snapshot.className = 'breadth-snapshot'
+      snapshot.setAttribute('aria-label', 'Chỉ số snapshot độ rộng thị trường')
+      snapshot.innerHTML = `<div><span>A/D ratio</span><strong>${ratio}</strong><small>Tăng / giảm</small></div><div><span>Chênh lệch A−D</span><strong class="${spread >= 0 ? 'positive' : 'negative'}">${spread > 0 ? '+' : ''}${spread}</strong><small>Mã tăng trừ mã giảm</small></div><div><span>Đã phân loại</span><strong>${classifiedPercent}%</strong><small>${classified ? 'Dựa trên mã có biến động' : 'Chưa có dữ liệu'}</small></div>`
+      breadth.querySelector('.breadth-counts')?.after(snapshot)
+    }
     const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
     const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')
     const pagination = document.querySelector('.table-panel .table-pagination')

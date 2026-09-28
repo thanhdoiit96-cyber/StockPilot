@@ -454,6 +454,8 @@ SSI iBoard tổ chức màn hình thị trường thành các lát cắt bổ su
 
 Ưu tiên Mốc 1 trước vì tận dụng quote contract hiện có và tạo giá trị ngay; sau đó Mốc 2 để biến snapshot thành công cụ theo dõi xu hướng. Mốc 3 là lớp khám phá ngành. Mốc 4 phụ thuộc dữ liệu provider và không nên chặn ba mốc đầu.
 
+**Trạng thái cập nhật 2026-09-28:** Đã triển khai phần snapshot an toàn gồm A/D ratio, chênh lệch A−D và tỷ lệ mã được phân loại trong source component và runtime bundle. Top lists, giá trị giao dịch và data contract mở rộng vẫn để ở phần tiếp theo của Mốc 1.
+
 - Complete: UI/UX context review across all investor pages. Page order is preserved, each page now has contextual topbar titles, and browser reload restores the active page and selected symbol through session storage. Continue with visual review at the 4180 preview after deployment.
 
 - Complete: simplified recommendation and shared page presentation. Recommendation flow now removes duplicate headings, groups criteria and actions, and uses a compact responsive grid. Shared page spacing and panel hierarchy are consistent. Resume 500-symbol expansion with universe/quote batching measurements at 300 and 500 records.
