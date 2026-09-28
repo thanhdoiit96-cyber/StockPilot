@@ -2614,3 +2614,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Luu view `Bang gia` trong session de F5 khong quay ve `Tong quan`; gom cac moc vao mot bieu do chung co truc thoi gian lien tuc, tach lop `Gia` va `KL`, dong thoi hien ngay giao dich hien tai.
 - Timeline tu dong ghi snapshot lai moi 30 giay khi dang o `Bang gia` va hien thi thoi diem cap nhat gan nhat; du lieu van chi dai dien cho quote ma ung dung dang co, khong thay the lich su intraday tu provider.
 - Kiem chung: syntax runtime source/dist, bundle integrity, diff check va E2E page split/timeline pass. Build day du van theo han che source/dist parity da ghi nhan.
+
+## Giam 429 cho quote polling - 2026-09-28
+
+- Them request guard cho GET `/api/stocks/quotes` va `/api/stocks/quotes/status`: gom request dang cung chay va cache thanh cong 15 giay trong tab.
+- Muc tieu la tranh cac lan retry trung lap khi provider dang loi/bi gioi han; khong cache response 429 hoac response loi.
+- Kiem chung: syntax source/dist, bundle integrity va diff check pass. Can tiep tuc theo doi log backend de dieu chinh cua so limiter theo tai thuc te.
