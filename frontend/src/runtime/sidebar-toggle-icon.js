@@ -6,7 +6,19 @@
     const style = document.createElement('style')
     style.id = styleId
     style.textContent = `
-      .sidebar-toggle { font-size: 0; }
+      .sidebar-toggle {
+        top: 8px !important;
+        right: 8px !important;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0;
+      }
+      .sidebar.is-collapsed .sidebar-toggle { right: 8px !important; }
+      .sidebar-toggle:focus-visible {
+        border-color: var(--primary);
+        outline: 2px solid rgba(94, 234, 212, .72);
+        outline-offset: 2px;
+      }
       .sidebar-toggle .sidebar-toggle-icon {
         width: 14px;
         height: 14px;

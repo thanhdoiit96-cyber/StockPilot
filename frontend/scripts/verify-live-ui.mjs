@@ -16,9 +16,20 @@ try {
   await sidebarToggle.locator('.sidebar-toggle-icon').waitFor({ state: 'visible' })
   const sidebarToggleState = {
     label: await sidebarToggle.getAttribute('aria-label'),
-    direction: await sidebarToggle.locator('.sidebar-toggle-icon').getAttribute('data-sidebar-direction')
+    direction: await sidebarToggle.locator('.sidebar-toggle-icon').getAttribute('data-sidebar-direction'),
+    geometry: await sidebarToggle.evaluate(button => {
+      const toggle = button.getBoundingClientRect()
+      const sidebar = button.closest('.sidebar').getBoundingClientRect()
+      return {
+        width: toggle.width,
+        height: toggle.height,
+        fully_inside_sidebar: toggle.left >= sidebar.left && toggle.right <= sidebar.right
+      }
+    })
   }
-  if (sidebarToggleState.label !== 'Thu gọn thanh điều hướng' || sidebarToggleState.direction !== 'left') {
+  if (sidebarToggleState.label !== 'Thu gọn thanh điều hướng' || sidebarToggleState.direction !== 'left'
+      || sidebarToggleState.geometry.width < 32 || sidebarToggleState.geometry.height < 32
+      || !sidebarToggleState.geometry.fully_inside_sidebar) {
     throw new Error(`Unexpected expanded sidebar toggle: ${JSON.stringify(sidebarToggleState)}`)
   }
   const bottomPageSize = page.locator('.table-pagination .overview-page-size-control')

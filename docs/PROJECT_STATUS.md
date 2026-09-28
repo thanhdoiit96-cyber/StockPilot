@@ -2502,3 +2502,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them runtime `sidebar-toggle-icon.js`: chevron trai khi sidebar dang mo, chevron phai khi da thu gon; dong bo tooltip va aria-label `Thu gon/Mo rong thanh dieu huong`.
 - Them acceptance cho icon/nhan o ca hai trang thai va release gate cho runtime moi.
 - Kiem chung: syntax va source/dist runtime cung hash; bundle integrity pass voi ca hai runtime; acceptance sidebar **1/1**, Playwright `overview` **12/12** va live smoke pass. UI live xac nhan nhan `Thu gon thanh dieu huong`, huong `left`; anh evidence cho thay chevron tai mep sidebar.
+
+## Sua vung bam nut sidebar bi cat - 2026-09-28
+
+- Anh live cho thay nut toggle dat `right: -12px` trong sidebar co `overflow-x: hidden`, lam mot phan nut bi cat va vung bam kho nhan biet.
+- Dua nut vao trong sidebar voi `right: 8px`, dat kich thuoc 32x32px, chuyen len `top: 8px` de khong de len logo va them focus ring cho ban phim.
+- Acceptance kiem tra bounding box nam tron trong sidebar, kich thuoc toi thieu 32x32, focus ring va ca hai trang thai icon/nhan. Live smoke ghi geometry cua nut.
+- Kiem chung: syntax va source/dist runtime cung hash; bundle integrity pass; acceptance sidebar **1/1**, Playwright `overview` **12/12** va live smoke pass. Geometry live la **32x32px**, `fully_inside_sidebar=true`; anh evidence xac nhan nut khong con bi cat.
