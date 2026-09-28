@@ -32,6 +32,9 @@ export default function MarketBreadthChart({ stocks = [], quotes = {} }) {
     }
     result.averageChange = changes.length ? changes.reduce((sum, value) => sum + value, 0) / changes.length : null
     result.classified = result.up.count + result.down.count + result.flat.count
+    result.spread = result.up.count - result.down.count
+    result.adRatio = result.down.count > 0 ? result.up.count / result.down.count : null
+    result.classifiedPercent = stocks.length ? result.classified / stocks.length * 100 : 0
     result.totalVolume = result.up.volume + result.down.volume + result.flat.volume
     result.maxVolume = Math.max(1, result.up.volume, result.down.volume, result.flat.volume)
     return result
@@ -43,10 +46,14 @@ export default function MarketBreadthChart({ stocks = [], quotes = {} }) {
       <span className="chip neutral"><span className={summary.averageChange != null && summary.averageChange < 0 ? 'negative' : 'positive'}>{summary.averageChange == null ? 'Chưa đủ dữ liệu' : `Biến động bình quân ${summary.averageChange >= 0 ? '+' : ''}${summary.averageChange.toFixed(2)}%`}</span></span>
     </div>
     <div className="breadth-counts">{categories.map((category) => <article className={`breadth-count ${category.color}`} key={category.key}><span>{category.label}</span><strong>{summary[category.key].count}</strong><small>{summary.classified ? `${(summary[category.key].count / summary.classified * 100).toFixed(1)}% số mã` : 'Chưa có dữ liệu'}</small></article>)}</div>
+    <div className="breadth-snapshot" aria-label="Chỉ số snapshot độ rộng thị trường">
+      <div><span>A/D ratio</span><strong>{summary.adRatio == null ? '—' : summary.adRatio.toFixed(2)}</strong><small>Tăng / giảm</small></div>
+      <div><span>Chênh lệch A−D</span><strong className={summary.spread >= 0 ? 'positive' : 'negative'}>{summary.spread > 0 ? '+' : ''}{summary.spread}</strong><small>Mã tăng trừ mã giảm</small></div>
+      <div><span>Đã phân loại</span><strong>{summary.classifiedPercent.toFixed(1)}%</strong><small>{summary.unknown ? `${summary.unknown} mã thiếu biến động` : 'Đủ dữ liệu biến động'}</small></div>
+    </div>
     {summary.classified > 0 && <div className="breadth-distribution" role="img" aria-label={`Độ rộng: tăng ${summary.up.count}, giảm ${summary.down.count}, đứng giá ${summary.flat.count}`}>{categories.map((category) => <span key={category.key} className={`breadth-segment ${category.color}`} style={{ width: `${summary[category.key].count / summary.classified * 100}%` }} title={`${category.label}: ${summary[category.key].count}`} />)}</div>}
     <div className="breadth-volume-heading"><strong>Khối lượng phiên theo nhóm biến động</strong><span>{formatNumber(summary.totalVolume)} cổ phiếu</span></div>
     <div className="breadth-volume-chart" role="img" aria-label="Khối lượng phiên của các mã tăng giá, giảm giá và đứng giá">{categories.map((category) => <div className="breadth-volume-column" key={category.key} title={`${category.label}: ${formatNumber(summary[category.key].volume)} cổ phiếu`}><div className="breadth-volume-track"><span className={category.color} style={{ height: `${summary[category.key].volume / summary.maxVolume * 100}%` }} /></div><strong>{formatNumber(summary[category.key].volume)}</strong><small>{category.label}</small></div>)}</div>
     <p className="breadth-disclaimer">Phân loại dựa trên biến động giá mới nhất; khối lượng chỉ dùng quote intraday theo phiên. {summary.unknown > 0 && `${summary.unknown} mã chưa có biến động để phân loại.`}</p>
   </section>
 }
-
