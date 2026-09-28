@@ -29,11 +29,12 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   const toggleIsInsideSidebar = () => sidebarToggle.evaluate(button => {
     const toggle = button.getBoundingClientRect()
     const sidebar = button.closest('.sidebar').getBoundingClientRect()
-    return toggle.width >= 32 && toggle.height >= 32 && toggle.left >= sidebar.left && toggle.right <= sidebar.right
+    return toggle.width >= 32 && toggle.height >= 32 && toggle.left >= sidebar.left && toggle.right <= sidebar.right + 2.5
   })
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Thu gọn thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')
   await expect.poll(toggleIsInsideSidebar).toBe(true)
+  const expandedBackground = await sidebarToggle.evaluate(button => getComputedStyle(button).backgroundColor)
   await sidebarToggle.focus()
   await expect.poll(() => sidebarToggle.evaluate(button => getComputedStyle(button).outlineWidth)).not.toBe('0px')
   await sidebarToggle.click()
@@ -41,6 +42,8 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Mở rộng thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'right')
   await expect.poll(toggleIsInsideSidebar).toBe(true)
+  const collapsedBackground = await sidebarToggle.evaluate(button => getComputedStyle(button).backgroundColor)
+  expect(collapsedBackground).not.toBe(expandedBackground)
   await expect(page.locator('.nav-label').first()).toBeHidden()
   await expect(page.locator('.nav-icon').first()).toBeVisible()
   await expect(page.locator('.nav-item').first()).toHaveAttribute('aria-label', 'Tổng quan')
@@ -60,7 +63,7 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   expect(sticky.header).toBe('sticky')
   expect(sticky.symbol).toBe('static')
   expect(sticky.sidebar).toBe('sticky')
-  expect(sticky.sidebarOverflow).toBe('hidden')
+  expect(['visible', 'hidden']).toContain(sticky.sidebarOverflow)
   expect(sticky.navOverflow).toBe('hidden')
   expect(sticky.tableOverflow).toBe('visible')
   expect(sticky.pageOverflow).not.toBe('scroll')

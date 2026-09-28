@@ -8,12 +8,26 @@
     style.textContent = `
       .sidebar-toggle {
         top: 8px !important;
-        right: 0 !important;
+        right: -2px !important;
         width: 32px !important;
         height: 32px !important;
         font-size: 0;
+        transition: background-color .18s ease, border-color .18s ease, color .18s ease;
       }
-      .sidebar.is-collapsed .sidebar-toggle { right: 0 !important; }
+      .sidebar.is-collapsed .sidebar-toggle { right: -2px !important; }
+      .dashboard-shell:not(.sidebar-collapsed) .sidebar-toggle {
+        background: rgba(8, 17, 33, .96);
+      }
+      .dashboard-shell.sidebar-collapsed .sidebar-toggle {
+        background: rgba(9, 14, 24, .96);
+      }
+      @media (min-width: 801px) {
+        .sidebar { overflow: visible !important; }
+      }
+      @media (max-width: 800px) {
+        .sidebar-toggle,
+        .sidebar.is-collapsed .sidebar-toggle { right: 0 !important; }
+      }
       .sidebar-toggle:focus-visible {
         border-color: var(--primary);
         outline: 2px solid rgba(94, 234, 212, .72);
