@@ -59,7 +59,12 @@
       .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
       .breadth-snapshot span, .breadth-snapshot small { color: var(--muted); font-size: 10px; }
       .breadth-snapshot strong { font-size: 17px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .breadth-leaders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+      .breadth-leader { min-width: 0; padding: 11px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
+      .breadth-leader > strong, .breadth-leader > small { display: block; }.breadth-leader > strong { font-size: 12px; }.breadth-leader > small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+      .breadth-leader ol { display: grid; gap: 5px; margin: 10px 0 0; padding-left: 17px; color: var(--muted); font-size: 11px; }.breadth-leader li { display: flex; justify-content: space-between; gap: 8px; padding-left: 2px; }.breadth-leader li span { color: var(--text); font-weight: 700; }.breadth-leader li b { font-variant-numeric: tabular-nums; }.breadth-leader > p { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
+      @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; } }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
       .table-panel .overview-original-result-count { display: none !important; }
       .table-panel > .panel-header {
@@ -161,6 +166,28 @@
     document.head.appendChild(style)
   }
 
+  let leadersLoading = false
+  const loadBreadthLeaders = async (breadth) => {
+    if (leadersLoading || breadth.querySelector('.breadth-leaders')) return
+    leadersLoading = true
+    try {
+      const response = await fetch('/api/stocks?page=1&pageSize=500&q=&sector=&sort=volume&direction=desc&pinned=', { cache: 'no-store' })
+      const payload = await response.json()
+      const rows = Array.isArray(payload?.data) ? payload.data : []
+      const byChange = rows.filter(row => Number.isFinite(Number(row.change)))
+      const byVolume = rows.filter(row => Number.isFinite(Number(row.volume)) && Number(row.volume) > 0)
+      const lists = [['Top tăng', byChange.sort((a, b) => Number(b.change) - Number(a.change)).slice(0, 5), 'change'], ['Top giảm', byChange.sort((a, b) => Number(a.change) - Number(b.change)).slice(0, 5), 'change'], ['Top khối lượng', byVolume.sort((a, b) => Number(b.volume) - Number(a.volume)).slice(0, 5), 'volume']]
+      const wrapper = document.createElement('div')
+      wrapper.className = 'breadth-leaders'
+      wrapper.setAttribute('aria-label', 'Các mã dẫn dắt thị trường')
+      wrapper.innerHTML = lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>Trong universe đang theo dõi</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')
+      breadth.querySelector('.breadth-snapshot')?.after(wrapper)
+    } catch (_) {
+      // Keep the breadth snapshot usable when the optional ranking request fails.
+    } finally { leadersLoading = false }
+  }
+  const formatCompact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
+
   const enhance = () => {
     installStyles()
     document.querySelectorAll('.table-panel thead th').forEach(header => {
@@ -204,6 +231,7 @@
       snapshot.innerHTML = `<div><span>A/D ratio</span><strong>${ratio}</strong><small>Tăng / giảm</small></div><div><span>Chênh lệch A−D</span><strong class="${spread >= 0 ? 'positive' : 'negative'}">${spread > 0 ? '+' : ''}${spread}</strong><small>Mã tăng trừ mã giảm</small></div><div><span>Đã phân loại</span><strong>${classifiedPercent}%</strong><small>${classified ? 'Dựa trên mã có biến động' : 'Chưa có dữ liệu'}</small></div>`
       breadth.querySelector('.breadth-counts')?.after(snapshot)
     }
+    if (breadth && !breadth.querySelector('.breadth-leaders')) loadBreadthLeaders(breadth)
     const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
     const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')
     const pagination = document.querySelector('.table-panel .table-pagination')
