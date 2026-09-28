@@ -12,9 +12,49 @@ try {
   await page.goto('http://127.0.0.1:4173')
   await page.waitForFunction(() => document.querySelectorAll('.table-panel tbody tr').length > 0)
   await page.waitForFunction(() => [...document.querySelectorAll('.table-panel tbody tr')].some(row => row.querySelector('.symbol')?.textContent?.trim()), null, { timeout: 45000 })
+  const firstRow = await page.locator('.table-panel tbody tr').first().innerText()
+  let inspectedPage = 1
+  while (await page.locator('[data-stale-volume]').count() === 0 && inspectedPage < 4) {
+    const previousSymbol = await page.locator('.table-panel tbody tr .symbol').first().innerText()
+    const next = page.getByRole('button', { name: 'Sau', exact: true })
+    if (await next.isDisabled()) break
+    await next.click()
+    await page.waitForFunction(symbol => document.querySelector('.table-panel tbody tr .symbol')?.textContent?.trim() !== symbol, previousSymbol)
+    await page.waitForTimeout(500)
+    inspectedPage += 1
+  }
+  const overlayDiagnostic = await page.evaluate(async () => {
+    const qualityResponse = await fetch('/api/stocks/data-quality', { cache: 'no-store' })
+    const qualityPayload = await qualityResponse.json()
+    const missing = new Set((qualityPayload.data?.missing_symbols || []).map(symbol => String(symbol).toUpperCase()))
+    const symbols = [...document.querySelectorAll('.table-panel tbody tr')]
+      .map(row => {
+        const cell = row.querySelector('td.symbol') || row.cells?.[0]
+        const node = [...(cell?.childNodes || [])].find(child => child.nodeType === 3 && child.textContent.trim())
+          || cell?.firstElementChild
+        return node?.textContent?.trim().toUpperCase()
+      })
+      .filter(Boolean)
+    return {
+      overlayLoaded: Boolean(document.querySelector('script[src*="stale-volume-overlay"]')),
+      qualityStatus: qualityResponse.status,
+      visibleSymbols: symbols,
+      visibleMissing: symbols.filter(symbol => missing.has(symbol)),
+      stockRequests: performance.getEntriesByType('resource')
+        .map(entry => entry.name)
+        .filter(name => name.includes('/api/stocks?'))
+    }
+  })
+  const staleVolumeBadges = await page.locator('[data-stale-volume]').count()
+  if (overlayDiagnostic.visibleMissing.length && staleVolumeBadges !== overlayDiagnostic.visibleMissing.length) {
+    throw new Error(`Expected ${overlayDiagnostic.visibleMissing.length} stale volume badges, found ${staleVolumeBadges}.`)
+  }
   const evidence = { checked_at: new Date().toISOString(), account_apis_mocked: true, stock_apis_mocked: false,
     rows: await page.locator('.table-panel tbody tr').count(),
-    first_row: await page.locator('.table-panel tbody tr').first().innerText(),
+    first_row: firstRow,
+    stale_volume_inspected_page: inspectedPage,
+    stale_volume_badges: staleVolumeBadges,
+    stale_volume_diagnostic: overlayDiagnostic,
     coverage: await page.locator('[role=status]').allTextContents() }
   await mkdir('../backend/evidence', { recursive: true })
   await page.screenshot({ path: '../backend/evidence/live-overview-2026-09-21.png' })

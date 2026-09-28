@@ -14,7 +14,10 @@
   }
   const annotate = () => {
     document.querySelectorAll('.table-panel tbody tr').forEach(row => {
-      const symbol = row.querySelector('td.symbol')?.textContent?.trim().toUpperCase()
+      const symbolCell = row.querySelector('td.symbol') || row.cells?.[0]
+      const symbolNode = [...(symbolCell?.childNodes || [])].find(node => node.nodeType === 3 && node.textContent.trim())
+        || symbolCell?.firstElementChild
+      const symbol = symbolNode?.textContent?.trim().toUpperCase()
       const item = cache.get(symbol)
       if (!symbol || !item) return
       const volumeCell = row.cells?.[4]
