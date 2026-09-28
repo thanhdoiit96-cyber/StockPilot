@@ -2524,3 +2524,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 ## Dua nut sidebar sat mep - 2026-09-28
 
 - Giam tiep `right` tu 4px xuong 0px de nut can mep phai sidebar, bot cam giac bi thut vao trong nhung van giu nguyen vung bam 32x32px.
+
+## Lam mem ranh gioi mau nut sidebar - 2026-09-28
+
+- Dua nut toggle sang phai them 2px (`right: -2px`) tren desktop/tablet de nut giao nhe voi pane ben phai; viewport <= 800px giu `right: 0` de khong tao overflow.
+- Khi sidebar mo, nut dung mau nen cua pane phai; khi thu gon, nut doi sang mau nen sidebar ben trai. Them transition mau de thay doi trang thai tu nhien.
+- Cap nhat acceptance va live smoke cho phep overlap toi da 2.5px, van kiem tra khong co horizontal overflow va xac nhan hai mau nen khac nhau.

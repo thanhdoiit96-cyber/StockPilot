@@ -23,13 +23,16 @@ try {
       return {
         width: toggle.width,
         height: toggle.height,
-        fully_inside_sidebar: toggle.left >= sidebar.left && toggle.right <= sidebar.right
+        fully_inside_sidebar: toggle.left >= sidebar.left && toggle.right <= sidebar.right,
+        within_sidebar_edge: toggle.left >= sidebar.left && toggle.right <= sidebar.right + 2.5,
+        edge_overlap_px: Math.max(0, toggle.right - sidebar.right),
+        background: getComputedStyle(button).backgroundColor
       }
     })
   }
   if (sidebarToggleState.label !== 'Thu gọn thanh điều hướng' || sidebarToggleState.direction !== 'left'
       || sidebarToggleState.geometry.width < 32 || sidebarToggleState.geometry.height < 32
-      || !sidebarToggleState.geometry.fully_inside_sidebar) {
+      || !sidebarToggleState.geometry.within_sidebar_edge) {
     throw new Error(`Unexpected expanded sidebar toggle: ${JSON.stringify(sidebarToggleState)}`)
   }
   const responsiveViewports = [
@@ -52,17 +55,21 @@ try {
         width: toggle.width,
         height: toggle.height,
         fully_inside_sidebar: toggle.left >= side.left && toggle.right <= side.right,
+        within_sidebar_edge: toggle.left >= side.left && toggle.right <= side.right + 2.5,
+        edge_overlap_px: Math.max(0, toggle.right - side.right),
+        background: getComputedStyle(button).backgroundColor,
         horizontal_overflow: document.documentElement.scrollWidth > window.innerWidth + 1
       }
     })
     const expanded = await measure()
-    if (expanded.width < 32 || expanded.height < 32 || !expanded.fully_inside_sidebar || expanded.horizontal_overflow) {
+    if (expanded.width < 32 || expanded.height < 32 || !expanded.within_sidebar_edge || expanded.horizontal_overflow) {
       throw new Error(`Responsive sidebar check failed at ${viewport.name}: ${JSON.stringify(expanded)}`)
     }
     await sidebarToggle.click()
     await page.waitForFunction(() => document.querySelector('.dashboard-shell')?.classList.contains('sidebar-collapsed'))
+    await page.waitForTimeout(220)
     const collapsed = await measure()
-    if (collapsed.width < 32 || collapsed.height < 32 || !collapsed.fully_inside_sidebar || collapsed.horizontal_overflow) {
+    if (collapsed.width < 32 || collapsed.height < 32 || !collapsed.within_sidebar_edge || collapsed.horizontal_overflow) {
       throw new Error(`Collapsed responsive sidebar check failed at ${viewport.name}: ${JSON.stringify(collapsed)}`)
     }
     await sidebarToggle.click()
