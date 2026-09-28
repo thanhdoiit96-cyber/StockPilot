@@ -2530,3 +2530,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dua nut toggle sang phai them 2px (`right: -2px`) tren desktop/tablet de nut giao nhe voi pane ben phai; viewport <= 800px giu `right: 0` de khong tao overflow.
 - Khi sidebar mo, nut dung mau nen cua pane phai; khi thu gon, nut doi sang mau nen sidebar ben trai. Them transition mau de thay doi trang thai tu nhien.
 - Cap nhat acceptance va live smoke cho phep overlap toi da 2.5px, van kiem tra khong co horizontal overflow va xac nhan hai mau nen khac nhau.
+
+## Dieu chinh vi tri va mau nut sidebar - 2026-09-28
+
+- Dua nut toggle desktop/tablet tu `right: -2px` sang `right: -13px` de tao do giao nhau ro hon voi pane ke ben; viewport <= 800px van giu nut trong sidebar.
+- Dao mau hai trang thai: sidebar mo dung mau sidebar ben trai, sidebar thu gon dung mau pane ben phai; loai bo vien nut.
+- Cap nhat nguong geometry cua acceptance/live smoke theo overlap toi da 13.5px.
