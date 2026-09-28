@@ -76,8 +76,8 @@
       .market-session-timeline strong { font-size: 12px; }.market-session-timeline small { color: var(--muted); font-size: 10px; }
       .market-session-timeline-legend { display: flex; gap: 10px; color: var(--muted); font-size: 10px; white-space: nowrap; }.market-session-timeline-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }.market-session-timeline-legend .price-dot { background: #60a5fa; }.market-session-timeline-legend .volume-dot { background: #5eead4; }
       .market-session-timeline-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-      .market-session-slot { min-width: 0; padding: 8px 6px 7px; border: 1px solid rgba(148, 163, 184, .12); border-radius: 8px; background: rgba(148, 163, 184, .035); }.market-session-slot.is-current { border-color: rgba(94, 234, 212, .6); background: rgba(20, 184, 166, .08); }
-      .market-session-slot > strong { display: block; font-size: 10px; text-align: center; }.market-session-bars { display: flex; align-items: end; justify-content: center; gap: 4px; height: 48px; margin: 7px 0 5px; }.market-session-bars i { display: block; width: 9px; min-height: 3px; border-radius: 3px 3px 1px 1px; }.market-session-bars .price-bar { background: #60a5fa; }.market-session-bars .volume-bar { background: #5eead4; opacity: .85; }
+      .market-session-slot { min-width: 0; min-height: 104px; padding: 8px 7px 7px; border: 1px solid rgba(148, 163, 184, .12); border-radius: 8px; background: rgba(148, 163, 184, .035); }.market-session-slot.is-current { border-color: rgba(94, 234, 212, .6); background: rgba(20, 184, 166, .08); }
+      .market-session-slot > strong { display: block; font-size: 10px; text-align: center; }.market-session-bars { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 7px; height: 48px; margin: 7px 0 5px; }.market-session-bars > div { display: grid; grid-template-rows: 1fr auto; align-items: end; height: 100%; gap: 3px; text-align: center; }.market-session-bars span { color: var(--muted); font-size: 8px; }.market-session-bars i { display: block; width: 100%; min-height: 3px; border-radius: 3px 3px 1px 1px; }.market-session-bars .price-bar { background: #60a5fa; }.market-session-bars .volume-bar { background: #5eead4; opacity: .85; }
       .market-session-slot > small { display: block; overflow: hidden; text-overflow: ellipsis; text-align: center; white-space: nowrap; }.market-session-slot .market-session-empty { color: var(--muted); }
       @media (max-width: 700px) { .market-session-timeline-header { flex-direction: column; }.market-session-timeline-grid { gap: 4px; }.market-session-slot { padding-inline: 3px; } }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
@@ -229,6 +229,8 @@
   }
   const formatCompact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
   const marketSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '14:45']
+  const marketViewKey = 'stockpilot-market-view'
+  const marketToday = () => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date())
   const marketTimelineKey = () => `stockpilot-market-session:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())}`
   const readMarketTimeline = () => { try { return JSON.parse(sessionStorage.getItem(marketTimelineKey()) || '{}') || {} } catch (_) { return {} } }
   const updateMarketTimeline = () => {
@@ -268,7 +270,7 @@
     let timeline = panel.querySelector('.market-session-timeline')
     if (!timeline) {
       timeline = document.createElement('section'); timeline.className = 'market-session-timeline'; timeline.setAttribute('aria-label', 'Biến động giá và khối lượng trong ngày')
-      timeline.innerHTML = `<div class="market-session-timeline-header"><div><div class="market-session-timeline-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><strong>Biến động trong ngày</strong></div><small>Snapshot theo các mốc giao dịch, phạm vi danh sách đang hiển thị</small></div><div class="market-session-timeline-legend"><span><i class="price-dot"></i>Giá</span><span><i class="volume-dot"></i>Khối lượng</span></div></div><div class="market-session-timeline-grid">${marketSlots.map(slot => `<article class="market-session-slot"><strong>${slot}</strong><div class="market-session-bars"><i class="price-bar"></i><i class="volume-bar"></i></div><small class="market-session-value market-session-empty">Chưa có dữ liệu</small></article>`).join('')}</div>`
+      timeline.innerHTML = `<div class="market-session-timeline-header"><div><div class="market-session-timeline-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><strong>Biến động trong ngày · ${marketToday()}</strong></div><small>Mỗi khung giờ là một snapshot riêng, phạm vi danh sách đang hiển thị</small></div><div class="market-session-timeline-legend"><span><i class="price-dot"></i>Giá</span><span><i class="volume-dot"></i>Khối lượng</span></div></div><div class="market-session-timeline-grid">${marketSlots.map(slot => `<article class="market-session-slot"><strong>${slot}</strong><div class="market-session-bars"><div><i class="price-bar"></i><span>Giá</span></div><div><i class="volume-bar"></i><span>KL</span></div></div><small class="market-session-value market-session-empty">Chưa có dữ liệu</small></article>`).join('')}</div>`
       panel.querySelector('.panel-header')?.after(timeline)
     }
     updateMarketTimeline()
@@ -296,6 +298,7 @@
       boardNav.addEventListener('click', () => {
         nav.querySelector('.nav-item:not(.market-board-nav-item)')?.click()
         window.setTimeout(() => {
+          try { sessionStorage.setItem(marketViewKey, 'board') } catch (_) { }
           shell?.classList.add('market-board-active')
           boardNav.classList.add('active')
           boardNav.setAttribute('aria-current', 'page')
@@ -308,11 +311,16 @@
       if (item.dataset.marketViewBound) return
       item.dataset.marketViewBound = '1'
       item.addEventListener('click', () => {
+        try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
         shell?.classList.remove('market-board-active')
         boardNav?.classList.remove('active')
         boardNav?.removeAttribute('aria-current')
       })
     })
+    if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active') && !boardNav?.dataset.restored) {
+      boardNav.dataset.restored = '1'
+      window.setTimeout(() => boardNav.click(), 0)
+    }
     document.querySelectorAll('.table-panel thead th').forEach(header => {
       if (header.textContent.trim() === 'Nhận định') header.textContent = 'Phân tích'
     })
