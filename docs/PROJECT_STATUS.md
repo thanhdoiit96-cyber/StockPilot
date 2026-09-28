@@ -2597,3 +2597,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Backend `GET /api/stocks` ho tro loc `exchange=HSX|HNX|UPCOM`, dua exchange vao where, cache key va pagination contract.
 - UI them select `Sàn cho Top list`; khi doi san, ba Top list tai lai va hien nhan pham vi tuong ung. Bo loc nay chi ap dung cho Top list, khong tu y thay doi bang co phieu chinh.
 - Kiem chung: stock controller **10/10**, acceptance breadth pass, bundle integrity va syntax runtime pass.
+
+## Tach Tong quan va Bang gia - 2026-09-28
+
+- Them view dieu huong `Bang gia` vao sidebar; khi chuyen view, `Tong quan` chi con cac chi so do rong thi truong, con bang co phieu va thao tac phan trang nam rieng trong `Bang gia`.
+- Dua bo loc San vao header Nhom dan dat, dong bo style voi bo loc Nhom nganh; Top tang va Top giam deu hien thi gia tri theo phan tram bien dong.
+- Runtime source/dist va Playwright da duoc cap nhat de bao phu chuyen view, danh muc ca nhan, chi tiet ma va luong giao dich.
+- Kiem chung: cac nhom E2E lien quan den page split, breadth, portfolio va loading pass; `check:bundle` va `git diff --check` pass. `npm run build` van la han che da ghi nhan do safe-build source/dist parity.
+- Diem tiep tuc: khi khoi phuc day du source `App.jsx`, chuyen view runtime nay thanh route/view React chinh thuc va bo runtime injection.

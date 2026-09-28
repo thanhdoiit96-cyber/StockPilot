@@ -466,7 +466,7 @@ SSI iBoard tổ chức màn hình thị trường thành các lát cắt bổ su
 
 **Trạng thái 2026-09-28:** Backend đã có contract `exchange=HSX|HNX|UPCOM` và UI đã thêm bộ lọc Sàn cho Top list. Bộ lọc này chỉ thay đổi phạm vi ba Top list; bảng cổ phiếu chính vẫn giữ luồng lọc hiện tại.
 
-**Kiến trúc page:** Đã ghi thiết kế tách `Tổng quan` và `Bảng giá` trong [`docs/MARKET_PAGES_SPLIT_DESIGN.md`](MARKET_PAGES_SPLIT_DESIGN.md). Bước code tiếp theo là tạo view/route `market-board` dùng lại API và chuyển bảng hiện tại sang view đó trước khi đổi điều hướng.
+**Kiến trúc page:** Đã ghi thiết kế tách `Tổng quan` và `Bảng giá` trong [`docs/MARKET_PAGES_SPLIT_DESIGN.md`](MARKET_PAGES_SPLIT_DESIGN.md). Bản runtime hiện đã cung cấp hai view điều hướng riêng và giữ chung query state; bước tiếp theo là chuyển cơ chế này thành view/route React `market-board` khi source `App.jsx` khôi phục đầy đủ để loại bỏ runtime injection.
 
 - Complete: UI/UX context review across all investor pages. Page order is preserved, each page now has contextual topbar titles, and browser reload restores the active page and selected symbol through session storage. Continue with visual review at the 4180 preview after deployment.
 
