@@ -69,6 +69,17 @@
       .dashboard-shell:not(.market-board-active) .table-panel { display: none !important; }
       .dashboard-shell.market-board-active .main-panel > :not(.topbar):not(.table-panel) { display: none !important; }
       .market-board-nav-item { position: relative; }
+      .market-board-nav-item .nav-icon { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .market-session-timeline { margin: 0 0 14px; padding: 13px 14px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 12px; background: rgba(15, 23, 42, .28); }
+      .market-session-timeline-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .market-session-timeline-title { display: flex; align-items: center; gap: 8px; }.market-session-timeline-title svg { width: 16px; height: 16px; fill: none; stroke: var(--primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .market-session-timeline strong { font-size: 12px; }.market-session-timeline small { color: var(--muted); font-size: 10px; }
+      .market-session-timeline-legend { display: flex; gap: 10px; color: var(--muted); font-size: 10px; white-space: nowrap; }.market-session-timeline-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }.market-session-timeline-legend .price-dot { background: #60a5fa; }.market-session-timeline-legend .volume-dot { background: #5eead4; }
+      .market-session-timeline-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+      .market-session-slot { min-width: 0; padding: 8px 6px 7px; border: 1px solid rgba(148, 163, 184, .12); border-radius: 8px; background: rgba(148, 163, 184, .035); }.market-session-slot.is-current { border-color: rgba(94, 234, 212, .6); background: rgba(20, 184, 166, .08); }
+      .market-session-slot > strong { display: block; font-size: 10px; text-align: center; }.market-session-bars { display: flex; align-items: end; justify-content: center; gap: 4px; height: 48px; margin: 7px 0 5px; }.market-session-bars i { display: block; width: 9px; min-height: 3px; border-radius: 3px 3px 1px 1px; }.market-session-bars .price-bar { background: #60a5fa; }.market-session-bars .volume-bar { background: #5eead4; opacity: .85; }
+      .market-session-slot > small { display: block; overflow: hidden; text-overflow: ellipsis; text-align: center; white-space: nowrap; }.market-session-slot .market-session-empty { color: var(--muted); }
+      @media (max-width: 700px) { .market-session-timeline-header { flex-direction: column; }.market-session-timeline-grid { gap: 4px; }.market-session-slot { padding-inline: 3px; } }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; }.breadth-leaders-header { align-items: stretch; flex-direction: column; } }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
@@ -217,6 +228,51 @@
     } finally { leadersLoading = false }
   }
   const formatCompact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
+  const marketSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '14:45']
+  const marketTimelineKey = () => `stockpilot-market-session:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())}`
+  const readMarketTimeline = () => { try { return JSON.parse(sessionStorage.getItem(marketTimelineKey()) || '{}') || {} } catch (_) { return {} } }
+  const updateMarketTimeline = () => {
+    const panel = document.querySelector('.table-panel')
+    const bodyRows = [...(panel?.querySelectorAll('tbody tr') || [])].filter(row => row.querySelector('.symbol'))
+    if (!panel || !bodyRows.length) return
+    const now = new Date()
+    const minutes = now.getHours() * 60 + now.getMinutes()
+    const slotIndex = minutes < 10 * 60 ? 0 : minutes < 11 * 60 ? 1 : minutes < 12 * 60 ? 2 : minutes < 14 * 60 ? 3 : minutes < 14 * 60 + 30 ? 4 : 5
+    const values = bodyRows.map(row => {
+      const changeText = row.cells[3]?.textContent?.replace(',', '.') || ''
+      const volumeText = row.cells[4]?.textContent?.replace(/[^0-9-]/g, '') || ''
+      const change = Number.parseFloat(changeText)
+      const volume = Number(volumeText)
+      return { change, volume }
+    })
+    const validChanges = values.map(item => item.change).filter(Number.isFinite)
+    const totalVolume = values.map(item => item.volume).filter(value => Number.isFinite(value)).reduce((sum, value) => sum + value, 0)
+    const snapshot = { change: validChanges.length ? validChanges.reduce((sum, value) => sum + value, 0) / validChanges.length : null, volume: totalVolume || null, observedAt: now.toISOString() }
+    const timeline = readMarketTimeline(); timeline[marketSlots[slotIndex]] = snapshot
+    try { sessionStorage.setItem(marketTimelineKey(), JSON.stringify(timeline)) } catch (_) { }
+    const timelineNode = panel.querySelector('.market-session-timeline'); if (!timelineNode) return
+    const snapshots = marketSlots.map(slot => timeline[slot]).filter(Boolean)
+    const maxVolume = Math.max(1, ...snapshots.map(item => Number(item.volume) || 0))
+    const maxChange = Math.max(1, ...snapshots.map(item => Math.abs(Number(item.change) || 0)))
+    timelineNode.querySelectorAll('.market-session-slot').forEach((slotNode, index) => {
+      const item = timeline[marketSlots[index]]
+      slotNode.classList.toggle('is-current', index === slotIndex)
+      slotNode.setAttribute('aria-label', item ? `${marketSlots[index]}: ${Number(item.change).toFixed(2)} phần trăm, khối lượng ${formatCompact(item.volume)}` : `${marketSlots[index]}: chưa có dữ liệu`)
+      const priceBar = slotNode.querySelector('.price-bar'); const volumeBar = slotNode.querySelector('.volume-bar'); const valueNode = slotNode.querySelector('.market-session-value')
+      if (!item) { priceBar.style.height = '3px'; volumeBar.style.height = '3px'; valueNode.textContent = '—'; return }
+      priceBar.style.height = `${Math.max(8, Math.abs(Number(item.change) / maxChange) * 100)}%`; priceBar.style.background = Number(item.change) >= 0 ? '#60a5fa' : '#fb7185'; volumeBar.style.height = `${Math.max(8, Number(item.volume) / maxVolume * 100)}%`; valueNode.textContent = `${Number(item.change) >= 0 ? '+' : ''}${Number(item.change).toFixed(2)}% · ${formatCompact(item.volume)}`
+    })
+  }
+  const ensureMarketTimeline = () => {
+    const panel = document.querySelector('.table-panel'); if (!panel) return
+    let timeline = panel.querySelector('.market-session-timeline')
+    if (!timeline) {
+      timeline = document.createElement('section'); timeline.className = 'market-session-timeline'; timeline.setAttribute('aria-label', 'Biến động giá và khối lượng trong ngày')
+      timeline.innerHTML = `<div class="market-session-timeline-header"><div><div class="market-session-timeline-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><strong>Biến động trong ngày</strong></div><small>Snapshot theo các mốc giao dịch, phạm vi danh sách đang hiển thị</small></div><div class="market-session-timeline-legend"><span><i class="price-dot"></i>Giá</span><span><i class="volume-dot"></i>Khối lượng</span></div></div><div class="market-session-timeline-grid">${marketSlots.map(slot => `<article class="market-session-slot"><strong>${slot}</strong><div class="market-session-bars"><i class="price-bar"></i><i class="volume-bar"></i></div><small class="market-session-value market-session-empty">Chưa có dữ liệu</small></article>`).join('')}</div>`
+      panel.querySelector('.panel-header')?.after(timeline)
+    }
+    updateMarketTimeline()
+  }
 
   const enhance = () => {
     installStyles()
@@ -234,7 +290,7 @@
       boardNav = document.createElement('button')
       boardNav.type = 'button'
       boardNav.className = 'nav-item market-board-nav-item'
-      boardNav.textContent = 'Bảng giá'
+      boardNav.innerHTML = '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><span class="nav-label">Bảng giá</span>'
       boardNav.setAttribute('aria-label', 'Bảng giá')
       nav.insertBefore(boardNav, nav.children[1] || null)
       boardNav.addEventListener('click', () => {
@@ -279,6 +335,7 @@
       badge.setAttribute('aria-label', badge.title)
     })
     document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
+    ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
     const breadthCounts = breadth ? {
       up: Number(breadth.querySelector('.breadth-count.up strong')?.textContent || 0),
