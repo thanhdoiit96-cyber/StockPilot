@@ -2,7 +2,25 @@
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000},{id:'b',code:'VCB',name:'Vietcombank',price:90000,industry:'banking_finance',volume:2000}]
 const list=(data=stocks)=>({success:true,data,pagination:{page:1,pageSize:25,total:data.length,totalPages:2}})
 async function boot(page, options = {}){await page.route('**/api/**',async route=>{const path=new URL(route.request().url()).pathname;const payload=path==='/api/stocks'?list():path==='/api/stocks/data-quality'?{success:true,data:{session_date:'2026-09-25',listed:551,covered:204,missing:347,missing_symbols:['VPB'],ready:false,provider:{}}}:path==='/api/health'?{success:true,data:{status:'ok'}}:path==='/api/cache/stats'?{success:true,data:{totalEntries:2}}:path==='/api/ai-gate'?{success:true,data:{enabled:false,reasons:[]}}:path==='/api/recommendations/latest'?(options.recommendations || {success:true,data:{recommendations:[]}}):path==='/api/recommendations/history'?{success:true,data:[]}:path==='/api/recommendations/readiness'?{success:true,data:{coverage:[]}}:path==='/api/auth/me'?{success:true,user:{id:'e2e',email:'e2e@example.com',role:'admin'}}:path==='/api/watchlist'?{success:true,data:[]}:path==='/api/portfolio'?{success:true,data:{positions:[]}}:{success:true,data:null};await route.fulfill({json:payload})});await page.goto('/');await expect(page.locator('.dashboard-shell')).toBeVisible()}
-test('overview supports sort and sector filter',async({page})=>{await boot(page);await expect(page.locator('tbody tr')).toHaveCount(2);await expect(page.locator('.sector-select option')).toHaveCount(10);await page.locator('.table-sort-btn').first().click();await expect(page.locator('tbody tr')).toHaveCount(2);await page.locator('.sector-select').selectOption('technology');await expect(page.locator('tbody tr')).toHaveCount(2);await expect(page.locator('.nav-item').first()).toHaveClass(/active/)})
+test('overview keeps search and sector filter on one row', async ({ page }) => {
+  await boot(page)
+  await expect(page.locator('tbody tr')).toHaveCount(2)
+  await expect(page.locator('.sector-select option')).toHaveCount(10)
+  await expect(page.locator('.table-tools')).toHaveClass(/overview-filter-row/)
+  const aligned = () => page.locator('.overview-filter-row').evaluate(row => {
+    const sector = row.querySelector('.sector-select').getBoundingClientRect()
+    const search = row.querySelector('.table-search').getBoundingClientRect()
+    return Math.abs(sector.top - search.top)
+  })
+  await expect.poll(aligned).toBeLessThanOrEqual(1)
+  await page.setViewportSize({ width: 520, height: 900 })
+  await expect.poll(aligned).toBeLessThanOrEqual(1)
+  await page.locator('.table-sort-btn').first().click()
+  await expect(page.locator('tbody tr')).toHaveCount(2)
+  await page.locator('.sector-select').selectOption('technology')
+  await expect(page.locator('tbody tr')).toHaveCount(2)
+  await expect(page.locator('.nav-item').first()).toHaveClass(/active/)
+})
 test('overview keeps analysis as a dedicated action without static assessment copy',async({page})=>{await boot(page);await expect(page.getByRole('columnheader',{name:'Phân tích',exact:true})).toBeVisible();await expect(page.getByRole('columnheader',{name:'Nhận định',exact:true})).toHaveCount(0);await expect(page.locator('.overview-assessment .rating-badge:visible')).toHaveCount(0);await expect(page.locator('.overview-assessment > small:visible')).toHaveCount(0);const action=page.getByRole('button',{name:'Mở phân tích chuyên sâu'}).first();await expect(action).toBeVisible();await action.click();await expect(page.locator('.nav-item').nth(2)).toHaveClass(/active/);await expect.poll(()=>page.evaluate(()=>Object.entries(sessionStorage).some(([key,value])=>key.startsWith('analysis-requested:')&&value==='1'))).toBe(true)})
 test('data quality banner persists across overview, portfolio and detail pages',async({page})=>{await boot(page);await expect(page.locator('#market-data-quality-overlay')).toContainText('204/551');await page.locator('.nav-item').nth(1).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('347');await page.locator('.nav-item').nth(2).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('2026-09-25')})
 test('sidebar collapses to labelled icons and overview headers stay pinned', async ({ page }) => {

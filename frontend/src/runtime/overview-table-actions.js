@@ -57,6 +57,39 @@
       .overview-next { display: none !important; }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
       .table-panel .overview-original-result-count { display: none !important; }
+      .table-panel > .panel-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 12px;
+      }
+      .table-panel .table-tools.overview-filter-row {
+        display: grid;
+        grid-template-columns: minmax(230px, .85fr) minmax(280px, 1.15fr);
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+      }
+      .table-panel .overview-filter-row .table-tabs {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+      .table-panel .overview-filter-row .tab-btn {
+        min-height: 38px;
+        border: 1px solid var(--border);
+      }
+      .table-panel .overview-filter-row .sector-select,
+      .table-panel .overview-filter-row .table-search {
+        width: 100%;
+        min-width: 0;
+        min-height: 38px;
+      }
       .table-panel .table-pagination { flex-wrap: wrap; }
       .overview-pagination-summary {
         display: flex;
@@ -100,6 +133,13 @@
         .overview-analysis-action .overview-analysis-btn { white-space: normal; }
       }
       @media (max-width: 620px) {
+        .table-panel .table-tools.overview-filter-row {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+          gap: 8px;
+        }
+        .table-panel .overview-filter-row .table-tabs { gap: 4px; }
+        .table-panel .overview-filter-row .tab-btn { padding-inline: 8px; }
+        .table-panel .overview-filter-row .sector-select { padding-inline: 7px; }
         .overview-pagination-summary {
           flex-basis: 100%;
           width: 100%;
@@ -139,6 +179,7 @@
       badge.title = `Dữ liệu cũ: giá hoặc khối lượng thuộc phiên ${session}, chưa phải phiên chuẩn mới nhất.`
       badge.setAttribute('aria-label', badge.title)
     })
+    document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
     const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
     const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')
     const pagination = document.querySelector('.table-panel .table-pagination')

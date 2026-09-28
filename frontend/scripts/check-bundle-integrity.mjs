@@ -37,7 +37,8 @@ const overviewChecks = [
   ['trạng thái hủy niêm yết', /Đã hủy niêm yết/],
   ['chú thích dữ liệu theo ngữ cảnh', /Giải thích Intraday, EOD và dữ liệu cũ/],
   ['bộ chọn số mã ở hàng phân trang', /overview-page-size-control/],
-  ['bộ đếm mã ở hàng phân trang', /overview-pagination-count/]
+  ['bộ đếm mã ở hàng phân trang', /overview-pagination-count/],
+  ['tìm kiếm và nhóm ngành cùng hàng', /overview-filter-row/]
 ]
 const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(overviewRuntime)).map(([label]) => label)
 if (missingOverview.length) throw new Error(`Runtime Tổng quan không đạt kiểm tra: ${missingOverview.join(', ')}`)

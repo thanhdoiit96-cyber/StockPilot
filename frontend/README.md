@@ -44,6 +44,8 @@ Khối **Tiếp tục từ đây** đã được bỏ vì trùng các action ở
 
 Bộ đếm **Hiển thị n/tổng số mã** và bộ chọn **Số mã / trang** nằm thành một cụm bên trái hàng phân trang dưới bảng; trạng thái trang và nút Trước/Sau nằm bên phải. Trên màn hình hẹp, cụm thông tin chiếm một hàng riêng. Tùy chọn `40` tương ứng với kích thước trang mặc định của Tổng quan.
 
+Tiêu đề **Danh sách cổ phiếu** nằm riêng phía trên. Bộ lọc **Nhóm ngành** và ô **Tìm cổ phiếu** dùng chung một hàng ngay bên dưới, kể cả khi giao diện thu hẹp; hai ô tự co theo chiều rộng khả dụng.
+
 Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy) và lịch sử đánh giá ngoài mẫu. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
 
 ## Build và kiểm tra bản phát hành

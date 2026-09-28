@@ -2488,3 +2488,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bo sung tuy chon `40` vao select vi Overview dang dung page-size mac dinh 40; tranh tinh trang UI hien 25 trong khi request/so dong thuc te la 40.
 - Tren man hinh hep, cum dem va page-size chiem tron mot hang truoc cac nut phan trang.
 - Kiem chung: syntax/hash runtime va bundle integrity pass; acceptance page-size/count **1/1**, Playwright `overview` **12/12** va live smoke pass. Live UI xac nhan `Hien thi 40/624 ma`, select `40`, request `pageSize=40`; anh evidence da duoc chup sau khi cuon den hang phan trang.
+
+## Can hang tim kiem va nhom nganh - 2026-09-28
+
+- Tach tieu de `Danh sach co phieu` thanh hang rieng; dat cum `Tat ca`/`Nhom nganh` va o `Tim co phieu` tren cung mot hang dieu khien ben duoi.
+- Dung grid hai cot co the co gian; o select va search cung chieu cao. O viewport hep 520px van giu cung hang va thu gon padding/gap.
+- Release gate them marker `overview-filter-row`; Playwright kiem tra toa do tren cua select/search o ca desktop va viewport 520px.
+- Kiem chung: syntax/hash runtime va bundle integrity pass; acceptance filter-row **1/1**, Playwright `overview` **12/12** va live smoke pass. Live UI do duoc select/search cung cao **43px**, lech mep tren **0px**.

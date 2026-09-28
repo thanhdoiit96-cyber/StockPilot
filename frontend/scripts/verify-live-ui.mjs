@@ -16,6 +16,14 @@ try {
   const bottomResultCount = page.locator('.table-pagination .overview-pagination-count')
   await bottomPageSize.waitFor({ state: 'visible' })
   await bottomResultCount.waitFor({ state: 'visible' })
+  const filterAlignment = await page.locator('.overview-filter-row').evaluate(row => {
+    const sector = row.querySelector('.sector-select').getBoundingClientRect()
+    const search = row.querySelector('.table-search').getBoundingClientRect()
+    return { top_difference_px: Math.abs(sector.top - search.top), sector_height_px: sector.height, search_height_px: search.height }
+  })
+  if (filterAlignment.top_difference_px > 1) {
+    throw new Error(`Search and sector controls are misaligned by ${filterAlignment.top_difference_px}px.`)
+  }
   if (await page.locator('.page-size-control:not(.overview-page-size-control)').isVisible()) {
     throw new Error('The original page-size control is still visible above the table.')
   }
@@ -67,6 +75,7 @@ try {
       value: await bottomPageSize.locator('select').inputValue(),
       result_count: await bottomResultCount.innerText()
     },
+    filter_alignment: filterAlignment,
     stale_volume_diagnostic: overlayDiagnostic,
     coverage: await page.locator('[role=status]').allTextContents() }
   await mkdir('../backend/evidence', { recursive: true })
