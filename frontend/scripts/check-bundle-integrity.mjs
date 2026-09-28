@@ -21,4 +21,22 @@ const checks = [
 ]
 const missing = checks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
 if (missing.length) throw new Error(`Bundle không đạt kiểm tra: ${missing.join(', ')}`)
-console.log(`Bundle integrity passed: ${asset}`)
+
+const overviewRuntimeAsset = 'overview-table-actions.js'
+if (!html.includes(`/assets/${overviewRuntimeAsset}`)) {
+  throw new Error(`Bundle không nạp runtime Tổng quan: ${overviewRuntimeAsset}`)
+}
+const overviewRuntimePath = path.join(root, 'dist/assets', overviewRuntimeAsset)
+if (!fs.existsSync(overviewRuntimePath)) {
+  throw new Error(`Thiếu runtime Tổng quan: ${overviewRuntimeAsset}`)
+}
+const overviewRuntime = fs.readFileSync(overviewRuntimePath, 'utf8')
+const overviewChecks = [
+  ['cột Phân tích', /overview-analysis-action/],
+  ['nhãn mở phân tích', /Mở phân tích chuyên sâu/],
+  ['trạng thái hủy niêm yết', /Đã hủy niêm yết/]
+]
+const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(overviewRuntime)).map(([label]) => label)
+if (missingOverview.length) throw new Error(`Runtime Tổng quan không đạt kiểm tra: ${missingOverview.join(', ')}`)
+
+console.log(`Bundle integrity passed: ${asset}; runtime: ${overviewRuntimeAsset}`)

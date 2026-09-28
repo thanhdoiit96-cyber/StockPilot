@@ -70,6 +70,8 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.getByRole('heading', { name: 'Lịch sử hiệu quả đề xuất' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Mở danh mục cá nhân' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Đến tab đề xuất' })).toBeVisible()
+  await page.getByRole('button', { name: 'Mở danh mục cá nhân' }).click()
+  await expect(page.locator('.nav-item').nth(1)).toHaveClass(/active/)
 })
 
 test('portfolio and watchlist remain pinned across sorting and page-size changes', async ({ page }) => {

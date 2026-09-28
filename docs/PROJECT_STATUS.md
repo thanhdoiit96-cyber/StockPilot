@@ -2451,3 +2451,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Nut van giu luong cu: dung propagation cua row, chon dung ma, dat co `analysis-requested:*` va mo trang Chi tiet ma de tai phan tich ky thuat.
 - Hanh vi duoc luu trong `src/runtime/overview-table-actions.js` va nap vao dist dang phuc vu ma khong thay bundle feature-rich chinh. Live smoke 40 dong xac nhan first row khong con hai chuoi nhan dinh tinh va asset runtime tra HTTP 200.
 - Kiem chung: runtime source va shipped asset cung hash, syntax va bundle integrity pass; Playwright targeted cho cot Phan tich/luong click **1/1** pass. Nhom regression `overview` dat **11/12**; test con lai la mismatch co san giua copy bundle `Huy niem yet` va assertion `Da huy niem yet`, khong lien quan thay doi nay. Source-parity/encoding cua `App.jsx` van la backlog rieng.
+
+## Dong gate nghiem thu Tong quan - 2026-09-28
+
+- Chuan hoa badge `Huy niem yet` thanh `Da huy niem yet`, dung voi trang thai da xay ra va acceptance hien co.
+- Loai CTA Chi tiet bi trung luong voi click row/nut Phan tich; CTA cuoi trang nay mo Danh muc ca nhan. CTA De xuat san co duoc giu rieng, khong tao hai nut cung nhan/cung dich.
+- `check:bundle` nay bat buoc `dist/index.html` nap `overview-table-actions.js`, asset ton tai va co marker cot Phan tich, aria label phan tich va copy huy niem yet. Runtime source va asset phat hanh duoc doi chieu cung hash.
+- Kiem chung cuoi: syntax pass, bundle integrity pass (`index-CJ9TdbTJ.js` + runtime), test acceptance tung loi **1/1** pass va toan bo nhom Playwright `overview` **12/12** pass.
+- M5/coverage EOD va source-parity/encoding cua `App.jsx` van la cac backlog rieng; gate nay chi dong nghiem thu UI Tong quan.
