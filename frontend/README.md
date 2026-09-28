@@ -9,6 +9,7 @@
 | [src/services/api.mjs](src/services/api.mjs) | Kiểm tra HTTP/JSON và cấu trúc dữ liệu cổ phiếu, hủy request và bỏ qua phản hồi cũ |
 | [src/hooks/useApiResource.js](src/hooks/useApiResource.js) | Trạng thái tải/lỗi/dữ liệu theo URL, retry, cleanup khi đổi lựa chọn hoặc unmount |
 | [src/runtime/overview-table-actions.js](src/runtime/overview-table-actions.js) | Chuẩn hóa cột hành động Phân tích trên bảng Tổng quan của bundle đang phục vụ |
+| [src/runtime/sidebar-toggle-icon.js](src/runtime/sidebar-toggle-icon.js) | Hiển thị chevron trái/phải và nhãn truy cập đúng trạng thái cho nút sidebar |
 | [src/styles.css](src/styles.css) | Giao diện |
 | [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc localhost:5000 |
 
@@ -45,6 +46,8 @@ Khối **Tiếp tục từ đây** đã được bỏ vì trùng các action ở
 Bộ đếm **Hiển thị n/tổng số mã** và bộ chọn **Số mã / trang** nằm thành một cụm bên trái hàng phân trang dưới bảng; trạng thái trang và nút Trước/Sau nằm bên phải. Trên màn hình hẹp, cụm thông tin chiếm một hàng riêng. Tùy chọn `40` tương ứng với kích thước trang mặc định của Tổng quan.
 
 Tiêu đề **Danh sách cổ phiếu** nằm riêng phía trên. Bộ lọc **Nhóm ngành** và ô **Tìm cổ phiếu** dùng chung một hàng ngay bên dưới, kể cả khi giao diện thu hẹp; hai ô tự co theo chiều rộng khả dụng.
+
+Nút sidebar dùng chevron trái khi thanh đang mở và chevron phải khi đã thu gọn. Tooltip/`aria-label` lần lượt là **Thu gọn thanh điều hướng** và **Mở rộng thanh điều hướng**.
 
 Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy) và lịch sử đánh giá ngoài mẫu. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
 

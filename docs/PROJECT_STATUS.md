@@ -2495,3 +2495,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dung grid hai cot co the co gian; o select va search cung chieu cao. O viewport hep 520px van giu cung hang va thu gon padding/gap.
 - Release gate them marker `overview-filter-row`; Playwright kiem tra toa do tren cua select/search o ca desktop va viewport 520px.
 - Kiem chung: syntax/hash runtime va bundle integrity pass; acceptance filter-row **1/1**, Playwright `overview` **12/12** va live smoke pass. Live UI do duoc select/search cung cao **43px**, lech mep tren **0px**.
+
+## Thay ky tu sidebar bang icon co huong - 2026-09-28
+
+- Nut sidebar trong bundle dang dung cung ky tu `-` cho ca hai trang thai, nen khong truyen dat duoc huong thao tac.
+- Them runtime `sidebar-toggle-icon.js`: chevron trai khi sidebar dang mo, chevron phai khi da thu gon; dong bo tooltip va aria-label `Thu gon/Mo rong thanh dieu huong`.
+- Them acceptance cho icon/nhan o ca hai trang thai va release gate cho runtime moi.
+- Kiem chung: syntax va source/dist runtime cung hash; bundle integrity pass voi ca hai runtime; acceptance sidebar **1/1**, Playwright `overview` **12/12** va live smoke pass. UI live xac nhan nhan `Thu gon thanh dieu huong`, huong `left`; anh evidence cho thay chevron tai mep sidebar.

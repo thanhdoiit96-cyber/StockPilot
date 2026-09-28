@@ -25,13 +25,20 @@ test('overview keeps analysis as a dedicated action without static assessment co
 test('data quality banner persists across overview, portfolio and detail pages',async({page})=>{await boot(page);await expect(page.locator('#market-data-quality-overlay')).toContainText('204/551');await page.locator('.nav-item').nth(1).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('347');await page.locator('.nav-item').nth(2).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('2026-09-25')})
 test('sidebar collapses to labelled icons and overview headers stay pinned', async ({ page }) => {
   await boot(page)
-  await page.locator('.sidebar-toggle').click()
+  const sidebarToggle = page.locator('.sidebar-toggle')
+  await expect(sidebarToggle).toHaveAttribute('aria-label', 'Thu gọn thanh điều hướng')
+  await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')
+  await sidebarToggle.click()
   await expect(page.locator('.dashboard-shell')).toHaveClass(/sidebar-collapsed/)
+  await expect(sidebarToggle).toHaveAttribute('aria-label', 'Mở rộng thanh điều hướng')
+  await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'right')
   await expect(page.locator('.nav-label').first()).toBeHidden()
   await expect(page.locator('.nav-icon').first()).toBeVisible()
   await expect(page.locator('.nav-item').first()).toHaveAttribute('aria-label', 'Tổng quan')
-  await page.locator('.sidebar-toggle').click()
+  await sidebarToggle.click()
   await expect(page.locator('.dashboard-shell')).not.toHaveClass(/sidebar-collapsed/)
+  await expect(sidebarToggle).toHaveAttribute('aria-label', 'Thu gọn thanh điều hướng')
+  await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')
   const sticky = await page.locator('.table-panel thead th').first().evaluate(node => ({
     header: getComputedStyle(node).position,
     symbol: getComputedStyle(document.querySelector('.table-panel tbody td')).position,
