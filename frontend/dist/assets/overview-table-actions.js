@@ -64,6 +64,7 @@
       .breadth-leader > strong, .breadth-leader > small { display: block; }.breadth-leader > strong { font-size: 12px; }.breadth-leader > small { margin-top: 3px; color: var(--muted); font-size: 10px; }
       .breadth-leader ol { display: grid; gap: 5px; margin: 10px 0 0; padding-left: 17px; color: var(--muted); font-size: 11px; }.breadth-leader li { display: flex; justify-content: space-between; gap: 8px; padding-left: 2px; }.breadth-leader li span { color: var(--text); font-weight: 700; }.breadth-leader li b { font-variant-numeric: tabular-nums; }.breadth-leader > p { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
       .breadth-leader li span[data-breadth-symbol] { cursor: pointer; border-radius: 4px; }.breadth-leader li span[data-breadth-symbol]:hover, .breadth-leader li span[data-breadth-symbol]:focus-visible { color: var(--primary); outline: 2px solid rgba(94, 234, 212, .5); outline-offset: 2px; }
+      .breadth-exchange-select { min-width: 96px; }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; } }
       .table-panel .page-size-control:not(.overview-page-size-control) { display: none !important; }
@@ -168,11 +169,11 @@
   }
 
   let leadersLoading = false
-  const loadBreadthLeaders = async (breadth, sector = '') => {
+  const loadBreadthLeaders = async (breadth, sector = '', exchange = '') => {
     if (leadersLoading || breadth.querySelector('.breadth-leaders')) return
     leadersLoading = true
     try {
-      const response = await fetch(`/api/stocks?page=1&pageSize=40&q=&sector=${encodeURIComponent(sector)}&sort=volume&direction=desc&pinned=`, { cache: 'no-store' })
+      const response = await fetch(`/api/stocks?page=1&pageSize=40&q=&sector=${encodeURIComponent(sector)}&exchange=${encodeURIComponent(exchange)}&sort=volume&direction=desc&pinned=`, { cache: 'no-store' })
       const payload = await response.json()
       const rows = Array.isArray(payload?.data) ? payload.data : []
       const byChange = rows.filter(row => Number.isFinite(Number(row.change)))
@@ -181,8 +182,9 @@
       const wrapper = document.createElement('div')
       wrapper.className = 'breadth-leaders'
       wrapper.dataset.sector = sector
+      wrapper.dataset.exchange = exchange
       wrapper.setAttribute('aria-label', 'Các mã dẫn dắt thị trường')
-      wrapper.innerHTML = lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>${sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ danh sách hiện tại'}</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')
+      wrapper.innerHTML = lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>${exchange ? `Sàn: ${exchange}` : sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ danh sách hiện tại'}</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')
       breadth.querySelector('.breadth-snapshot')?.after(wrapper)
       wrapper.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {
         const symbol = symbolNode.textContent.trim()
@@ -255,14 +257,30 @@
     }
     const sectorSelect = document.querySelector('.sector-select')
     const selectedSector = sectorSelect?.value || ''
+    let exchangeSelect = document.querySelector('.breadth-exchange-select')
+    if (sectorSelect && !exchangeSelect) {
+      exchangeSelect = document.createElement('select')
+      exchangeSelect.className = 'breadth-exchange-select'
+      exchangeSelect.setAttribute('aria-label', 'Sàn cho Top list')
+      exchangeSelect.innerHTML = '<option value="">Tất cả sàn</option><option value="HSX">HSX</option><option value="HNX">HNX</option><option value="UPCOM">UPCOM</option>'
+      sectorSelect.closest('.table-tabs')?.append(exchangeSelect)
+    }
+    const selectedExchange = exchangeSelect?.value || ''
     const existingLeaders = breadth?.querySelector('.breadth-leaders')
-    if (existingLeaders && existingLeaders.dataset.sector !== selectedSector) existingLeaders.remove()
-    if (breadth && !breadth.querySelector('.breadth-leaders')) loadBreadthLeaders(breadth, selectedSector)
+    if (existingLeaders && (existingLeaders.dataset.sector !== selectedSector || existingLeaders.dataset.exchange !== selectedExchange)) existingLeaders.remove()
+    if (breadth && !breadth.querySelector('.breadth-leaders')) loadBreadthLeaders(breadth, selectedSector, selectedExchange)
     if (sectorSelect && !sectorSelect.dataset.breadthScopeBound) {
       sectorSelect.dataset.breadthScopeBound = '1'
       sectorSelect.addEventListener('change', () => {
         breadth?.querySelector('.breadth-leaders')?.remove()
-        if (breadth) loadBreadthLeaders(breadth, sectorSelect.value || '')
+        if (breadth) loadBreadthLeaders(breadth, sectorSelect.value || '', exchangeSelect?.value || '')
+      })
+    }
+    if (exchangeSelect && !exchangeSelect.dataset.breadthScopeBound) {
+      exchangeSelect.dataset.breadthScopeBound = '1'
+      exchangeSelect.addEventListener('change', () => {
+        breadth?.querySelector('.breadth-leaders')?.remove()
+        if (breadth) loadBreadthLeaders(breadth, sectorSelect?.value || '', exchangeSelect.value || '')
       })
     }
     document.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {

@@ -146,6 +146,8 @@ module.exports = function(cacheService) {
       const coverage = ['ready', 'incomplete'].includes(String(req.query.coverage)) ? String(req.query.coverage) : '';
       const requestedSector = String(req.query.sector || '').trim();
       const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : '';
+      const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
+      const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : '';
       const requestedSort = String(req.query.sort || 'name');
       const sort = ['code', 'name', 'price', 'volume'].includes(requestedSort) ? requestedSort : 'name';
       const direction = String(req.query.direction || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
@@ -155,9 +157,10 @@ module.exports = function(cacheService) {
       if (query) filters.push({ [Op.or]: [{ code: { [Op.iLike]: `%${query}%` } }, { name: { [Op.iLike]: `%${query}%` } }] });
       if (sector === 'other') filters.push({ code: { [Op.notIn]: CLASSIFIED_CODES } });
       else if (sector) filters.push({ [Op.or]: [{ code: { [Op.in]: SECTOR_CODES[sector] } }, industryCondition(Op, sector)] });
+      if (exchange) filters.push({ exchange });
       if (coverage) filters.push(Stock.sequelize.literal(`(SELECT COUNT(*) FROM stock_prices AS coverage_prices WHERE coverage_prices.stock_id = "Stock"."id") ${coverage === 'ready' ? '>=' : '<'} 50`));
       const where = filters.length === 1 ? filters[0] : filters.length ? { [Op.and]: filters } : undefined;
-      const cacheKey = `v8:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${query.toLowerCase()}:${pinned.join(',')}`;
+      const cacheKey = `v9:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${exchange}:${query.toLowerCase()}:${pinned.join(',')}`;
       let cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success: true, data: cached.data, pagination: cached.pagination, source: 'cache' });
       const latestValue = field => Stock.sequelize.literal(`(SELECT COALESCE(sp.${field === 'price' ? 'close' : field}, sp.${field === 'price' ? 'price' : field}) FROM stock_prices AS sp WHERE sp.stock_id = "Stock"."id" AND sp.observed_at IS NOT NULL ORDER BY sp.observed_at DESC NULLS LAST, sp.id DESC LIMIT 1)`);
@@ -176,7 +179,7 @@ module.exports = function(cacheService) {
         : { rows: await Stock.findAll(queryOptions), count: 0 };
 
       const payload = result.rows.map(stock => normalizeStock(stock, latestSessionDate));
-      const pagination = { page, pageSize, total: result.count, totalPages: Math.max(1, Math.ceil(result.count / pageSize)), query, coverage, sector, sort, direction: direction.toLowerCase() };
+      const pagination = { page, pageSize, total: result.count, totalPages: Math.max(1, Math.ceil(result.count / pageSize)), query, coverage, sector, exchange, sort, direction: direction.toLowerCase() };
       await cacheService.set(cacheKey, { data: payload, pagination }, 5, 'stock');
 
       res.json({ success: true, data: payload, pagination, source: 'database' });

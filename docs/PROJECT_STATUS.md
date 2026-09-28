@@ -2585,3 +2585,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Top tang/giam/khoi luong dong bo voi select `Nhom nganh`; khi doi nganh, runtime tai lai cung endpoint `pageSize=40` voi tham so `sector` va cap nhat nhan pham vi tren tung bang.
 - Khi khong chon nganh, Top list ghi ro `Toan bo danh sach hien tai`; khong dung nhan `toan thi truong` khi request chi lay danh sach hien thi.
 - Kiem chung: acceptance breadth co chuyen nganh va xac nhan request `sector=technology`, bundle integrity va syntax runtime pass.
+
+## Them pham vi san cho Top list - 2026-09-28
+
+- Backend `GET /api/stocks` ho tro loc `exchange=HSX|HNX|UPCOM`, dua exchange vao where, cache key va pagination contract.
+- UI them select `Sàn cho Top list`; khi doi san, ba Top list tai lai va hien nhan pham vi tuong ung. Bo loc nay chi ap dung cho Top list, khong tu y thay doi bang co phieu chinh.
+- Kiem chung: stock controller **10/10**, acceptance breadth pass, bundle integrity va syntax runtime pass.

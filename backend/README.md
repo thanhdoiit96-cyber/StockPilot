@@ -104,7 +104,7 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ### Personal overview ordering and source URLs
 
-`GET /api/stocks?pinned=FPT,VCB` accepts a display preference of up to 200 unique uppercase alphanumeric symbols (maximum 10 characters each). Matching rows sort first, followed by the requested sort order and pagination. Search/sector filters still apply. Cache keys include the normalized pinned set; this parameter does not grant access to any user's portfolio or Watchlist. The frontend derives it from the authenticated user's positive positions and Watchlist.
+`GET /api/stocks?pinned=FPT,VCB` accepts a display preference of up to 200 unique uppercase alphanumeric symbols (maximum 10 characters each). Matching rows sort first, followed by the requested sort order and pagination. Search/sector/exchange filters still apply; supported exchange values are `HSX`, `HNX`, and `UPCOM`. Cache keys include the normalized pinned set and exchange; this parameter does not grant access to any user's portfolio or Watchlist. The frontend derives it from the authenticated user's positive positions and Watchlist.
 
 `GET /api/stocks/:id/analysis` preserves `source_url` in each verified `external_factors.factors` entry so the UI can link back to the source. No schema migration is needed; the URL is already stored on external factors.
 
