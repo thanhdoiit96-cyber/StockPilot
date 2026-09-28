@@ -55,27 +55,10 @@
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
       .overview-next { display: none !important; }
-      .overview-data-guide { margin-top: 16px; padding: 18px 20px; }
-      .overview-data-guide-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
-      .overview-data-guide-header h3 { margin: 0; }
-      .overview-data-guide-header > p { max-width: 560px; margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.55; }
-      .overview-data-guide-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-      .overview-data-guide-item { min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 11px; background: rgba(255, 255, 255, .025); }
-      .overview-data-guide-item strong { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: .78rem; }
-      .overview-data-guide-item p { margin: 0; color: var(--muted); font-size: .72rem; line-height: 1.45; }
-      .overview-data-guide-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--muted); }
-      .overview-data-guide-dot.live { background: var(--success); box-shadow: 0 0 10px rgba(52, 211, 153, .45); }
-      .overview-data-guide-dot.eod { background: #60a5fa; }
-      .overview-data-guide-dot.stale { background: var(--warning); }
       @media (max-width: 1100px) {
         .table-panel th:nth-child(2), .table-panel td:nth-child(2) { width: 21%; }
         .table-panel th:nth-child(7), .table-panel td:nth-child(7) { width: 20%; }
         .overview-analysis-action .overview-analysis-btn { white-space: normal; }
-      }
-      @media (max-width: 760px) {
-        .overview-data-guide-header { display: block; }
-        .overview-data-guide-header > p { margin-top: 8px; }
-        .overview-data-guide-grid { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         .overview-analysis-action .overview-analysis-btn { transition: none; }
@@ -93,27 +76,21 @@
     document.querySelectorAll('.listing-badge.delisted').forEach(badge => {
       if (badge.textContent.trim() === 'Hủy niêm yết') badge.textContent = 'Đã hủy niêm yết'
     })
-    const legacyNext = document.querySelector('.overview-next')
-    const existingGuide = document.getElementById('overview-data-guide')
-    if (!legacyNext) {
-      existingGuide?.remove()
-    } else if (!existingGuide) {
-      const guide = document.createElement('section')
-      guide.id = 'overview-data-guide'
-      guide.className = 'overview-data-guide panel'
-      guide.setAttribute('aria-labelledby', 'overview-data-guide-title')
-      guide.innerHTML = `
-        <div class="overview-data-guide-header">
-          <div><p class="eyebrow accent">Dữ liệu thị trường</p><h3 id="overview-data-guide-title">Cách đọc trạng thái dữ liệu</h3></div>
-          <p>Các nhãn trong bảng mô tả độ mới của dữ liệu, không phải tín hiệu mua bán.</p>
-        </div>
-        <div class="overview-data-guide-grid">
-          <article class="overview-data-guide-item"><strong><span class="overview-data-guide-dot live"></span>Intraday</strong><p>Giá và khối lượng từ quote của phiên hiện tại; có thể trễ theo provider.</p></article>
-          <article class="overview-data-guide-item"><strong><span class="overview-data-guide-dot eod"></span>EOD</strong><p>Giá đóng cửa phiên gần nhất, dùng khi chưa có quote intraday hợp lệ.</p></article>
-          <article class="overview-data-guide-item"><strong><span class="overview-data-guide-dot stale"></span>Dữ liệu cũ</strong><p>Mã chưa có EOD cho phiên chuẩn; cần xem ngày phiên trước khi sử dụng.</p></article>
-        </div>`
-      legacyNext.insertAdjacentElement('afterend', guide)
+    document.getElementById('overview-data-guide')?.remove()
+    const sourceHelp = document.querySelector('.overview-source-summary .overview-source-help')
+    if (sourceHelp) {
+      sourceHelp.title = 'Intraday: quote của phiên hiện tại và có thể trễ theo provider. EOD: giá đóng cửa phiên gần nhất khi chưa có quote hợp lệ. Dữ liệu cũ: mã chưa có EOD cho phiên chuẩn.'
+      sourceHelp.setAttribute('aria-label', 'Giải thích Intraday, EOD và dữ liệu cũ')
+      sourceHelp.setAttribute('tabindex', '0')
     }
+    document.querySelectorAll('.volume-context').forEach(context => {
+      context.setAttribute('tabindex', '0')
+    })
+    document.querySelectorAll('[data-stale-volume]').forEach(badge => {
+      const session = badge.parentElement?.title?.replace(/^Dữ liệu phiên\s*/, '') || 'trước'
+      badge.title = `Dữ liệu cũ: giá hoặc khối lượng thuộc phiên ${session}, chưa phải phiên chuẩn mới nhất.`
+      badge.setAttribute('aria-label', badge.title)
+    })
     document.querySelectorAll('.overview-assessment').forEach(container => {
       if (!container.classList.contains(enhancedClass)) container.classList.add(enhancedClass)
       const button = container.querySelector('.overview-analysis-btn')

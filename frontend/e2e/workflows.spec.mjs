@@ -30,7 +30,7 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   expect(sticky.navOverflow).toBe('hidden')
   expect(sticky.tableOverflow).toBe('visible')
   expect(sticky.pageOverflow).not.toBe('scroll')
-  await page.evaluate(() => { document.body.style.minHeight = '2200px'; window.scrollTo(0, 640) })
+  await page.evaluate(() => { document.querySelector('.dashboard-shell').style.minHeight = '2200px'; window.scrollTo(0, 640) })
   await expect.poll(() => page.evaluate(() => Math.round(document.querySelector('.sidebar').getBoundingClientRect().top))).toBe(0)
 })
 test('personal tab renders portfolio and watchlist',async({page})=>{await boot(page);await page.locator('.nav-item').nth(1).click();await expect(page.locator('.transaction-form')).toBeVisible();await expect(page.getByRole('heading', { name: 'Watchlist' })).toBeVisible()})
