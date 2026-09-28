@@ -460,6 +460,8 @@ SSI iBoard tổ chức màn hình thị trường thành các lát cắt bổ su
 
 **Trạng thái 2026-09-28:** Đã thêm ba nhóm Top tăng, Top giảm và Top khối lượng, tối đa 5 mã mỗi nhóm. Bước tiếp theo của Mốc 1 là bổ sung bộ lọc phạm vi và liên kết tương tác sang bảng cổ phiếu.
 
+**Trạng thái 2026-09-28:** Đã hoàn tất liên kết tương tác từ mã trong Top list về ô tìm kiếm/bảng cổ phiếu bằng click hoặc Enter/Space. Bộ lọc phạm vi chuyên biệt vẫn là phần tiếp theo.
+
 - Complete: UI/UX context review across all investor pages. Page order is preserved, each page now has contextual topbar titles, and browser reload restores the active page and selected symbol through session storage. Continue with visual review at the 4180 preview after deployment.
 
 - Complete: simplified recommendation and shared page presentation. Recommendation flow now removes duplicate headings, groups criteria and actions, and uses a compact responsive grid. Shared page spacing and panel hierarchy are consistent. Resume 500-symbol expansion with universe/quote batching measurements at 300 and 500 records.

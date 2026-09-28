@@ -2573,3 +2573,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them ba nhom Top tang, Top giam va Top khoi luong, toi da 5 ma moi nhom; source component tinh tu universe/quote, runtime bundle co fallback lay universe 500 ma dang phuc vu.
 - Moi nhom hien thi pham vi `Trong universe dang theo doi`; khi khong co truong hop le thi hien empty state, khong gan gia tri 0 gia tao.
 - Kiem chung: syntax runtime, bundle integrity va acceptance breadth **1/1** pass. Gia tri giao dich, net flow va heatmap nganh van cho den khi provider co hop dong du lieu tuong ung.
+
+## Ket noi Top list voi bang co phieu - 2026-09-28
+
+- Them thao tac click va Enter/Space cho ma trong Top tang/giam/khoi luong: tu dong dien vao Tim co phieu, focus lai input va dua nguoi dung ve bang.
+- Top list runtime dung page size 40 cua danh sach hien tai, khong tao them request universe 500 hay pha vo gioi han request cua Overview; source component van tinh top theo universe/quote khi build parity duoc khoi phuc.
+- Kiem chung: acceptance breadth pass, request-bound test pass va bundle integrity/syntax runtime pass.
