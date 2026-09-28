@@ -2509,3 +2509,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dua nut vao trong sidebar voi `right: 8px`, dat kich thuoc 32x32px, chuyen len `top: 8px` de khong de len logo va them focus ring cho ban phim.
 - Acceptance kiem tra bounding box nam tron trong sidebar, kich thuoc toi thieu 32x32, focus ring va ca hai trang thai icon/nhan. Live smoke ghi geometry cua nut.
 - Kiem chung: syntax va source/dist runtime cung hash; bundle integrity pass; acceptance sidebar **1/1**, Playwright `overview` **12/12** va live smoke pass. Geometry live la **32x32px**, `fully_inside_sidebar=true`; anh evidence xac nhan nut khong con bi cat.
+
+## Kiem tra responsive sidebar - 2026-09-28
+
+- Live smoke kiem tra cac viewport **1440**, **1024**, **768** va **520px**; moi viewport deu dat ca trang thai mo va thu gon.
+- Nut toggle giu **32x32px**, nam tron trong sidebar va khong tao horizontal overflow o ca bon kich thuoc. Khong can them override breakpoint.
+- Bao cao live ghi `responsive_sidebar` cung geometry, dong thoi van xac nhan filter 43px, page-size 40 va stale badge tren UI dang phuc vu.
