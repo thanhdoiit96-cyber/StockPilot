@@ -2543,3 +2543,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Chay lai Playwright nhom `overview`: **12/12**; bao gom filter/search, phan tich chuyen sau, portfolio/watchlist va sidebar.
 - Live smoke tiep tuc dat o 1440/1024/768/520px: nut 32x32px, overlap desktop/tablet 12px thuc te, khong horizontal overflow; mau mo `rgba(8,17,33,.96)`, mau thu gon `rgba(9,14,24,.96)`.
 - Bundle integrity pass; trang thai hien tai da san sang de chuyen sang buoc tiep theo: ra soat kha nang tiep can va thao tac ban phim cho cac control trong bang co phieu.
+
+## Kiem tra thao tac ban phim bang co phieu - 2026-09-28
+
+- Them acceptance cho o tim kiem, select nhom nganh va nut sap xep: ca ba nhan focus ring ro rang; nut sap xep la button native co `type="button"` va tooltip mo ta.
+- Day la buoc kiem tra tiep can cho cac control dang hien huu, khong thay doi logic du lieu hay giao dien.
