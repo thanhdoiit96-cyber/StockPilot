@@ -2515,3 +2515,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Live smoke kiem tra cac viewport **1440**, **1024**, **768** va **520px**; moi viewport deu dat ca trang thai mo va thu gon.
 - Nut toggle giu **32x32px**, nam tron trong sidebar va khong tao horizontal overflow o ca bon kich thuoc. Khong can them override breakpoint.
 - Bao cao live ghi `responsive_sidebar` cung geometry, dong thoi van xac nhan filter 43px, page-size 40 va stale badge tren UI dang phuc vu.
+
+## Can chinh nut sidebar sang phai - 2026-09-28
+
+- Giam `right` tu 8px xuong 4px de nut nam gan mep phai sidebar hon theo yeu cau giao dien, van giu vung bam 32x32px.
+- Live smoke responsive tiep tuc pass o 1440/1024/768/520px, ca mo va thu gon; nut van nam tron trong sidebar va khong tao overflow ngang.
