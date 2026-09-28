@@ -74,6 +74,7 @@
       .market-session-timeline-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .market-session-timeline-title { display: flex; align-items: center; gap: 8px; }.market-session-timeline-title svg { width: 16px; height: 16px; fill: none; stroke: var(--primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
       .market-session-timeline strong { font-size: 12px; }.market-session-timeline small { color: var(--muted); font-size: 10px; }
+      .market-session-updated { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
       .market-session-timeline-legend { display: flex; gap: 10px; color: var(--muted); font-size: 10px; white-space: nowrap; }.market-session-timeline-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }.market-session-timeline-legend .price-dot { background: #60a5fa; }.market-session-timeline-legend .volume-dot { background: #5eead4; }
       .market-session-timeline-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 12px; padding: 10px 8px 0; border: 1px solid rgba(148, 163, 184, .14); border-radius: 9px; background: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(148, 163, 184, .08) 32px); }
       .market-session-slot { min-width: 0; min-height: 104px; padding: 8px 7px 7px; border: 0; border-inline: 1px solid rgba(148, 163, 184, .07); background: transparent; }.market-session-slot.is-current { border-inline-color: rgba(94, 234, 212, .6); background: rgba(20, 184, 166, .08); }
@@ -253,6 +254,8 @@
     const timeline = readMarketTimeline(); timeline[marketSlots[slotIndex]] = snapshot
     try { sessionStorage.setItem(marketTimelineKey(), JSON.stringify(timeline)) } catch (_) { }
     const timelineNode = panel.querySelector('.market-session-timeline'); if (!timelineNode) return
+    const updatedNode = timelineNode.querySelector('.market-session-updated')
+    if (updatedNode) updatedNode.textContent = `Cập nhật lúc ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
     const snapshots = marketSlots.map(slot => timeline[slot]).filter(Boolean)
     const maxVolume = Math.max(1, ...snapshots.map(item => Number(item.volume) || 0))
     const maxChange = Math.max(1, ...snapshots.map(item => Math.abs(Number(item.change) || 0)))
@@ -270,7 +273,7 @@
     let timeline = panel.querySelector('.market-session-timeline')
     if (!timeline) {
       timeline = document.createElement('section'); timeline.className = 'market-session-timeline'; timeline.setAttribute('aria-label', 'Biến động giá và khối lượng trong ngày')
-      timeline.innerHTML = `<div class="market-session-timeline-header"><div><div class="market-session-timeline-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><strong>Biến động trong ngày · ${marketToday()}</strong></div><small>Một biểu đồ chung theo trục thời gian, phạm vi danh sách đang hiển thị</small></div><div class="market-session-timeline-legend"><span><i class="price-dot"></i>Giá</span><span><i class="volume-dot"></i>Khối lượng</span></div></div><div class="market-session-timeline-grid">${marketSlots.map(slot => `<article class="market-session-slot"><strong>${slot}</strong><div class="market-session-bars"><div><i class="price-bar"></i><span>Giá</span></div><div><i class="volume-bar"></i><span>KL</span></div></div><small class="market-session-value market-session-empty">Chưa có dữ liệu</small></article>`).join('')}</div>`
+      timeline.innerHTML = `<div class="market-session-timeline-header"><div><div class="market-session-timeline-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><strong>Biến động trong ngày · ${marketToday()}</strong></div><small>Một biểu đồ chung theo trục thời gian, phạm vi danh sách đang hiển thị</small><span class="market-session-updated">Chưa có snapshot</span></div><div class="market-session-timeline-legend"><span><i class="price-dot"></i>Giá</span><span><i class="volume-dot"></i>Khối lượng</span></div></div><div class="market-session-timeline-grid">${marketSlots.map(slot => `<article class="market-session-slot"><strong>${slot}</strong><div class="market-session-bars"><div><i class="price-bar"></i><span>Giá</span></div><div><i class="volume-bar"></i><span>KL</span></div></div><small class="market-session-value market-session-empty">Chưa có dữ liệu</small></article>`).join('')}</div>`
       panel.querySelector('.panel-header')?.after(timeline)
     }
     updateMarketTimeline()
@@ -287,6 +290,7 @@
       if (event.target.closest('.nav-item, .detail-analysis-btn, .table-panel tbody tr, [aria-label*="Thêm"]')) shell.classList.remove('market-board-active')
     })
   }
+
     let boardNav = nav?.querySelector('.market-board-nav-item')
     if (nav && !boardNav) {
       boardNav = document.createElement('button')
@@ -464,6 +468,11 @@
       button.title = 'Mở trang chi tiết và tải phân tích kỹ thuật'
     })
   }
+
+  const refreshTimeline = () => {
+    if (document.querySelector('.dashboard-shell.market-board-active')) updateMarketTimeline()
+  }
+  window.setInterval(refreshTimeline, 30000)
 
   let scheduled = false
   const scheduleEnhance = () => {
