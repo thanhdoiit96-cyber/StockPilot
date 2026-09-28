@@ -1,6 +1,6 @@
 # Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-09-18.
+Cập nhật: 2026-09-28.
 
 ## Yêu cầu làm việc đã ghi nhận
 
@@ -2435,3 +2435,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Live smoke truoc day timeout vi cho cung 131 row va bat buoc phai co FPT; hai dieu kien nay khong con phu hop voi page-size/API hien tai.
 - Da sua smoke test cho cho bat ky row hop le va ghi first row; chay lai pass, ghi evidence live overview voi **40 rows** va coverage banner.
 - E2E quality banner/sidebar pass **2/2** sau thay doi overlay.
+
+## Sua doi chieu ma cho stale volume overlay - 2026-09-28
+
+- Overlay truoc day doc toan bo `textContent` cua o ma; badge san/pin lam ma DOM thanh chuoi nhu `VGSHNX`, nen khong khop `missing_symbols` chi chua `VGS` va khong gan nhan volume cu.
+- Overlay nay doc text node ma truc tiep, co fallback sang o dau tien/phan tu con dau tien. Live smoke duyet den trang 3, doi chieu `VKC` va xac nhan **1/1** dong missing co badge `· cu`; coverage runtime tai luc kiem tra la **245/551**, con **306** ma.
+- `verify-live-ui.mjs` ghi trang da kiem tra, so badge, ma missing hien thi va cac request phan trang; smoke se fail neu co ma missing hien thi ma so badge khong khop.
+- Kiem chung: syntax overlay/smoke pass, bundle integrity pass, frontend service tests **14/14** pass va E2E quality banner/sidebar **2/2** pass. `npm test` day du van dung o encoding gate do mojibake co san trong `frontend/src/App.jsx`; khong xem test dich vu truc tiep la xac nhan source parity.
+- M5 va moc 500 ma EOD van mo; thay doi nay chi sua cach trinh bay stale, khong bo sung du lieu provider hay thay doi coverage.
