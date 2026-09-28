@@ -42,6 +42,8 @@ Cột **Phân tích** không hiển thị nhãn xu hướng hoặc mô tả bi�
 
 Khối **Tiếp tục từ đây** đã được bỏ vì trùng các action ở đầu trang. Giải thích dữ liệu được đặt ngay nơi sử dụng: biểu tượng thông tin của nguồn giải thích Intraday/EOD/dữ liệu cũ, biểu tượng cạnh khối lượng cho biết loại khối lượng của từng dòng, và nhãn **cũ** giải thích phiên dữ liệu cụ thể. Trạng thái mã đã rời sàn dùng nhãn **Đã hủy niêm yết**. Release gate kiểm tra cả bundle chính và runtime Tổng quan để tránh phát hành thiếu các hành vi này.
 
+Bộ đếm **Hiển thị n/tổng số mã** và bộ chọn **Số mã / trang** nằm thành một cụm bên trái hàng phân trang dưới bảng; trạng thái trang và nút Trước/Sau nằm bên phải. Trên màn hình hẹp, cụm thông tin chiếm một hàng riêng. Tùy chọn `40` tương ứng với kích thước trang mặc định của Tổng quan.
+
 Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy) và lịch sử đánh giá ngoài mẫu. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
 
 ## Build và kiểm tra bản phát hành

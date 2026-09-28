@@ -12,6 +12,13 @@ try {
   await page.goto('http://127.0.0.1:4173')
   await page.waitForFunction(() => document.querySelectorAll('.table-panel tbody tr').length > 0)
   await page.waitForFunction(() => [...document.querySelectorAll('.table-panel tbody tr')].some(row => row.querySelector('.symbol')?.textContent?.trim()), null, { timeout: 45000 })
+  const bottomPageSize = page.locator('.table-pagination .overview-page-size-control')
+  const bottomResultCount = page.locator('.table-pagination .overview-pagination-count')
+  await bottomPageSize.waitFor({ state: 'visible' })
+  await bottomResultCount.waitFor({ state: 'visible' })
+  if (await page.locator('.page-size-control:not(.overview-page-size-control)').isVisible()) {
+    throw new Error('The original page-size control is still visible above the table.')
+  }
   const firstRow = await page.locator('.table-panel tbody tr').first().innerText()
   let inspectedPage = 1
   while (await page.locator('[data-stale-volume]').count() === 0 && inspectedPage < 4) {
@@ -54,9 +61,17 @@ try {
     first_row: firstRow,
     stale_volume_inspected_page: inspectedPage,
     stale_volume_badges: staleVolumeBadges,
+    page_size_control: {
+      location: 'table-pagination',
+      label: await bottomPageSize.locator('span').innerText(),
+      value: await bottomPageSize.locator('select').inputValue(),
+      result_count: await bottomResultCount.innerText()
+    },
     stale_volume_diagnostic: overlayDiagnostic,
     coverage: await page.locator('[role=status]').allTextContents() }
   await mkdir('../backend/evidence', { recursive: true })
+  await page.locator('.loading-overlay').waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {})
+  await page.locator('.table-pagination').scrollIntoViewIfNeeded()
   await page.screenshot({ path: '../backend/evidence/live-overview-2026-09-21.png' })
   await writeFile('../backend/evidence/live-overview-2026-09-21.json', JSON.stringify(evidence, null, 2))
   console.log(JSON.stringify(evidence))
