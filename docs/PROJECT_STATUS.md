@@ -2777,3 +2777,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Hien thi ro ba trang thai: chua phan tich, dang phan tich va da co ket qua; khi da co ket qua, nut doi thanh `Phan tich lai`.
 - `check:source-parity` da nhan dien duoc panel, gate va trang thai phan tich; con lai 3 nhom: them ma tu Chi tiet, Ichimoku va mot so marker giao dien lien quan.
 - Kiem chung: frontend service tests **14/14 pass**, encoding check pass va diff check pass. Chua thay the dist vi source van chua dat parity day du.
+
+## Khoi phuc nut Them ma tu Chi tiet - 2026-09-29
+
+- Trang Chi tiet ma trong source da co nut `detail-add-btn` de them ma dang xem vao watchlist, dung cung endpoint va co che refresh voi form Watchlist hien tai.
+- Sau khi them thanh cong, giao dien cap nhat watchlist va hien thi thong bao; loi trung ma/provider duoc dua vao thong bao hien co.
+- `check:source-parity` da giam con 2 nhom thieu: gate phan tich theo ma va Ichimoku. Frontend service tests **14/14 pass**, encoding check pass.
