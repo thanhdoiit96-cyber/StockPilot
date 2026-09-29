@@ -2750,3 +2750,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung: backend 28 suite/110 test pass; frontend bundle integrity, runtime syntax va diff check pass. Frontend `npm test` van dung o check encoding do `frontend/src/App.jsx` con chuoi ma hoa loi da ghi nhan tu truoc.
 - Diem tiep tuc: khoi phuc App.jsx UTF-8 va route React chinh thuc, sau do them E2E xac nhan panel audit hien thi voi ca quote day du va fallback EOD.
 - Da dong bo fixture `frontend/e2e/portfolio.spec.mjs` theo nut Danh muc ca nhan sau khi tach Bang gia; E2E Danh muc dat **4/4**, bao gom assertion panel audit.
+
+## Kiem tra tinh nhat quan nguon frontend - 2026-09-29
+
+- Sua cac chuoi tieng Viet bi ma hoa sai trong `frontend/src/App.jsx` o cac nhanh hien thi dang duoc dung; `npm run check:encoding` da dat voi **24 file nguon**.
+- Kiem chung lai backend: **28 suite / 110 test pass**; E2E Danh muc: **4/4 pass**; bundle integrity va runtime syntax pass.
+- Lenh `npm run build` van bi safe-build tu choi bundle moi vi `App.jsx` hien tai chua chua day du cac marker tinh nang dang co trong shipped dist (nut them ma tu Chi tiet, nhan dinh chuyen gia, Ichimoku). Dist cu duoc khoi phuc an toan, khong lam mat ban dang chay.
+- Diem tiep tuc: tach/khôi phuc nguon React day du tu shipped dist truoc khi bat dau thay doi lon tren `App.jsx`; sau do build va E2E full suite lai de xac nhan parity.
