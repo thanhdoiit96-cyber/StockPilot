@@ -408,9 +408,19 @@
         symbolNode.dataset.breadthBound = '1'
         symbolNode.dataset.breadthSymbol = symbol
         symbolNode.tabIndex = 0
+        symbolNode.setAttribute('aria-label', `Mở Chi tiết mã ${symbol}`)
         symbolNode.setAttribute('role', 'button')
+        symbolNode.setAttribute('aria-label', `Mở Chi tiết mã ${symbol}`)
         symbolNode.setAttribute('aria-label', `Lọc bảng theo mã ${symbol}`)
-        const focusTable = () => {
+        const openDetail = () => {
+          const row = [...document.querySelectorAll('.table-panel tbody tr')].find(item => item.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0].toUpperCase() === symbol.toUpperCase())
+          if (row) {
+            row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+            return
+          }
+          window.location.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+          return
+          /*
           const input = document.querySelector('.table-search')
           if (!input) return
           const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
@@ -418,9 +428,11 @@
           input.dispatchEvent(new Event('input', { bubbles: true }))
           input.scrollIntoView({ behavior: 'smooth', block: 'center' })
           input.focus({ preventScroll: true })
+          */
         }
-        symbolNode.addEventListener('click', focusTable)
-        symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); focusTable() } })
+        symbolNode.title = `Mở Chi tiết mã ${symbol}`
+        symbolNode.addEventListener('click', openDetail)
+        symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail() } })
       })
     } catch (_) {
       // Keep the breadth snapshot usable when the optional ranking request fails.
@@ -768,19 +780,20 @@
       symbolNode.dataset.breadthBound = '1'
       symbolNode.dataset.breadthSymbol = symbol
       symbolNode.tabIndex = 0
+      symbolNode.setAttribute('aria-label', `Mở Chi tiết mã ${symbol}`)
       symbolNode.setAttribute('role', 'button')
       symbolNode.setAttribute('aria-label', `Lọc bảng theo mã ${symbol}`)
-      const focusTable = () => {
-        const input = document.querySelector('.table-search')
-        if (!input) return
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
-        setter?.call(input, symbol)
-        input.dispatchEvent(new Event('input', { bubbles: true }))
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        input.focus({ preventScroll: true })
+      const openDetail = () => {
+        const row = [...document.querySelectorAll('.table-panel tbody tr')].find(item => item.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0].toUpperCase() === symbol.toUpperCase())
+        if (row) {
+          row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+          return
+        }
+        window.location.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
       }
-      symbolNode.addEventListener('click', focusTable)
-      symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); focusTable() } })
+      symbolNode.title = `Mở Chi tiết mã ${symbol}`
+      symbolNode.addEventListener('click', openDetail)
+      symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail() } })
     })
     const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
     const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')

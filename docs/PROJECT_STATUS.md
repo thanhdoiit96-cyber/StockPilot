@@ -2716,3 +2716,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Hieu ung hover dong van doi nen va mau chu phu, nhung cac o `.positive` va `.negative` duoc uu tien lai mau xanh/do de khong lam sai y nghia tang giam.
 - Kiem chung: syntax runtime source/dist, bundle integrity va E2E portfolio pass.
+
+## Dieu huong ma Top trong Do rong thi truong - 2026-09-29
+
+- Click hoac nhan Enter/Space vao ma trong Top tang, Top giam va Top khoi luong gio mo Chi tiet ma qua row SPA; neu ma khong co trong bang hien tai, runtime dung URL resolver lam fallback.
+- Hover/title va aria-label cua ma duoc doi thanh “Mo Chi tiet ma”, tranh hanh vi cu chi loc o tim kiem ma khong dieu huong.
+- Kiem chung: E2E click ma Top mo Chi tiet ma pass; runtime source/dist syntax va bundle integrity pass.
