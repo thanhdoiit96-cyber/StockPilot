@@ -2620,6 +2620,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them request guard cho GET `/api/stocks/quotes` va `/api/stocks/quotes/status`: gom request dang cung chay va cache thanh cong 15 giay trong tab.
 - Muc tieu la tranh cac lan retry trung lap khi provider dang loi/bi gioi han; khong cache response 429 hoac response loi.
 - Kiem chung: syntax source/dist, bundle integrity va diff check pass. Can tiep tuc theo doi log backend de dieu chinh cua so limiter theo tai thuc te.
+- Bo sung E2E xac nhan hai fetch quote giong nhau trong cua so ngan chi tao mot request mang; phan hoi 429 cung duoc cache tam thoi de tranh lap request lien tuc.
 
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 

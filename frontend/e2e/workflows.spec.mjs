@@ -46,6 +46,19 @@ test('price board remains selected after refresh', async ({ page }) => {
   await expect(page.locator('.market-board-nav-item')).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.table-panel')).toBeVisible()
 })
+test('quote requests are coalesced within the short cache window', async ({ page }) => {
+  await boot(page)
+  let requests = 0
+  await page.route('**/api/stocks/quotes?symbols=COALESCE', async route => {
+    requests += 1
+    await route.fulfill({ json: { success: true, data: {} } })
+  })
+  await page.evaluate(() => Promise.all([
+    fetch('/api/stocks/quotes?symbols=COALESCE'),
+    fetch('/api/stocks/quotes?symbols=COALESCE')
+  ]))
+  expect(requests).toBe(1)
+})
 test('overview table controls expose keyboard focus states', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)
