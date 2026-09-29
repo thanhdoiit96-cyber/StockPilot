@@ -151,6 +151,9 @@
       .overview-source-summary .overview-source-help { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 0; border-radius: 50%; color: var(--muted); background: rgba(148, 163, 184, .12); font-size: 0; cursor: help; }
       .overview-source-summary .overview-source-help::before { content: 'i'; font-size: .68rem; font-weight: 800; }
       .overview-source-summary .overview-source-help:hover, .overview-source-summary .overview-source-help:focus-visible { color: var(--primary); background: rgba(94, 234, 212, .15); outline: 2px solid rgba(94, 234, 212, .35); outline-offset: 1px; }
+      .allocation-day-change[data-rag="green"] { color: var(--success, #34d399); }
+      .allocation-day-change[data-rag="red"] { color: var(--danger, #f87171); }
+      .allocation-day-change[data-rag="amber"] { color: var(--warning, #fbbf24); }
       .stock-detail-row-link { cursor: pointer; }
       .stock-detail-row-link:hover > td, .stock-detail-row-link:focus-visible > td { color: var(--primary); background: rgba(94, 234, 212, .08); }
       .stock-detail-row-link:hover > td.positive, .stock-detail-row-link:focus-visible > td.positive { color: var(--success); }
@@ -720,7 +723,17 @@
       // This is a portfolio day change, not a five-minute return:
       // current total minus quantity-weighted previous-session close.
       change.textContent = label.replace(/^So với hôm qua:/i, 'So với phiên trước:')
-      change.title = 'Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.'
+      const allocationPanel = change.closest('.allocation-panel')
+      const footnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
+      const coverage = footnote.match(/(\d+)\s*\/\s*(\d+)/)
+      const partialCoverage = coverage && Number(coverage[1]) < Number(coverage[2])
+      const value = change.querySelector('span')
+      const signedChange = value?.textContent.trim() || ''
+      const hasNegativeSign = /-/.test(signedChange)
+      const hasPositiveSign = /\+/.test(signedChange)
+      const rag = partialCoverage || (!hasNegativeSign && !hasPositiveSign) ? 'amber' : hasPositiveSign ? 'green' : 'red'
+      change.dataset.rag = rag
+      change.title = `${rag === 'amber' ? 'Dữ liệu chưa đủ hoặc đang dùng giá fallback. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
       change.setAttribute('aria-label', change.title)
     })
     document.querySelectorAll('.volume-context').forEach(context => {

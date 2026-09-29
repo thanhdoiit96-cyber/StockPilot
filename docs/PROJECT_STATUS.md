@@ -2736,3 +2736,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Backend co test voi hai phien EOD lien tiep, xac nhan `day_change` va `day_change_pct` dung tren gia dong cua phien truoc, trong khi gia tri danh muc dung quote intraday moi nhat.
 - Dong bo runtime source/dist; `node --check`, `git diff --check` va bundle integrity pass. Lenh `npm run check:bundle` phai chay tu thu muc `frontend` (chay o root khong co `package.json`).
 - Diem tiep tuc: neu can bien dong 5 phut, can bo sung mot quote intraday truoc do co timestamp hop le; khong dung `previous_market_price` cho chi so do.
+
+## Ap dung RAG cho chenh lech danh muc - 2026-09-29
+
+- Gan trang thai Red-Amber-Green cho chenh lech tong danh muc: xanh khi du lieu day du va thay doi duong, do khi thay doi am, ho phach khi quote intraday thieu/fallback hoac khong co dau hieu tin cay.
+- RAG chi mo ta trang thai tin hieu va chat luong du lieu; cong thuc chenh lech theo phien truoc van giu nguyen va duoc giai thich trong tooltip.
+- Dong bo runtime source/dist; syntax, diff check va bundle integrity pass.
