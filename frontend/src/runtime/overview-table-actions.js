@@ -406,10 +406,22 @@
     })
     document.querySelectorAll('.table-panel tbody tr').forEach(row => {
       if (row.dataset.marketDetailBound) return
-      const symbol = row.querySelector('.symbol')?.textContent.trim()
+      const symbolCell = row.querySelector('.symbol')
+      const symbol = symbolCell ? ([...symbolCell.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())?.textContent.trim() || '') : ''
       if (!symbol) return
       row.dataset.marketDetailBound = '1'
       const href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+      if (symbolCell && !symbolCell.querySelector('a.stock-detail-link')) {
+        const textNode = [...symbolCell.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+        if (textNode) {
+          const link = document.createElement('a')
+          link.className = 'stock-detail-link'
+          link.href = href
+          link.title = `Mở chi tiết mã ${symbol}`
+          link.textContent = textNode.textContent.trim()
+          textNode.replaceWith(link)
+        }
+      }
       row.querySelector('.symbol')?.addEventListener('click', event => {
         event.preventDefault()
         event.stopPropagation()
@@ -431,6 +443,16 @@
       row.setAttribute('tabindex', '0')
       row.title = `Mở chi tiết mã ${symbol}`
       const href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+      const symbolCell = row.querySelector('td:first-child')
+      if (symbolCell && !symbolCell.querySelector('a.stock-detail-link')) {
+        const strong = symbolCell.querySelector(':scope > strong')
+        const textNode = strong ? null : [...symbolCell.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+        const link = document.createElement('a')
+        link.className = 'stock-detail-link'
+        link.href = href
+        link.title = `Mở chi tiết mã ${symbol}`
+        if (strong) { strong.replaceWith(link); link.append(strong) } else if (textNode) { link.textContent = textNode.textContent.trim(); textNode.replaceWith(link) }
+      }
       row.addEventListener('click', event => { if (!event.target.closest('button, a, input, select, textarea')) window.location.href = href })
       row.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button, a, input, select, textarea')) { event.preventDefault(); window.location.href = href } })
     })
