@@ -2704,3 +2704,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Header hien ro pham vi dang xem, so ma co quote va ghi chu “Binh quan chi tren ma co bien dong hop le”, tranh hieu nham `+0.00%` la gia tri mac dinh hay loi du lieu.
 - Bo sung E2E xac nhan chon HSX cap nhat context cua chart; bundle integrity va syntax runtime source/dist pass.
 - Fixture E2E cua HSX tra ve tap ma thu gon rieng va assertion kiem tra so ma tren chart thay doi theo pham vi, khong chi doi nhan hien thi.
+- Kiem chung bo sung: toan bo `frontend/e2e/workflows.spec.mjs` dat **15/15 test pass**, bao gom page split, timeline, sidebar, portfolio, recommendations, pagination va lazy analysis.
