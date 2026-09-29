@@ -14,7 +14,8 @@ const fs = require('node:fs/promises');
 
 describe('vnstock EOD scheduler', () => {
   const original = process.env.VNSTOCK_EOD_ENABLED;
-  afterEach(() => { jest.clearAllMocks(); if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original; });
+  beforeEach(() => { jest.useFakeTimers({ now: new Date('2026-09-27T10:00:00.000Z') }); });
+  afterEach(() => { jest.useRealTimers(); jest.clearAllMocks(); if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original; });
 
   test('rolls Sunday and configured holidays back to the latest completed weekday', () => {
     expect(completedSessionDate(new Date('2026-09-27T03:00:00.000Z'))).toBe('2026-09-25');
