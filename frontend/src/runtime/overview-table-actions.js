@@ -723,15 +723,21 @@
     document.querySelectorAll('.allocation-day-change').forEach(change => {
       const label = change.textContent.trim().replace(/^So\s+[^:]+:/i, 'So với phiên trước:')
       if (!label) return
+      const normalizedLabel = label.replace(/^So\s+[^:]+:/i, '\u0053\u006f \u0076\u1edbi phi\u00ean tr\u01b0\u1edbc:')
       // This is a portfolio day change, not a five-minute return:
       // current total minus quantity-weighted previous-session close.
       change.textContent = label.replace(/^So với hôm qua:/i, 'So với phiên trước:')
+      const parts = normalizedLabel.match(/^([^:]+:)\s*(.*)$/)
+      const value = document.createElement('span')
+      const signedChange = parts?.[2] || label
+      if (parts) {
+        value.textContent = parts[2]
+        change.replaceChildren(document.createTextNode(`${parts[1]} `), value)
+      }
       const allocationPanel = change.closest('.allocation-panel')
       const footnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
       const coverage = footnote.match(/(\d+)\s*\/\s*(\d+)/)
       const partialCoverage = coverage && Number(coverage[1]) < Number(coverage[2])
-      const value = change.querySelector('span')
-      const signedChange = change.textContent.trim()
       const percentMatch = signedChange.match(/([+-])\s*(\d+(?:[.,]\d+)?)\s*%/)
       const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : /\+/.test(signedChange) ? 1 : /-/.test(signedChange) ? -1 : null
       const amountMatch = signedChange.match(/([+-]?\s*\d[\d.,]*)\s*(?:₫|đ|VND)/i)
