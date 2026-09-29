@@ -729,11 +729,14 @@
       const partialCoverage = coverage && Number(coverage[1]) < Number(coverage[2])
       const value = change.querySelector('span')
       const signedChange = value?.textContent.trim() || ''
-      const hasNegativeSign = /-/.test(signedChange)
-      const hasPositiveSign = /\+/.test(signedChange)
-      const rag = partialCoverage || (!hasNegativeSign && !hasPositiveSign) ? 'amber' : hasPositiveSign ? 'green' : 'red'
+      const percentMatch = signedChange.match(/([+-])\s*(\d+(?:[.,]\d+)?)\s*%/)
+      const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : null
+      // Keep direction and data quality separate: a positive change stays green
+      // even when the portfolio is only partially covered by intraday quotes.
+      const rag = percentChange == null || percentChange === 0 ? 'amber' : percentChange > 0 ? 'green' : 'red'
       change.dataset.rag = rag
-      change.title = `${rag === 'amber' ? 'Dữ liệu chưa đủ hoặc đang dùng giá fallback. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
+      change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
+      change.title = `${partialCoverage ? 'Một phần danh mục đang dùng giá fallback hoặc chưa có quote intraday. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
       change.setAttribute('aria-label', change.title)
     })
     document.querySelectorAll('.volume-context').forEach(context => {
