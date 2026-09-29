@@ -731,7 +731,7 @@
       const coverage = footnote.match(/(\d+)\s*\/\s*(\d+)/)
       const partialCoverage = coverage && Number(coverage[1]) < Number(coverage[2])
       const value = change.querySelector('span')
-      const signedChange = value?.textContent.trim() || ''
+      const signedChange = change.textContent.trim()
       const percentMatch = signedChange.match(/([+-])\s*(\d+(?:[.,]\d+)?)\s*%/)
       const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : /\+/.test(signedChange) ? 1 : /-/.test(signedChange) ? -1 : null
       const amountMatch = signedChange.match(/([+-]?\s*\d[\d.,]*)\s*(?:₫|đ|VND)/i)
