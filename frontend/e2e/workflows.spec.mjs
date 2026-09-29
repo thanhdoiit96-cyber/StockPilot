@@ -45,6 +45,24 @@ test('market breadth exchange scope updates the chart context', async ({ page })
   await expect(page.locator('.market-breadth-header')).toContainText('1 mã thuộc HSX')
   await expect(page.locator('.breadth-disclaimer')).toContainText('HSX')
 })
+test('market breadth leader symbols open stock detail', async ({ page }) => {
+  await boot(page)
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  await page.evaluate(() => {
+    const leader = document.createElement('section')
+    leader.className = 'breadth-leader'
+    const item = document.createElement('li')
+    const symbol = document.createElement('span')
+    symbol.textContent = 'FPT'
+    item.append(symbol)
+    leader.append(item)
+    document.querySelector('.market-breadth-panel').append(leader)
+  })
+  const symbol = page.locator('.breadth-leader span').last()
+  await expect(symbol).toHaveAttribute('title', 'Mở Chi tiết mã FPT')
+  await symbol.click()
+  await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
+})
 test('price board exposes a market timeline and navigation icon', async ({ page }) => {
   await boot(page)
   await expect(page.locator('.market-board-nav-item .nav-icon')).toBeVisible()
