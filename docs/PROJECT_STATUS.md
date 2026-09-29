@@ -2711,3 +2711,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Thu nho metadata nguon va thoi diem cap nhat tren bang va Chi tiet ma; thong tin van giu trong `title` va `aria-label` de hover/focus xem khi can.
 - Chuyen thong tin he thong ve dang icon `i` trong khu vuc nguon du lieu, giu phan noi dung chinh cua page tap trung vao gia, bien dong va phan tich.
 - Kiem chung: runtime source/dist syntax, bundle integrity va E2E hover metadata pass.
+
+## Bao toan mau bien dong khi hover dong Danh muc - 2026-09-29
+
+- Hieu ung hover dong van doi nen va mau chu phu, nhung cac o `.positive` va `.negative` duoc uu tien lai mau xanh/do de khong lam sai y nghia tang giam.
+- Kiem chung: syntax runtime source/dist, bundle integrity va E2E portfolio pass.

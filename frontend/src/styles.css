@@ -526,6 +526,11 @@ th {
 
 .positive { color: var(--success); font-weight: 700; }
 .negative { color: var(--danger); font-weight: 700; }
+
+.stock-detail-row-link:hover > td.positive,
+.stock-detail-row-link:focus-visible > td.positive { color: var(--success); }
+.stock-detail-row-link:hover > td.negative,
+.stock-detail-row-link:focus-visible > td.negative { color: var(--danger); }
 .realtime-loading { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-size: 12px; font-weight: 600; }
 .realtime-loading i { width: 10px; height: 10px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: realtime-spin .75s linear infinite; }
 @keyframes realtime-spin { to { transform: rotate(360deg); } }
