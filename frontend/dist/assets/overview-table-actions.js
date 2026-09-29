@@ -15,7 +15,7 @@
       if (cached && now - cached.at < ttl) return Promise.resolve(new Response(cached.body, { status: cached.status, headers: cached.headers }))
       if (pending.has(key)) return pending.get(key).then(response => response.clone())
       const task = nativeFetch(input, init).then(async response => {
-        if (response.ok) {
+        if (response.ok || response.status === 429) {
           const body = await response.text()
           cache.set(key, { at: Date.now(), body, status: response.status, headers: [...response.headers.entries()] })
           return new Response(body, { status: response.status, headers: response.headers })
