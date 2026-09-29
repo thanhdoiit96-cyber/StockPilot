@@ -350,17 +350,19 @@
     installStyles()
     const detailParams = new URLSearchParams(window.location.search)
     const detailSymbol = detailParams.get('symbol')?.trim().toUpperCase()
-    if (detailParams.get('view') === 'detail' && detailSymbol && !document.documentElement.dataset.detailUrlResolved) {
-      document.documentElement.dataset.detailUrlResolved = '1'
+    const detailResolveKey = 'stockpilot-detail-url-resolved'
+    let detailAlreadyResolved = false
+    try { detailAlreadyResolved = sessionStorage.getItem(detailResolveKey) === detailSymbol } catch (_) { }
+    if (detailParams.get('view') === 'detail' && detailSymbol && !detailAlreadyResolved) {
       fetch(`/api/stocks?page=1&pageSize=40&q=${encodeURIComponent(detailSymbol)}`, { cache: 'no-store' }).then(response => response.json()).then(payload => {
         const match = (payload?.data || []).find(stock => String(stock.code || stock.symbol || '').toUpperCase() === detailSymbol)
         if (!match) return
         try {
           sessionStorage.setItem('stockpilot-selected-id', String(match.id))
           sessionStorage.setItem('stockpilot-view', 'detail')
+          sessionStorage.setItem(detailResolveKey, detailSymbol)
         } catch (_) { }
-        document.querySelector('.nav-item:not(.market-board-nav-item)[aria-label*="Chi ti"]')?.click()
-        document.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => { if (item.textContent.includes('Chi ti')) item.click() })
+        window.location.reload()
       }).catch(() => {})
     }
     document.querySelectorAll('.recommendation-stock-heading > strong, .recommendation-tracking-table tbody td:first-child > strong').forEach(node => {
@@ -420,6 +422,7 @@
       item.dataset.marketViewBound = '1'
       item.addEventListener('click', () => {
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        try { sessionStorage.removeItem(detailResolveKey) } catch (_) { }
         const sectorSelect = document.querySelector('.sector-select')
         if (sectorSelect && sectorSelect.value) {
           sectorSelect.value = ''

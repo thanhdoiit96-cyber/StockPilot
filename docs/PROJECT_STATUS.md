@@ -2666,3 +2666,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them link co URL `/?view=detail&symbol=...` cho ma trong danh sach De xuat, bang Danh muc ca nhan, bang Theo doi ma da them va Watchlist.
 - Link co hover/focus style dong bo mau primary, title mo ta va xu ly URL de tim id ma roi mo view Chi tiet ma khi trang duoc tai lai.
 - Kiem chung: E2E page split/persist pass; syntax runtime source/dist, bundle integrity va diff check pass. Chua co E2E rieng cho tung bang co du lieu phat sinh tu API portfolio/recommendation.
+- Bo sung co che khoi tao lai `selected-id` mot lan khi mo URL Chi tiet ma; sau khi tim dung ma, trang reload co kiem soat de React doc duoc view va ma da chon, tranh hien trang Chi tiet rong.
