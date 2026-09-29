@@ -2705,3 +2705,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bo sung E2E xac nhan chon HSX cap nhat context cua chart; bundle integrity va syntax runtime source/dist pass.
 - Fixture E2E cua HSX tra ve tap ma thu gon rieng va assertion kiem tra so ma tren chart thay doi theo pham vi, khong chi doi nhan hien thi.
 - Kiem chung bo sung: toan bo `frontend/e2e/workflows.spec.mjs` dat **15/15 test pass**, bao gom page split, timeline, sidebar, portfolio, recommendations, pagination va lazy analysis.
+
+## Thu gon metadata cho nha dau tu - 2026-09-29
+
+- Thu nho metadata nguon va thoi diem cap nhat tren bang va Chi tiet ma; thong tin van giu trong `title` va `aria-label` de hover/focus xem khi can.
+- Chuyen thong tin he thong ve dang icon `i` trong khu vuc nguon du lieu, giu phan noi dung chinh cua page tap trung vao gia, bien dong va phan tich.
+- Kiem chung: runtime source/dist syntax, bundle integrity va E2E hover metadata pass.
