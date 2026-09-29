@@ -31,6 +31,15 @@ test('market overview and price board are separate views', async ({ page }) => {
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.locator('.table-panel')).toBeVisible()
 })
+test('market breadth exchange scope updates the chart context', async ({ page }) => {
+  await boot(page)
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  const exchange = page.getByRole('combobox', { name: /Sàn/ }).first()
+  await expect(exchange).toBeVisible()
+  await exchange.selectOption('HSX')
+  await expect(page.locator('.market-breadth-header')).toContainText('HSX')
+  await expect(page.locator('.breadth-disclaimer')).toContainText('HSX')
+})
 test('price board exposes a market timeline and navigation icon', async ({ page }) => {
   await boot(page)
   await expect(page.locator('.market-board-nav-item .nav-icon')).toBeVisible()

@@ -251,6 +251,102 @@
   }
 
   let leadersLoading = false
+  const ensureBreadthExchangeSelect = breadth => {
+    if (!breadth) return null
+    const existing = breadth.querySelector('.breadth-exchange-select')
+    if (existing) return existing
+    const header = breadth.querySelector('.market-breadth-header')
+    if (!header) return null
+    const select = document.createElement('select')
+    select.className = 'breadth-exchange-select'
+    select.setAttribute('aria-label', 'Sàn cho độ rộng và nhóm dẫn dắt')
+    select.innerHTML = '<option value="">Tất cả sàn</option><option value="HSX">HSX</option><option value="HNX">HNX</option><option value="UPCOM">UPCOM</option>'
+    header.append(select)
+    return select
+  }
+  let breadthScopeRequest = 0
+  const refreshBreadthScope = async (breadth, sector = '', exchange = '') => {
+    const requestId = ++breadthScopeRequest
+    if (!breadth) return
+    try {
+      const first = await fetch(`/api/stocks?page=1&pageSize=500&q=&sector=${encodeURIComponent(sector)}&exchange=${encodeURIComponent(exchange)}&sort=code&direction=asc&pinned=`, { cache: 'no-store' })
+      const firstPayload = await first.json()
+      let rows = Array.isArray(firstPayload?.data) ? firstPayload.data : []
+      const pages = Math.min(4, Number(firstPayload?.pagination?.totalPages || 1))
+      for (let page = 2; page <= pages; page += 1) {
+        const response = await fetch(`/api/stocks?page=${page}&pageSize=500&q=&sector=${encodeURIComponent(sector)}&exchange=${encodeURIComponent(exchange)}&sort=code&direction=asc&pinned=`, { cache: 'no-store' })
+        const payload = await response.json()
+        if (Array.isArray(payload?.data)) rows = rows.concat(payload.data)
+      }
+      if (requestId !== breadthScopeRequest) return
+      const symbols = rows.map(row => row.symbol || row.code).filter(Boolean).join(',')
+      let quotes = {}
+      if (symbols) {
+        try {
+          const quoteResponse = await fetch(`/api/stocks/quotes?symbols=${encodeURIComponent(symbols)}`, { cache: 'no-store' })
+          const quotePayload = await quoteResponse.json()
+          quotes = quotePayload?.data && typeof quotePayload.data === 'object' ? quotePayload.data : {}
+        } catch (_) { /* Keep EOD values when intraday is unavailable. */ }
+      }
+      const stats = { up: { count: 0, volume: 0 }, down: { count: 0, volume: 0 }, flat: { count: 0, volume: 0 } }
+      const changes = []
+      let quoted = 0
+      let unknown = 0
+      rows.forEach(row => {
+        const symbol = String(row.symbol || row.code || '').toUpperCase()
+        const quote = quotes[symbol] || quotes[row.symbol || row.code] || {}
+        if (Object.keys(quote).length) quoted += 1
+        const rawChange = quote.change ?? row.change
+        const change = Number(rawChange)
+        if (!Number.isFinite(change)) { unknown += 1; return }
+        changes.push(change)
+        const key = change > 0 ? 'up' : change < 0 ? 'down' : 'flat'
+        stats[key].count += 1
+        const volume = Number(quote.volume_type === 'session' ? quote.volume : (quote.volume ?? row.volume))
+        if (Number.isFinite(volume) && volume > 0) stats[key].volume += volume
+      })
+      const classified = stats.up.count + stats.down.count + stats.flat.count
+      const average = changes.length ? changes.reduce((sum, value) => sum + value, 0) / changes.length : null
+      const totalVolume = stats.up.volume + stats.down.volume + stats.flat.volume
+      const maxVolume = Math.max(1, stats.up.volume, stats.down.volume, stats.flat.volume)
+      breadth.querySelectorAll('.breadth-count').forEach(card => {
+        const key = [...card.classList].find(value => ['up', 'down', 'flat'].includes(value))
+        if (!key) return
+        const strong = card.querySelector('strong')
+        const small = card.querySelector('small')
+        if (strong) strong.textContent = String(stats[key].count)
+        if (small) small.textContent = classified ? `${(stats[key].count / classified * 100).toFixed(1)}% số mã` : 'Chưa có dữ liệu'
+      })
+      const header = breadth.querySelector('.market-breadth-header p')
+      if (header) header.textContent = `${rows.length} mã thuộc ${exchange || 'toàn bộ thị trường'} · ${quoted}/${rows.length} mã có quote intraday · Bình quân chỉ trên mã có biến động hợp lệ`
+      const chip = breadth.querySelector('.market-breadth-header .chip span')
+      if (chip) {
+        chip.className = average != null && average < 0 ? 'negative' : 'positive'
+        chip.textContent = average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${average >= 0 ? '+' : ''}${average.toFixed(2)}% · ${changes.length}/${rows.length} mã`
+        chip.title = 'Bình quân thay đổi của các mã có dữ liệu trong phạm vi sàn đang chọn.'
+      }
+      const snapshot = breadth.querySelector('.breadth-snapshot')
+      if (snapshot) {
+        const values = snapshot.querySelectorAll('strong')
+        if (values[0]) values[0].textContent = stats.down.count ? (stats.up.count / stats.down.count).toFixed(2) : '—'
+        if (values[1]) { values[1].textContent = `${stats.up.count - stats.down.count > 0 ? '+' : ''}${stats.up.count - stats.down.count}`; values[1].className = stats.up.count >= stats.down.count ? 'positive' : 'negative' }
+        if (values[2]) values[2].textContent = `${rows.length ? (classified / rows.length * 100).toFixed(1) : '0.0'}%`
+      }
+      const segments = breadth.querySelectorAll('.breadth-distribution .breadth-segment')
+      ;['up', 'down', 'flat'].forEach((key, index) => { if (segments[index]) segments[index].style.width = `${classified ? stats[key].count / classified * 100 : 0}%` })
+      breadth.querySelectorAll('.breadth-volume-column').forEach((column, index) => {
+        const resolved = ['up', 'down', 'flat'][index] || 'flat'
+        const bar = column.querySelector('.breadth-volume-track > span')
+        const value = column.querySelector('strong')
+        if (bar) bar.style.height = `${stats[resolved].volume / maxVolume * 100}%`
+        if (value) value.textContent = formatCompact(stats[resolved].volume)
+      })
+      const total = breadth.querySelector('.breadth-volume-heading span')
+      if (total) total.textContent = `${formatCompact(totalVolume)} cổ phiếu`
+      const note = breadth.querySelector('.breadth-disclaimer')
+      if (note) note.textContent = `Phạm vi đang chọn: ${exchange || 'toàn bộ thị trường'}. Phân loại dựa trên biến động giá mới nhất; khối lượng dùng quote intraday theo phiên. ${unknown ? `${unknown} mã chưa có biến động để phân loại.` : ''}`
+    } catch (_) { /* Keep the previous breadth snapshot when the scoped request fails. */ }
+  }
   const loadBreadthLeaders = async (breadth, sector = '', exchange = '') => {
     if (leadersLoading || breadth.querySelector('.breadth-leaders')) return
     leadersLoading = true
@@ -288,9 +384,12 @@
       const createdExchange = wrapper.querySelector('.breadth-exchange-select')
       if (createdExchange) {
         createdExchange.value = exchange
+        createdExchange.remove()
+        createdExchange.setAttribute('aria-label', 'Sàn cho độ rộng và nhóm dẫn dắt')
         createdExchange.setAttribute('aria-label', 'Sàn cho Top list, chỉ áp dụng cho nhóm dẫn dắt')
       }
       const scopeNote = wrapper.querySelector('.breadth-leaders-header small')
+      if (scopeNote) scopeNote.textContent = `${exchange ? `Sàn: ${exchange}` : sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ thị trường'} · Sàn áp dụng cho độ rộng và Top list`
       if (scopeNote && !scopeNote.textContent.includes('chỉ áp dụng cho Top list')) scopeNote.textContent += ' · Sàn chỉ áp dụng cho Top list'
       wrapper.querySelectorAll('.breadth-leader > small').forEach(note => { if (note.textContent.includes('biến động')) note.textContent += ' intraday' })
       breadth.querySelector('.breadth-snapshot')?.after(wrapper)
@@ -593,6 +692,10 @@
     document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
     ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
+    const breadthHeaderText = breadth?.querySelector('.market-breadth-header p')
+    if (breadthHeaderText && !breadthHeaderText.textContent.includes('Bình quân')) breadthHeaderText.textContent += ' · Bình quân chỉ trên mã có biến động hợp lệ'
+    const breadthAverageChip = breadth?.querySelector('.market-breadth-header .chip span')
+    if (breadthAverageChip) breadthAverageChip.title = 'Bình quân thay đổi của các mã có dữ liệu biến động hợp lệ trong phạm vi đang chọn.'
     const breadthCounts = breadth ? {
       up: Number(breadth.querySelector('.breadth-count.up strong')?.textContent || 0),
       down: Number(breadth.querySelector('.breadth-count.down strong')?.textContent || 0),
@@ -614,7 +717,7 @@
     const sectorSelect = document.querySelector('.sector-select')
     const boardActive = shell?.classList.contains('market-board-active')
     const selectedSector = boardActive ? '' : sectorSelect?.value || ''
-    let exchangeSelect = document.querySelector('.breadth-exchange-select')
+    let exchangeSelect = ensureBreadthExchangeSelect(breadth)
     const selectedExchange = exchangeSelect?.value || ''
     const existingLeaders = breadth?.querySelector('.breadth-leaders')
     if (existingLeaders && (existingLeaders.dataset.sector !== selectedSector || existingLeaders.dataset.exchange !== selectedExchange)) existingLeaders.remove()
@@ -634,6 +737,7 @@
       exchangeSelect.dataset.breadthScopeBound = '1'
       exchangeSelect.addEventListener('change', () => {
         breadth?.querySelector('.breadth-leaders')?.remove()
+        if (breadth) refreshBreadthScope(breadth, sectorSelect?.value || '', exchangeSelect.value || '')
         if (breadth) loadBreadthLeaders(breadth, sectorSelect?.value || '', exchangeSelect.value || '')
       })
     }
