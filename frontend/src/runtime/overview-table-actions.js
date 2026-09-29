@@ -152,6 +152,8 @@
       .overview-source-summary .overview-source-help:hover, .overview-source-summary .overview-source-help:focus-visible { color: var(--primary); background: rgba(94, 234, 212, .15); outline: 2px solid rgba(94, 234, 212, .35); outline-offset: 1px; }
       .stock-detail-row-link { cursor: pointer; }
       .stock-detail-row-link:hover > td, .stock-detail-row-link:focus-visible > td { color: var(--primary); background: rgba(94, 234, 212, .08); }
+      .stock-detail-row-link:hover > td.positive, .stock-detail-row-link:focus-visible > td.positive { color: var(--success); }
+      .stock-detail-row-link:hover > td.negative, .stock-detail-row-link:focus-visible > td.negative { color: var(--danger); }
       .stock-detail-row-link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
       @media (max-width: 700px) { .market-session-timeline-header { flex-direction: column; }.market-session-timeline-grid { gap: 4px; }.market-session-slot { padding-inline: 3px; } }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
