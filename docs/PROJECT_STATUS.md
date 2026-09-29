@@ -2675,3 +2675,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Phan tich chi tiet khong con duoc request ngay khi mo ma: state React chi bat dau tai khi co su kien `stockpilot:request-analysis` tu nut Phan tich chuyen sau. Sau lan dau, nut Phan tich lai van duoc phep request lai.
 - Runtime dist co gate bo sung cho request analysis de bao ve ban build dang chay; bundle integrity va syntax runtime pass.
 - Bo sung handler click uu tien tren o Ma cua Bảng giá de mo URL Chi tiet ma, dong thoi reset yeu cau phan tich khi doi selectedId de nut moi ma hien `Phan tich chuyen sau` thay vi ke thua trang thai loading cua ma truoc.
+
+## Giam 429 cho request tim ma tu URL - 2026-09-29
+
+- Request guard cua danh sach co phieu gio co the dung cache danh sach thanh cong gan nhat khi query tim ma rieng gap HTTP 429, thay vi phat sinh loi khi mo link Chi tiet ma.
+- Cache cu chi duoc dung tam thoi cho response 429; request thanh cong moi van cap nhat cache, khong ghi nhan 429 la du lieu moi.
+- Kiem chung: runtime source/dist syntax va bundle integrity pass.
