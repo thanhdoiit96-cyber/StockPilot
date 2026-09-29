@@ -220,8 +220,22 @@
       const response = await fetch(`/api/stocks?page=1&pageSize=40&q=&sector=${encodeURIComponent(sector)}&exchange=${encodeURIComponent(exchange)}&sort=volume&direction=desc&pinned=`, { cache: 'no-store' })
       const payload = await response.json()
       const rows = Array.isArray(payload?.data) ? payload.data : []
-      const byChange = rows.filter(row => Number.isFinite(Number(row.change)))
-      const byVolume = rows.filter(row => Number.isFinite(Number(row.volume)) && Number(row.volume) > 0)
+      let quotes = {}
+      const symbols = rows.map(row => row.symbol || row.code).filter(Boolean).join(',')
+      if (symbols) {
+        try {
+          const quoteResponse = await fetch(`/api/stocks/quotes?symbols=${encodeURIComponent(symbols)}`, { cache: 'no-store' })
+          const quotePayload = await quoteResponse.json()
+          quotes = quotePayload?.data && typeof quotePayload.data === 'object' ? quotePayload.data : {}
+        } catch (_) { /* Keep database values when intraday is unavailable. */ }
+      }
+      const currentRows = rows.map(row => {
+        const symbol = String(row.symbol || row.code || '').toUpperCase()
+        const quote = quotes[symbol] || {}
+        return { ...row, change: Number.isFinite(Number(quote.change)) ? Number(quote.change) : row.change, volume: Number.isFinite(Number(quote.volume)) ? Number(quote.volume) : row.volume }
+      })
+      const byChange = currentRows.filter(row => Number.isFinite(Number(row.change)))
+      const byVolume = currentRows.filter(row => Number.isFinite(Number(row.volume)) && Number(row.volume) > 0)
       const lists = [['Top tăng', byChange.sort((a, b) => Number(b.change) - Number(a.change)).slice(0, 5), 'change'], ['Top giảm', byChange.sort((a, b) => Number(a.change) - Number(b.change)).slice(0, 5), 'change'], ['Top khối lượng', byVolume.sort((a, b) => Number(b.volume) - Number(a.volume)).slice(0, 5), 'volume']]
       const wrapper = document.createElement('div')
       wrapper.className = 'breadth-leaders'
@@ -230,7 +244,13 @@
       wrapper.setAttribute('aria-label', 'Các mã dẫn dắt thị trường')
       wrapper.innerHTML = `<div class="breadth-leaders-header"><div><strong>Nhóm dẫn dắt</strong><small>${exchange ? `Sàn: ${exchange}` : sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ danh sách hiện tại'}</small></div><select class="breadth-exchange-select" aria-label="Sàn cho Top list"><option value="">Tất cả sàn</option><option value="HSX">HSX</option><option value="HNX">HNX</option><option value="UPCOM">UPCOM</option></select></div>${lists.map(([label, items, field]) => `<section class="breadth-leader"><strong>${label}</strong><small>${field === 'change' ? 'Xếp theo % biến động' : 'Xếp theo khối lượng'}</small>${items.length ? `<ol>${items.map(row => `<li><span>${row.symbol || row.code || '—'}</span><b>${field === 'change' ? `${Number(row.change) >= 0 ? '+' : ''}${Number(row.change).toFixed(2)}%` : formatCompact(row.volume)}</b></li>`).join('')}</ol>` : '<p>Chưa có dữ liệu</p>'}</section>`).join('')}`
       const createdExchange = wrapper.querySelector('.breadth-exchange-select')
-      if (createdExchange) createdExchange.value = exchange
+      if (createdExchange) {
+        createdExchange.value = exchange
+        createdExchange.setAttribute('aria-label', 'Sàn cho Top list, chỉ áp dụng cho nhóm dẫn dắt')
+      }
+      const scopeNote = wrapper.querySelector('.breadth-leaders-header small')
+      if (scopeNote && !scopeNote.textContent.includes('chỉ áp dụng cho Top list')) scopeNote.textContent += ' · Sàn chỉ áp dụng cho Top list'
+      wrapper.querySelectorAll('.breadth-leader > small').forEach(note => { if (note.textContent.includes('biến động')) note.textContent += ' intraday' })
       breadth.querySelector('.breadth-snapshot')?.after(wrapper)
       wrapper.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {
         const symbol = symbolNode.textContent.trim()
