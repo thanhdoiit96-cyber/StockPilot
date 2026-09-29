@@ -2635,6 +2635,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Co dinh dong ho trong `vnstockEodJob.test.js` ve mot ngay cu the de test khong phu thuoc ngay hien tai cua may.
 - Kiem chung lai: backend **28/28 suites, 109/109 tests pass**.
 
+## Ra soat E2E sau tach page - 2026-09-29
+
+- Da chay full frontend E2E 44 tests. Mot so test loading cu van gia dinh bang co phieu nam truc tiep trong `Tong quan`, trong khi UI hien tach sang `Bang gia`; cac luong page split va timeline rieng van pass.
+- Diem tiep tuc: chuyen tiep cac fixture loading con lai sang helper mo `Bang gia` truoc khi kiem tra table, va dung `Tong quan` cho assertion do rong/health.
+
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 
 - Lam ro select `San` chi loc ba bang Top trong khu vuc Nhom dan dat, khong loc bang gia chinh.
