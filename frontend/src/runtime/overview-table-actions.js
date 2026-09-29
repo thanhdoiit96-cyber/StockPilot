@@ -404,6 +404,22 @@
       link.textContent = symbol
       node.replaceChildren(link)
     })
+    document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+      if (row.dataset.marketDetailBound) return
+      const symbol = row.querySelector('.symbol')?.textContent.trim()
+      if (!symbol) return
+      row.dataset.marketDetailBound = '1'
+      const href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+      row.querySelector('.symbol')?.addEventListener('click', event => {
+        event.preventDefault()
+        event.stopPropagation()
+        window.location.href = href
+      })
+      row.addEventListener('click', event => {
+        if (event.target.closest('button, a, input, select, textarea')) return
+        window.location.href = href
+      })
+    })
     document.querySelectorAll('.portfolio-table tbody tr, .recommendation-tracking-table tbody tr').forEach(row => {
       if (row.dataset.stockDetailRowBound) return
       const symbolNode = row.querySelector('td:first-child > strong') || row.querySelector('td:first-child')
@@ -427,6 +443,12 @@
         }
       }, true)
     }
+    document.querySelectorAll('.detail-analysis-btn').forEach(button => {
+      if (/Đang phân tích/.test(button.textContent) && !document.querySelector('.technical-panel .analysis-status-row .chip.success')) {
+        button.textContent = 'Phân tích chuyên sâu'
+        button.disabled = false
+      }
+    })
   const shell = document.querySelector('.dashboard-shell')
   const nav = document.querySelector('.nav')
   if (shell && !shell.dataset.marketNavigationBound) {
