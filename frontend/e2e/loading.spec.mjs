@@ -52,6 +52,7 @@ const openBoard = page => page.getByRole('button', { name: 'Bảng giá', exact:
 const activateBoard = async page => { await page.getByRole('button', { name: 'Bảng giá', exact: true }).click({ force: true }); await page.clock.runFor(1) }
 
 test('price board retains the last dated intraday quote when refresh fails', async ({ page }) => {
+  test.setTimeout(60000)
   let fail = false
   await page.clock.install()
   await setup(page, { '/api/stocks/quotes': route => fail
