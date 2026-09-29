@@ -2722,3 +2722,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Click hoac nhan Enter/Space vao ma trong Top tang, Top giam va Top khoi luong gio mo Chi tiet ma qua row SPA; neu ma khong co trong bang hien tai, runtime dung URL resolver lam fallback.
 - Hover/title va aria-label cua ma duoc doi thanh “Mo Chi tiet ma”, tranh hanh vi cu chi loc o tim kiem ma khong dieu huong.
 - Kiem chung: E2E click ma Top mo Chi tiet ma pass; runtime source/dist syntax va bundle integrity pass.
+- Hoi quy sau sua: `frontend/e2e/workflows.spec.mjs` dat **16/16 test pass**; hai luong portfolio va hover metadata trong `overview-personal.spec.mjs` cung pass.
