@@ -2723,3 +2723,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Hover/title va aria-label cua ma duoc doi thanh “Mo Chi tiet ma”, tranh hanh vi cu chi loc o tim kiem ma khong dieu huong.
 - Kiem chung: E2E click ma Top mo Chi tiet ma pass; runtime source/dist syntax va bundle integrity pass.
 - Hoi quy sau sua: `frontend/e2e/workflows.spec.mjs` dat **16/16 test pass**; hai luong portfolio va hover metadata trong `overview-personal.spec.mjs` cung pass.
+
+## Hoi quy loading va Danh muc - 2026-09-29
+
+- Bo `loading.spec.mjs` dat **21/21 test pass** sau khi tang timeout rieng cho test dung fake clock mo phong 31 giay refresh quote; day la timeout cua test harness, khong thay doi timeout san pham.
+- Khi chay tron bo `overview-personal.spec.mjs`, 2/5 test dau pass; 3 test con lai bi gian doan boi setup/server va trace artifact cua suite. Hai test portfolio/hover lien quan thay doi gan day da duoc chay rieng va pass; can chay lai suite nay trong mot phien preview sach truoc khi dung lam ket luan production.
