@@ -234,10 +234,14 @@
         const quote = quotes[symbol] || {}
         return { ...row, change: Number.isFinite(Number(quote.change)) ? Number(quote.change) : row.change, volume: Number.isFinite(Number(quote.volume)) ? Number(quote.volume) : row.volume }
       })
-      const byChange = currentRows.filter(row => Number.isFinite(Number(row.change)))
+      const byChange = currentRows.filter(row => Number.isFinite(Number(row.change)) && Number(row.change) !== 0)
       const byVolume = currentRows.filter(row => Number.isFinite(Number(row.volume)) && Number(row.volume) > 0)
+      const positiveChanges = byChange.filter(row => Number(row.change) > 0)
+      const negativeChanges = byChange.filter(row => Number(row.change) < 0)
       const lists = [['Top tăng', byChange.sort((a, b) => Number(b.change) - Number(a.change)).slice(0, 5), 'change'], ['Top giảm', byChange.sort((a, b) => Number(a.change) - Number(b.change)).slice(0, 5), 'change'], ['Top khối lượng', byVolume.sort((a, b) => Number(b.volume) - Number(a.volume)).slice(0, 5), 'volume']]
       const wrapper = document.createElement('div')
+      lists[0][1] = positiveChanges.sort((a, b) => Number(b.change) - Number(a.change)).slice(0, 5)
+      lists[1][1] = negativeChanges.sort((a, b) => Number(a.change) - Number(b.change)).slice(0, 5)
       wrapper.className = 'breadth-leaders'
       wrapper.dataset.sector = sector
       wrapper.dataset.exchange = exchange
