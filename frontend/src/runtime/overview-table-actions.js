@@ -494,12 +494,14 @@
   }
 
     let boardNav = nav?.querySelector('.market-board-nav-item')
+    boardNav?.setAttribute('title', 'Mở Bảng giá')
     if (nav && !boardNav) {
       boardNav = document.createElement('button')
       boardNav.type = 'button'
       boardNav.className = 'nav-item market-board-nav-item'
       boardNav.innerHTML = '<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg><span class="nav-label">Bảng giá</span>'
       boardNav.setAttribute('aria-label', 'Bảng giá')
+      boardNav.title = 'Mở Bảng giá'
       nav.insertBefore(boardNav, nav.children[1] || null)
       boardNav.addEventListener('click', () => {
         nav.querySelector('.nav-item:not(.market-board-nav-item)')?.click()
