@@ -154,6 +154,9 @@
       .allocation-day-change[data-rag="green"] { color: var(--success, #34d399); }
       .allocation-day-change[data-rag="red"] { color: var(--danger, #f87171); }
       .allocation-day-change[data-rag="amber"] { color: var(--warning, #fbbf24); }
+      .allocation-day-change > span[data-rag="green"] { color: var(--success, #34d399) !important; }
+      .allocation-day-change > span[data-rag="red"] { color: var(--danger, #f87171) !important; }
+      .allocation-day-change > span[data-rag="amber"] { color: var(--warning, #fbbf24) !important; }
       .stock-detail-row-link { cursor: pointer; }
       .stock-detail-row-link:hover > td, .stock-detail-row-link:focus-visible > td { color: var(--primary); background: rgba(94, 234, 212, .08); }
       .stock-detail-row-link:hover > td.positive, .stock-detail-row-link:focus-visible > td.positive { color: var(--success); }
@@ -736,6 +739,11 @@
       const rag = percentChange == null || percentChange === 0 ? 'amber' : percentChange > 0 ? 'green' : 'red'
       change.dataset.rag = rag
       change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
+      if (value) {
+        value.classList.remove('positive', 'negative', 'neutral')
+        value.classList.add(rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral')
+        value.dataset.rag = rag
+      }
       change.title = `${partialCoverage ? 'Một phần danh mục đang dùng giá fallback hoặc chưa có quote intraday. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
       change.setAttribute('aria-label', change.title)
     })
