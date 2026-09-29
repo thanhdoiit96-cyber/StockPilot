@@ -2682,3 +2682,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Cache cu chi duoc dung tam thoi cho response 429; request thanh cong moi van cap nhat cache, khong ghi nhan 429 la du lieu moi.
 - Kiem chung: runtime source/dist syntax va bundle integrity pass.
 - Click dong Ma trong Bang gia gio xoa `stockpilot-market-view` va phat su kien click SPA cho row React, khong reload trang; dieu nay tranh request khoi tao lai va giu luong vao Chi tiet ma khong bi vong lap Bảng giá/429.
+- Handler roi Bang gia dong thoi xoa class `active`, `aria-current` va class `market-board-active`, tranh nut Bang gia van sang sau khi da vao Chi tiet ma.

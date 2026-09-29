@@ -426,7 +426,13 @@
           textNode.replaceWith(link)
         }
       }
-      const leaveBoard = () => { try { sessionStorage.removeItem(marketViewKey) } catch (_) { } }
+      const leaveBoard = () => {
+        try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        const boardButton = document.querySelector('.market-board-nav-item')
+        boardButton?.classList.remove('active')
+        boardButton?.removeAttribute('aria-current')
+        document.querySelector('.dashboard-shell')?.classList.remove('market-board-active')
+      }
       row.querySelector('.symbol a.stock-detail-link')?.addEventListener('click', event => {
         event.preventDefault()
         event.stopPropagation()
