@@ -33,11 +33,16 @@ test('market overview and price board are separate views', async ({ page }) => {
 })
 test('market breadth exchange scope updates the chart context', async ({ page }) => {
   await boot(page)
+  await page.route('**/api/stocks**', async route => {
+    const url = new URL(route.request().url())
+    if (url.searchParams.get('exchange') !== 'HSX') return route.fallback()
+    await route.fulfill({ json: { ...list([stocks[0]]), pagination: { page: 1, pageSize: 25, total: 1, totalPages: 1 } } })
+  })
   await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
   const exchange = page.getByRole('combobox', { name: /Sàn/ }).first()
   await expect(exchange).toBeVisible()
   await exchange.selectOption('HSX')
-  await expect(page.locator('.market-breadth-header')).toContainText('HSX')
+  await expect(page.locator('.market-breadth-header')).toContainText('1 mã thuộc HSX')
   await expect(page.locator('.breadth-disclaimer')).toContainText('HSX')
 })
 test('price board exposes a market timeline and navigation icon', async ({ page }) => {
