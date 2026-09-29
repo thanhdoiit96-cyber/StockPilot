@@ -2770,3 +2770,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them `frontend/scripts/check-source-parity.mjs` va script npm `check:source-parity` de so sanh cac marker hanh vi quan trong giua `App.jsx` va bundle dang chay.
 - Lan chay dau tien xac nhan 5 nhom con thieu trong source: them ma tu Chi tiet, gate phan tich theo ma, trang thai phan tich, nhan dinh chuyen gia va Ichimoku.
 - Cong cu nay doc lap voi `check:bundle`, khong chan runtime/dist hien tai; no tao danh sach cong viec cu the cho qua trinh tach source theo tung route.
+
+## Khoi phuc luong Phan tich chuyen sau trong source - 2026-09-29
+
+- `App.jsx` da co panel `expert-guidance-panel` voi nut `detail-analysis-btn`; request chi duoc phat khi nguoi dung click, phu hop voi gate runtime hien tai.
+- Hien thi ro ba trang thai: chua phan tich, dang phan tich va da co ket qua; khi da co ket qua, nut doi thanh `Phan tich lai`.
+- `check:source-parity` da nhan dien duoc panel, gate va trang thai phan tich; con lai 3 nhom: them ma tu Chi tiet, Ichimoku va mot so marker giao dien lien quan.
+- Kiem chung: frontend service tests **14/14 pass**, encoding check pass va diff check pass. Chua thay the dist vi source van chua dat parity day du.
