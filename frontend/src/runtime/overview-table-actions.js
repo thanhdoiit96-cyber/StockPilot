@@ -491,8 +491,8 @@
       button.dataset.detailNavigationBound = '1'
       button.addEventListener('click', event => {
         event.preventDefault()
-        event.stopImmediatePropagation()
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        try { sessionStorage.setItem(`analysis-requested:${symbol}`, '1') } catch (_) { }
         document.querySelector('.market-board-nav-item')?.classList.remove('active')
         document.querySelector('.market-board-nav-item')?.removeAttribute('aria-current')
         row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))

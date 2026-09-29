@@ -2686,5 +2686,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Sua nut Phan tich chuyen sau tren Bang gia - 2026-09-29
 
-- Nut Phan tich chuyen sau trong dong Bang gia duoc tach khoi propagation cua row, xoa trang thai Bang gia truoc khi mo Chi tiet ma va phat su kien lazy analysis sau khi view detail da chuyen.
-- Tranh hanh vi click nut bi xem nhu click anchor/reload page; lan bam dau goi phan tich, cac lan sau van di qua co che Phan tich lai.
+- Nut Phan tich chuyen sau trong dong Bang gia duoc xu ly rieng, xoa trang thai Bang gia truoc khi mo Chi tiet ma va phat su kien lazy analysis sau khi view detail da chuyen.
+- Khong chan propagation cua React tren nut, nen callback chuyen view va danh dau yeu cau phan tich van duoc thuc thi; runtime chi bo sung marker `analysis-requested:<symbol>` va mo gate request sau khi detail da hien.
+- Kiem chung: 3 E2E workflow (tach page, giu Bang gia sau refresh, Phan tich chuyen sau) pass; bundle integrity, syntax runtime source/dist va diff check pass.
+- Diem tiep tuc: chay lai E2E loading/full suite khi co thay doi lon o luong du lieu; cac E2E hien tai dung fixture mock va khong thay the xac minh provider production.
