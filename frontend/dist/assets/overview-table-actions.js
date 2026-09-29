@@ -144,7 +144,8 @@
       .stock-detail-link:hover, .stock-detail-link:focus-visible { color: var(--primary); text-decoration: underline; text-decoration-color: currentColor; }
       .stock-detail-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
       .compact-system-meta { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .66rem; line-height: 1.2; opacity: .82; }
-      .compact-system-meta::before { content: 'ⓘ'; color: var(--muted); font-size: .72rem; cursor: help; }
+      /* Metadata remains available through hover/focus, without adding an info glyph to every line. */
+      .compact-system-meta::before { display: none; }
       .detail-page .detail-hero > p { margin-top: 5px; font-size: .68rem; color: var(--muted); }
       .overview-source-summary { display: inline-flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--muted); }
       .overview-source-summary .overview-source-help { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 0; border-radius: 50%; color: var(--muted); background: rgba(148, 163, 184, .12); font-size: 0; cursor: help; }
@@ -713,6 +714,18 @@
     document.querySelectorAll('.data-time').forEach(meta => {
       if (!meta.title && meta.textContent.trim()) meta.title = meta.textContent.trim()
     })
+    const allocationPanel = document.querySelector('.allocation-panel')
+    const allocationFootnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
+    const intradayCoverage = allocationFootnote.match(/(\d+)\s*\/\s*\d+/)
+    if (intradayCoverage && Number(intradayCoverage[1]) === 0) {
+      allocationPanel?.querySelectorAll('.allocation-day-change').forEach(change => {
+        change.textContent = 'Chưa có giao dịch trong phiên hiện tại'
+        change.classList.remove('positive', 'negative')
+        change.classList.add('neutral')
+        change.title = 'Không có quote intraday hợp lệ trong ngày; không suy diễn thay đổi ngắn hạn.'
+        change.setAttribute('aria-label', change.title)
+      })
+    }
     document.querySelectorAll('.volume-context').forEach(context => {
       context.setAttribute('tabindex', '0')
     })
