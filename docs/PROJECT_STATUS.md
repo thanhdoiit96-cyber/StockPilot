@@ -2764,3 +2764,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bundle dang chay `index-CJ9TdbTJ.js` co day du cac marker; `index-sourcefix.js` chi la ban trung gian va khong du de lam nguon JSX day du.
 - Khong thay doi dist sau lan build that bai. Day la blocker tai tao build, khong phai loi runtime moi.
 - Buoc tiep theo da xac dinh: tao mot lop source React moi tu cac hanh vi dang co trong shipped bundle, uu tien tach route/page va giu test marker lam cong cu doi chieu truoc khi thay the `App.jsx` hien tai.
+
+## Them cong cu theo doi source parity - 2026-09-29
+
+- Them `frontend/scripts/check-source-parity.mjs` va script npm `check:source-parity` de so sanh cac marker hanh vi quan trong giua `App.jsx` va bundle dang chay.
+- Lan chay dau tien xac nhan 5 nhom con thieu trong source: them ma tu Chi tiet, gate phan tich theo ma, trang thai phan tich, nhan dinh chuyen gia va Ichimoku.
+- Cong cu nay doc lap voi `check:bundle`, khong chan runtime/dist hien tai; no tao danh sach cong viec cu the cho qua trinh tach source theo tung route.
