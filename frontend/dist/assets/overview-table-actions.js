@@ -744,7 +744,7 @@
       const ragColor = rag === 'green' ? 'var(--success, #34d399)' : rag === 'red' ? 'var(--danger, #f87171)' : 'var(--warning, #fbbf24)'
       change.dataset.rag = rag
       change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
-      change.style.setProperty('color', ragColor, 'important')
+      change.style.setProperty('color', 'var(--text)', 'important')
       if (value) {
         value.classList.remove('positive', 'negative', 'neutral')
         value.classList.add(rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral')
