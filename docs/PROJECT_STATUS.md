@@ -2628,7 +2628,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Neu danh sach da co ban cache thanh cong ma lan tai tiep theo gap 429, giao dien dung ban cache gan nhat voi danh dau stale thay vi xoa bang va hien loi khong the tai danh sach.
 - Khong cache response 429 nhu du lieu thanh cong; khi het cua so ngan, he thong van thu lai binh thuong.
 - Backend limiter bo qua cac GET chi doc trang thai (`health`, `cache/stats`, `data-quality`, `quotes/status`) de polling van hanh khong chiem quota cua danh sach va thao tac nguoi dung.
-- Kiem chung: 27/28 backend suites pass (107/109 tests); 2 test EOD hien fail do fixture ky vong ngay 25-09 trong khi dong ho he thong la 29-09, khong lien quan thay doi limiter.
+- Kiem chung ban dau: 27/28 backend suites pass; hai test EOD phu thuoc ngay he thong va da duoc co dinh lai o muc tiep theo.
+
+## On dinh test EOD theo ngay phien - 2026-09-29
+
+- Co dinh dong ho trong `vnstockEodJob.test.js` ve mot ngay cu the de test khong phu thuoc ngay hien tai cua may.
+- Kiem chung lai: backend **28/28 suites, 109/109 tests pass**.
 
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 
