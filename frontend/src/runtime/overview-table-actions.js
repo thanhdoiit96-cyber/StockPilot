@@ -143,6 +143,13 @@
       .stock-detail-link { color: inherit; text-decoration: none; text-decoration-thickness: 2px; text-underline-offset: 3px; transition: color .15s ease, text-decoration-color .15s ease; }
       .stock-detail-link:hover, .stock-detail-link:focus-visible { color: var(--primary); text-decoration: underline; text-decoration-color: currentColor; }
       .stock-detail-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
+      .compact-system-meta { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .66rem; line-height: 1.2; opacity: .82; }
+      .compact-system-meta::before { content: 'ⓘ'; color: var(--muted); font-size: .72rem; cursor: help; }
+      .detail-page .detail-hero > p { margin-top: 5px; font-size: .68rem; color: var(--muted); }
+      .overview-source-summary { display: inline-flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--muted); }
+      .overview-source-summary .overview-source-help { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 0; border-radius: 50%; color: var(--muted); background: rgba(148, 163, 184, .12); font-size: 0; cursor: help; }
+      .overview-source-summary .overview-source-help::before { content: 'i'; font-size: .68rem; font-weight: 800; }
+      .overview-source-summary .overview-source-help:hover, .overview-source-summary .overview-source-help:focus-visible { color: var(--primary); background: rgba(94, 234, 212, .15); outline: 2px solid rgba(94, 234, 212, .35); outline-offset: 1px; }
       .stock-detail-row-link { cursor: pointer; }
       .stock-detail-row-link:hover > td, .stock-detail-row-link:focus-visible > td { color: var(--primary); background: rgba(94, 234, 212, .08); }
       .stock-detail-row-link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
@@ -681,6 +688,17 @@
       sourceHelp.setAttribute('aria-label', 'Giải thích Intraday, EOD và dữ liệu cũ')
       sourceHelp.setAttribute('tabindex', '0')
     }
+    document.querySelectorAll('.data-provenance, .detail-hero > p').forEach(meta => {
+      if (meta.classList.contains('compact-system-meta')) return
+      const description = meta.textContent.trim()
+      if (!description) return
+      meta.classList.add('compact-system-meta')
+      if (!meta.title) meta.title = description
+      meta.setAttribute('aria-label', `Thông tin dữ liệu: ${description}`)
+    })
+    document.querySelectorAll('.data-time').forEach(meta => {
+      if (!meta.title && meta.textContent.trim()) meta.title = meta.textContent.trim()
+    })
     document.querySelectorAll('.volume-context').forEach(context => {
       context.setAttribute('tabindex', '0')
     })
