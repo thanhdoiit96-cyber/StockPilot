@@ -29,12 +29,16 @@
       const key = request.url
       const now = Date.now()
       const cached = cache.get(key)
+      const fallbackStockCache = isStockList ? [...cache.entries()]
+        .filter(([entryKey, entry]) => entry.status === 200 && entry.body && entryKey !== key)
+        .sort((a, b) => b[1].at - a[1].at)[0]?.[1] : null
       const cacheTtl = cached?.status === 429 ? 8000 : isStockList ? 8000 : ttl
       if (cached && now - cached.at < cacheTtl) return Promise.resolve(new Response(cached.body, { status: cached.status, headers: cached.headers }))
       if (pending.has(key)) return pending.get(key).then(response => response.clone())
       const task = nativeFetch(input, init).then(async response => {
-        if (response.status === 429 && isStockList && cached?.body) {
-          return new Response(cached.body, { status: 200, headers: [...cached.headers, ['x-stockpilot-stale', 'rate-limited']] })
+        if (response.status === 429 && isStockList && (cached?.body || fallbackStockCache?.body)) {
+          const stale = cached || fallbackStockCache
+          return new Response(stale.body, { status: 200, headers: [...stale.headers, ['x-stockpilot-stale', 'rate-limited']] })
         }
         if (response.ok) {
           const body = await response.text()
