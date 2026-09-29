@@ -2622,6 +2622,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung: syntax source/dist, bundle integrity va diff check pass. Can tiep tuc theo doi log backend de dieu chinh cua so limiter theo tai thuc te.
 - Bo sung E2E xac nhan hai fetch quote giong nhau trong cua so ngan chi tao mot request mang; phan hoi 429 cung duoc cache tam thoi de tranh lap request lien tuc.
 
+## Bao ve danh sach co phieu khi API 429 - 2026-09-29
+
+- Request guard nay bao phu ca `GET /api/stocks`, khong chi quote; request trung lap cung query duoc gom va cache ngan 8 giay.
+- Neu danh sach da co ban cache thanh cong ma lan tai tiep theo gap 429, giao dien dung ban cache gan nhat voi danh dau stale thay vi xoa bang va hien loi khong the tai danh sach.
+- Khong cache response 429 nhu du lieu thanh cong; khi het cua so ngan, he thong van thu lai binh thuong.
+
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 
 - Lam ro select `San` chi loc ba bang Top trong khu vuc Nhom dan dat, khong loc bang gia chinh.
