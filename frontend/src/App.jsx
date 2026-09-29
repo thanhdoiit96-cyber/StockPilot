@@ -19,6 +19,7 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState('')
   const [view, setView] = useState(() => { try { return sessionStorage.getItem('stockpilot-view') || 'overview' } catch { return 'overview' } })
   const [selectedId, setSelectedId] = useState(() => { try { const value = sessionStorage.getItem('stockpilot-selected-id'); return value ? Number(value) : null } catch { return null } })
+  const [analysisRequested, setAnalysisRequested] = useState(false)
   const [sort, setSort] = useState({ key: 'symbol', direction: 'asc' })
   const [search, setSearch] = useState('')
   const [sector, setSector] = useState('')
@@ -60,7 +61,12 @@ export default function App() {
     return { ...position, market_price: marketPrice, market_value: marketValue, unrealized_pnl: marketValue - Number(position.avg_cost || 0) * quantity, current_quote: quote }
   }), [portfolio, portfolioQuotes])
   const detail = useApiResource(selected?.id ? `/api/stocks/${encodeURIComponent(selected.id)}` : null, stockDetail)
-  const analysis = useApiResource(selected?.id ? `/api/stocks/${encodeURIComponent(selected.id)}/analysis` : null, stockAnalysis)
+  const analysis = useApiResource(selected?.id && analysisRequested ? `/api/stocks/${encodeURIComponent(selected.id)}/analysis` : null, stockAnalysis)
+  useEffect(() => {
+    const requestAnalysis = () => setAnalysisRequested(true)
+    window.addEventListener('stockpilot:request-analysis', requestAnalysis)
+    return () => window.removeEventListener('stockpilot:request-analysis', requestAnalysis)
+  }, [])
   useEffect(() => {
     const refreshMarketData = () => {
       marketQuality.retry()
