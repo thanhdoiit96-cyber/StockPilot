@@ -2690,3 +2690,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khong chan propagation cua React tren nut, nen callback chuyen view va danh dau yeu cau phan tich van duoc thuc thi; runtime chi bo sung marker `analysis-requested:<symbol>` va mo gate request sau khi detail da hien.
 - Kiem chung: 3 E2E workflow (tach page, giu Bang gia sau refresh, Phan tich chuyen sau) pass; bundle integrity, syntax runtime source/dist va diff check pass.
 - Diem tiep tuc: chay lai E2E loading/full suite khi co thay doi lon o luong du lieu; cac E2E hien tai dung fixture mock va khong thay the xac minh provider production.
+
+## Gioi han diem kich hoat Phan tich chuyen sau - 2026-09-29
+
+- Request phan tich chi duoc mo sau click vao `.overview-analysis-btn` tren Bang gia hoac `.detail-analysis-btn` tren Chi tiet ma.
+- Bo gate khong con chap nhan cac aria label trung khop o khu vuc khac; khi doi ma/page, co che runtime reset lai trang thai da cho phep de tranh tu dong phan tich ma moi.
+- Kiem chung: 3 E2E workflow lien quan pass va bundle integrity pass; runtime source/dist da dong bo.
