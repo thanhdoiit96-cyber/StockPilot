@@ -2683,3 +2683,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung: runtime source/dist syntax va bundle integrity pass.
 - Click dong Ma trong Bang gia gio xoa `stockpilot-market-view` va phat su kien click SPA cho row React, khong reload trang; dieu nay tranh request khoi tao lai va giu luong vao Chi tiet ma khong bi vong lap Bảng giá/429.
 - Handler roi Bang gia dong thoi xoa class `active`, `aria-current` va class `market-board-active`, tranh nut Bang gia van sang sau khi da vao Chi tiet ma.
+
+## Sua nut Phan tich chuyen sau tren Bang gia - 2026-09-29
+
+- Nut Phan tich chuyen sau trong dong Bang gia duoc tach khoi propagation cua row, xoa trang thai Bang gia truoc khi mo Chi tiet ma va phat su kien lazy analysis sau khi view detail da chuyen.
+- Tranh hanh vi click nut bi xem nhu click anchor/reload page; lan bam dau goi phan tich, cac lan sau van di qua co che Phan tich lai.

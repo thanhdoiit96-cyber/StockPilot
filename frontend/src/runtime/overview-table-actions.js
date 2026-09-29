@@ -483,6 +483,25 @@
         button.disabled = false
       }
     })
+    document.querySelectorAll('.overview-analysis-btn').forEach(button => {
+      if (button.dataset.detailNavigationBound) return
+      const row = button.closest('tr')
+      const symbol = row?.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
+      if (!row || !symbol) return
+      button.dataset.detailNavigationBound = '1'
+      button.addEventListener('click', event => {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        document.querySelector('.market-board-nav-item')?.classList.remove('active')
+        document.querySelector('.market-board-nav-item')?.removeAttribute('aria-current')
+        row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+        window.setTimeout(() => {
+          window.__stockpilotRequestAnalysis?.()
+          window.dispatchEvent(new Event('stockpilot:request-analysis'))
+        }, 0)
+      }, true)
+    })
   const shell = document.querySelector('.dashboard-shell')
   const nav = document.querySelector('.nav')
   if (shell && !shell.dataset.marketNavigationBound) {
