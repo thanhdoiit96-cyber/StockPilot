@@ -24,7 +24,11 @@
         }
         if (response.ok) {
           const body = await response.text()
-          cache.set(key, { at: Date.now(), body, status: response.status, headers: [...response.headers.entries()] })
+          let cacheable = true
+          if (isStockList) {
+            try { cacheable = JSON.parse(body)?.success === true && Array.isArray(JSON.parse(body)?.data) } catch (_) { cacheable = false }
+          }
+          if (cacheable) cache.set(key, { at: Date.now(), body, status: response.status, headers: [...response.headers.entries()] })
           return new Response(body, { status: response.status, headers: response.headers })
         }
         return response
