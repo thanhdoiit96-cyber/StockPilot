@@ -2640,6 +2640,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da chay full frontend E2E 44 tests. Mot so test loading cu van gia dinh bang co phieu nam truc tiep trong `Tong quan`, trong khi UI hien tach sang `Bang gia`; cac luong page split va timeline rieng van pass.
 - Diem tiep tuc: chuyen tiep cac fixture loading con lai sang helper mo `Bang gia` truoc khi kiem tra table, va dung `Tong quan` cho assertion do rong/health.
 - Bo loc request bi huy hop le khi React doi view khoi danh sach loi mang trong fixture; stock-list cache chi luu JSON thanh cong de retry malformed response khong bi ket qua cu che.
+- Dong bo lai class active cua sidebar theo view DOM sau moi lan React render, tranh truong hop noi dung Tong quan da hien nhung nut Tong quan chua sang.
 
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 
