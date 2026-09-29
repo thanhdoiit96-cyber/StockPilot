@@ -48,7 +48,13 @@ app.use(express.urlencoded({ extended: true }));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || 60000),
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100)
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
+  skip: req => req.method === 'GET' && [
+    '/api/health',
+    '/api/cache/stats',
+    '/api/stocks/data-quality',
+    '/api/stocks/quotes/status'
+  ].includes(req.path)
 });
 app.use('/api/', limiter);
 

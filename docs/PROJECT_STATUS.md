@@ -2627,6 +2627,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Request guard nay bao phu ca `GET /api/stocks`, khong chi quote; request trung lap cung query duoc gom va cache ngan 8 giay.
 - Neu danh sach da co ban cache thanh cong ma lan tai tiep theo gap 429, giao dien dung ban cache gan nhat voi danh dau stale thay vi xoa bang va hien loi khong the tai danh sach.
 - Khong cache response 429 nhu du lieu thanh cong; khi het cua so ngan, he thong van thu lai binh thuong.
+- Backend limiter bo qua cac GET chi doc trang thai (`health`, `cache/stats`, `data-quality`, `quotes/status`) de polling van hanh khong chiem quota cua danh sach va thao tac nguoi dung.
+- Kiem chung: 27/28 backend suites pass (107/109 tests); 2 test EOD hien fail do fixture ky vong ngay 25-09 trong khi dong ho he thong la 29-09, khong lien quan thay doi limiter.
 
 ## Lam ro pham vi San va sua Top phan tram - 2026-09-29
 
