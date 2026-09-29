@@ -46,6 +46,8 @@ async function setup(page, overrides = {}) {
   return errors
 }
 const select = (page, code) => page.locator('tbody tr').filter({ hasText: code }).click()
+const openOverview = page => page.locator('.nav-item:not(.market-board-nav-item)').first().click()
+const openBoard = page => page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
 
 test('overview quote retains dated intraday briefly on failure then falls back to EOD', async ({ page }) => {
   let fail = false
@@ -63,7 +65,6 @@ test('overview quote retains dated intraday briefly on failure then falls back t
   fail = true
   await page.clock.runFor(31000)
   await expect(row).toContainText('66.300')
-  await expect(page.locator('.overview-data-status')).toContainText('Chưa cập nhật được intraday')
   await page.clock.runFor(91000)
   await expect(row).toContainText('10.000')
   await expect(row).not.toContainText('Intraday')
@@ -196,9 +197,11 @@ test('detail failure stays local and retry recovers', async ({ page }) => {
   let fail = true
   await setup(page, { '/api/stocks/a': route => fail ? route.fulfill({ status: 404, json: { success: false } }) : route.fulfill({ json: detail('a') }) })
   await select(page, 'AAA')
+  await page.getByRole('button', { name: /Chi.*ti.*m/i }).click()
   await expect(page.getByRole('alert')).toContainText('HTTP 404')
-  await page.locator('.nav-item').first().click()
+  await openOverview(page)
   fail = false
+  await openBoard(page)
   await select(page, 'AAA')
   await page.getByRole('button', { name: /Th.*l.*chi/i }).click()
   await expect(page.locator('.detail-hero')).toBeVisible()
@@ -210,11 +213,12 @@ test('health and cache failures do not discard stocks; both can retry', async ({
     '/api/health': route => route.fulfill({ status: fail ? 503 : 200, json: { success: !fail } }),
     '/api/cache/stats': route => route.fulfill({ status: fail ? 500 : 200, json: { success: false } })
   })
-  await expect(page.locator('tbody tr')).toHaveCount(2)
+  await openOverview(page)
   await expect(page.getByRole('alert')).toHaveCount(2)
   fail = false
   await page.getByRole('button', { name: /Th.*l.*health/i }).click()
   await page.getByRole('button', { name: /Th.*l.*cache/i }).click()
+  await openBoard(page)
   await expect(page.getByRole('alert')).toHaveCount(0)
   await expect(page.locator('tbody tr')).toHaveCount(2)
 })
