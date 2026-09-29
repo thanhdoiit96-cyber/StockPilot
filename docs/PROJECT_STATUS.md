@@ -2739,6 +2739,6 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Ap dung RAG cho chenh lech danh muc - 2026-09-29
 
-- Gan trang thai Red-Amber-Green cho chenh lech tong danh muc: xanh khi du lieu day du va thay doi duong, do khi thay doi am, ho phach khi quote intraday thieu/fallback hoac khong co dau hieu tin cay.
-- RAG chi mo ta trang thai tin hieu va chat luong du lieu; cong thuc chenh lech theo phien truoc van giu nguyen va duoc giai thich trong tooltip.
+- Gan trang thai Red-Amber-Green cho huong chenh lech tong danh muc: xanh khi thay doi duong, do khi thay doi am, ho phach khi bang 0 hoac khong xac dinh. Chat luong quote thieu/fallback duoc tach rieng trong `data-quality` va tooltip, khong lam doi mau huong tang/giam.
+- RAG chi mo ta trang thai tin hieu; cong thuc chenh lech theo phien truoc van giu nguyen va duoc giai thich trong tooltip.
 - Dong bo runtime source/dist; syntax, diff check va bundle integrity pass.
