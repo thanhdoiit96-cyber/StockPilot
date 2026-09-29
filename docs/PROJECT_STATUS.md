@@ -2647,3 +2647,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Lam ro select `San` chi loc ba bang Top trong khu vuc Nhom dan dat, khong loc bang gia chinh.
 - Top tang/giam bo sung fetch quote intraday cho cac ma dang xep hang; fallback ve du lieu danh sach khi provider khong tra quote, tranh hien thi gia tri mac dinh `+0.00%` khi co quote hop le.
 - Kiem chung: syntax runtime source/dist, bundle integrity, diff check va E2E filter/page board pass.
+
+## Dong bo fixture loading theo page split - 2026-09-29
+
+- Cap nhat fixture E2E de mo dung `Bang gia` khi kiem tra danh sach ma va quay ve `Tong quan` khi kiem tra health/cache; retry chi tiet cung mo trang chi tiet truoc khi xac nhan loi.
+- Kiem chung: hai luong loading retry vua chinh sua pass; toan bo `loading.spec.mjs` dat 17/21 test. Bon test polling theo dong ho (quote fallback, phan trang 40 ma, quote treo va quote cap nhat tung phan) van can tach rieng de phan biet trang thai render trung gian voi du lieu thuc te.
+- Diem tiep tuc: dieu tra viec danh sach tam rong trong nhat polling khi clock E2E tien nhanh, sau do chay lai full frontend E2E; khong xem ket qua test nay la xac nhan production polling.
