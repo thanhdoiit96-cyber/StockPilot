@@ -2660,3 +2660,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Xac dinh loi: state `sector` cua bang gia cung bi runtime Do rong thi truong doc lai, nen thay doi Nhom nganh o Bang gia lam thay doi tap ma cua Tong quan.
 - Runtime gio coi Nhom nganh la bo loc cua Bang gia; khi quay ve Tong quan, bo loc duoc xoa va Do rong thi truong tai lai theo toan bo thi truong. Bo loc San trong Top list van doc lap.
 - Kiem chung: 3 E2E page split/timeline/persist pass; syntax runtime source/dist va bundle integrity pass.
+
+## Them lien ket ma den Chi tiet ma - 2026-09-29
+
+- Them link co URL `/?view=detail&symbol=...` cho ma trong danh sach De xuat, bang Danh muc ca nhan, bang Theo doi ma da them va Watchlist.
+- Link co hover/focus style dong bo mau primary, title mo ta va xu ly URL de tim id ma roi mo view Chi tiet ma khi trang duoc tai lai.
+- Kiem chung: E2E page split/persist pass; syntax runtime source/dist, bundle integrity va diff check pass. Chua co E2E rieng cho tung bang co du lieu phat sinh tu API portfolio/recommendation.

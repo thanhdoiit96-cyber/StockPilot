@@ -119,6 +119,9 @@
       .market-session-slot { min-width: 0; min-height: 104px; padding: 8px 7px 7px; border: 0; border-inline: 1px solid rgba(148, 163, 184, .07); background: transparent; }.market-session-slot.is-current { border-inline-color: rgba(94, 234, 212, .6); background: rgba(20, 184, 166, .08); }
       .market-session-slot > strong { display: block; font-size: 10px; text-align: center; }.market-session-bars { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 7px; height: 48px; margin: 7px 0 5px; }.market-session-bars > div { display: grid; grid-template-rows: 1fr auto; align-items: end; height: 100%; gap: 3px; text-align: center; }.market-session-bars span { color: var(--muted); font-size: 8px; }.market-session-bars i { display: block; width: 100%; min-height: 3px; border-radius: 3px 3px 1px 1px; }.market-session-bars .price-bar { background: #60a5fa; }.market-session-bars .volume-bar { background: #5eead4; opacity: .85; }
       .market-session-slot > small { display: block; overflow: hidden; text-overflow: ellipsis; text-align: center; white-space: nowrap; }.market-session-slot .market-session-empty { color: var(--muted); }
+      .stock-detail-link { color: inherit; text-decoration: none; text-decoration-thickness: 2px; text-underline-offset: 3px; transition: color .15s ease, text-decoration-color .15s ease; }
+      .stock-detail-link:hover, .stock-detail-link:focus-visible { color: var(--primary); text-decoration: underline; text-decoration-color: currentColor; }
+      .stock-detail-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
       @media (max-width: 700px) { .market-session-timeline-header { flex-direction: column; }.market-session-timeline-grid { gap: 4px; }.market-session-slot { padding-inline: 3px; } }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; }.breadth-leaders-header { align-items: stretch; flex-direction: column; } }
@@ -345,6 +348,43 @@
 
   const enhance = () => {
     installStyles()
+    const detailParams = new URLSearchParams(window.location.search)
+    const detailSymbol = detailParams.get('symbol')?.trim().toUpperCase()
+    if (detailParams.get('view') === 'detail' && detailSymbol && !document.documentElement.dataset.detailUrlResolved) {
+      document.documentElement.dataset.detailUrlResolved = '1'
+      fetch(`/api/stocks?page=1&pageSize=40&q=${encodeURIComponent(detailSymbol)}`, { cache: 'no-store' }).then(response => response.json()).then(payload => {
+        const match = (payload?.data || []).find(stock => String(stock.code || stock.symbol || '').toUpperCase() === detailSymbol)
+        if (!match) return
+        try {
+          sessionStorage.setItem('stockpilot-selected-id', String(match.id))
+          sessionStorage.setItem('stockpilot-view', 'detail')
+        } catch (_) { }
+        document.querySelector('.nav-item:not(.market-board-nav-item)[aria-label*="Chi ti"]')?.click()
+        document.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => { if (item.textContent.includes('Chi ti')) item.click() })
+      }).catch(() => {})
+    }
+    document.querySelectorAll('.recommendation-stock-heading > strong, .recommendation-tracking-table tbody td:first-child > strong').forEach(node => {
+      if (node.closest('a.stock-detail-link')) return
+      const symbol = node.textContent.trim()
+      if (!symbol) return
+      const link = document.createElement('a')
+      link.className = 'stock-detail-link'
+      link.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+      link.title = `Mở chi tiết mã ${symbol}`
+      link.textContent = symbol
+      node.replaceWith(link)
+    })
+    document.querySelectorAll('.portfolio-table tbody td:first-child, .watchlist li > strong').forEach(node => {
+      if (node.querySelector('a.stock-detail-link') || node.closest('a.stock-detail-link')) return
+      const symbol = node.textContent.trim()
+      if (!symbol || symbol.includes('Chưa có')) return
+      const link = document.createElement('a')
+      link.className = 'stock-detail-link'
+      link.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+      link.title = `Mở chi tiết mã ${symbol}`
+      link.textContent = symbol
+      node.replaceChildren(link)
+    })
   const shell = document.querySelector('.dashboard-shell')
   const nav = document.querySelector('.nav')
   if (shell && !shell.dataset.marketNavigationBound) {
