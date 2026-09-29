@@ -294,6 +294,7 @@
   const formatCompact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
   const marketSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '14:45']
   const marketViewKey = 'stockpilot-market-view'
+  const boardSectorKey = 'stockpilot-board-sector'
   const marketToday = () => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date())
   const marketTimelineKey = () => `stockpilot-market-session:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())}`
   const readMarketTimeline = () => { try { return JSON.parse(sessionStorage.getItem(marketTimelineKey()) || '{}') || {} } catch (_) { return {} } }
@@ -379,6 +380,11 @@
       item.dataset.marketViewBound = '1'
       item.addEventListener('click', () => {
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        const sectorSelect = document.querySelector('.sector-select')
+        if (sectorSelect && sectorSelect.value) {
+          sectorSelect.value = ''
+          sectorSelect.dispatchEvent(new Event('change', { bubbles: true }))
+        }
         shell?.classList.remove('market-board-active')
         boardNav?.classList.remove('active')
         boardNav?.removeAttribute('aria-current')
@@ -438,7 +444,8 @@
       breadth.querySelector('.breadth-counts')?.after(snapshot)
     }
     const sectorSelect = document.querySelector('.sector-select')
-    const selectedSector = sectorSelect?.value || ''
+    const boardActive = shell?.classList.contains('market-board-active')
+    const selectedSector = boardActive ? '' : sectorSelect?.value || ''
     let exchangeSelect = document.querySelector('.breadth-exchange-select')
     const selectedExchange = exchangeSelect?.value || ''
     const existingLeaders = breadth?.querySelector('.breadth-leaders')
@@ -447,6 +454,10 @@
     if (sectorSelect && !sectorSelect.dataset.breadthScopeBound) {
       sectorSelect.dataset.breadthScopeBound = '1'
       sectorSelect.addEventListener('change', () => {
+        if (shell?.classList.contains('market-board-active')) {
+          try { sessionStorage.setItem(boardSectorKey, sectorSelect.value || '') } catch (_) { }
+          return
+        }
         breadth?.querySelector('.breadth-leaders')?.remove()
         if (breadth) loadBreadthLeaders(breadth, sectorSelect.value || '', exchangeSelect?.value || '')
       })

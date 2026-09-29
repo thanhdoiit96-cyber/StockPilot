@@ -2654,3 +2654,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung: toan bo `frontend/e2e/loading.spec.mjs` dat **21/21 test pass**; cac fixture fake clock da duoc dong bo voi callback chuyen view va chi kiem tra contract on dinh cua page split.
 - Sua runtime source/dist de tu dong khoi phuc view `Bang gia` neu React render lai sau quote polling, tranh trang thai noi dung `Tong quan` hien trong khi nut `Bang gia` dang duoc chon.
 - Diem tiep tuc: chay lai full frontend E2E sau khi cac workflow loading da on dinh; ket qua E2E chi xac nhan hanh vi mock, khong thay the kiem tra provider production.
+
+## Tach pham vi bo loc Nhom nganh giua hai page - 2026-09-29
+
+- Xac dinh loi: state `sector` cua bang gia cung bi runtime Do rong thi truong doc lai, nen thay doi Nhom nganh o Bang gia lam thay doi tap ma cua Tong quan.
+- Runtime gio coi Nhom nganh la bo loc cua Bang gia; khi quay ve Tong quan, bo loc duoc xoa va Do rong thi truong tai lai theo toan bo thi truong. Bo loc San trong Top list van doc lap.
+- Kiem chung: 3 E2E page split/timeline/persist pass; syntax runtime source/dist va bundle integrity pass.
