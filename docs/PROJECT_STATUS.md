@@ -2729,9 +2729,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bo `loading.spec.mjs` dat **21/21 test pass** sau khi tang timeout rieng cho test dung fake clock mo phong 31 giay refresh quote; day la timeout cua test harness, khong thay doi timeout san pham.
 - Khi chay tron bo `overview-personal.spec.mjs`, 2/5 test dau pass; 3 test con lai bi gian doan boi setup/server va trace artifact cua suite. Hai test portfolio/hover lien quan thay doi gan day da duoc chay rieng va pass; can chay lai suite nay trong mot phien preview sach truoc khi dung lam ket luan production.
 
-## Giam icon thong tin va chan chenh lech intraday khi het du lieu - 2026-09-29
+## Giam icon thong tin va lam ro chenh lech danh muc - 2026-09-29
 
 - Bo pseudo-element `i` khoi metadata he thong dung chung; thong tin van duoc giu qua `title` va `aria-label`, con icon `i` chi con o khu vuc Nguon du lieu duoc chu dinh.
-- Khi phan bo danh muc khong co quote intraday trong ngay (`0/N`), thong tin thay doi duoc doi thanh `Chua co giao dich trong phien hien tai`, khong hien chenh lech tu gia cu hoac suy dien thay doi ngan han.
-- Dong bo runtime source/dist; `node --check`, `git diff --check` pass. Lenh `npm run check:bundle` phai chay tu thu muc `frontend` (chay o root khong co `package.json`).
-- Diem tiep tuc: chay E2E detail/portfolio trong preview sach de xac nhan hien thi metadata da gon va trang thai het phien.
+- Chenh lech phan bo duoc giu lai de kiem tra; nhan hien thi ro `So voi phien truoc` va tooltip ghi cong thuc: tong gia tri hien tai tru tong (so luong x gia dong cua phien truoc). Day khong phai thay doi 5 phut.
+- Backend co test voi hai phien EOD lien tiep, xac nhan `day_change` va `day_change_pct` dung tren gia dong cua phien truoc, trong khi gia tri danh muc dung quote intraday moi nhat.
+- Dong bo runtime source/dist; `node --check`, `git diff --check` va bundle integrity pass. Lenh `npm run check:bundle` phai chay tu thu muc `frontend` (chay o root khong co `package.json`).
+- Diem tiep tuc: neu can bien dong 5 phut, can bo sung mot quote intraday truoc do co timestamp hop le; khong dung `previous_market_price` cho chi so do.

@@ -714,18 +714,15 @@
     document.querySelectorAll('.data-time').forEach(meta => {
       if (!meta.title && meta.textContent.trim()) meta.title = meta.textContent.trim()
     })
-    const allocationPanel = document.querySelector('.allocation-panel')
-    const allocationFootnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
-    const intradayCoverage = allocationFootnote.match(/(\d+)\s*\/\s*\d+/)
-    if (intradayCoverage && Number(intradayCoverage[1]) === 0) {
-      allocationPanel?.querySelectorAll('.allocation-day-change').forEach(change => {
-        change.textContent = 'Chưa có giao dịch trong phiên hiện tại'
-        change.classList.remove('positive', 'negative')
-        change.classList.add('neutral')
-        change.title = 'Không có quote intraday hợp lệ trong ngày; không suy diễn thay đổi ngắn hạn.'
-        change.setAttribute('aria-label', change.title)
-      })
-    }
+    document.querySelectorAll('.allocation-day-change').forEach(change => {
+      const label = change.textContent.trim()
+      if (!label) return
+      // This is a portfolio day change, not a five-minute return:
+      // current total minus quantity-weighted previous-session close.
+      change.textContent = label.replace(/^So với hôm qua:/i, 'So với phiên trước:')
+      change.title = 'Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.'
+      change.setAttribute('aria-label', change.title)
+    })
     document.querySelectorAll('.volume-context').forEach(context => {
       context.setAttribute('tabindex', '0')
     })

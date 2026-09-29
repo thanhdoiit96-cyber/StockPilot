@@ -32,6 +32,22 @@ test('uses the same shared intraday quote as detail/overview for valuation', asy
   expect(response.body.data.positions[0]).toMatchObject({ market_price: 66000, market_value: 660000, unrealized_pnl: 160000, price_source: 'intraday' });
 });
 
+test('calculates day change from the previous distinct EOD session', async () => {
+  models.StockPrice.findAll.mockResolvedValue([
+    { stock_id: 's', close: 60000, observed_at: '2026-09-25T00:00:00Z' },
+    { stock_id: 's', close: 55000, observed_at: '2026-09-24T00:00:00Z' }
+  ]);
+  liveQuoteService.load.mockResolvedValue({ FPT: { symbol: 'FPT', price: 66000, observed_at: '2026-09-25T10:00:00+07:00' } });
+  const response = await request(app).get('/portfolio');
+  expect(response.body.data.positions[0]).toMatchObject({
+    market_price: 66000,
+    previous_market_price: 55000,
+    day_change: 11000,
+    day_change_pct: 20,
+    price_source: 'intraday'
+  });
+});
+
 test('database errors produce an explicit HTTP error rather than an empty portfolio', async () => {
   models.Portfolio.findOne.mockRejectedValueOnce(new Error('database unavailable'));
   const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
