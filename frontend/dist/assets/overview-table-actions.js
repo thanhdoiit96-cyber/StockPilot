@@ -734,9 +734,13 @@
       const signedChange = value?.textContent.trim() || ''
       const percentMatch = signedChange.match(/([+-])\s*(\d+(?:[.,]\d+)?)\s*%/)
       const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : /\+/.test(signedChange) ? 1 : /-/.test(signedChange) ? -1 : null
+      const amountMatch = signedChange.match(/([+-]?\s*\d[\d.,]*)\s*(?:₫|đ|VND)/i)
+      const amountText = amountMatch?.[1]?.replace(/\s/g, '') || ''
+      const amountChange = amountText ? Number(amountText.replace(/\./g, '').replace(',', '.')) : null
+      const direction = Number.isFinite(amountChange) && amountChange !== 0 ? Math.sign(amountChange) : percentChange
       // Keep direction and data quality separate: a positive change stays green
       // even when the portfolio is only partially covered by intraday quotes.
-      const rag = percentChange == null || percentChange === 0 ? 'amber' : percentChange > 0 ? 'green' : 'red'
+      const rag = direction == null || direction === 0 ? 'amber' : direction > 0 ? 'green' : 'red'
       const ragColor = rag === 'green' ? 'var(--success, #34d399)' : rag === 'red' ? 'var(--danger, #f87171)' : 'var(--warning, #fbbf24)'
       change.dataset.rag = rag
       change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
