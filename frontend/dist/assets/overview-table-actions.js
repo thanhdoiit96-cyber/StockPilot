@@ -157,6 +157,15 @@
       .allocation-day-change > span[data-rag="green"] { color: var(--success, #34d399) !important; }
       .allocation-day-change > span[data-rag="red"] { color: var(--danger, #f87171) !important; }
       .allocation-day-change > span[data-rag="amber"] { color: var(--warning, #fbbf24) !important; }
+      .portfolio-data-audit { display: grid; gap: 7px; margin-top: 14px; padding: 11px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(15, 23, 42, .28); font-size: 10px; }
+      .portfolio-data-audit strong { color: var(--text); font-size: 11px; }
+      .portfolio-data-audit p { margin: 0; color: var(--muted); line-height: 1.45; }
+      .portfolio-data-audit-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+      .portfolio-data-audit-legend span { color: var(--muted); }
+      .portfolio-data-audit-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }
+      .portfolio-data-audit-legend .rag-green { background: var(--success); }
+      .portfolio-data-audit-legend .rag-red { background: var(--danger); }
+      .portfolio-data-audit-legend .rag-amber { background: var(--warning); }
       .stock-detail-row-link { cursor: pointer; }
       .stock-detail-row-link:hover > td, .stock-detail-row-link:focus-visible > td { color: var(--primary); background: rgba(94, 234, 212, .08); }
       .stock-detail-row-link:hover > td.positive, .stock-detail-row-link:focus-visible > td.positive { color: var(--success); }
@@ -760,6 +769,20 @@
       change.title = `${partialCoverage ? 'Một phần danh mục đang dùng giá fallback hoặc chưa có quote intraday. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
       change.setAttribute('aria-label', change.title)
     })
+    const allocationPanel = document.querySelector('.allocation-panel')
+    if (allocationPanel) {
+      let audit = allocationPanel.querySelector('.portfolio-data-audit')
+      if (!audit) {
+        audit = document.createElement('aside')
+        audit.className = 'portfolio-data-audit'
+        audit.setAttribute('aria-label', 'Kiểm tra dữ liệu danh mục')
+        audit.innerHTML = '<strong>Kiểm tra dữ liệu danh mục</strong><p data-audit-coverage></p><p>Chênh lệch = tổng giá trị hiện tại − tổng (số lượng × giá đóng cửa phiên trước).</p><div class="portfolio-data-audit-legend" aria-label="Chú giải RAG"><span><i class="rag-green"></i>Tăng</span><span><i class="rag-red"></i>Giảm</span><span><i class="rag-amber"></i>Chưa đủ dữ liệu</span></div>'
+        allocationPanel.append(audit)
+      }
+      const coverageText = allocationPanel.querySelector('.allocation-footnote')?.textContent.trim() || 'Chưa có thông tin độ phủ quote.'
+      const coverageNode = audit.querySelector('[data-audit-coverage]')
+      if (coverageNode) coverageNode.textContent = coverageText
+    }
     document.querySelectorAll('.volume-context').forEach(context => {
       context.setAttribute('tabindex', '0')
     })

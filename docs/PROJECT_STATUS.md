@@ -2742,3 +2742,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Gan trang thai Red-Amber-Green cho huong chenh lech tong danh muc: xanh khi thay doi duong, do khi thay doi am, ho phach khi bang 0 hoac khong xac dinh. Chat luong quote thieu/fallback duoc tach rieng trong `data-quality` va tooltip, khong lam doi mau huong tang/giam.
 - RAG chi mo ta trang thai tin hieu; cong thuc chenh lech theo phien truoc van giu nguyen va duoc giai thich trong tooltip.
 - Dong bo runtime source/dist; syntax, diff check va bundle integrity pass.
+
+## Trung tam kiem tra du lieu danh muc - 2026-09-29
+
+- Them khu vuc `Kiem tra du lieu danh muc` trong Phan bo danh muc: hien thi do phu quote, cong thuc chenh lech theo phien truoc va chu giai RAG tach huong bien dong khoi chat luong du lieu.
+- Khu vuc nay duoc cap nhat theo DOM sau moi lan portfolio render, khong tao them request API va khong thay doi phep tinh danh muc.
+- Kiem chung: backend 28 suite/110 test pass; frontend bundle integrity, runtime syntax va diff check pass. Frontend `npm test` van dung o check encoding do `frontend/src/App.jsx` con chuoi ma hoa loi da ghi nhan tu truoc.
+- Diem tiep tuc: khoi phuc App.jsx UTF-8 va route React chinh thuc, sau do them E2E xac nhan panel audit hien thi voi ca quote day du va fallback EOD.
