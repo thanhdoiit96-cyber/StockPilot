@@ -5,10 +5,24 @@
     const nativeFetch = window.fetch.bind(window)
     const cache = new Map()
     const pending = new Map()
+    const gatedAnalysis = new Map()
+    let analysisRequested = false
+    window.__stockpilotRequestAnalysis = () => {
+      analysisRequested = true
+      for (const [key, request] of gatedAnalysis) {
+        gatedAnalysis.delete(key)
+        nativeFetch(request.input, request.init).then(request.resolve, request.reject)
+      }
+    }
     const ttl = 15000
     window.fetch = (input, init = {}) => {
       const request = new Request(input, init)
       const requestUrl = new URL(request.url, window.location.href)
+      const isAnalysisRequest = /^\/api\/stocks\/[^/]+\/analysis$/.test(requestUrl.pathname)
+      if (isAnalysisRequest && !analysisRequested) {
+        const key = request.url
+        return new Promise((resolve, reject) => gatedAnalysis.set(key, { input, init, resolve, reject }))
+      }
       const isStockList = requestUrl.pathname === '/api/stocks'
       const isQuoteRequest = /\/api\/stocks\/quotes(?:\/status)?$/.test(requestUrl.pathname)
       if (request.method !== 'GET' || (!isStockList && !isQuoteRequest)) return nativeFetch(input, init)
@@ -122,6 +136,9 @@
       .stock-detail-link { color: inherit; text-decoration: none; text-decoration-thickness: 2px; text-underline-offset: 3px; transition: color .15s ease, text-decoration-color .15s ease; }
       .stock-detail-link:hover, .stock-detail-link:focus-visible { color: var(--primary); text-decoration: underline; text-decoration-color: currentColor; }
       .stock-detail-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
+      .stock-detail-row-link { display: block; color: inherit; text-decoration: none; margin: -7px -8px; padding: 7px 8px; min-height: 20px; transition: background .15s ease, color .15s ease; }
+      .stock-detail-row-link:hover, .stock-detail-row-link:focus-visible { color: var(--primary); background: rgba(94, 234, 212, .08); }
+      .stock-detail-row-link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
       @media (max-width: 700px) { .market-session-timeline-header { flex-direction: column; }.market-session-timeline-grid { gap: 4px; }.market-session-slot { padding-inline: 3px; } }
       @media (max-width: 700px) { .breadth-snapshot { grid-template-columns: 1fr; } }
       @media (max-width: 700px) { .breadth-leaders { grid-template-columns: 1fr; }.breadth-leaders-header { align-items: stretch; flex-direction: column; } }
@@ -387,6 +404,31 @@
       link.textContent = symbol
       node.replaceChildren(link)
     })
+    document.querySelectorAll('.portfolio-table tbody tr, .recommendation-tracking-table tbody tr').forEach(row => {
+      if (row.dataset.stockDetailRowBound) return
+      const symbolNode = row.querySelector('td:first-child .stock-detail-link, td:first-child > strong')
+      const symbol = symbolNode?.textContent.trim()
+      if (!symbol) return
+      row.dataset.stockDetailRowBound = '1'
+      row.querySelectorAll('td').forEach(cell => {
+        if (cell.querySelector('button, input, select, a')) return
+        const link = document.createElement('a')
+        link.className = 'stock-detail-row-link'
+        link.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
+        link.title = `Mở chi tiết mã ${symbol}`
+        while (cell.firstChild) link.append(cell.firstChild)
+        cell.append(link)
+      })
+    })
+    if (!document.documentElement.dataset.analysisGateBound) {
+      document.documentElement.dataset.analysisGateBound = '1'
+      document.addEventListener('click', event => {
+        if (event.target.closest('.detail-analysis-btn, [aria-label*="Phân tích chuyên sâu"], [aria-label*="Phân tích lại"]')) {
+          window.__stockpilotRequestAnalysis?.()
+          window.dispatchEvent(new Event('stockpilot:request-analysis'))
+        }
+      }, true)
+    }
   const shell = document.querySelector('.dashboard-shell')
   const nav = document.querySelector('.nav')
   if (shell && !shell.dataset.marketNavigationBound) {

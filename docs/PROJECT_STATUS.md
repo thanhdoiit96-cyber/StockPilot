@@ -2668,3 +2668,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung: E2E page split/persist pass; syntax runtime source/dist, bundle integrity va diff check pass. Chua co E2E rieng cho tung bang co du lieu phat sinh tu API portfolio/recommendation.
 - Bo sung co che khoi tao lai `selected-id` mot lan khi mo URL Chi tiet ma; sau khi tim dung ma, trang reload co kiem soat de React doc duoc view va ma da chon, tranh hien trang Chi tiet rong.
 - Khi roi Chi tiet ma sang page khac, runtime xoa query `view=detail&symbol=...` khoi URL de khong tai lai Chi tiet vo han; kiem tra lai dieu huong sidebar page split pass.
+
+## Lien ket toan dong va lazy phan tich chi tiet - 2026-09-29
+
+- Cac o trong dong cua bang Danh muc ca nhan va Theo doi ma da them duoc bo hover/focus va link den cung URL Chi tiet ma; ma trong De xuat va Watchlist van co link rieng de khong pha vo nut thao tac.
+- Phan tich chi tiet khong con duoc request ngay khi mo ma: state React chi bat dau tai khi co su kien `stockpilot:request-analysis` tu nut Phan tich chuyen sau. Sau lan dau, nut Phan tich lai van duoc phep request lai.
+- Runtime dist co gate bo sung cho request analysis de bao ve ban build dang chay; bundle integrity va syntax runtime pass.
