@@ -2696,3 +2696,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Request phan tich chi duoc mo sau click vao `.overview-analysis-btn` tren Bang gia hoac `.detail-analysis-btn` tren Chi tiet ma.
 - Bo gate khong con chap nhan cac aria label trung khop o khu vuc khac; khi doi ma/page, co che runtime reset lai trang thai da cho phep de tranh tu dong phan tich ma moi.
 - Kiem chung: 3 E2E workflow lien quan pass va bundle integrity pass; runtime source/dist da dong bo.
+- Bo sung E2E regression: mo Chi tiet ma tu dong khong tao request `/analysis`; test click nut rieng van xac nhan co request phan tich.
