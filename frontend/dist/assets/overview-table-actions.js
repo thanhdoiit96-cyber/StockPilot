@@ -426,14 +426,16 @@
           textNode.replaceWith(link)
         }
       }
-      row.querySelector('.symbol')?.addEventListener('click', event => {
+      const leaveBoard = () => { try { sessionStorage.removeItem(marketViewKey) } catch (_) { } }
+      row.querySelector('.symbol a.stock-detail-link')?.addEventListener('click', event => {
         event.preventDefault()
         event.stopPropagation()
-        window.location.href = href
+        leaveBoard()
+        row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
       })
       row.addEventListener('click', event => {
         if (event.target.closest('button, a, input, select, textarea')) return
-        window.location.href = href
+        leaveBoard()
       })
     })
     document.querySelectorAll('.portfolio-table tbody tr, .recommendation-tracking-table tbody tr').forEach(row => {

@@ -2681,3 +2681,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Request guard cua danh sach co phieu gio co the dung cache danh sach thanh cong gan nhat khi query tim ma rieng gap HTTP 429, thay vi phat sinh loi khi mo link Chi tiet ma.
 - Cache cu chi duoc dung tam thoi cho response 429; request thanh cong moi van cap nhat cache, khong ghi nhan 429 la du lieu moi.
 - Kiem chung: runtime source/dist syntax va bundle integrity pass.
+- Click dong Ma trong Bang gia gio xoa `stockpilot-market-view` va phat su kien click SPA cho row React, khong reload trang; dieu nay tranh request khoi tao lai va giu luong vao Chi tiet ma khong bi vong lap Bảng giá/429.
