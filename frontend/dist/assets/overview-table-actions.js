@@ -721,7 +721,7 @@
       if (!meta.title && meta.textContent.trim()) meta.title = meta.textContent.trim()
     })
     document.querySelectorAll('.allocation-day-change').forEach(change => {
-      const label = change.textContent.trim()
+      const label = change.textContent.trim().replace(/^So\s+[^:]+:/i, 'So với phiên trước:')
       if (!label) return
       // This is a portfolio day change, not a five-minute return:
       // current total minus quantity-weighted previous-session close.
