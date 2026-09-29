@@ -2757,3 +2757,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiem chung lai backend: **28 suite / 110 test pass**; E2E Danh muc: **4/4 pass**; bundle integrity va runtime syntax pass.
 - Lenh `npm run build` van bi safe-build tu choi bundle moi vi `App.jsx` hien tai chua chua day du cac marker tinh nang dang co trong shipped dist (nut them ma tu Chi tiet, nhan dinh chuyen gia, Ichimoku). Dist cu duoc khoi phuc an toan, khong lam mat ban dang chay.
 - Diem tiep tuc: tach/khôi phuc nguon React day du tu shipped dist truoc khi bat dau thay doi lon tren `App.jsx`; sau do build va E2E full suite lai de xac nhan parity.
+
+## Xac minh lai safe-build va nguon shipped - 2026-09-29
+
+- Chay lai `npm run build`: Vite van bien dich thanh cong, nhung `check:bundle` chu dong tu choi bundle moi vi thieu marker nut them ma tu Chi tiet, nhan dinh chuyen gia va Ichimoku; safe-build da khoi phuc dist truoc do.
+- Bundle dang chay `index-CJ9TdbTJ.js` co day du cac marker; `index-sourcefix.js` chi la ban trung gian va khong du de lam nguon JSX day du.
+- Khong thay doi dist sau lan build that bai. Day la blocker tai tao build, khong phai loi runtime moi.
+- Buoc tiep theo da xac dinh: tao mot lop source React moi tu cac hanh vi dang co trong shipped bundle, uu tien tach route/page va giu test marker lam cong cu doi chieu truoc khi thay the `App.jsx` hien tai.
