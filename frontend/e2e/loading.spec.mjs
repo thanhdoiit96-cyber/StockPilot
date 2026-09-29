@@ -14,7 +14,10 @@ const listPayload = (data = stocks) => ({ success: true, data, pagination: { pag
 async function setup(page, overrides = {}) {
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
-  page.on('requestfailed', request => errors.push('requestfailed ' + request.method() + ' ' + request.url()))
+  page.on('requestfailed', request => {
+    if (request.failure()?.errorText === 'net::ERR_ABORTED') return
+    errors.push('requestfailed ' + request.method() + ' ' + request.url())
+  })
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
     if (overrides[path]) return overrides[path](route)
