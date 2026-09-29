@@ -67,6 +67,7 @@ export default function App() {
     window.addEventListener('stockpilot:request-analysis', requestAnalysis)
     return () => window.removeEventListener('stockpilot:request-analysis', requestAnalysis)
   }, [])
+  useEffect(() => { setAnalysisRequested(false) }, [selectedId])
   useEffect(() => {
     const refreshMarketData = () => {
       marketQuality.retry()
