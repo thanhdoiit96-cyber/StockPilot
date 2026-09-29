@@ -733,16 +733,19 @@
       const value = change.querySelector('span')
       const signedChange = value?.textContent.trim() || ''
       const percentMatch = signedChange.match(/([+-])\s*(\d+(?:[.,]\d+)?)\s*%/)
-      const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : null
+      const percentChange = percentMatch ? Number(percentMatch[2].replace(',', '.')) * (percentMatch[1] === '-' ? -1 : 1) : /\+/.test(signedChange) ? 1 : /-/.test(signedChange) ? -1 : null
       // Keep direction and data quality separate: a positive change stays green
       // even when the portfolio is only partially covered by intraday quotes.
       const rag = percentChange == null || percentChange === 0 ? 'amber' : percentChange > 0 ? 'green' : 'red'
+      const ragColor = rag === 'green' ? 'var(--success, #34d399)' : rag === 'red' ? 'var(--danger, #f87171)' : 'var(--warning, #fbbf24)'
       change.dataset.rag = rag
       change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
+      change.style.setProperty('color', ragColor, 'important')
       if (value) {
         value.classList.remove('positive', 'negative', 'neutral')
         value.classList.add(rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral')
         value.dataset.rag = rag
+        value.style.setProperty('color', ragColor, 'important')
       }
       change.title = `${partialCoverage ? 'Một phần danh mục đang dùng giá fallback hoặc chưa có quote intraday. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
       change.setAttribute('aria-label', change.title)
