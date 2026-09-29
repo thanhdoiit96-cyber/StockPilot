@@ -14,6 +14,9 @@
         nativeFetch(request.input, request.init).then(request.resolve, request.reject)
       }
     }
+    window.__stockpilotResetAnalysis = () => {
+      analysisRequested = false
+    }
     const ttl = 15000
     window.fetch = (input, init = {}) => {
       const request = new Request(input, init)
@@ -428,6 +431,7 @@
       }
       const leaveBoard = () => {
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        window.__stockpilotResetAnalysis?.()
         const boardButton = document.querySelector('.market-board-nav-item')
         boardButton?.classList.remove('active')
         boardButton?.removeAttribute('aria-current')
@@ -471,6 +475,7 @@
     if (!document.documentElement.dataset.analysisGateBound) {
       document.documentElement.dataset.analysisGateBound = '1'
       document.addEventListener('click', event => {
+        if (!event.target.closest('.detail-analysis-btn')) return
         if (event.target.closest('.detail-analysis-btn, [aria-label*="Phân tích chuyên sâu"], [aria-label*="Phân tích lại"]')) {
           window.__stockpilotRequestAnalysis?.()
           window.dispatchEvent(new Event('stockpilot:request-analysis'))
@@ -523,6 +528,7 @@
       boardNav.title = 'Mở Bảng giá'
       nav.insertBefore(boardNav, nav.children[1] || null)
       boardNav.addEventListener('click', () => {
+        window.__stockpilotResetAnalysis?.()
         nav.querySelector('.nav-item:not(.market-board-nav-item)')?.click()
         window.setTimeout(() => {
           try { sessionStorage.setItem(marketViewKey, 'board') } catch (_) { }
@@ -538,6 +544,7 @@
       if (item.dataset.marketViewBound) return
       item.dataset.marketViewBound = '1'
       item.addEventListener('click', () => {
+        window.__stockpilotResetAnalysis?.()
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
         try { sessionStorage.removeItem(detailResolveKey) } catch (_) { }
         if (!item.textContent.includes('Chi ti')) window.history.replaceState({}, '', window.location.pathname)
