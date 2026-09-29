@@ -384,6 +384,14 @@
         boardNav?.removeAttribute('aria-current')
       })
     })
+    const overviewNav = nav?.querySelector('.nav-item:not(.market-board-nav-item)')
+    if (shell?.classList.contains('market-board-active')) {
+      overviewNav?.classList.remove('active')
+      boardNav?.classList.add('active')
+    } else if (document.querySelector('.market-breadth-panel')) {
+      nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => item.classList.remove('active'))
+      overviewNav?.classList.add('active')
+    }
     if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active') && !boardNav?.dataset.restored) {
       boardNav.dataset.restored = '1'
       window.setTimeout(() => boardNav.click(), 0)
