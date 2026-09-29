@@ -2697,3 +2697,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bo gate khong con chap nhan cac aria label trung khop o khu vuc khac; khi doi ma/page, co che runtime reset lai trang thai da cho phep de tranh tu dong phan tich ma moi.
 - Kiem chung: 3 E2E workflow lien quan pass va bundle integrity pass; runtime source/dist da dong bo.
 - Bo sung E2E regression: mo Chi tiet ma tu dong khong tao request `/analysis`; test click nut rieng van xac nhan co request phan tich.
+
+## Lam ro Do rong thi truong va pham vi San - 2026-09-29
+
+- Bo loc San duoc dua len header cua Do rong thi truong, thay vi nam trong rieng danh sach Top; khi chon HSX/HNX/UPCOM, he thong tai lai tap ma theo sàn va cap nhat so ma tang/giam/di ngang, A/D, phan bo, khoi luong va Top list.
+- Header hien ro pham vi dang xem, so ma co quote va ghi chu “Binh quan chi tren ma co bien dong hop le”, tranh hieu nham `+0.00%` la gia tri mac dinh hay loi du lieu.
+- Bo sung E2E xac nhan chon HSX cap nhat context cua chart; bundle integrity va syntax runtime source/dist pass.
