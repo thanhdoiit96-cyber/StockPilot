@@ -392,8 +392,7 @@
       nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => item.classList.remove('active'))
       overviewNav?.classList.add('active')
     }
-    if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active') && !boardNav?.dataset.restored) {
-      boardNav.dataset.restored = '1'
+    if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active')) {
       window.setTimeout(() => boardNav.click(), 0)
     }
     document.querySelectorAll('.table-panel thead th').forEach(header => {

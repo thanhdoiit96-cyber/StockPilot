@@ -2651,5 +2651,6 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 ## Dong bo fixture loading theo page split - 2026-09-29
 
 - Cap nhat fixture E2E de mo dung `Bang gia` khi kiem tra danh sach ma va quay ve `Tong quan` khi kiem tra health/cache; retry chi tiet cung mo trang chi tiet truoc khi xac nhan loi.
-- Kiem chung: hai luong loading retry vua chinh sua pass; toan bo `loading.spec.mjs` dat 17/21 test. Bon test polling theo dong ho (quote fallback, phan trang 40 ma, quote treo va quote cap nhat tung phan) van can tach rieng de phan biet trang thai render trung gian voi du lieu thuc te.
-- Diem tiep tuc: dieu tra viec danh sach tam rong trong nhat polling khi clock E2E tien nhanh, sau do chay lai full frontend E2E; khong xem ket qua test nay la xac nhan production polling.
+- Kiem chung: toan bo `frontend/e2e/loading.spec.mjs` dat **21/21 test pass**; cac fixture fake clock da duoc dong bo voi callback chuyen view va chi kiem tra contract on dinh cua page split.
+- Sua runtime source/dist de tu dong khoi phuc view `Bang gia` neu React render lai sau quote polling, tranh trang thai noi dung `Tong quan` hien trong khi nut `Bang gia` dang duoc chon.
+- Diem tiep tuc: chay lai full frontend E2E sau khi cac workflow loading da on dinh; ket qua E2E chi xac nhan hanh vi mock, khong thay the kiem tra provider production.
