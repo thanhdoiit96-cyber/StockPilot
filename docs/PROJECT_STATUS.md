@@ -2749,3 +2749,4 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khu vuc nay duoc cap nhat theo DOM sau moi lan portfolio render, khong tao them request API va khong thay doi phep tinh danh muc.
 - Kiem chung: backend 28 suite/110 test pass; frontend bundle integrity, runtime syntax va diff check pass. Frontend `npm test` van dung o check encoding do `frontend/src/App.jsx` con chuoi ma hoa loi da ghi nhan tu truoc.
 - Diem tiep tuc: khoi phuc App.jsx UTF-8 va route React chinh thuc, sau do them E2E xac nhan panel audit hien thi voi ca quote day du va fallback EOD.
+- Da dong bo fixture `frontend/e2e/portfolio.spec.mjs` theo nut Danh muc ca nhan sau khi tach Bang gia; E2E Danh muc dat **4/4**, bao gom assertion panel audit.
