@@ -423,6 +423,7 @@
       item.addEventListener('click', () => {
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
         try { sessionStorage.removeItem(detailResolveKey) } catch (_) { }
+        if (!item.textContent.includes('Chi ti')) window.history.replaceState({}, '', window.location.pathname)
         const sectorSelect = document.querySelector('.sector-select')
         if (sectorSelect && sectorSelect.value) {
           sectorSelect.value = ''
