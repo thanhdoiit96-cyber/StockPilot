@@ -2840,3 +2840,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Test sidebar fail do runtime ap dung `overflow-x: auto` toan cuc; da sua thanh chi ap dung tren mobile va test sidebar chay rieng **1/1 pass**.
 - Con 2 test timeout doc lap: partial quote refresh khong giu duoc gia BBB sau fake clock 31 giay; recommendation criteria khong tim thay slider trong bundle preview. Hai loi nay khong lien quan nut Thêm, can tach xu ly o luong loading/recovered bundle.
 - Cac suite Bảng giá–Danh mục van dat **6/6 pass**; source parity va bundle integrity pass.
+
+## Phan loai loi E2E con lai - 2026-09-30
+
+- Sidebar da xanh sau khi gioi han overflow mobile.
+- Selector slider cua test Đề xuất da chuyen sang DOM class on dinh; test di qua buoc tao ket qua nhung bundle preview van khong tao `saved-proposal` nhu source React hien tai. Day la sai lech source/dist, khong phai loi API.
+- Partial quote refresh van that bai doc lap: sau fake clock 31 giay, ma BBB khong nhan quote moi trong preview. Can tach tiep co che polling/partial merge cua bundle truoc khi danh dau full E2E xanh.
