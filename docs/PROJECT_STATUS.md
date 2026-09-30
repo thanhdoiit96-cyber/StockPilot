@@ -2853,3 +2853,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dong bo `frontend/dist/assets/overview-table-actions.js` de preview dang chay su dung cung logic voi source; khong thay doi cach tinh gia hay tan suat polling cua ung dung.
 - Kiem chung: test E2E `partial quote refresh` dat **1/1 pass**, runtime syntax pass. Full E2E chua chay lai sau thay doi; loi `saved-proposal` trong recommendation preview van la blocker source/dist da ghi nhan.
 - Diem tiep tuc: chay lai full E2E de xac nhan khong co hoi quy, sau do tach source React va shipped dist cho recommendation workbench truoc khi mo rong build parity.
+
+## Full E2E sau khi sua partial quote - 2026-09-30
+
+- Full Playwright dat **47/48 pass**.
+- Luong `partial quote refresh` da pass; cac ma khong nam trong payload refresh van giu gia gan nhat. Cac suite Loading, Bang gia, Danh muc, Sidebar va Workflows deu pass.
+- Con 1 test fail o `recommendation-workbench.spec.mjs`: preview bundle khong tao `.saved-proposal` sau khi luu de xuat. Day la sai lech giua source React va shipped dist, khong phai loi API hay quote polling.
+- Diem tiep tuc: khoi phuc/parity hoa Recommendation Workbench trong dist hoac hoan tat qua trinh tai tao source React, sau do chay lai full E2E.
