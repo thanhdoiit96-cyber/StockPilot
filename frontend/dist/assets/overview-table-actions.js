@@ -114,6 +114,8 @@
       .overview-analysis-action .overview-analysis-btn:focus-visible {
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
+      .overview-add-portfolio-btn { margin-left: 5px; padding: 6px 8px; border: 1px solid rgba(94, 234, 212, .35); border-radius: 7px; color: var(--text); background: rgba(20, 184, 166, .12); font: inherit; font-size: 10px; cursor: pointer; }
+      .overview-add-portfolio-btn:hover, .overview-add-portfolio-btn:focus-visible { color: #042f2e; background: #5eead4; }
       .overview-next { display: none !important; }
       .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
       .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
@@ -675,6 +677,38 @@
         nav.querySelector('.nav-item:not(.market-board-nav-item).active')?.classList.remove('active')
       })
     }
+    if (!document.documentElement.dataset.portfolioAddBound) {
+      document.documentElement.dataset.portfolioAddBound = '1'
+      document.addEventListener('click', event => {
+        const button = event.target.closest('.add-portfolio-btn, .overview-add-portfolio-btn, [aria-label*="danh mục"]')
+        if (!button) return
+        const row = button.closest('tr')
+        const ariaSymbol = button.getAttribute('aria-label')?.match(/Thêm\s+(.+?)\s+vào danh mục/i)?.[1]
+        const symbol = ariaSymbol || row?.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
+        if (!symbol) return
+        const priceText = row.querySelectorAll('td')?.[2]?.textContent || ''
+        const price = Number(priceText.replace(/[^0-9-]/g, '')) || null
+        event.preventDefault()
+        event.stopPropagation()
+        if (window.__stockpilotAddToPortfolio) {
+          window.__stockpilotAddToPortfolio({ symbol, price })
+          window.dispatchEvent(new CustomEvent('stockpilot:add-to-portfolio', { detail: { symbol, price } }))
+        } else {
+          const portfolioNav = [...document.querySelectorAll('.nav-item')].find(item => item.textContent.includes('Danh mục'))
+          portfolioNav?.click()
+          window.setTimeout(() => {
+            const symbolInput = document.querySelector('.transaction-form input[aria-label], .transaction-form input')
+            const priceInput = document.querySelectorAll('.transaction-form input')[2]
+            const setValue = (node, value) => {
+              if (!node || value == null) return
+              const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+              setter?.call(node, String(value)); node.dispatchEvent(new Event('input', { bubbles: true }))
+            }
+            setValue(symbolInput, symbol); setValue(priceInput, price)
+          }, 50)
+        }
+      }, true)
+    }
     if (shell && !shell.classList.contains('market-board-active')) boardNav?.removeAttribute('aria-current')
     nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => {
       if (item.dataset.marketViewBound) return
@@ -920,6 +954,21 @@
       if (!container.classList.contains(enhancedClass)) container.classList.add(enhancedClass)
       const button = container.querySelector('.overview-analysis-btn')
       if (!button) return
+      if (!container.querySelector('.overview-add-portfolio-btn')) {
+        const row = container.closest('tr')
+        const symbol = row?.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
+        const priceText = row?.querySelectorAll('td')?.[2]?.textContent || ''
+        const price = Number(priceText.replace(/[^0-9-]/g, '')) || null
+        if (symbol) {
+          const addButton = document.createElement('button')
+          addButton.type = 'button'
+          addButton.className = 'overview-add-portfolio-btn'
+          addButton.textContent = 'Thêm vào danh mục'
+          addButton.setAttribute('aria-label', `Thêm ${symbol} vào danh mục`)
+          addButton.title = `Thêm ${symbol} vào danh mục`
+          container.append(addButton)
+        }
+      }
       button.setAttribute('aria-label', 'Mở phân tích chuyên sâu')
       button.title = 'Mở trang chi tiết và tải phân tích kỹ thuật'
     })
