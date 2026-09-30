@@ -2797,3 +2797,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Runtime dist co fallback cho bundle hien tai: bat ca nut add da ship, dieu huong sang Danh muc va dien form qua native input setter; symbol duoc lay tu aria-label de tranh dinh kem text metadata vao ma.
 - Kiem chung: E2E `overview add` pass, E2E `failed save` pass; bundle integrity va runtime syntax pass.
 - Dist runtime da dong bo voi source. Build raw van phu thuoc blocker source parity da ghi nhan truoc do.
+
+## Loai bo nut Them trung tren Bang gia - 2026-09-30
+
+- Da bo nut runtime `overview-add-portfolio-btn` duoc them nham trong khu vuc Phan tich; giu duy nhat nut `add-portfolio-btn` trong cot Thao tac.
+- Nut duoc can giua, co vung bam toi thieu 32px va icon dau cong trong khung nho; handler runtime van bat nut da ship cua bundle hien tai va dieu huong/diền form dung ma.
+- Kiem chung: E2E luong them va luong luu that bai **2/2 pass**, bundle integrity, runtime syntax va diff check pass.

@@ -1030,7 +1030,9 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .listing-badge.delisted { border-color: rgba(251, 113, 133, .4); background: rgba(251, 113, 133, .1); color: #fda4af; }
 .listing-badge.listed { color: var(--muted); }
 .pinned-stock { background: rgba(94, 234, 212, .035); }
-.add-portfolio-btn { white-space: nowrap; }
+.add-portfolio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 74px; min-height: 32px; padding: 6px 10px; border: 1px solid rgba(94, 234, 212, .32); border-radius: 8px; color: var(--text); background: rgba(20, 184, 166, .1); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+.add-portfolio-btn::before { content: '+'; display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 4px; font-size: 13px; line-height: 1; }
+.add-portfolio-btn:hover, .add-portfolio-btn:focus-visible { border-color: var(--primary); background: rgba(94, 234, 212, .22); transform: translateY(-1px); outline: none; }
 .source-link { color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
 .source-link:hover { color: var(--primary); text-decoration-style: solid; }
 .source-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 2px; }

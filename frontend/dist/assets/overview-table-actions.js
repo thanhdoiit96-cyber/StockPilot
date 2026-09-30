@@ -114,8 +114,9 @@
       .overview-analysis-action .overview-analysis-btn:focus-visible {
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
-      .overview-add-portfolio-btn { margin-left: 5px; padding: 6px 8px; border: 1px solid rgba(94, 234, 212, .35); border-radius: 7px; color: var(--text); background: rgba(20, 184, 166, .12); font: inherit; font-size: 10px; cursor: pointer; }
-      .overview-add-portfolio-btn:hover, .overview-add-portfolio-btn:focus-visible { color: #042f2e; background: #5eead4; }
+      .add-portfolio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 74px; min-height: 32px; padding: 6px 10px; border: 1px solid rgba(94, 234, 212, .32); border-radius: 8px; color: var(--text); background: rgba(20, 184, 166, .1); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+      .add-portfolio-btn::before { content: '+'; display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 4px; font-size: 13px; line-height: 1; }
+      .add-portfolio-btn:hover, .add-portfolio-btn:focus-visible { border-color: var(--primary); background: rgba(94, 234, 212, .22); transform: translateY(-1px); outline: none; }
       .overview-next { display: none !important; }
       .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
       .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
@@ -954,21 +955,6 @@
       if (!container.classList.contains(enhancedClass)) container.classList.add(enhancedClass)
       const button = container.querySelector('.overview-analysis-btn')
       if (!button) return
-      if (!container.querySelector('.overview-add-portfolio-btn')) {
-        const row = container.closest('tr')
-        const symbol = row?.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
-        const priceText = row?.querySelectorAll('td')?.[2]?.textContent || ''
-        const price = Number(priceText.replace(/[^0-9-]/g, '')) || null
-        if (symbol) {
-          const addButton = document.createElement('button')
-          addButton.type = 'button'
-          addButton.className = 'overview-add-portfolio-btn'
-          addButton.textContent = 'Thêm vào danh mục'
-          addButton.setAttribute('aria-label', `Thêm ${symbol} vào danh mục`)
-          addButton.title = `Thêm ${symbol} vào danh mục`
-          container.append(addButton)
-        }
-      }
       button.setAttribute('aria-label', 'Mở phân tích chuyên sâu')
       button.title = 'Mở trang chi tiết và tải phân tích kỹ thuật'
     })
