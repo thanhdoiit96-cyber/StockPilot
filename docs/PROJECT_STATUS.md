@@ -2846,3 +2846,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Sidebar da xanh sau khi gioi han overflow mobile.
 - Selector slider cua test Đề xuất da chuyen sang DOM class on dinh; test di qua buoc tao ket qua nhung bundle preview van khong tao `saved-proposal` nhu source React hien tai. Day la sai lech source/dist, khong phai loi API.
 - Partial quote refresh van that bai doc lap: sau fake clock 31 giay, ma BBB khong nhan quote moi trong preview. Can tach tiep co che polling/partial merge cua bundle truoc khi danh dau full E2E xanh.
+
+## Giu du lieu khi quote cap nhat tung phan - 2026-09-30
+
+- Runtime quote guard da hop nhat cac payload thanh cong cua `/api/stocks/quotes` trong mot snapshot ngan han. Khi provider chi tra ve mot phan ma thay doi, cac ma con lai van giu quote gan nhat thay vi bi xoa khoi bang.
+- Dong bo `frontend/dist/assets/overview-table-actions.js` de preview dang chay su dung cung logic voi source; khong thay doi cach tinh gia hay tan suat polling cua ung dung.
+- Kiem chung: test E2E `partial quote refresh` dat **1/1 pass**, runtime syntax pass. Full E2E chua chay lai sau thay doi; loi `saved-proposal` trong recommendation preview van la blocker source/dist da ghi nhan.
+- Diem tiep tuc: chay lai full E2E de xac nhan khong co hoi quy, sau do tach source React va shipped dist cho recommendation workbench truoc khi mo rong build parity.

@@ -5,6 +5,7 @@
     const nativeFetch = window.fetch.bind(window)
     const cache = new Map()
     const pending = new Map()
+    const mergedQuoteData = new Map()
     const gatedAnalysis = new Map()
     let analysisRequested = false
     window.__stockpilotRequestAnalysis = () => {
@@ -18,6 +19,12 @@
       analysisRequested = false
     }
     const ttl = 15000
+    const quoteMergeKey = requestUrl => {
+      const symbols = requestUrl.searchParams.get('symbols')
+      if (!symbols) return requestUrl.pathname
+      const normalized = symbols.split(',').map(symbol => symbol.trim().toUpperCase()).filter(Boolean).sort().join(',')
+      return `${requestUrl.pathname}?symbols=${normalized}`
+    }
     window.fetch = (input, init = {}) => {
       const request = new Request(input, init)
       const requestUrl = new URL(request.url, window.location.href)
@@ -45,12 +52,29 @@
         }
         if (response.ok) {
           const body = await response.text()
+          let responseBody = body
+          if (isQuoteRequest) {
+            try {
+              const payload = JSON.parse(body)
+              if (payload?.success === true && payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+                // Providers may return only the symbols that changed in a refresh.
+                // Keep one short-lived market snapshot per quote endpoint so a
+                // partial response cannot blank prices that are still current.
+                const mergeKey = requestUrl.pathname === '/api/stocks/quotes' ? '/api/stocks/quotes' : quoteMergeKey(requestUrl)
+                const merged = { ...(mergedQuoteData.get(mergeKey) || {}), ...payload.data }
+                mergedQuoteData.set(mergeKey, merged)
+                responseBody = JSON.stringify({ ...payload, data: merged })
+              }
+            } catch (_) {
+              responseBody = body
+            }
+          }
           let cacheable = true
           if (isStockList) {
-            try { cacheable = JSON.parse(body)?.success === true && Array.isArray(JSON.parse(body)?.data) } catch (_) { cacheable = false }
+            try { cacheable = JSON.parse(responseBody)?.success === true && Array.isArray(JSON.parse(responseBody)?.data) } catch (_) { cacheable = false }
           }
-          if (cacheable) cache.set(key, { at: Date.now(), body, status: response.status, headers: [...response.headers.entries()] })
-          return new Response(body, { status: response.status, headers: response.headers })
+          if (cacheable) cache.set(key, { at: Date.now(), body: responseBody, status: response.status, headers: [...response.headers.entries()] })
+          return new Response(responseBody, { status: response.status, headers: response.headers })
         }
         return response
       }).finally(() => pending.delete(key))
