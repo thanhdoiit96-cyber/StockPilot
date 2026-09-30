@@ -2803,3 +2803,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Da bo nut runtime `overview-add-portfolio-btn` duoc them nham trong khu vuc Phan tich; giu duy nhat nut `add-portfolio-btn` trong cot Thao tac.
 - Nut duoc can giua, co vung bam toi thieu 32px va icon dau cong trong khung nho; handler runtime van bat nut da ship cua bundle hien tai va dieu huong/diền form dung ma.
 - Kiem chung: E2E luong them va luong luu that bai **2/2 pass**, bundle integrity, runtime syntax va diff check pass.
+
+## Sua icon va nhan nut Them - 2026-09-30
+
+- Bo pseudo-icon dau cong do runtime/style them vao, tranh hien thi hai dau cong khi bundle da co icon goc.
+- Tang be rong toi thieu va cho phep overflow de nhan `Thêm` khong bi cat trong cot Thao tac.
+- Kiem chung: E2E mo form Them dat **1/1 pass**, bundle integrity, runtime syntax va diff check pass.

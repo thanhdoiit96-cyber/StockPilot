@@ -114,8 +114,7 @@
       .overview-analysis-action .overview-analysis-btn:focus-visible {
         box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(94, 234, 212, .72);
       }
-      .add-portfolio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 74px; min-height: 32px; padding: 6px 10px; border: 1px solid rgba(94, 234, 212, .32); border-radius: 8px; color: var(--text); background: rgba(20, 184, 166, .1); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-      .add-portfolio-btn::before { content: '+'; display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 4px; font-size: 13px; line-height: 1; }
+      .add-portfolio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 86px; min-height: 32px; padding: 6px 10px; border: 1px solid rgba(94, 234, 212, .32); border-radius: 8px; color: var(--text); background: rgba(20, 184, 166, .1); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: visible; cursor: pointer; }
       .add-portfolio-btn:hover, .add-portfolio-btn:focus-visible { border-color: var(--primary); background: rgba(94, 234, 212, .22); transform: translateY(-1px); outline: none; }
       .overview-next { display: none !important; }
       .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
