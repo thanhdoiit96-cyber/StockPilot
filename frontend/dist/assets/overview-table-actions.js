@@ -71,6 +71,7 @@
       .table-panel th:nth-child(5), .table-panel td:nth-child(5) { width: 13%; }
       .table-panel th:nth-child(7), .table-panel td:nth-child(7) { width: 18%; text-align: center; }
       .table-panel th:nth-child(8), .table-panel td:nth-child(8) { width: 10%; }
+      .table-wrap { overflow-x: auto; }
       .overview-analysis-action { display: flex; align-items: center; justify-content: center; min-width: 0; }
       .overview-analysis-action .rating-badge,
       .overview-analysis-action > small { display: none !important; }
@@ -116,6 +117,7 @@
       }
       .add-portfolio-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 86px; min-height: 32px; padding: 6px 10px; border: 1px solid rgba(94, 234, 212, .32); border-radius: 8px; color: var(--text); background: rgba(20, 184, 166, .1); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: visible; cursor: pointer; }
       .add-portfolio-btn:hover, .add-portfolio-btn:focus-visible { border-color: var(--primary); background: rgba(94, 234, 212, .22); transform: translateY(-1px); outline: none; }
+      @media (max-width: 700px) { .table-panel th:last-child, .table-panel td:last-child { min-width: 96px; } .table-panel .add-portfolio-btn { min-width: 86px; writing-mode: horizontal-tb; } }
       .overview-next { display: none !important; }
       .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
       .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }

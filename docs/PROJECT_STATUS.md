@@ -2815,3 +2815,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Suite `frontend/e2e/overview-personal.spec.mjs` dat **5/5 pass**, bao gom coverage overview, ghim/watchlist, phan trang, them giao dich, luu that bai va hover/link.
 - `check:source-parity` dat **9/9 marker**; bundle integrity va diff check pass.
 - Buoc tiep theo: kiem tra hien thi nut Thêm tren viewport hep va sau khi doi kich thuoc cot, sau do moi mo rong thay doi style sang cac bang khac.
+
+## Responsive nut Them tren viewport hep - 2026-09-30
+
+- Them E2E viewport 390x844, xac nhan nut Thêm van hien text, co chieu rong toi thieu va bang cho phep cuon ngang thay vi cat cot Thao tac.
+- Bo sung quy tac responsive cho cot Thao tac va dong bo runtime dist de preview hien tai ap dung ngay.
+- Kiem chung: responsive E2E **1/1 pass**, bundle integrity pass.
