@@ -2783,3 +2783,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Trang Chi tiet ma trong source da co nut `detail-add-btn` de them ma dang xem vao watchlist, dung cung endpoint va co che refresh voi form Watchlist hien tai.
 - Sau khi them thanh cong, giao dien cap nhat watchlist va hien thi thong bao; loi trung ma/provider duoc dua vao thong bao hien co.
 - `check:source-parity` da giam con 2 nhom thieu: gate phan tich theo ma va Ichimoku. Frontend service tests **14/14 pass**, encoding check pass.
+
+## Hoan tat source parity cho Phan tich chuyen sau - 2026-09-30
+
+- Panel phan tich trong source gan marker `analysis-requested:<symbol>` va luu session key theo ma, dong bo voi co che gate dang chay.
+- Su kien request kem symbol, tranh dung lai trang thai phan tich cua ma truoc khi doi ma.
+- Them hien thi tom tat Ichimoku tu `analysis.data.indicators.ichimoku` khi backend tra ve conversion, base va cloud.
+- `check:source-parity` dat **9/9 marker**; frontend service tests **14/14 pass** va encoding check pass.
