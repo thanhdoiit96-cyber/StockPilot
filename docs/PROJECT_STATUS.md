@@ -2809,3 +2809,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bo pseudo-icon dau cong do runtime/style them vao, tranh hien thi hai dau cong khi bundle da co icon goc.
 - Tang be rong toi thieu va cho phep overflow de nhan `Thêm` khong bi cat trong cot Thao tac.
 - Kiem chung: E2E mo form Them dat **1/1 pass**, bundle integrity, runtime syntax va diff check pass.
+
+## Hoi quy day du Bang gia va Danh muc - 2026-09-30
+
+- Suite `frontend/e2e/overview-personal.spec.mjs` dat **5/5 pass**, bao gom coverage overview, ghim/watchlist, phan trang, them giao dich, luu that bai va hover/link.
+- `check:source-parity` dat **9/9 marker**; bundle integrity va diff check pass.
+- Buoc tiep theo: kiem tra hien thi nut Thêm tren viewport hep va sau khi doi kich thuoc cot, sau do moi mo rong thay doi style sang cac bang khac.
