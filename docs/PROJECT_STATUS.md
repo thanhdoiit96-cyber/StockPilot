@@ -2790,3 +2790,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Su kien request kem symbol, tranh dung lai trang thai phan tich cua ma truoc khi doi ma.
 - Them hien thi tom tat Ichimoku tu `analysis.data.indicators.ichimoku` khi backend tra ve conversion, base va cloud.
 - `check:source-parity` dat **9/9 marker**; frontend service tests **14/14 pass** va encoding check pass.
+
+## Sua thao tac Them tu Bang gia - 2026-09-30
+
+- Bo sung nut `Thêm` voi aria-label theo ma trong cot Thao tac cua source Bang gia; click chi dien symbol va gia hien tai vao bieu mau Danh muc, chua tao giao dich cho den khi nguoi dung nhan Luu.
+- Runtime dist co fallback cho bundle hien tai: bat ca nut add da ship, dieu huong sang Danh muc va dien form qua native input setter; symbol duoc lay tu aria-label de tranh dinh kem text metadata vao ma.
+- Kiem chung: E2E `overview add` pass, E2E `failed save` pass; bundle integrity va runtime syntax pass.
+- Dist runtime da dong bo voi source. Build raw van phu thuoc blocker source parity da ghi nhan truoc do.
