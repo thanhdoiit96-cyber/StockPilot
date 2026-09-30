@@ -2833,3 +2833,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Frontend service tests dat **14/14 pass**, encoding check dat voi 24 file nguon.
 - Backend Jest dat **28 suite / 110 test pass**.
 - Day la kiem chung service/API va UI regression; khong suy dien thanh xac nhan provider production.
+
+## Full E2E lien thong - 2026-09-30
+
+- Full Playwright suite dat **45/48 pass**.
+- Test sidebar fail do runtime ap dung `overflow-x: auto` toan cuc; da sua thanh chi ap dung tren mobile va test sidebar chay rieng **1/1 pass**.
+- Con 2 test timeout doc lap: partial quote refresh khong giu duoc gia BBB sau fake clock 31 giay; recommendation criteria khong tim thay slider trong bundle preview. Hai loi nay khong lien quan nut Thêm, can tach xu ly o luong loading/recovered bundle.
+- Cac suite Bảng giá–Danh mục van dat **6/6 pass**; source parity va bundle integrity pass.

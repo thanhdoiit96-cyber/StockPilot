@@ -71,7 +71,7 @@
       .table-panel th:nth-child(5), .table-panel td:nth-child(5) { width: 13%; }
       .table-panel th:nth-child(7), .table-panel td:nth-child(7) { width: 18%; text-align: center; }
       .table-panel th:nth-child(8), .table-panel td:nth-child(8) { width: 10%; }
-      .table-wrap { overflow-x: auto; }
+      @media (max-width: 700px) { .table-wrap { overflow-x: auto; } }
       .overview-analysis-action { display: flex; align-items: center; justify-content: center; min-width: 0; }
       .overview-analysis-action .rating-badge,
       .overview-analysis-action > small { display: none !important; }
