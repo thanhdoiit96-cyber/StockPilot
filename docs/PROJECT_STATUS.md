@@ -2827,3 +2827,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Toan bo `overview-personal.spec.mjs` dat **6/6 pass**, gom 5 luong desktop va test viewport 390x844.
 - `check:source-parity` dat **9/9 marker**; bundle integrity pass.
 - Giao dien hien co the cuon ngang bang tren mobile, giu cot Thao tac va nhan nut Thêm doc duoc.
+
+## Regression gate toan du sau chuoi thay doi UI - 2026-09-30
+
+- Frontend service tests dat **14/14 pass**, encoding check dat voi 24 file nguon.
+- Backend Jest dat **28 suite / 110 test pass**.
+- Day la kiem chung service/API va UI regression; khong suy dien thanh xac nhan provider production.
