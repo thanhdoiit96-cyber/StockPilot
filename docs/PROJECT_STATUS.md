@@ -2821,3 +2821,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Them E2E viewport 390x844, xac nhan nut Thêm van hien text, co chieu rong toi thieu va bang cho phep cuon ngang thay vi cat cot Thao tac.
 - Bo sung quy tac responsive cho cot Thao tac va dong bo runtime dist de preview hien tai ap dung ngay.
 - Kiem chung: responsive E2E **1/1 pass**, bundle integrity pass.
+
+## Hoi quy sau responsive Bang gia - 2026-09-30
+
+- Toan bo `overview-personal.spec.mjs` dat **6/6 pass**, gom 5 luong desktop va test viewport 390x844.
+- `check:source-parity` dat **9/9 marker**; bundle integrity pass.
+- Giao dien hien co the cuon ngang bang tren mobile, giu cot Thao tac va nhan nut Thêm doc duoc.
