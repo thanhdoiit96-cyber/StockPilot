@@ -158,3 +158,15 @@ test('URL data exposes hover titles and external links without selecting the row
   await page.locator('.detail-analysis-btn').click()
   await expect(page.getByRole('link', { name: /Economic data/ })).toHaveAttribute('title', 'https://example.test/data')
 })
+
+test('portfolio add action remains readable on narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await setup(page)
+  const addButton = page.locator('.table-panel .add-portfolio-btn').first()
+  await expect(addButton).toBeVisible()
+  await expect(addButton).toContainText('Thêm')
+  const box = await addButton.boundingBox()
+  expect(box).not.toBeNull()
+  expect(box.width).toBeGreaterThanOrEqual(70)
+  await expect(page.locator('.table-wrap')).toHaveCSS('overflow-x', 'auto')
+})
