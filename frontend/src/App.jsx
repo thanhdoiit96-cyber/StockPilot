@@ -7,6 +7,7 @@ import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
 import DetailPriceVolumeChart from "./components/DetailPriceVolumeChart.jsx";
+import DetailAnalysisStatus from "./components/DetailAnalysisStatus.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1088,13 +1089,7 @@ a c\xF3 nh\u1EADn \u0111\u1ECBnh") })] }), O.jsxs("li", { children: [O.jsx("span
 ong", { children: ((Hr = (Vr = T.data) == null ? void 0 : Vr.indicators) == null ? void 0 : Hr.rsi14) ?? Xn })] }), O.jsxs(
   "li", { children: [O.jsx("span", { children: p("Quan s\xE1t") }), O.jsxs("strong", { children: [((Qr = T.data) == null ?
   void 0 : Qr.observations) ?? 0, " ", p("phi\xEAn")] })] })] })] })] }), O.jsxs("section", { className: "panel technica\
-l-panel", children: [O.jsxs("div", { className: "analysis-status-row", children: [O.jsx("h3", { children: p("Ph\xE2n t\xEDch c\
-huy\xEAn s\xE2u") }), O.jsx("span", { className: `chip ${T.status === "loading" ? "neutral" : T.data ? "success" : "neut\
-ral"}`, children: T.status === "loading" ? "\u0110ang ph\xE2n t\xEDch..." : T.data ? "\u0110\xE3 ph\xE2n t\xEDch" : "Ch\u01B0\
-a ph\xE2n t\xEDch" })] }), T.error && O.jsx("p", { role: "alert", children: T.error }), !T.data && !T.error && O.jsxs("d\
-iv", { className: "analysis-empty-state", children: [O.jsx("strong", { children: p("Ch\u01B0a c\xF3 k\u1EBFt qu\u1EA3 ph\xE2n t\xEDch") }),
-  O.jsx("span", { children: T.status === "loading" ? p("\u0110ang t\u1EA3i c\xE1c ch\u1EC9 b\xE1o k\u1EF9 thu\u1EADt...") :
-  p("Nh\u1EA5n Ph\xE2n t\xEDch chuy\xEAn s\xE2u \u0111\u1EC3 xem \u0111i\u1EC3m s\u1ED1, ch\u1EC9 b\xE1o v\xE0 nh\u1EADn \u0111\u1ECBnh theo k\u1EF3 h\u1EA1n.") })] }),
+l-panel", children: [O.jsx(DetailAnalysisStatus, { analysis: T, translate: p }),
   T.data && O.jsxs("p", { children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || p("Ch\u01B0a c\xF3 nh\u1EADn \u0111\u1ECBnh"),
   "  ", p("Ch\u1EA5t l\u01B0\u1EE3ng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"] }), T.data &&
   O.jsx("p", { className: "data-time", children: ["C\u1EADp nh\u1EADt ph\xE2n t\xEDch: ", He((t = T.data.insight) == null ?

@@ -3090,3 +3090,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Đã xoá hoàn toàn `rv` legacy khỏi `App.jsx`; `rg` không còn reference `rv` trong `frontend/src`. `DetailPriceVolumeChart` là implementation chart duy nhất.
 - Kiểm chứng: production build/safe-build và bundle integrity pass; Playwright chart targeted **4/4** pass (EOD/Intraday alignment, empty history, EOD gap và gap suppression cho current Intraday).
 - Điểm tiếp tục P1: tách panel analysis theo contract dữ liệu rõ ràng; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
+
+## Tách trạng thái panel Phân tích chuyên sâu — 2026-10-01
+
+- `DetailAnalysisStatus` nay sở hữu heading, chip trạng thái, error và empty/loading state của panel Phân tích chuyên sâu. Container vẫn giữ data-specific indicators, guidance và risk plan, tránh thay đổi contract response trong lát cắt này.
+- Kiểm chứng: production build/safe-build và bundle integrity pass (`index-Dx0zkBSY.js`); Playwright workflow analysis **4/4** pass, gồm mở từ Tổng quan, không auto-request, session intent và stale flag.
+- Điểm tiếp tục P1: tách nội dung analysis theo các section có contract response rõ (guidance/risk), không đổi lifecycle; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
