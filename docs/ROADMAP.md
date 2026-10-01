@@ -585,3 +585,16 @@ Build reproducibility is restored through application-only recovery from the shi
 ## Intraday provider reset follow-up — 2026-09-25
 
 The remaining incident was worker concurrency and provider instability: simultaneous per-symbol calls could reset the HTTP worker, while the UI mislabeled valid intraday trades as EOD because it required `volume_type=session`. The service now serializes worker calls, falls back to the local bridge, returns partial symbols early, and polls missing symbols. UI labels use the intraday interval. Latest live evidence shows partial-first/3-symbol cached follow-up; provider resets remain an external limitation and are explicitly surfaced.
+
+## Frontend reproducible release checkpoint — 2026-09-30
+
+- Complete: source recovery now covers Detail, Recommendation Workbench, market board/breadth, portfolio/watchlist, quality overlays and lazy expert analysis. Source parity is 9/9.
+- Complete: Vite emits the four runtime overlays/actions as explicit release assets; safe-build and bundle integrity accept a clean rebuild without relying on the previously ignored hashed bundle.
+- Complete: frontend service tests pass 14/14 and the production artifact passes all 48 Chrome E2E scenarios, including saved recommendations and partial quote retention.
+- Open: this closes the frontend build-reproducibility blocker, not M5. Continue the bounded, session-specific EOD coverage audit toward the 500-symbol acceptance criterion and classify provider gaps without fabricating data or increasing concurrency prematurely.
+
+## Bundle backup restoration follow-up — 2026-09-30
+
+- In progress: user-provided `index_backup.js` is now the recovery baseline; source extraction and clean rebuild succeed.
+- Open gate: merge the later quote-refresh and overview selector fixes into the recovered baseline, then require full E2E 48/48 before deleting the ignored backup artifact.
+- Prevention: retain a hashed recovery artifact outside `dist`, make the extraction script reproducible, and treat any build from a partial/recovered source as blocked until source parity and full E2E pass.

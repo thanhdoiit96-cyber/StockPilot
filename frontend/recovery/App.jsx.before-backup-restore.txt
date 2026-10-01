@@ -1,0 +1,449 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import useApiResource from './hooks/useApiResource';
+import useLiveQuotes from './hooks/useLiveQuotes';
+import DetailWorkspace from './components/DetailWorkspace';
+import RecommendationWorkbench from './components/RecommendationWorkbench';
+import RecommendationTracking from './components/RecommendationTracking';
+import { requestJson, stockList, stockDetail, stockAnalysis, stockQuotes, marketDataQuality, aiGateStatus, recommendationStatus, recommendationHistory, recommendationReadiness } from './services/api.mjs';
+const text = value => value;
+const empty = 'Chưa có dữ liệu';
+const money = value => value == null ? empty : new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 2
+}).format(Number(value || 0));
+const number = value => value == null ? empty : new Intl.NumberFormat('vi-VN', {
+  notation: 'compact',
+  maximumFractionDigits: 1
+}).format(Number(value || 0));
+const percent = value => value == null ? empty : `${Number(value) >= 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
+const dateTime = value => value ? new Intl.DateTimeFormat('vi-VN', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'Asia/Ho_Chi_Minh'
+}).format(new Date(value)) : empty;
+const formatStock = stock => ({
+  id: stock.id,
+  symbol: stock.code || stock.symbol || 'N/A',
+  name: stock.name || text('Chưa có tên'),
+  price: stock.price == null ? null : Number(stock.price),
+  change: stock.change == null ? null : Number(stock.change),
+  volume: stock.volume == null ? null : Number(stock.volume),
+  rating: stock.rating || text('Chưa Ä‘ánh giá'),
+  industry: stock.industry || text('Chưa phân loại'),
+  dataSource: stock.data_source,
+  dataFetchedAt: stock.data_fetched_at,
+  dataSessionDate: stock.data_session_date,
+  dataIsStale: Boolean(stock.data_is_stale),
+  website_url: stock.website_url,
+  exchange: stock.exchange,
+  listing_status: stock.listing_status
+});
+function ExpertAnalysisPanel({
+  analysis,
+  requested,
+  symbol,
+  onRequest
+}) {
+  const hasResult = Boolean(analysis.data);
+  return <section className="panel expert-guidance-panel" data-analysis-requested={`analysis-requested:${symbol || ''}`}>
+    <div className="panel-header"><div><p className="eyebrow accent">Nhận định chuyên gia</p><h3>Phân tích chuyên sâu</h3></div><button className="primary-btn detail-analysis-btn" type="button" onClick={onRequest}>{requested && analysis.loading ? 'Đang phân tích...' : hasResult ? 'Phân tích lại' : 'Phân tích chuyên sâu'}</button></div>
+    <div className="analysis-status-row" role="status">{analysis.loading ? 'Đang phân tích dữ liệu kỹ thuật...' : analysis.error ? analysis.error : hasResult ? `Đã phân tích${analysis.data.generated_at ? ` lúc ${dateTime(analysis.data.generated_at)}` : ''}` : 'Chưa phân tích. Nhấn nút để bắt đầu.'}</div>
+    {analysis.error && <p className="error-text">Không thể tải phân tích. Hãy thử lại.</p>}
+    {hasResult && <div className="expert-guidance-content"><strong>{analysis.data.insight?.label || 'Chưa có nhận định'}</strong><span>Chất lượng dữ liệu: {analysis.data.quality?.score ?? 0}/100</span>{analysis.data.indicators?.ichimoku && <div className="ichimoku-summary"><strong>Ichimoku</strong><span>Tenkan {analysis.data.indicators.ichimoku.conversion ?? '-'} · Kijun {analysis.data.indicators.ichimoku.base ?? '-'} · {analysis.data.indicators.ichimoku.cloud || 'Chưa đủ dữ liệu'}</span></div>}{analysis.data.external_factors?.factors?.length > 0 && <div className="external-factor-box">{analysis.data.external_factors.factors.map(factor => /^https?:\/\//i.test(factor.source_url || '') ? <a key={factor.source_url} href={factor.source_url} target="_blank" rel="noreferrer" title={factor.source_url}>{factor.title}</a> : <span key={factor.title}>{factor.title}</span>)}</div>}</div>}
+  </section>;
+}
+export default function App() {
+  const [auth, setAuth] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('market-auth') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const [authMode, setAuthMode] = useState('login');
+  const [authForm, setAuthForm] = useState({
+    email: '',
+    password: ''
+  });
+  const [authMessage, setAuthMessage] = useState('');
+  const [view, setView] = useState(() => {
+    try {
+      return sessionStorage.getItem('stockpilot-view') || 'overview';
+    } catch {
+      return 'overview';
+    }
+  });
+  const [selectedId, setSelectedId] = useState(() => {
+    try {
+      const value = sessionStorage.getItem('stockpilot-selected-id');
+      return value || null;
+    } catch {
+      return null;
+    }
+  });
+  const [analysisRequested, setAnalysisRequested] = useState(false);
+  const [sort, setSort] = useState({
+    key: 'volume',
+    direction: 'desc'
+  });
+  const [pageSize, setPageSize] = useState(40);
+  const [search, setSearch] = useState('');
+  const [sector, setSector] = useState('');
+  const [watchlist, setWatchlist] = useState([]);
+  const [watchSymbol, setWatchSymbol] = useState('');
+  const [portfolio, setPortfolio] = useState(null);
+  const [portfolioError, setPortfolioError] = useState('');
+  const [portfolioQuotes, setPortfolioQuotes] = useState({});
+  const [portfolioQuotesLoading, setPortfolioQuotesLoading] = useState(false);
+  const [transaction, setTransaction] = useState({
+    symbol: '',
+    side: 'BUY',
+    quantity: '',
+    price: '',
+    fees: '',
+    traded_at: new Date().toISOString().slice(0, 10),
+    recommendation_context: null
+  });
+  const scrollY = useRef(null);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('stockpilot-view', view);
+      if (selectedId == null) sessionStorage.removeItem('stockpilot-selected-id');else sessionStorage.setItem('stockpilot-selected-id', String(selectedId));
+    } catch {}
+  }, [view, selectedId]);
+  const preserve = fn => {
+    scrollY.current = window.scrollY;
+    fn();
+  };
+  useEffect(() => {
+    if (!auth) return;
+    localStorage.setItem('market-auth', JSON.stringify(auth));
+    requestJson('/api/watchlist', { token: auth.token }).then(payload => setWatchlist(payload.data || [])).catch(error => {
+      if (error.status === 401) {
+        setAuth(null);
+        setAuthMessage(text(''));
+      }
+    });
+    setPortfolioError('');
+    requestJson('/api/portfolio', { token: auth.token }).then(payload => {
+      setPortfolio(payload.data);
+      setPortfolioError('');
+    }).catch(error => {
+      if (error.status === 401) setAuth(null);
+      else setPortfolioError(`Không tải được danh mục. ${error.message}`);
+    });
+  }, [auth]);
+  useEffect(() => {
+    window.__stockpilotPortfolioError = portfolioError;
+    window.dispatchEvent(new CustomEvent('stockpilot:portfolio-state'));
+  }, [portfolioError]);
+  useEffect(() => {
+    if (!auth) return undefined;
+    const retryPortfolio = () => {
+      setPortfolioError('');
+      requestJson('/api/portfolio', { token: auth.token }).then(payload => {
+        setPortfolio(payload.data);
+        setPortfolioError('');
+      }).catch(error => setPortfolioError(`Không tải được danh mục. ${error.message}`));
+    };
+    window.addEventListener('stockpilot:retry-portfolio', retryPortfolio);
+    return () => window.removeEventListener('stockpilot:retry-portfolio', retryPortfolio);
+  }, [auth]);
+  useEffect(() => {
+    if (!auth || !portfolio?.positions?.length) {
+      setPortfolioQuotes({});
+      setPortfolioQuotesLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    const symbols = portfolio.positions.map(item => item.symbol).filter(Boolean).join(',');
+    const load = async () => {
+      setPortfolioQuotesLoading(true);
+      try {
+        const payload = await requestJson(`/api/stocks/quotes?symbols=${encodeURIComponent(symbols)}`);
+        if (!cancelled) setPortfolioQuotes(stockQuotes(payload));
+      } catch (_) {} finally {
+        if (!cancelled) setPortfolioQuotesLoading(false);
+      }
+    };
+    load();
+    const timer = window.setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [auth, portfolio]);
+  const health = useApiResource('/api/health');
+  const cache = useApiResource('/api/cache/stats');
+  const marketQuality = useApiResource('/api/stocks/data-quality', marketDataQuality);
+  const gate = useApiResource('/api/ai-gate', aiGateStatus);
+  const recommendations = useApiResource('/api/recommendations/latest', recommendationStatus);
+  useEffect(() => {
+    window.__stockpilotOverviewErrors = { health: health.error, cache: cache.error };
+    window.__stockpilotRetryHealth = health.retry;
+    window.__stockpilotRetryCache = cache.retry;
+    window.dispatchEvent(new CustomEvent('stockpilot:overview-resource-state'));
+  }, [health.error, cache.error]);
+  const recommendationHistoryResource = useApiResource('/api/recommendations/history?limit=5', recommendationHistory);
+  useApiResource('/api/recommendations/readiness', recommendationReadiness);
+  const pinnedSymbols = useMemo(() => [...new Set([
+    ...watchlist.map(item => item?.Stock?.code),
+    ...(portfolio?.positions || []).filter(item => Number(item.quantity) > 0).map(item => item.symbol)
+  ].filter(Boolean).map(symbol => String(symbol).toUpperCase()))], [watchlist, portfolio]);
+  const stocksResource = useApiResource(`/api/stocks?page=1&pageSize=${pageSize}&q=${encodeURIComponent(search)}&sector=${encodeURIComponent(sector)}&sort=${sort.key === 'symbol' ? 'code' : sort.key}&direction=${sort.direction}&pinned=${encodeURIComponent(pinnedSymbols.join(','))}`, stockList);
+  const marketQuoteSymbols = useMemo(() => (stocksResource.data || []).map(stock => stock.code || stock.symbol).filter(Boolean), [stocksResource.data]);
+  const marketQuotes = useLiveQuotes(marketQuoteSymbols).data;
+  const stocks = useMemo(() => (stocksResource.data || []).map(formatStock).map(stock => {
+    const quote = marketQuotes[stock.symbol];
+    if (!quote) return stock;
+    return {
+      ...stock,
+      price: Number(quote.price),
+      change: quote.change == null ? stock.change : Number(quote.change),
+      volume: quote.volume == null ? stock.volume : Number(quote.volume),
+      dataSource: quote.upstream || quote.provider || stock.dataSource,
+      dataFetchedAt: quote.fetched_at || stock.dataFetchedAt,
+      dataSessionDate: sessionStorage.getItem('stockpilot-market-date') || stock.dataSessionDate,
+      dataIsStale: false,
+      quote
+    };
+  }), [stocksResource.data, marketQuotes]);
+  const visibleStocks = useMemo(() => [...stocks].sort((a, b) => {
+    const aPinned = pinnedSymbols.includes(a.symbol);
+    const bPinned = pinnedSymbols.includes(b.symbol);
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+    const av = a[sort.key] ?? '';
+    const bv = b[sort.key] ?? '';
+    const cmp = typeof av === 'string' ? String(av).localeCompare(String(bv), 'vi') : Number(av) - Number(bv);
+    return sort.direction === 'asc' ? cmp : -cmp;
+  }), [stocks, sort, pinnedSymbols]);
+  const selected = visibleStocks.find(item => item.id === selectedId) || (selectedId ? { id: selectedId, symbol: '' } : visibleStocks[0]);
+  const displayPositions = useMemo(() => (portfolio?.positions || []).map(position => {
+    const quote = portfolioQuotes[String(position.symbol || '').toUpperCase()];
+    if (!quote) return position;
+    const marketPrice = Number(quote.price);
+    const quantity = Number(position.quantity || 0);
+    const marketValue = marketPrice * quantity;
+    return {
+      ...position,
+      market_price: marketPrice,
+      market_value: marketValue,
+      unrealized_pnl: marketValue - Number(position.avg_cost || 0) * quantity,
+      current_quote: quote
+    };
+  }), [portfolio, portfolioQuotes]);
+  const detail = useApiResource(selected?.id ? `/api/stocks/${encodeURIComponent(selected.id)}` : null, stockDetail);
+  const analysis = useApiResource(selected?.id && analysisRequested ? `/api/stocks/${encodeURIComponent(selected.id)}/analysis` : null, stockAnalysis);
+  useEffect(() => {
+    const changePageSize = event => setPageSize(Number(event.detail?.value || 40));
+    window.addEventListener('stockpilot:page-size', changePageSize);
+    return () => window.removeEventListener('stockpilot:page-size', changePageSize);
+  }, []);
+  useEffect(() => {
+    const openDetail = event => {
+      const symbol = String(event.detail?.symbol || '').toUpperCase();
+      const match = visibleStocks.find(stock => stock.symbol === symbol);
+      if (!match) return;
+      setSelectedId(match.id);
+      setView('detail');
+    };
+    window.addEventListener('stockpilot:open-detail', openDetail);
+    return () => window.removeEventListener('stockpilot:open-detail', openDetail);
+  }, [visibleStocks]);
+  useEffect(() => {
+    const requestAnalysis = () => setAnalysisRequested(true);
+    const addToPortfolio = event => {
+      const symbol = String(event.detail?.symbol || '').trim().toUpperCase();
+      if (!symbol) return;
+      setTransaction(current => ({
+        ...current,
+        symbol,
+        price: event.detail?.price ? String(event.detail.price) : current.price
+      }));
+      setView('portfolio');
+      setAuthMessage(`${symbol} đã được đưa vào biểu mẫu Danh mục`);
+    };
+    window.addEventListener('stockpilot:request-analysis', requestAnalysis);
+    window.addEventListener('stockpilot:add-to-portfolio', addToPortfolio);
+    window.__stockpilotAddToPortfolio = addToPortfolio;
+    return () => {
+      window.removeEventListener('stockpilot:request-analysis', requestAnalysis);
+      window.removeEventListener('stockpilot:add-to-portfolio', addToPortfolio);
+      delete window.__stockpilotAddToPortfolio;
+    };
+  }, []);
+  useEffect(() => {
+    setAnalysisRequested(false);
+  }, [selectedId]);
+  useEffect(() => {
+    const refreshMarketData = () => {
+      marketQuality.retry();
+      stocksResource.retry();
+      detail.retry();
+      analysis.retry();
+      if (auth) {
+        requestJson('/api/portfolio', {
+          token: auth.token
+        }).then(payload => setPortfolio(payload.data)).catch(() => {});
+      }
+    };
+    window.addEventListener('stockpilot:market-data-quality', refreshMarketData);
+    const timer = window.setInterval(() => marketQuality.retry(), 60000);
+    return () => {
+      window.removeEventListener('stockpilot:market-data-quality', refreshMarketData);
+      window.clearInterval(timer);
+    };
+  }, [auth, selected?.id]);
+  useEffect(() => {
+    if (scrollY.current == null) return;
+    const y = scrollY.current;
+    scrollY.current = null;
+    requestAnimationFrame(() => window.scrollTo({
+      top: y,
+      behavior: 'auto'
+    }));
+  }, [search, sector, sort]);
+  const submitAuth = async event => {
+    event.preventDefault();
+    try {
+      const payload = await requestJson(`/api/auth/${authMode}`, {
+        method: 'POST',
+        body: authForm
+      });
+      setAuth({
+        token: payload.token,
+        user: payload.user
+      });
+      setAuthForm({
+        email: '',
+        password: ''
+      });
+      setAuthMessage('');
+    } catch (error) {
+      setAuthMessage(error.message);
+    }
+  };
+  const addWatch = async event => {
+    event.preventDefault();
+    try {
+      await requestJson('/api/watchlist', {
+        method: 'POST',
+        token: auth.token,
+        body: {
+          symbol: watchSymbol
+        }
+      });
+      const payload = await requestJson('/api/watchlist', {
+        token: auth.token
+      });
+      setWatchlist(payload.data || []);
+      setWatchSymbol('');
+    } catch (error) {
+      setAuthMessage(error.message);
+    }
+  };
+  const removeWatch = async symbol => {
+    try {
+      await requestJson(`/api/watchlist/${encodeURIComponent(symbol)}`, { method: 'DELETE', token: auth.token });
+      setWatchlist(current => current.filter(item => item?.Stock?.code !== symbol));
+    } catch (error) { setAuthMessage(error.message); }
+  };
+  const addDetailToWatchlist = async () => {
+    const symbol = detail.data?.code || selected?.symbol;
+    if (!symbol) return;
+    try {
+      await requestJson('/api/watchlist', {
+        method: 'POST',
+        token: auth.token,
+        body: {
+          symbol
+        }
+      });
+      const payload = await requestJson('/api/watchlist', {
+        token: auth.token
+      });
+      setWatchlist(payload.data || []);
+      setAuthMessage(`${symbol} đã được thêm vào watchlist`);
+    } catch (error) {
+      setAuthMessage(error.message);
+    }
+  };
+  const addTransaction = async event => {
+    event.preventDefault();
+    try {
+      await requestJson('/api/portfolio/transactions', {
+        method: 'POST',
+        token: auth.token,
+        body: transaction
+      });
+      const payload = await requestJson('/api/portfolio', {
+        token: auth.token
+      });
+      setPortfolio(payload.data);
+      setAuthMessage(text('Mục ghi nhớ giao dịch'));
+    } catch (error) {
+      setAuthMessage(error.message);
+    }
+  };
+  const changeSort = key => preserve(() => setSort(current => current.key === key ? {
+    key,
+    direction: current.direction === 'asc' ? 'desc' : 'asc'
+  } : {
+    key,
+    direction: 'asc'
+  }));
+  if (!auth) return <div className="auth-page"><section className="auth-card panel"><div className="brand-block"><div className="brand-mark">S</div><div><p className="eyebrow">AI Platform</p><h2>StockPilot</h2></div></div><p className="eyebrow accent">{text('Kênh phân tích cá nhân')}</p><h1>{authMode === 'login' ? text('Đăng nhập') : text('Tên tài khoản')}</h1><p className="muted-text">{text('Đăng nhập để lưu watchlist vào danh mục riêng.')}</p><form onSubmit={submitAuth} className="auth-form"><label>{text('Email')}<input aria-label={text('Email Ä‘Äƒng nhập')} type="email" placeholder="you@example.com" value={authForm.email} onChange={event => setAuthForm({
+            ...authForm,
+            email: event.target.value
+          })} required /></label><label>{text('Mật khẩu')}<input aria-label={text('Mật khẩu Ä‘Äƒng nhập')} type="password" placeholder={text('Tối thiểu 8 kí tự')} value={authForm.password} onChange={event => setAuthForm({
+            ...authForm,
+            password: event.target.value
+          })} required minLength={8} /></label><button className="primary-btn" type="submit">{authMode === 'login' ? text('Đăng nhập') : text('Đăng kí')}</button><button className="ghost-btn" type="button" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}>{authMode === 'login' ? text('Chưa có tài khoản? Đăng kí') : text('Đã có tài khoản! Đăng nhập')}</button>{authMessage && <p role="alert" className="error-text">{authMessage}</p>}</form></section></div>;
+  const rows = visibleStocks;
+  return <div className="dashboard-shell">{(view === 'overview' && (stocksResource.loading || cache.loading) || view === 'portfolio' && portfolioQuotesLoading || view === 'detail' && detail.loading || view === 'advisor' && gate.loading || view === 'overview' && recommendations.loading || view === 'recommendations' && recommendations.loading) && <div className="loading-overlay" role="status"><div className="loading-card"><span className="loading-spinner" />Đang cập nhật dữ liệu intraday...</div></div>}<aside className="sidebar"><div className="brand-block"><div className="brand-mark">S</div><div><p className="eyebrow">AI Platform</p><h2>StockPilot</h2></div></div><nav className="nav">{[['overview', 'Tổng quan'], ['recommendations', 'Đề xuất'], ['portfolio', 'Danh mục cá nhân'], ['detail', 'Chi tiết mã'], ['advisor', 'AI Advisor']].map(([key, label]) => <button key={key} className={`nav-item ${view === key ? 'active' : ''}`} onClick={() => setView(key)}>{text(label)}</button>)}</nav><div className="profile-card"><p className="eyebrow">{text('Tài khoản')}</p><strong className="profile-email">{auth.user.email}</strong><span className="role-badge">{auth.user.role === 'admin' ? text('Quản trị viên') : text('Nhà Ä‘ầu tư')}</span><p className="eyebrow">{text('Danh mục')}</p></div></aside><main className="main-panel"><header className="topbar"><div><p className="eyebrow">{text('Tổng quan thị trường')}</p><h1>{text('Trung tâm phân tích cổ phiếu')}</h1></div><div className="topbar-actions"><span>{auth.user.email}</span><button className="ghost-btn" onClick={() => setAuth(null)}>{text('Đăng xuất')}</button></div></header>{view === 'overview' && <><section className="hero-panel panel"><p className="eyebrow accent">{text('Tín hiệu hôm nay')}</p><h2>{text(`Đang theo dõi ${rows.length} mã cổ phiếu`)}</h2></section>{marketQuality.data && <div className={`data-quality-banner ${marketQuality.data.ready ? 'is-ready' : 'is-warning'}`} role="status"><strong>{marketQuality.data.ready ? text('Dữ liệu EOD Ä‘ã Ä‘ủ') : text('Dữ liệu EOD chưa Ä‘ủ')}</strong><span>{text('Phiên')} {marketQuality.data.session_date}: {marketQuality.data.covered}/{marketQuality.data.listed} {text('mã có dữ liệu')}.</span>{!marketQuality.data.ready && <small>{marketQuality.data.missing} {text('mã Ä‘ang chờ retry provider')}.</small>}</div>}<section className="stats-grid"><article className="panel stat-card"><p>VN-Index</p><strong>{empty}</strong></article><article className="panel stat-card"><p>{text('Dữ liệu')}</p><strong>{cache.data?.totalEntries ?? empty}</strong></article><article className="panel stat-card"><p>{text('Tín hiệu AI')}</p><strong>{gate.data?.enabled ? text('Đã mở') : text('Rule-based')}</strong></article></section><section className="panel table-panel"><div className="panel-header"><h3>{text('Danh sách cổ phiếu')}</h3><div className="table-tools"><div className="table-tabs"><button className="tab-btn active" type="button">{text('Tất cả')}</button><select className="sector-select" aria-label={text('Nhóm ngành')} value={sector} onChange={event => preserve(() => setSector(event.target.value))}><option value="">{text('Nhóm ngành')}</option><option value="technology">{text('Công nghệ')}</option><option value="banking_finance">{text('Ngân hàng và tài chính')}</option><option value="securities">{text('chứng khoán')}</option><option value="real_estate">{text('Bất động sản')}</option></select></div><input className="table-search" aria-label={text('Tìm cổ phiếu')} placeholder={text('Tìm mã hoặc tên công ty')} value={search} onChange={event => preserve(() => setSearch(event.target.value))} /><span className="muted-text">{rows.length} {text('mã - bấm để sắp xếp')}</span></div></div><div className="table-wrap"><table><thead><tr>{[['symbol', 'Mã', 'Kí hiệu giao dịch'], ['name', 'Tên', 'Tên doanh nghiệp'], ['price', 'Gía', 'Giá gần nhất'], ['change', 'Biến động', 'Mức tÄƒng giảm'], ['volume', 'Khối lượng', 'Khối lượng giao dịch']].map(([key, label, title]) => <th key={key}><button className="table-sort-btn" type="button" onClick={() => changeSort(key)} title={text(title)}>{text(label)}{sort.key === key ? sort.direction === 'asc' ? ' â†‘' : ' â†“' : ''}</button></th>)}<th>{text('Nguồn dữ liệu')}</th><th>{text('Đánh giá')}</th><th>Thao tác</th></tr></thead><tbody>{stocksResource.error ? null : rows.length ? rows.map(stock => <tr key={stock.id} onClick={() => {
+                  setSelectedId(stock.id);
+                  setView('detail');
+                }} className={pinnedSymbols.includes(stock.symbol) ? 'pinned-stock' : ''}><td className="symbol">{stock.symbol}</td><td>{stock.website_url && /^https?:\/\//i.test(stock.website_url) ? <a href={stock.website_url} target="_blank" rel="noreferrer" title={stock.website_url} aria-label={`${stock.name} · ${stock.website_url}`} onClick={event => event.stopPropagation()}>{stock.name}</a> : stock.name}</td><td>{money(stock.price)}</td><td className={stock.change >= 0 ? 'positive' : 'negative'}>{percent(stock.change)}</td><td className="volume-context" title={stock.quote ? 'Khối lượng giao dịch Intraday' : 'Khối lượng EOD'} tabIndex="0">{number(stock.volume)}{stock.dataIsStale && <small className="stale-data"> · cũ</small>}</td><td>{stock.dataSource ? <><span className="chip neutral">{stock.dataSource}</span><small className="data-time">{stock.dataFetchedAt ? `Lấy lúc ${dateTime(stock.dataFetchedAt)}` : `Phiên ${stock.dataSessionDate || empty}`}</small></> : empty}</td><td><span className="rating-badge">{stock.rating}</span></td><td><button className="add-portfolio-btn" type="button" aria-label={`Thêm ${stock.symbol} vào danh mục`} onClick={event => {
+                      event.stopPropagation();
+                      setTransaction(current => ({
+                        ...current,
+                        symbol: stock.symbol,
+                        price: stock.price == null ? '' : String(stock.price)
+                      }));
+                      setView('portfolio');
+                    }}>Thêm</button></td></tr>) : <tr><td colSpan="8">{text('Chưa có cổ phiếu trong dữ liệu')}</td></tr>}</tbody></table></div>{stocksResource.error && <div className="error-banner" role="alert"><p>{text('Không thể tải danh sách cổ phiếu')}. {stocksResource.error}</p><button className="ghost-btn" onClick={stocksResource.retry}>{text('Thử lại danh sách')}</button></div>}</section></>}{view === 'recommendations' && <RecommendationWorkbench initialData={recommendations.data} history={recommendationHistoryResource.data || []} token={auth.token} onAddToPortfolio={({
+        symbol,
+        price,
+        recommendationContext
+      }) => {
+        setTransaction(current => ({
+          ...current,
+          symbol,
+          price: price || '',
+          recommendation_context: recommendationContext || null
+        }));
+        setView('portfolio');
+      }} />}{view === 'portfolio' && <section className="personal-page"><div className="page-heading"><h2>{text('Danh mục và theo dõi')}</h2><p>{text('Chỉ theo dõi giao dịch bên ngoài, không thực hiện mua bán trong ứng dụng.')}</p></div><div className="personal-grid"><article className="panel portfolio-panel"><h3>{text('Ghi nhận giao dịch')}</h3><form className="transaction-form" onSubmit={addTransaction}><label>{text('Mã cổ phiếu')}<input aria-label={text('Mã giao dịch')} value={transaction.symbol} onChange={event => setTransaction({
+                  ...transaction,
+                  symbol: event.target.value.toUpperCase()
+                })} required /></label><label>{text('Loại giao dịch')}<select value={transaction.side} onChange={event => setTransaction({
+                  ...transaction,
+                  side: event.target.value
+                })}><option value="BUY">{text('Mua')}</option><option value="SELL">{text('Bán')}</option></select></label><label>{text('Số lượng')}<input type="number" value={transaction.quantity} onChange={event => setTransaction({
+                  ...transaction,
+                  quantity: event.target.value
+                })} required /></label><label>{text('Giá giao dịch')}<input type="number" value={transaction.price} onChange={event => setTransaction({
+                  ...transaction,
+                  price: event.target.value
+                })} required /></label><button className="primary-btn" type="submit">{text('Lưu giao dịch')}</button></form>{authMessage && <p role="status">{authMessage}</p>}<div className="table-wrap portfolio-table"><table><thead><tr><th>Mã</th><th>{text('Số lượng')}</th><th>{text('Giá vốn')}</th><th>{text('Giá hiện tại')}</th><th>{text('Lãi/lá»—')}</th></tr></thead><tbody>{(displayPositions || []).map(position => <tr key={position.stock_id}><td>{position.symbol}</td><td>{number(position.quantity)}</td><td>{money(position.avg_cost)}</td><td>{money(position.market_price)}</td><td>{money(position.unrealized_pnl)}</td></tr>)}{!displayPositions.length && <tr><td colSpan="5">{text('Chưa có vị thế')}</td></tr>}</tbody></table></div></article><article className="panel watchlist-panel"><h3>Watchlist</h3><form onSubmit={addWatch} className="auth-form"><input placeholder={text('Thêm mã, ví dụ FPT')} value={watchSymbol} onChange={event => setWatchSymbol(event.target.value.toUpperCase())} /><button className="primary-btn" type="submit">{text('Thêm mã')}</button></form><ul className="watchlist">{watchlist.map(item => <li key={item.stock_id}><strong>{item.Stock.code}</strong><button className="ghost-btn small-btn" type="button" onClick={() => removeWatch(item.Stock.code)}>{text('Xóa')}</button></li>)}{!watchlist.length && <li className="muted-text">{text('Chưa có mã')}</li>}</ul></article></div><RecommendationTracking entries={portfolio?.recommendation_entries || []} /></section>}{view === 'detail' && <DetailWorkspace detail={detail} selectedId={selected?.id} stocks={visibleStocks} onSelectId={setSelectedId} onAddWatchlist={addDetailToWatchlist}><ExpertAnalysisPanel analysis={analysis} requested={analysisRequested} symbol={detail.data?.code} onRequest={() => {
+            try {
+              sessionStorage.setItem(`analysis-requested:${detail.data.code}`, '1');
+            } catch {}
+            window.dispatchEvent(new CustomEvent('stockpilot:request-analysis', {
+              detail: {
+                symbol: detail.data.code
+              }
+            }));
+          }} /></DetailWorkspace>}{view === 'advisor' && <section className="advisor-page panel"><h3>AI Advisor</h3><p>{text('Phân tích rule-based phục vụ nghiên cứu, không phải khuyến nghị mua bán.')}</p></section>}</main></div>;
+}

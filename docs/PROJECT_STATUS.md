@@ -1,6 +1,6 @@
 # Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-09-28.
+Cập nhật: 2026-09-30.
 
 ## Yêu cầu làm việc đã ghi nhận
 
@@ -2860,3 +2860,125 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Luong `partial quote refresh` da pass; cac ma khong nam trong payload refresh van giu gia gan nhat. Cac suite Loading, Bang gia, Danh muc, Sidebar va Workflows deu pass.
 - Con 1 test fail o `recommendation-workbench.spec.mjs`: preview bundle khong tao `.saved-proposal` sau khi luu de xuat. Day la sai lech giua source React va shipped dist, khong phai loi API hay quote polling.
 - Diem tiep tuc: khoi phuc/parity hoa Recommendation Workbench trong dist hoac hoan tat qua trinh tai tao source React, sau do chay lai full E2E.
+
+## Hoan tat frontend source recovery va release gate - 2026-09-30
+
+- Da khoi phuc source React cho workspace Chi tiet ma, Recommendation Workbench, Bang gia, portfolio/watchlist, market breadth, quality/stale overlays va lazy expert analysis. `check:source-parity` dat **9/9 marker**; check da doc ca `App.jsx` va component `DetailWorkspace.jsx` sau khi tach component.
+- Luong quote Bang gia da dung `useLiveQuotes`: poll co so lan rieng de khong bi cache chan refresh, giu quote thanh cong khi response tiep theo chi co mot phan ma va retry sau 5 giay khi universe chua du. Watchlist/portfolio van tai doc lap va co loi/retry rieng.
+- Recommendation Workbench da luu/khôi phuc snapshot tren giao dien; loi `.saved-proposal` cua shipped preview da dong. Sidebar, sticky header, Dieu huong Chi tiet ma, bang gia, market breadth, quality/stale overlays va portfolio audit da duoc parity hoa trong source/runtime.
+- Build Vite gio phat hanh bon runtime tach rieng (`quality-overlay.js`, `stale-volume-overlay.js`, `sidebar-toggle-icon.js`, `overview-table-actions.js`) va `safe-build` kiem tra dung main module thay vi nham runtime dau tien. `npm.cmd run build` dat va tao lai `dist` thanh cong; blocker bundle cu khong con.
+- Kiem chung cuoi: frontend service tests **14/14 pass**, encoding check **25 source files pass**, source parity **9/9 pass**, safe-build/bundle integrity pass va full Playwright **48/48 pass** tren `dist` moi. `git diff --check` pass. Khong chay lai backend vi dot nay khong sua backend.
+- Gioi han: Playwright dung fixture/mock API, khong xac nhan provider production; Vite van canh bao CJS Node API deprecated. Coverage EOD 500 ma/M5 van mo va khong duoc suy dien tu test frontend.
+- Diem tiep tuc: quay lai backlog M5, chay audit coverage EOD theo session voi batch gioi han va phan loai provider gap; khong tang concurrency hoac chen candle gia. Neu tiep tuc frontend, uu tien visual review mobile/live tren artifact moi thay vi sua truc tiep `dist`.
+
+## Phục hồi từ bundle người dùng lưu lại — 2026-09-30
+
+- Người dùng cung cấp `frontend/dist/assets/index_backup.js` (229.561 bytes, SHA-256 `449C79C933D0A9D54D48D21DBC4F9B29AFE669808DFA909E32C11B257BC5D8E6`). Bundle chứa đầy đủ các marker của Đề xuất, Danh mục, Watchlist, AI Advisor, loading overlay, phân tích chuyên sâu và data quality.
+- Đã trích xuất application source độc lập vào `frontend/recovery/App.jsx.recovered-from-index-backup.txt`, lưu source trước khi thay thế tại `frontend/recovery/App.jsx.before-backup-restore.txt`, và dùng bản phục hồi làm `frontend/src/App.jsx`.
+- Build Vite, bundle integrity, encoding và source parity đều pass; bản build tạo `index-BgGdUhvI.js`.
+- Full E2E hiện đạt **43/48**. Năm regression còn lại là khác biệt giữa bundle backup và các sửa sau đó: partial quote retention (2), selector summary nguồn bị trùng (2), breadth leader count (1) và sector option count (1). Chưa xóa file backup cho đến khi các kiểm tra này được xử lý.
+- Biện pháp chống tái diễn: giữ bản phục hồi có hash trong `frontend/recovery/`, trích xuất bằng `scripts/extract-backup-source.cjs`, không build trực tiếp từ file trong `dist/assets`; chỉ xóa `index_backup.js` sau khi source mới và full E2E đạt xanh.
+
+## Live preview/API và style control follow-up — 2026-09-30
+
+- HTTP 500 trên preview được xác minh là do backend không chạy ở cổng 5000; sau khi khởi động lại, `/api/health`, `/api/stocks`, `/api/stocks/data-quality`, `/api/cache/stats`, `/api/ai-gate` và các endpoint recommendations đều trả **HTTP 200**.
+- Bổ sung style dark-theme nhất quán cho `.table-search`, `.sector-select`, `.saved-proposal-select` và ô tìm mã Chi tiết; có trạng thái focus/placeholder/option để không rơi về nền trắng mặc định của trình duyệt.
+- Build sau chỉnh CSS tạo `index-BW6BxDeB.js`/`index-CDzONR_t.css`; bundle integrity, encoding và source parity đều pass. Preview đang phục vụ tại `http://127.0.0.1:4173/?v=20260930-restored`.
+- Giới hạn còn lại: backend cần được chạy cùng preview khi kiểm thử live; full E2E của baseline backup vẫn còn 5 regression đã ghi ở mục trên.
+
+## Kiểm tra phiên 30-09 và tiếp tục parity quote — 2026-09-30
+
+- Đối chiếu trực tiếp PostgreSQL cho `stock_prices` (`provider=vnstock`, `interval=1d`) xác nhận hiện có 343 mã ở phiên 28-09 và 336 mã ở phiên 29-09; chưa có row phiên 30-09. Không có thao tác xóa/reset dữ liệu trong lượt kiểm tra.
+- EOD scheduler đã chạy đúng lúc `16:30 Asia/Ho_Chi_Minh`, `runtime.session_date=2026-09-30`, nhưng provider trả `fetch failed`; mạch circuit ghi nhận 19 failures và chưa có `last_success_at`. Vì vậy đây là thiếu dữ liệu upstream/ingestion, không phải UI tự làm mất phiên cũ. Evidence sẽ được ghi khi job kết thúc.
+- Đã thử ingest có giới hạn FPT/VCB/HPG/SSI/VIC cho ngày 30-09; kết quả `received=0`, cả 5 mã `fetch failed`. Không chèn dữ liệu giả và không thay thế phiên 29-09.
+- Đã thêm cache-buster `poll` vào hook quote trong source phục hồi để tránh lặp cùng URL khi polling partial. Build và source parity pass; targeted E2E partial quote vẫn cần tiếp tục xử lý vì bundle backup còn khác luồng active-page của source trước recovery.
+
+## Build UI và khởi động lại service — 2026-09-30
+
+- Frontend đã build lại bằng `npm.cmd run build`; Vite build, safe-build và bundle integrity đều đạt. Artifact hiện tại dùng `frontend/dist/assets/index-CAX1WjsQ.js`.
+- PostgreSQL local đang chạy; backend khởi động thành công ở cổng 5000, kết nối database và các scheduler được ghi nhận trong log. Smoke check `/api/health` và `/api/stocks` đều HTTP 200; danh sách trả 200 mã.
+- Vnstock worker đang chạy ở cổng 8787 bằng Python global hiện có module `vnstock`; `/health` trả HTTP 200. Shared venv `C:\Users\ntdoi\\.venv` đã tạo nhưng pip index hiện tại không cung cấp `vnstock>=4.0.6`, nên chưa cài được `vnstock`/`vnai` vào venv.
+- Vite preview đang chạy tại `http://127.0.0.1:4173/`; kiểm tra bằng curl không qua proxy trả HTTP 200. Docker không có trong PATH, vì vậy phiên này dùng PostgreSQL/service local và không chạy Compose.
+
+## Khắc phục worker EOD và bắt đầu bổ sung phiên 30-09 — 2026-09-30
+
+- Xác định nguyên nhân job 16:30 kéo dài: `.env` trỏ tới `VNSTOCK_WORKER_URL=127.0.0.1:8787` nhưng worker không chạy; bridge trả `fetch failed`, trong khi job mặc định xử lý batch rất nhỏ và retry tuần tự.
+- Đã khởi động `backend/scripts/vnstock_worker.py` trên cổng 8787 và khởi động lại backend với batch/retry giới hạn. Ingest kiểm tra FPT/VCB/HPG/SSI/VIC đã nhận và ghi được **3 dòng phiên 30-09** (HPG, SSI, VIC); FPT/VCB vẫn timeout từ provider.
+- Đang chạy ingest toàn universe 30-09 qua worker; API data-quality đã chuyển sang `session_date=2026-09-30`, ban đầu `covered=3`, sau đó tăng dần. Chưa đánh dấu hoàn tất cho đến khi job kết thúc và evidence được ghi.
+- Không có dữ liệu session cũ bị xóa; các phiên EOD cũ vẫn bất biến. Quote intraday vẫn là cache process và không được coi là lịch sử EOD.
+
+## Khắc phục các lỗi UI từ `Desktop/new 3.txt` — 2026-09-30
+
+- Đã loại duplicate nhóm dẫn dắt và summary nguồn; giữ đúng một nhóm Top tăng/giảm/khối lượng và một summary nguồn dữ liệu trên Tổng quan.
+- Đã bỏ các option ngành runtime bị thêm trùng, khôi phục active state của Tổng quan, tăng kích thước/nút focus cho Phân tích chuyên sâu và giữ điều hướng sang Chi tiết mã.
+- Quote partial được đồng bộ vào bảng và giữ giá gần nhất của mã không xuất hiện trong response kế tiếp; loading/refresh tiếp tục được kiểm tra trong luồng Bảng giá.
+- Khu vực Đề xuất đã bỏ danh sách “Đề xuất đã tạo”; snapshot vẫn được lưu và thao tác qua select box “Đề xuất đã lưu”. Component nguồn cũng đã dùng cùng mô hình này.
+- Fallback Phân bổ danh mục được khôi phục donut gradient, màu từng mã, thanh tỷ trọng và định dạng giá; bảng theo dõi đề xuất hiện có vẫn được giữ nguyên.
+- Kiểm chứng: frontend service tests **14/14**, encoding **25 file**, source parity **9/9**, bundle integrity đạt; full Playwright **48/48** pass. Build Vite/safe-build đạt với artifact `index-D96deRSd.js`.
+
+## Sửa nút thu gọn/mở rộng sidebar — 2026-09-30
+
+- `sidebar-toggle-icon.js` giờ luôn bind một click handler ổn định kể cả khi React thay lại children của nút; trạng thái `sidebar-collapsed` và hướng icon được đồng bộ sau mỗi lần click.
+- Bổ sung lại style nền, viền, hover, active, focus ring, cursor và z-index cho nút/icon; desktop không bị sidebar cắt nút, mobile giữ nút trong sidebar.
+- Kiểm chứng: `node --check`, safe-build/bundle integrity đạt; E2E sidebar **1/1 pass**; preview hiện phục vụ artifact `index-CbLXS1f7.js` và UI HTTP 200.
+
+## Sửa layout co sidebar — 2026-09-30
+
+- Bổ sung `grid-template-columns: 76px minmax(0, 1fr)` cho trạng thái `.dashboard-shell.sidebar-collapsed`, ẩn brand/profile phụ và căn giữa icon nav; trạng thái mở rộng vẫn dùng cột 260px.
+- Mobile được override về một cột ở cả hai trạng thái, tránh làm hỏng layout responsive.
+- E2E sidebar mở rộng thêm assertion cột grid thực sự thay đổi khi click; kết quả **1/1 pass**. Build/safe-build và bundle integrity đạt với artifact `index-DxfiR1rR.js`.
+
+## Sửa active state điều hướng sidebar — 2026-09-30
+
+- Bỏ logic runtime luôn ép “Tổng quan” active khi không ở Bảng giá. Active state giờ bám page React hiện tại; `aria-current="page"` được dọn và gán lại cho đúng một mục.
+- Bảng giá tiếp tục dùng `market-board-active` riêng và loại active khỏi các page khác khi được chọn.
+- Thêm E2E đi lần lượt Tổng quan, Danh mục cá nhân, Chi tiết mã, Đề xuất, AI Advisor và Bảng giá; mỗi bước xác nhận chỉ có một `.nav-item.active`. Ba test điều hướng/sidebar liên quan đều pass; build/bundle integrity đạt với artifact `index-DnLKcJNX.js`.
+
+## Dọn cột nguồn và căn hàng Phân tích — 2026-09-30
+
+- Bảng giá ẩn cột “Nguồn dữ liệu” không có dữ liệu hữu ích; thông tin provider vẫn giữ trong summary/metadata hiện có.
+- Ô Phân tích đổi từ `display:flex` trên `td` về `display:table-cell`, dùng `vertical-align:middle` và căn giữa nội dung nên nút không còn lệch hàng.
+- Thêm E2E xác nhận header nguồn bị ẩn và tâm nút Phân tích trùng tâm cell/hàng; ba test bảng/Phân tích liên quan đều pass. Build/bundle integrity đạt với artifact `index-B6FUPo-H.js`.
+
+## Sửa chức năng Phân tích chuyên sâu từ Bảng giá — 2026-09-30
+
+- Loại bỏ handler runtime ghi `analysis-requested` theo symbol và phát click giả vào cả hàng. Click giả từng tạo race với handler React, có thể reload/chuyển trang nhưng không chạy phân tích cho đúng stock ID.
+- Handler Bảng giá giờ chỉ thoát trạng thái board và mở analysis gate trước khi để React thực hiện luồng chuẩn: chọn stock ID, chuyển sang Chi tiết mã, lưu cờ request và gọi `/api/stocks/:id/analysis`.
+- Trạng thái Bảng giá được ghi vào session đồng bộ sau khi chuyển về view Tổng quan, tránh mất lựa chọn nếu refresh ngay sau click.
+- E2E đã nâng từ kiểm tra chuyển trang/cờ session sang xác nhận request `/analysis` thực sự phát đúng một lần và UI chuyển sang “Đã phân tích”; mở Chi tiết mã thông thường vẫn không tự gọi phân tích.
+- Kiểm chứng: build/safe-build và bundle integrity đạt với artifact `index-B3tV7V3h.js`; workflow Playwright **18/18 pass**; live analysis qua preview `127.0.0.1:4173` và backend `127.0.0.1:5000` pass với 5 score factors. Script `verify-live-analysis` cũng được sửa để chọn main module thay vì nhầm runtime script đầu tiên trong HTML.
+
+## Sửa cảnh báo thiếu nến trên Chi tiết mã — 2026-09-30
+
+- Biểu đồ Chi tiết trước đây chỉ dùng các điểm không mang `interval=intraday` khi đối chiếu `market_sessions`. Vì vậy phiên 30-09 vẫn bị báo “chưa có nến EOD” dù biểu đồ đã có điểm intraday cùng ngày.
+- Runtime giờ đối chiếu cảnh báo với toàn bộ điểm giá đang được biểu diễn. Nếu phiên đã có điểm intraday thì cảnh báo khoảng trống bị loại bỏ; phiên hoàn toàn không có điểm giá vẫn được cảnh báo và ngày hiển thị theo `dd-mm`.
+- Không thay đổi hoặc che trạng thái chất lượng EOD toàn thị trường. Kiểm tra live tại thời điểm sửa cho thấy phiên 30-09 mới đạt **220/551 mã**, còn 331 mã thiếu; DBD là ca kiểm tra có quote intraday 30-09 nhưng chưa có EOD.
+- Kiểm chứng: hai E2E nhánh có/không có điểm giá đều pass; build/safe-build và bundle integrity đạt với artifact `index-iWiOe4nS.js`. Preview đang phục vụ đúng artifact mới ở cổng 4173.
+
+## Đồng bộ loading screen với quote mới nhất trên Bảng giá — 2026-09-30
+
+- Bảng giá là view runtime trên trang Tổng quan, trong khi loading overlay cũ chỉ bám state của hook React. Khi hook đang giữ dữ liệu cũ hoặc chưa bắt đầu request mới, overlay có thể tắt trước khi lượt quote mới nhất hoàn tất.
+- Mỗi lần mở Bảng giá giờ phát một request refresh riêng cho tối đa 40 mã đang hiển thị, có cache-buster và timeout 15 giây. Overlay `market-board-loading-overlay` tồn tại từ lúc bắt đầu refresh đến sau khi payload đã được áp vào các hàng và browser hoàn tất hai frame render.
+- Khi rời Bảng giá, refresh đang chờ bị hủy và overlay được dọn. Nếu provider lỗi hoặc timeout, bảng EOD vẫn dùng được và overlay không khóa ứng dụng vô hạn.
+- Thêm E2E giữ response quote lại để xác nhận overlay vẫn hiển thị khi hàng còn giá cũ, sau đó chỉ biến mất khi giá intraday mới đã xuất hiện. Toàn bộ suite Loading/Chi tiết đạt **23/23 pass**; build/safe-build và bundle integrity đạt với artifact `index-C3xoeyNs.js`.
+
+## Ngăn trạng thái Phân tích giả khi vào Chi tiết từ Danh mục — 2026-09-30
+
+- Nguyên nhân là khóa `analysis-requested:<stockId>` còn tồn tại trong `sessionStorage` sau lần phân tích trước. Khi quay lại Chi tiết, React đọc khóa cũ và đặt trạng thái loading, nhưng analysis gate đã reset nên request bị giữ và nút hiển thị “Đang phân tích...” dù người dùng không bấm.
+- Runtime giờ coi khóa phân tích là tín hiệu một lần: dọn khóa cũ khi khởi tạo UI và khi điều hướng thông thường qua sidebar, hàng Bảng giá, Danh mục hoặc bảng theo dõi đề xuất. Click Phân tích thực sự vẫn giữ nguyên luồng mở gate và gọi API.
+- E2E xác nhận ba nhánh: Phân tích từ Bảng giá vẫn gọi đúng một request; mở Chi tiết thường không tự phân tích; chuyển từ Danh mục với khóa cũ hiển thị “Phân tích chuyên sâu”/“Chưa phân tích”, phát 0 request và dọn sạch khóa.
+- Build/safe-build và bundle integrity đạt với artifact `index-Dj0_Nktw.js`; ba test mục tiêu đạt **3/3 pass**.
+
+## Khôi phục tooltip tỷ trọng trên vành donut Danh mục — 2026-10-01
+
+- Nguyên nhân gồm hai nhánh: SVG tương tác của React nằm trong lớp tâm có `pointer-events: none`, còn allocation fallback dựng bằng `conic-gradient` không tạo vùng hover cho từng lát.
+- Runtime giờ dựng một SVG hit-layer trực tiếp trên vành donut cho cả hai nhánh. Mỗi lát khớp tỷ trọng hiển thị, có hover/focus state và tooltip gồm mã cổ phiếu, tỷ trọng, giá trị thị trường; vùng tâm không bị biến thành hit-area.
+- Bổ sung `aria-label`, `aria-describedby`, `<title>` và `tabindex` cho từng lát để thông tin cũng truy cập được bằng bàn phím/công nghệ hỗ trợ.
+- E2E dùng tọa độ thật trên vành donut để xác nhận hover FPT và focus VCB đều đổi tooltip đúng; toàn bộ `portfolio.spec.mjs` đạt **5/5 pass**. Encoding check, build/safe-build và bundle integrity đạt với artifact `index-CQFlo0C6.js`.
+
+## Chốt baseline frontend trước đợt rà soát toàn ứng dụng — 2026-10-01
+
+- Phát hiện runtime overlay từng dùng `replaceChildren()` trên `.allocation-day-change` do React sở hữu. Sau lần render EOD đầu, React không còn cập nhật được số biến động khi quote intraday về; bảng giá đã lên 130.000 nhưng donut vẫn giữ số cũ.
+- Runtime giờ giữ nguyên `span` của React và chỉ chuẩn hóa nội dung/style tại chỗ. Bổ sung kiểm thử chờ quote intraday rồi xác nhận cả chiều tăng `+100.000 ₫ +8,33%` và chiều giảm `-100.000 ₫ -7,14%`.
+- Kiểm chứng cuối baseline: frontend service tests **14/14**, encoding **25 file**, build/safe-build và bundle integrity đạt; `portfolio.spec.mjs` **7/7** và toàn bộ Playwright **56/56 pass**. Artifact production hiện tại là `index-DAMQoB1v.js`.
+- Giới hạn: E2E dùng mock API; chưa phải xác nhận dữ liệu/provider production. Cảnh báo Vite CJS API vẫn còn. Đợt tiếp theo bắt đầu từ audit có hệ thống từng page, ưu tiên cải tiến có thể đo và giữ source/dist tái tạo được.

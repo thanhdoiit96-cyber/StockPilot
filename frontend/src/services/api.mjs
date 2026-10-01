@@ -2,12 +2,12 @@
   constructor(message, status = null) { super(message); this.name = 'ApiError'; this.status = status }
 }
 
-export async function requestJson(url, { signal, method = 'GET', body, token } = {}) {
-  const deadline = AbortSignal.timeout(15000)
-  const requestSignal = signal ? AbortSignal.any([signal, deadline]) : deadline
+export async function requestJson(url, { signal, method = 'GET', body, token, timeoutMs = 15000 } = {}) {
+  const deadline = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : null
+  const requestSignal = signal && deadline ? AbortSignal.any([signal, deadline]) : signal || deadline
   let response
   try {
-    response = await fetch(url, { signal: requestSignal, method, headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
+    response = await fetch(url, { ...(requestSignal ? { signal: requestSignal } : {}), method, headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
   } catch (error) {
     if (signal?.aborted || error.name === 'AbortError') throw error
     throw new ApiError('Không thể kết nối máy chủ. Vui lòng thử lại.')
@@ -47,7 +47,7 @@ export function marketDataQuality(payload) {
   return payload.data
 }
 export function stockAnalysis(payload) {
-  if (payload.success !== true || !payload.data || !payload.data.indicators || typeof payload.data.observations !== 'number' || !payload.data.quality || !payload.data.risk_plan || !Array.isArray(payload.data.evaluation_factors) || !payload.data.horizon_advice || typeof payload.data.horizon_advice !== 'object' || !payload.data.expert_guidance || !Array.isArray(payload.data.expert_guidance.score_breakdown)) throw new ApiError('Phân tích kỹ thuật trả về không đúng định dạng.')
+  if (payload.success !== true || !payload.data || !payload.data.indicators || typeof payload.data.observations !== 'number' || !payload.data.quality || !payload.data.risk_plan || !payload.data.expert_guidance || !Array.isArray(payload.data.expert_guidance.score_breakdown)) throw new ApiError('Phân tích kỹ thuật trả về không đúng định dạng.')
   return payload.data
 }
 export function aiGateStatus(payload) {
