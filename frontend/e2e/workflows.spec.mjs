@@ -213,7 +213,7 @@ test('portfolio navigation ignores stale analysis request flags', async ({ page 
   await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('analysis-requested:')).length)).toBe(0)
 })
 test('data quality banner persists across overview, portfolio and detail pages',async({page})=>{await boot(page);await expect(page.locator('#market-data-quality-overlay')).toContainText('204/551');await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('347');await page.getByRole('button',{name:'Chi tiết mã',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('2026-09-25')})
-test('sidebar collapses to labelled icons and overview headers stay pinned', async ({ page }) => {
+test('sidebar collapses to labelled icons while overview headers and symbols stay pinned', async ({ page }) => {
   await boot(page)
   const sidebarToggle = page.locator('.sidebar-toggle')
   const toggleIsInsideSidebar = () => sidebarToggle.evaluate(button => {
@@ -253,7 +253,7 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
     pageOverflow: getComputedStyle(document.documentElement).overflowX
   }))
   expect(sticky.header).toBe('sticky')
-  expect(sticky.symbol).toBe('static')
+  expect(sticky.symbol).toBe('sticky')
   expect(sticky.sidebar).toBe('sticky')
   expect(['visible', 'hidden']).toContain(sticky.sidebarOverflow)
   expect(sticky.navOverflow).toBe('hidden')

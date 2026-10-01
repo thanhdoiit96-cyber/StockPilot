@@ -603,6 +603,8 @@ The remaining incident was worker concurrency and provider instability: simultan
 
 - P0 hoàn thành: mobile shell không tràn document, refresh intraday không khóa thao tác, topbar đúng ngữ cảnh, coverage Tổng quan/Danh mục đúng phạm vi và AI Advisor có trạng thái gửi/accessibility rõ.
 - Audit regression bao phủ Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop `1440×1000` và mobile `390×844`.
-- P1 tiếp theo: chuyển Bảng giá/runtime enhancements thành page/component React, tách `App.jsx`, rồi đo first usable paint/quote settlement/aggregate ở 300 và 500 mã trước khi chọn virtualization hoặc code splitting.
-- P2 chỉ mở sau P1: tính năng sâu theo page như lịch sử độ rộng, cấu hình cột, quản lý ledger, chart benchmark, so sánh snapshot và Advisor có citation/context.
+- P1 đang thực hiện: Bảng giá có sticky mã, cấu hình cột lưu cục bộ và xuất CSV theo trang/bộ lọc. Regression 300/500 mã đã bắt và sửa coverage bất khả thi khi quote đầy đủ đến trước pagination summary.
+- Bốn lượt cục bộ trên Chrome headless/build production cho p50 quan sát 300 mã `583/556/150 ms`, 500 mã `790/848/193 ms` tương ứng first usable/chuyển page/quote settlement; khoảng lớn nhất vẫn dưới budget regression `10.000/2.000/3.000 ms`. Mock API tức thời và mẫu nhỏ nên chưa coi đây là SLA/p95 production; cần chạy nhiều lượt với API/live data và ghi cấu hình máy.
+- P1 tiếp theo: chuyển Bảng giá/runtime enhancements thành page/component React, tách `App.jsx`, đo p50/p95 live rồi mới chọn pagination/windowing, memoization hoặc code splitting.
+- P2 còn lại sau P1: lịch sử độ rộng, quản lý ledger, chart benchmark, so sánh snapshot và Advisor có citation/context. Hạng mục cấu hình cột/sticky/export Bảng giá đã có bản đầu tiên nhưng server-side export ngoài trang hiện tại chưa triển khai.
 - Chi tiết, tiêu chí nghiệm thu và giới hạn nằm tại [UI_UX_AUDIT](UI_UX_AUDIT.md).

@@ -14,7 +14,7 @@ Playwright kiểm tra page đích hiển thị, chỉ một mục điều hướ
 | --- | --- | --- | --- |
 | Đăng nhập | Form gọn, có trạng thái đăng nhập/đăng ký; chưa có luồng khôi phục mật khẩu và thông báo phiên hết hạn theo ngữ cảnh. | Bổ sung vào audit desktop/mobile và kiểm tra không tràn viewport. | Thêm hiện/ẩn mật khẩu, hướng dẫn mật khẩu, luồng quên mật khẩu khi backend có contract; đưa lỗi vào focus và `aria-live`. |
 | Tổng quan | Phân cấp hero → KPI → độ rộng hợp lý. Dòng phạm vi từng ghi `0/0` dù các nhóm tăng/giảm đã có dữ liệu. | Đồng bộ topbar; sửa dòng phạm vi từ coverage thực của bảng; giữ cảnh báo chất lượng dữ liệu gần đầu page. | Thêm xu hướng độ rộng nhiều snapshot, hiệu suất ngành và lưu bộ lọc; chỉ triển khai khi backend có contract nhất quán. |
-| Bảng giá | Bảng, timeline, filter và action đã rõ trên desktop. Mobile cần cuộn ngang nhưng trước đây kéo rộng cả document và không có chỉ dẫn. | Sửa app shell mobile, cô lập cuộn trong bảng, thêm hướng dẫn “Vuốt ngang”, giữ action/phân tích và loading không chặn. | Tách thành route React thật; thêm cấu hình cột/sticky mã; đo và cân nhắc virtualization khi tải 300/500 mã. |
+| Bảng giá | Bảng, timeline, filter và action đã rõ trên desktop. Mobile cần cuộn ngang nhưng trước đây kéo rộng cả document và không có chỉ dẫn. | Cô lập cuộn trong bảng, thêm hướng dẫn “Vuốt ngang”, giữ mã sticky; thêm cấu hình cột lưu cục bộ và xuất CSV đúng trang/bộ lọc hiện tại. Đã đo fixture 300/500 mã và sửa coverage bất khả thi `300/40`, `500/40`. | Tách thành route React thật; đo lại bằng API/live data và lấy p50/p95 nhiều lượt trước khi quyết định pagination/windowing. |
 | Danh mục cá nhân | Có ghi giao dịch, vị thế, P/L, donut và watchlist. Form từng rơi về nền sáng; coverage quote ghi `4/1` vì đếm quote toàn thị trường. | Đồng bộ dark theme; coverage chỉ đếm dòng vị thế có Intraday; refresh nền không khóa form; giữ tooltip donut cho chuột và bàn phím. | Thêm lịch sử giao dịch với sửa/xóa có xác nhận, import/export CSV và bộ lọc vị thế đóng khi backend hỗ trợ. |
 | Chi tiết mã | Tìm mã, giá hiện tại, lịch sử và phân tích lazy rõ ràng; page dài trên mobile sau khi mở phân tích. | Topbar đúng ngữ cảnh, mobile shell gọn, refresh intraday không chặn thao tác; giữ analysis chỉ tải khi người dùng yêu cầu. | Thêm range/zoom, benchmark, tooltip chart bằng bàn phím và mục lục dính cho các khối phân tích dài. |
 | Đề xuất | Có tiêu chí giải thích được, snapshot và vòng phản hồi; mật độ nội dung cao, đặc biệt trên mobile. | Bảo toàn layout một cột mobile, topbar đúng ngữ cảnh và audit toàn chiều dài; không thay đổi logic chấm điểm. | Cho thu gọn tiêu chí sau khi có kết quả, so sánh hai snapshot và mở evidence/provenance tại chỗ; không cộng điểm nguồn chưa xác minh. |
@@ -41,11 +41,11 @@ Trạng thái: hoàn thành trong đợt 2026-10-01.
 
 ### P1 — Kiến trúc page và hiệu năng 300/500 mã
 
-Trạng thái: tiếp theo.
+Trạng thái: đang thực hiện.
 
 1. Chuyển Bảng giá từ runtime DOM injection thành view/route React riêng, sau đó chuyển từng enhancement còn lại khỏi MutationObserver.
 2. Tách `App.jsx` đã phục hồi thành module page/component có tên rõ; chỉ khi source parity và full E2E còn xanh mới code-split Detail, Đề xuất và Advisor.
-3. Đo first usable paint, thời gian chuyển page, quote settlement và aggregate độ rộng với 300/500 mã trên build production. Ghi p50/p95, thiết bị và dữ liệu kiểm tra; không suy diễn từ fixture nhỏ.
+3. Đã đo bốn lượt regression trên Chrome headless/build production cục bộ với mock API. P50 quan sát cho 300 mã là `first usable 583 ms`, chuyển Bảng giá `556 ms`, quote settlement `150 ms` (khoảng lần lượt `527–675`, `476–643`, `134–157 ms`); với 500 mã là `790`, `848`, `193 ms` (khoảng `718–930`, `818–977`, `189–202 ms`). Mẫu nhỏ và API tức thời nên đây chưa phải SLA production; bước tiếp theo là đo nhiều lượt bằng API/live data và ghi cấu hình máy.
 4. Sau phép đo, ưu tiên server pagination/windowing, memo hóa aggregate và lazy mount khối phân tích ngoài viewport nếu vượt budget được thống nhất.
 
 Tiêu chí: source/dist tái tạo được; service tests, build, page audit và full E2E xanh; không tăng request concurrency để che độ trễ provider; có evidence đo 300/500 mã.
@@ -55,7 +55,7 @@ Tiêu chí: source/dist tái tạo được; service tests, build, page audit v�
 Trạng thái: backlog sau P1.
 
 - Tổng quan: lịch sử độ rộng và drill-down ngành.
-- Bảng giá: cấu hình cột, sticky symbol và export phạm vi hiện tại.
+- Bảng giá: cấu hình cột, sticky symbol và export phạm vi hiện tại đã có; tiếp theo là preset cột theo tác vụ và server-side export nếu phạm vi vượt trang hiện tại.
 - Danh mục: quản lý ledger đầy đủ và import/export.
 - Chi tiết: chart tương tác, benchmark và điều hướng section.
 - Đề xuất: so sánh snapshot/evidence.
@@ -66,6 +66,6 @@ Mỗi tính năng chỉ được đánh dấu hoàn thành khi có contract/back
 
 ## Ngân sách và giới hạn hiện tại
 
-Build production ngày 2026-10-01 tạo main JS khoảng `304,78 kB` (`91,41 kB` gzip), CSS `61,47 kB` (`11,97 kB` gzip) và runtime Bảng giá khoảng `97,17 kB` chưa gzip. Đây là kích thước artifact, không phải số đo tốc độ người dùng.
+Build production ngày 2026-10-01 sau lát cắt P1 tạo main JS khoảng `311,39 kB` (`93,34 kB` gzip), CSS `61,47 kB` (`11,97 kB` gzip) và runtime Bảng giá khoảng `105,97 kB` chưa gzip. Đây là kích thước artifact, không phải số đo tốc độ người dùng. Runtime tăng do thêm cấu hình cột/export và regression guard; mục tiêu kiến trúc tiếp theo vẫn là chuyển hành vi này vào component React rồi đánh giá lại bundle.
 
-Blocker hiệu năng lớn nhất là source phục hồi vẫn tập trung trong `App.jsx` và nhiều behavior còn được bổ sung qua runtime observer. Không nên thêm thư viện/virtualization trước khi đo 300/500 mã và tách page; nếu không sẽ tăng độ phức tạp nhưng chưa chứng minh cải thiện.
+Blocker hiệu năng lớn nhất là source phục hồi vẫn tập trung trong `App.jsx` và nhiều behavior còn được bổ sung qua runtime observer. Phép đo fixture hiện chưa cho thấy cần thêm thư viện virtualization; không chọn giải pháp đó trước khi có p50/p95 với API/live data và sau khi tách page.

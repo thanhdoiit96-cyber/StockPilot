@@ -302,6 +302,53 @@
         font: inherit;
         cursor: pointer;
       }
+      .market-board-tools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .market-board-tools .ghost-btn { min-height: 36px; white-space: nowrap; }
+      .market-board-column-picker { position: relative; }
+      .market-board-column-picker > summary { list-style: none; cursor: pointer; }
+      .market-board-column-picker > summary::-webkit-details-marker { display: none; }
+      .market-board-column-picker[open] > summary { border-color: var(--primary); color: var(--primary); }
+      .market-board-column-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 30;
+        display: grid;
+        gap: 9px;
+        min-width: 230px;
+        margin: 0;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #101a2d;
+        box-shadow: 0 18px 42px rgba(2, 8, 23, .42);
+      }
+      .market-board-column-menu legend { padding: 0 0 3px; color: var(--text); font-size: .78rem; font-weight: 700; }
+      .market-board-column-menu label { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .76rem; cursor: pointer; }
+      .market-board-column-menu input { width: 16px; height: 16px; accent-color: var(--primary); }
+      .market-board-column-menu .ghost-btn { width: 100%; margin-top: 3px; }
+      .market-board-toolbar-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .table-panel.market-board-hide-name th:nth-child(2), .table-panel.market-board-hide-name td:nth-child(2),
+      .table-panel.market-board-hide-volume th:nth-child(5), .table-panel.market-board-hide-volume td:nth-child(5),
+      .table-panel.market-board-hide-analysis th:nth-child(7), .table-panel.market-board-hide-analysis td:nth-child(7),
+      .table-panel.market-board-hide-actions th:nth-child(8), .table-panel.market-board-hide-actions td:nth-child(8) { display: none !important; }
+      .table-panel .table-wrap th:first-child,
+      .table-panel .table-wrap td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #101a2d;
+      }
+      .table-panel .table-wrap th:first-child { z-index: 4; background: #111d31; }
+      .table-panel .table-wrap.is-horizontally-scrolled th:first-child,
+      .table-panel .table-wrap.is-horizontally-scrolled td:first-child { box-shadow: 10px 0 18px -15px rgba(94, 234, 212, .9); }
+      .table-panel tbody tr:hover td:first-child { background: #13233a; }
       .overview-page-size-control select:focus-visible {
         border-color: var(--primary);
         outline: 2px solid rgba(94, 234, 212, .38);
@@ -313,6 +360,11 @@
         .overview-analysis-action .overview-analysis-btn { white-space: normal; }
       }
       @media (max-width: 620px) {
+        .table-panel > .panel-header { align-items: stretch; flex-direction: column; }
+        .market-board-tools { width: 100%; margin-left: 0; }
+        .market-board-tools > * { flex: 1 1 0; }
+        .market-board-tools .ghost-btn, .market-board-column-picker > summary { width: 100%; justify-content: center; }
+        .market-board-column-menu { right: auto; left: 0; min-width: min(280px, calc(100vw - 52px)); }
         .table-panel .table-tools.overview-filter-row {
           grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
           gap: 8px;
@@ -762,6 +814,7 @@
   const marketSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '14:45']
   const marketViewKey = 'stockpilot-market-view'
   const boardSectorKey = 'stockpilot-board-sector'
+  const marketColumnsKey = 'stockpilot-market-columns-v1'
   const boardLoadingId = 'market-board-loading-overlay'
   let boardRefreshSequence = 0
   let boardRefreshController = null
@@ -922,6 +975,94 @@
     hint.setAttribute('role', 'note')
     hint.textContent = 'Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác.'
     wrap.before(hint)
+  }
+
+  const marketColumnDefinitions = [
+    { key: 'name', label: 'Doanh nghiệp', index: 1 },
+    { key: 'volume', label: 'Khối lượng', index: 4 },
+    { key: 'analysis', label: 'Phân tích', index: 6 },
+    { key: 'actions', label: 'Thao tác', index: 7 }
+  ]
+  const readMarketColumns = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(marketColumnsKey) || '{}')
+      return Object.fromEntries(marketColumnDefinitions.map(column => [column.key, saved[column.key] !== false]))
+    } catch (_) {
+      return Object.fromEntries(marketColumnDefinitions.map(column => [column.key, true]))
+    }
+  }
+  const writeMarketColumns = columns => {
+    try { localStorage.setItem(marketColumnsKey, JSON.stringify(columns)) } catch (_) { }
+  }
+  const applyMarketColumns = (panel, columns) => {
+    marketColumnDefinitions.forEach(column => panel.classList.toggle(`market-board-hide-${column.key}`, columns[column.key] === false))
+    panel.querySelectorAll('[data-market-column]').forEach(input => { input.checked = columns[input.dataset.marketColumn] !== false })
+  }
+  const csvCell = value => {
+    const normalized = String(value || '').replace(/\s+/g, ' ').trim()
+    const safe = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized
+    return `"${safe.replaceAll('"', '""')}"`
+  }
+  const exportMarketBoard = panel => {
+    const columns = readMarketColumns()
+    const exportIndexes = [0, 1, 2, 3, 4].filter(index => {
+      const definition = marketColumnDefinitions.find(column => column.index === index)
+      return !definition || columns[definition.key] !== false
+    })
+    const headers = [...panel.querySelectorAll('thead th')]
+    const rows = [...panel.querySelectorAll('tbody tr')].filter(row => row.querySelector('.symbol'))
+    const records = [
+      exportIndexes.map(index => csvCell(headers[index]?.textContent || '')).join(','),
+      ...rows.map(row => exportIndexes.map(index => csvCell(row.cells[index]?.textContent || '')).join(','))
+    ]
+    const blob = new Blob([`\uFEFF${records.join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
+    link.href = url
+    link.download = `stockpilot-bang-gia-${date}.csv`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+  }
+  const ensureMarketBoardTools = () => {
+    const panel = document.querySelector('.table-panel')
+    const header = panel?.querySelector(':scope > .panel-header')
+    if (!panel || !header) return
+    let tools = header.querySelector('.market-board-tools')
+    if (!tools) {
+      tools = document.createElement('div')
+      tools.className = 'market-board-tools'
+      tools.innerHTML = '<button type="button" class="ghost-btn market-board-export">Xuất CSV</button><details class="market-board-column-picker"><summary class="ghost-btn">Cột hiển thị</summary><fieldset class="market-board-column-menu"><legend>Tùy chỉnh Bảng giá</legend>' + marketColumnDefinitions.map(column => `<label><input type="checkbox" data-market-column="${column.key}"> ${column.label}</label>`).join('') + '<button type="button" class="ghost-btn market-board-columns-reset">Khôi phục mặc định</button></fieldset></details><span class="market-board-toolbar-status" role="status" aria-live="polite"></span>'
+      header.append(tools)
+      tools.querySelector('.market-board-export').addEventListener('click', () => exportMarketBoard(panel))
+      tools.querySelectorAll('[data-market-column]').forEach(input => input.addEventListener('change', () => {
+        const columns = readMarketColumns()
+        columns[input.dataset.marketColumn] = input.checked
+        writeMarketColumns(columns)
+        applyMarketColumns(panel, columns)
+        tools.querySelector('.market-board-toolbar-status').textContent = `Đã ${input.checked ? 'hiện' : 'ẩn'} cột ${input.parentElement.textContent.trim()}`
+      }))
+      tools.querySelector('.market-board-columns-reset').addEventListener('click', () => {
+        const defaults = Object.fromEntries(marketColumnDefinitions.map(column => [column.key, true]))
+        writeMarketColumns(defaults)
+        applyMarketColumns(panel, defaults)
+        tools.querySelector('.market-board-toolbar-status').textContent = 'Đã khôi phục các cột mặc định'
+      })
+    }
+    const rowCount = panel.querySelectorAll('tbody tr .symbol').length
+    const exportButton = tools.querySelector('.market-board-export')
+    const exportLabel = `Xuất CSV (${rowCount})`
+    if (exportButton.textContent !== exportLabel) exportButton.textContent = exportLabel
+    exportButton.disabled = rowCount === 0
+    exportButton.title = rowCount ? `Xuất ${rowCount} mã trong trang và bộ lọc hiện tại` : 'Chưa có dữ liệu để xuất'
+    applyMarketColumns(panel, readMarketColumns())
+    const wrap = panel.querySelector('.table-wrap')
+    if (wrap && !wrap.dataset.marketStickyBound) {
+      wrap.dataset.marketStickyBound = '1'
+      const syncScrolled = () => wrap.classList.toggle('is-horizontally-scrolled', wrap.scrollLeft > 2)
+      wrap.addEventListener('scroll', syncScrolled, { passive: true })
+      syncScrolled()
+    }
   }
 
   const enhanceAdvisor = () => {
@@ -1318,11 +1459,16 @@
     ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
     const breadthHeaderText = breadth?.querySelector('.market-breadth-header p')
-    if (breadthHeaderText) {
+    const activeBreadthExchange = breadth?.querySelector('.breadth-exchange-select')?.value || ''
+    if (breadthHeaderText && !activeBreadthExchange) {
       const tableCount = document.querySelectorAll('.table-panel tbody tr .symbol').length
       const sourceCoverage = document.querySelector('.overview-source-summary')?.textContent.match(/(\d+)\s*\/\s*(\d+)\s*mã có Intraday/i)
-      const quoted = sourceCoverage ? Number(sourceCoverage[1]) : tableCount
-      const universe = sourceCoverage ? Number(sourceCoverage[2]) : tableCount
+      const reportedQuoted = sourceCoverage ? Number(sourceCoverage[1]) : tableCount
+      const reportedUniverse = sourceCoverage ? Number(sourceCoverage[2]) : tableCount
+      // A full quote response can settle before the React pagination summary.
+      // Never expose impossible coverage such as 300/40 during that transition.
+      const universe = Math.max(tableCount, reportedQuoted, reportedUniverse)
+      const quoted = Math.min(reportedQuoted, universe)
       breadthHeaderText.textContent = `${universe} mã trong vũ trụ · ${quoted}/${universe} mã có quote intraday · Bình quân chỉ trên mã có biến động hợp lệ`
     }
     const breadthAverageChip = breadth?.querySelector('.market-breadth-header .chip span')
@@ -1482,6 +1628,7 @@
     })
     document.querySelectorAll('.recommendation-workbench > .saved-proposals, .recommendation-criteria-panel > .saved-proposals').forEach(section => section.remove())
     ensureTableScrollHint()
+    ensureMarketBoardTools()
     enhanceAdvisor()
     syncPageContext()
   }
