@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import PageLoadingOverlay from './PageLoadingOverlay.jsx'
 import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
 import {
@@ -192,7 +193,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       <button type="button" className="ghost-btn small-btn market-board-export" onClick={exportCsv}>Xuất CSV ({rows.length})</button>
     </div>
     <p className="overview-data-status" role="status">{quoteState.error || (quoteState.loading ? 'Đang cập nhật Intraday…' : Object.keys(mergedQuotes).length ? 'Có dữ liệu intraday' : 'Đang dùng dữ liệu EOD')}</p>
-    <p className="overview-source-summary">Nguồn dữ liệu: {quoteProviders.length ? `${quoteProviders.join(', ')} · ` : ''}giá Intraday khi có sẵn, nếu không dùng giá EOD gần nhất. <span className="overview-source-help" aria-label="Giải thích Intraday, EOD và dữ liệu cũ" title="Intraday: quote của phiên hiện tại. EOD: giá đóng cửa phiên gần nhất. Dữ liệu cũ: chưa có dữ liệu cho phiên chuẩn mới nhất." tabIndex="0">i</span></p>
+    <p className="overview-source-summary"><span className="overview-source-label">Nguồn dữ liệu</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : 'EOD gần nhất'}</span><span className="overview-source-description">Ưu tiên giá Intraday khi có sẵn; nếu không, dùng giá đóng cửa EOD gần nhất.</span><button className="overview-source-help" type="button" aria-label="Giải thích Intraday, EOD và dữ liệu cũ" title="Intraday: quote của phiên hiện tại. EOD: giá đóng cửa phiên gần nhất. Dữ liệu cũ: chưa có dữ liệu cho phiên chuẩn mới nhất.">?</button></p>
     <MarketTimeline rows={rows} />
     {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>Thử lại danh sách</button></p>}
     <p className="table-scroll-hint" role="note">Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác.</p>
@@ -223,6 +224,6 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       <label className="page-size-control overview-page-size-control"><span>Số mã mỗi trang</span><select className="app-select" value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       <div className="pagination-actions"><button type="button" className="ghost-btn small-btn" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>Trước</button><span>Trang {pagination.page || page}/{pagination.totalPages || 1}</span><button type="button" className="ghost-btn small-btn" disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>Sau</button></div>
     </div>
-    {active && quoteState.loading && <div id="market-board-loading-overlay" className="loading-overlay market-board-loading-overlay" role="status"><div className="loading-card"><span className="loading-spinner" /><span>Đang cập nhật Bảng giá…</span></div></div>}
+    <PageLoadingOverlay active={active && (listState.loading || quoteState.loading)} id="market-board-loading-overlay" className="market-board-loading-overlay" label="Đang cập nhật dữ liệu Bảng giá mới nhất…" />
   </section>
 }

@@ -3,6 +3,7 @@ import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
+import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -920,9 +921,7 @@ eyebrow", children: p("Danh m\u1EE5c") })] })] }), O.jsxs("main", { className: "
 topbar-actions", children: [O.jsx("span", { children: ue.user.email }), O.jsx("button", { className: "ghost-btn", onClick: () => Bt(
   null), children: p("\u0110\u0103ng xu\u1EA5t") })] })] }), (re === "overview" && cu || re === "portfolio" && ci.loading ||
   re === "detail" && (Ee.status === "loading" || fi.loading) || re === "recommendations" && (su.status === "loading" || uu.
-  status === "loading")) && O.jsx("div", { className: "loading-overlay", role: "status", children: O.jsxs("div", { className: "\
-loading-card", children: [O.jsx("div", { className: "loading-logo", children: "S" }), O.jsx("span", { className: "loadin\
-  g-spinner" }), O.jsx("span", { children: "\u0110ang c\u1EADp nh\u1EADt Intraday..." })] }) }), re !== "market-board" && (wt.error || ai.error) &&
+  status === "loading")) && O.jsx(PageLoadingOverlay, { active: true, label: re === "detail" ? p("\u0110ang t\u1EA3i d\u1EEF li\u1EC7u Chi ti\u1EBFt m\u00E3 m\u1EDBi nh\u1EA5t...") : re === "recommendations" ? p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u \u0110\u1EC1 xu\u1EA5t m\u1EDBi nh\u1EA5t...") : re === "portfolio" ? p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u Danh m\u1EE5c m\u1EDBi nh\u1EA5t...") : p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u Th\u1ECB tr\u01B0\u1EDDng m\u1EDBi nh\u1EA5t...") }), re !== "market-board" && (wt.error || ai.error) &&
   O.jsxs("section", { className: "api-panel diagnostics-panel", children: [wt.error && O.jsxs("p", { role: "alert", children: [
   wt.error, " ", O.jsx("button", { className: "ghost-btn small-btn", onClick: wt.retry, children: p("Th\u1EED l\u1EA1i health") })] }),
   ai.error && O.jsxs("p", { role: "alert", children: [ai.error, " ", O.jsx("button", { className: "ghost-btn small-btn",
