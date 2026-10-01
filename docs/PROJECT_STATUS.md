@@ -3042,3 +3042,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bỏ gạch chân khi hover/focus ở link Chi tiết trong bảng Danh mục và Watchlist; vẫn giữ màu, nền highlight, cursor và focus-visible để không làm mất affordance điều hướng/khả năng truy cập.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-CbPBG7Tk.js`); Playwright `recommendation-workbench.spec.mjs` và `portfolio.spec.mjs` **8/8** pass. Test Đề xuất cố ý cho `/api/portfolio` trả `recommendation_entries: []` sau khi lưu, rồi xác nhận FPT vẫn hiện trong bảng theo dõi.
 - Điểm tiếp tục P1 không đổi: trace outlier chuyển Bảng giá với phiên authenticated production-like, sau đó lặp benchmark live trước khi quyết định tối ưu hiệu năng.
+
+## Phân rã độ trễ live của Bảng giá — 2026-10-01
+
+- Thêm lệnh tái lập `npm run measure:live:market-board`. Lệnh đo tuần tự API list 40 mã và quotes của chính 40 mã đó, có timeout 35 giây, báo HTTP/error, số dòng/mã trả về và p50/p95 theo nearest-rank. Không ghi hay thay đổi dữ liệu.
+- Đo 5 mẫu lúc `2026-10-01T09:57:20Z` với API local live `127.0.0.1:5000`: list p50/p95 **3/130 ms**; quote p50/p95 **2/5068 ms**. Cả 5 lần HTTP 200; list trả 40 mã và quote trả 39/40 mã. Cold quote đầu tiên 5.068 giây, bốn lượt dùng cache là 1–3 ms; do đó không có bằng chứng list/render cần virtualization hoặc server pagination mới.
+- Đã build production/safe-build và bundle integrity pass (`index-CbPBG7Tk.js`). E2E `market-board-productivity.spec.mjs` **3/3** pass; fixture 300 mã `547/479/54 ms`, 500 mã `675/773/93 ms` tương ứng first usable/chuyển trang/quote settlement.
+- Giới hạn: đây là phân rã API không xác thực, không thay thế trace navigation browser với session production-like. Token E2E có sẵn bị backend từ chối là hết hạn, nên không tự tạo hay giả mạo phiên người dùng. Điểm tiếp tục: chạy trace browser authenticated khi có session hợp lệ, đối chiếu waterfall list/quote/cache rồi mới quyết định thay đổi lifecycle hoặc provider.
