@@ -19,6 +19,13 @@ if (fs.existsSync(path.join(root, 'dist'))) walk(path.join(root, 'dist'))
 const markers = /(?:�|ï¿½|Ã[\u0080-\u00bf]|Â[\u0080-\u00bf]|â(?:€|™|œ|€¦|—|…))/u
 const failures = files.filter(file => markers.test(fs.readFileSync(file, 'utf8')))
 if (failures.length) { console.error(`Encoding check failed in: ${failures.map(file => path.relative(root, file)).join(', ')}`); process.exit(1) }
+const appSource = fs.readFileSync(path.join(root, 'src/App.jsx'), 'utf8')
+const escapedVietnamese = /\\u(?:00|01|1e)[0-9a-f]{2}|\\x[c-f][0-9a-f]/i
+const damagedLabels = /["`](?:Bn|Xa|Gi EOD|Trong my|Trung tnh|Theo di thm)["`]|Generative AI\s{2}m|(?:vợt đề xuất|xem xt rủi ro)/
+if (escapedVietnamese.test(appSource) || damagedLabels.test(appSource)) {
+  console.error('Encoding check failed: App.jsx still contains escaped or damaged Vietnamese labels.')
+  process.exit(1)
+}
 console.log(`Encoding check passed (${files.length} source files).`)
 
 
