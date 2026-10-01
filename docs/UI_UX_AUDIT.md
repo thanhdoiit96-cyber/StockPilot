@@ -44,8 +44,9 @@ Trạng thái: hoàn thành trong đợt 2026-10-01.
 Trạng thái: đang thực hiện.
 
 1. Chuyển Bảng giá từ runtime DOM injection thành view/route React riêng, sau đó chuyển từng enhancement còn lại khỏi MutationObserver.
+   - Đã tách toolbar/sticky/CSV thành runtime module độc lập và giới hạn observer vào mutation liên quan `.table-panel`; phần render/navigation/quote lifecycle vẫn còn trong runtime Tổng quan và là lát cắt tiếp theo.
 2. Tách `App.jsx` đã phục hồi thành module page/component có tên rõ; chỉ khi source parity và full E2E còn xanh mới code-split Detail, Đề xuất và Advisor.
-3. Đã đo bốn lượt regression trên Chrome headless/build production cục bộ với mock API. P50 quan sát cho 300 mã là `first usable 583 ms`, chuyển Bảng giá `556 ms`, quote settlement `150 ms` (khoảng lần lượt `527–675`, `476–643`, `134–157 ms`); với 500 mã là `790`, `848`, `193 ms` (khoảng `718–930`, `818–977`, `189–202 ms`). Mẫu nhỏ và API tức thời nên đây chưa phải SLA production; bước tiếp theo là đo nhiều lượt bằng API/live data và ghi cấu hình máy.
+3. Baseline trước tách module gồm bốn lượt Chrome headless/build production cục bộ với mock API: p50 quan sát 300 mã `583/556/150 ms`, 500 mã `790/848/193 ms` theo first usable/chuyển Bảng giá/quote settlement. Hai lượt sau tách module lần lượt là `647/552/131 ms` và `986/722/182 ms`; tất cả vẫn trong budget regression. Mẫu nhỏ và API tức thời nên đây chưa phải SLA production; bước tiếp theo là đo nhiều lượt bằng API/live data và ghi cấu hình máy.
 4. Sau phép đo, ưu tiên server pagination/windowing, memo hóa aggregate và lazy mount khối phân tích ngoài viewport nếu vượt budget được thống nhất.
 
 Tiêu chí: source/dist tái tạo được; service tests, build, page audit và full E2E xanh; không tăng request concurrency để che độ trễ provider; có evidence đo 300/500 mã.
@@ -66,6 +67,6 @@ Mỗi tính năng chỉ được đánh dấu hoàn thành khi có contract/back
 
 ## Ngân sách và giới hạn hiện tại
 
-Build production ngày 2026-10-01 sau lát cắt P1 tạo main JS khoảng `311,39 kB` (`93,34 kB` gzip), CSS `61,47 kB` (`11,97 kB` gzip) và runtime Bảng giá khoảng `105,97 kB` chưa gzip. Đây là kích thước artifact, không phải số đo tốc độ người dùng. Runtime tăng do thêm cấu hình cột/export và regression guard; mục tiêu kiến trúc tiếp theo vẫn là chuyển hành vi này vào component React rồi đánh giá lại bundle.
+Build production ngày 2026-10-01 sau khi tách module tạo main JS khoảng `312,04 kB` (`93,81 kB` gzip), CSS `61,47 kB` (`11,97 kB` gzip), runtime Tổng quan `97,61 kB`, module toolbar `8,85 kB` và core `1,26 kB` chưa gzip. Đây là kích thước artifact, không phải số đo tốc độ người dùng. Tổng byte runtime chưa giảm vì có biên module/contract; lợi ích hiện tại là cô lập trách nhiệm và giảm phạm vi observer, còn tối ưu tải chỉ đánh giá sau khi chuyển page sang React.
 
 Blocker hiệu năng lớn nhất là source phục hồi vẫn tập trung trong `App.jsx` và nhiều behavior còn được bổ sung qua runtime observer. Phép đo fixture hiện chưa cho thấy cần thêm thư viện virtualization; không chọn giải pháp đó trước khi có p50/p95 với API/live data và sau khi tách page.

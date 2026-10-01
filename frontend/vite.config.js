@@ -9,6 +9,8 @@ const runtimeAssets = [
   'sidebar-toggle-icon.js',
   'overview-table-actions.js'
 ]
+const moduleRuntimeAssets = ['market-board-tools.js']
+const moduleRuntimeDependencies = ['market-board-tools-core.mjs']
 
 const externalRuntimeAssets = () => {
   let projectRoot = process.cwd()
@@ -22,13 +24,13 @@ const externalRuntimeAssets = () => {
       outputDirectory = path.resolve(config.root, config.build.outDir)
     },
     transformIndexHtml(html) {
-      return runtimeAssets.reduce((result, asset) => result.replace(
+      return [...runtimeAssets, ...moduleRuntimeAssets].reduce((result, asset) => result.replace(
         `<script type="module" src="/src/runtime/${asset}"></script>`,
         ''
       ), html)
     },
     generateBundle() {
-      runtimeAssets.forEach(asset => {
+      ;[...runtimeAssets, ...moduleRuntimeAssets, ...moduleRuntimeDependencies].forEach(asset => {
         this.emitFile({
           type: 'asset',
           fileName: `assets/${asset}`,
@@ -38,12 +40,14 @@ const externalRuntimeAssets = () => {
     },
     closeBundle() {
       const indexPath = path.join(outputDirectory, 'index.html')
-      const scripts = runtimeAssets.map(asset => `    <script defer src="/assets/${asset}"></script>`).join('\n')
+      const classicScripts = runtimeAssets.map(asset => `    <script defer src="/assets/${asset}"></script>`).join('\n')
+      const moduleScripts = moduleRuntimeAssets.map(asset => `    <script type="module" src="/assets/${asset}"></script>`).join('\n')
       const html = fs.readFileSync(indexPath, 'utf8')
       const moduleScript = '    <script type="module"'
-      const nextHtml = html.includes(moduleScript)
-        ? html.replace(moduleScript, `${scripts}\n${moduleScript}`)
-        : html.replace('  </body>', `${scripts}\n  </body>`)
+      const withClassicScripts = html.includes(moduleScript)
+        ? html.replace(moduleScript, `${classicScripts}\n${moduleScript}`)
+        : html.replace('  </body>', `${classicScripts}\n  </body>`)
+      const nextHtml = withClassicScripts.replace('  </body>', `${moduleScripts}\n  </body>`)
       fs.writeFileSync(indexPath, nextHtml)
     }
   }

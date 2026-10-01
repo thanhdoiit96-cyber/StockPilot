@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "npm run check:encoding && node --test src/services/*.test.mjs",
+    "test": "npm run check:encoding && node --test src/services/*.test.mjs src/runtime/*.test.mjs",
     "test:e2e": "playwright test",
     "dev": "vite",
     "build": "node scripts/safe-build.mjs",
