@@ -1,9 +1,10 @@
 'use strict';
 const express = require('express');
 const { Op } = require('sequelize');
-const { Portfolio, PortfolioTransaction, Stock, StockPrice } = require('../models');
+const { Portfolio, PortfolioTransaction, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioTransactions } = require('../services/portfolioAccounting');
+const { normalizePortfolioImportRows, validatePortfolioImport } = require('../services/portfolioImport');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -129,6 +130,51 @@ router.post('/transactions', async (req, res) => {
   if (side === 'SELL') { const existing = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] }); const position = summarizePortfolioTransactions(existing, new Map()).find(item => item.stock_id === stock.id); if (!position || position.quantity < quantity) return res.status(400).json({ success: false, message: 'Số lượng bán vượt vị thế hiện có' }); }
   const transaction = await PortfolioTransaction.create({ portfolio_id: portfolio.id, stock_id: stock.id, side, quantity, price, fees, traded_at: tradedAt, recommendation_context: recommendationContext });
   res.status(201).json({ success: true, data: transaction });
+});
+
+router.post('/transactions/import', async (req, res) => {
+  const dryRun = req.body?.dry_run !== false;
+  const normalized = normalizePortfolioImportRows(req.body?.rows);
+  if (normalized.errors.length) {
+    const data = { valid: false, dry_run: dryRun, row_count: normalized.rows.length, errors: normalized.errors };
+    return dryRun
+      ? res.status(200).json({ success: true, data })
+      : res.status(422).json({ success: false, message: 'File import có lỗi; chưa có giao dịch nào được ghi.', errors: normalized.errors });
+  }
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']], transaction, ...(dryRun ? {} : { lock: true }) });
+      const symbols = [...new Set(normalized.rows.map(row => row.symbol))];
+      const stocks = await Stock.findAll({ where: { code: { [Op.in]: symbols } }, attributes: ['id', 'code', 'name'], transaction });
+      const existingTransactions = portfolio ? await PortfolioTransaction.findAll({
+        where: { portfolio_id: portfolio.id },
+        order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']],
+        transaction,
+        ...(dryRun ? {} : { lock: true })
+      }) : [];
+      const validation = validatePortfolioImport({ rows: normalized.rows, stocks, existingTransactions });
+      if (validation.errors.length) return { valid: false, dry_run: dryRun, row_count: normalized.rows.length, errors: validation.errors };
+      if (dryRun) return { valid: true, dry_run: true, row_count: validation.rows.length, errors: [] };
+      if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' }, { transaction });
+      const created = await PortfolioTransaction.bulkCreate(validation.rows.map(row => ({
+        portfolio_id: portfolio.id,
+        stock_id: row.stock_id,
+        side: row.side,
+        quantity: row.quantity,
+        price: row.price,
+        fees: row.fees,
+        traded_at: row.traded_at,
+        created_at: row.created_at,
+        recommendation_context: null
+      })), { transaction, returning: true });
+      return { valid: true, dry_run: false, row_count: created.length, transaction_ids: created.map(item => item.id), errors: [] };
+    });
+    if (!result.valid && !dryRun) return res.status(422).json({ success: false, message: 'File import có lỗi; chưa có giao dịch nào được ghi.', errors: result.errors });
+    return res.status(dryRun ? 200 : 201).json({ success: true, data: result });
+  } catch (error) {
+    console.error('[Portfolio] Import failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể nhập giao dịch. Chưa có dữ liệu nào được ghi.' });
+  }
 });
 
 module.exports = router;

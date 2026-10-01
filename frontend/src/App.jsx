@@ -1589,6 +1589,23 @@ api/stocks/${encodeURIComponent(me.id)}` : null, Um),
         on(S.message);
       }
     },
+    importPortfolioTransactions = async (rows, dryRun) => {
+      const response = await je("/api/portfolio/transactions/import", {
+        method: "POST",
+        token: ue.token,
+        body: {
+          rows,
+          dry_run: dryRun
+        }
+      });
+      if (!dryRun) {
+        const refreshed = await je("/api/portfolio", {
+          token: ue.token
+        });
+        mt(refreshed.data), on(p("Đã nhập nhật ký giao dịch"));
+      }
+      return response.data;
+    },
     Jh = d => Ze(() => {
       En(1), ti(S => S.key === d ? {
         key: d,
@@ -2523,7 +2540,8 @@ mary-btn",
             quoteError: Qh,
             providerStatus: hi == null ? void 0 : hi.status
           }), O.jsx(PortfolioLedger, {
-            entries: (pe == null ? void 0 : pe.transactions) || []
+            entries: (pe == null ? void 0 : pe.transactions) || [],
+            onImport: importPortfolioTransactions
           }), false && O.jsxs("article", {
             className: "panel legacy-allocation-panel",
             children: [O.jsxs("div", {
