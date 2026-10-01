@@ -52,7 +52,6 @@ const openBoard = page => page.getByRole('button', { name: 'Bảng giá', exact:
 const activateBoard = async page => { await page.getByRole('button', { name: 'Bảng giá', exact: true }).click({ force: true }); await page.clock.runFor(1) }
 
 test('price board retains the last dated intraday quote when refresh fails', async ({ page }) => {
-  test.setTimeout(60000)
   let fail = false
   await page.clock.install()
   await setup(page, { '/api/stocks/quotes': route => fail
@@ -67,7 +66,7 @@ test('price board retains the last dated intraday quote when refresh fails', asy
   await expect(page.locator('.overview-source-summary')).toContainText('VCI')
   await expect(visibleRows(page).filter({ hasText: 'BBB' })).toContainText('20.000')
   fail = true
-  await page.clock.runFor(31000)
+  await page.clock.runFor(6000)
 })
 
 test('stock list renders and selection opens detail without page errors', async ({ page }) => {
@@ -167,10 +166,27 @@ test('detail chart identifies system sessions without candles and keeps actual p
   } } }) })
   await select(page, 'AAA')
   await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
-  await expect(page.locator('.chart-data-gap')).toContainText('09-21')
+  await expect(page.locator('.chart-data-gap')).toContainText('21-09')
   await expect(page.locator('.price-point')).toHaveCount(1)
   await expect(page.locator('.detail-volume-bars .volume-bar')).toHaveCount(1)
   await expect(page.locator('.price-axis-labels small')).toHaveCount(1)
+})
+
+test('detail chart does not report an EOD gap when intraday represents the current session', async ({ page }) => {
+  await setup(page, {
+    '/api/stocks/a': route => route.fulfill({ json: { success: true, data: {
+      ...stocks[0], market_sessions: ['2026-09-29', '2026-09-30'], price_history: [
+        { observed_at: '2026-09-29T09:00:00+07:00', close: 10000, volume: 1200 }
+      ]
+    } } }),
+    '/api/stocks/a/quote': route => route.fulfill({ json: { success: true, data: {
+      price: 10400, volume: 2500, interval: 'intraday', observed_at: '2026-09-30T18:18:00+07:00', fetched_at: '2026-09-30T18:18:02+07:00', upstream: 'VCI'
+    } } })
+  })
+  await select(page, 'AAA')
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
+  await expect(page.locator('.price-point.current[data-session-date="2026-09-30"]')).toHaveCount(1)
+  await expect(page.locator('.chart-data-gap')).toHaveCount(0)
 })
 
 for (const failure of ['network', '404', '500', 'json']) {
@@ -242,6 +258,32 @@ test('price board bounds its initial request to 40 stocks', async ({ page }) => 
   await expect(last).toContainText('66.300')
 })
 
+test('price board keeps its loading screen until the latest quote is applied', async ({ page }) => {
+  let holdRefresh = false
+  let heldRequest = false
+  let releaseRefresh
+  const refreshGate = new Promise(resolve => { releaseRefresh = resolve })
+  await setup(page, {
+    '/api/stocks/quotes': async route => {
+      if (!holdRefresh) return route.fulfill({ json: { success: true, data: {} } })
+      heldRequest = true
+      await refreshGate
+      await route.fulfill({ json: { success: true, data: { AAA: {
+        price: 66300, volume: 10, observed_at: '2026-09-30T14:45:00+07:00', fetched_at: '2026-09-30T14:45:02+07:00', upstream: 'VCI'
+      } } } })
+    }
+  })
+  await openOverview(page)
+  holdRefresh = true
+  await openBoard(page)
+  await expect.poll(() => heldRequest).toBe(true)
+  await expect(page.locator('#market-board-loading-overlay')).toBeVisible()
+  await expect(visibleRows(page).filter({ hasText: 'AAA' })).toContainText('10.000')
+  releaseRefresh()
+  await expect(visibleRows(page).filter({ hasText: 'AAA' })).toContainText('66.300')
+  await expect(page.locator('#market-board-loading-overlay')).toBeHidden()
+})
+
 test('empty intraday settles loading on overview and portfolio while positions remain visible', async ({ page }) => {
   await setup(page, {
     '/api/stocks/quotes': route => route.fulfill({ json: { success: true, data: {} } }),
@@ -307,7 +349,7 @@ test('partial quote refresh keeps the recent price of another symbol', async ({ 
   } })
   await activateBoard(page)
   await expect(visibleRows(page).filter({ hasText: 'AAA' })).toContainText('66.300')
-  await page.clock.runFor(31000)
+  await page.clock.runFor(6000)
   await expect(visibleRows(page).filter({ hasText: 'BBB' })).toContainText('66.300')
   await expect(visibleRows(page).filter({ hasText: 'AAA' })).toContainText('66.300')
 })

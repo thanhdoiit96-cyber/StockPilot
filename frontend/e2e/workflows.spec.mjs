@@ -1,7 +1,31 @@
 ﻿import { test, expect } from '@playwright/test'
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000},{id:'b',code:'VCB',name:'Vietcombank',price:90000,industry:'banking_finance',volume:2000}]
 const list=(data=stocks)=>({success:true,data,pagination:{page:1,pageSize:25,total:data.length,totalPages:2}})
-async function boot(page, options = {}){await page.route('**/api/**',async route=>{const path=new URL(route.request().url()).pathname;const payload=path==='/api/stocks'?list():path==='/api/stocks/data-quality'?{success:true,data:{session_date:'2026-09-25',listed:551,covered:204,missing:347,missing_symbols:['VPB'],ready:false,provider:{}}}:path==='/api/health'?{success:true,data:{status:'ok'}}:path==='/api/cache/stats'?{success:true,data:{totalEntries:2}}:path==='/api/ai-gate'?{success:true,data:{enabled:false,reasons:[]}}:path==='/api/recommendations/latest'?(options.recommendations || {success:true,data:{recommendations:[]}}):path==='/api/recommendations/history'?{success:true,data:[]}:path==='/api/recommendations/readiness'?{success:true,data:{coverage:[]}}:path==='/api/auth/me'?{success:true,user:{id:'e2e',email:'e2e@example.com',role:'admin'}}:path==='/api/watchlist'?{success:true,data:[]}:path==='/api/portfolio'?{success:true,data:{positions:[]}}:{success:true,data:null};await route.fulfill({json:payload})});await page.goto('/');await expect(page.locator('.dashboard-shell')).toBeVisible();await page.getByRole('button',{name:'Bảng giá',exact:true}).click()}
+async function boot(page, options = {}) {
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    let payload = { success: true, data: null }
+    if (path === '/api/stocks') payload = list()
+    else if (path === '/api/stocks/data-quality') payload = { success: true, data: { session_date: '2026-09-25', listed: 551, covered: 204, missing: 347, missing_symbols: ['VPB'], ready: false, provider: {} } }
+    else if (path.endsWith('/analysis')) payload = { success: true, data: { observations: 90, indicators: {}, quality: { score: 100 }, risk_plan: { horizons: {} }, expert_guidance: { technical_score: 75, stance: 'Tích cực', confirmation: 'Dữ liệu kiểm thử', score_breakdown: [] } } }
+    else if (/^\/api\/stocks\/[^/]+$/.test(path)) {
+      const stock = stocks.find(item => item.id === decodeURIComponent(path.split('/').pop())) || stocks[0]
+      payload = { success: true, data: { ...stock, price_history: [] } }
+    } else if (path === '/api/health') payload = { success: true, data: { status: 'ok' } }
+    else if (path === '/api/cache/stats') payload = { success: true, data: { totalEntries: 2 } }
+    else if (path === '/api/ai-gate') payload = { success: true, data: { enabled: false, reasons: [] } }
+    else if (path === '/api/recommendations/latest') payload = options.recommendations || { success: true, data: { recommendations: [] } }
+    else if (path === '/api/recommendations/history') payload = { success: true, data: [] }
+    else if (path === '/api/recommendations/readiness') payload = { success: true, data: { coverage: [] } }
+    else if (path === '/api/auth/me') payload = { success: true, user: { id: 'e2e', email: 'e2e@example.com', role: 'admin' } }
+    else if (path === '/api/watchlist') payload = { success: true, data: [] }
+    else if (path === '/api/portfolio') payload = { success: true, data: { positions: [] } }
+    await route.fulfill({ json: payload })
+  })
+  await page.goto('/')
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+}
 test('overview keeps search and sector filter on one row', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)
@@ -30,6 +54,20 @@ test('market overview and price board are separate views', async ({ page }) => {
   await expect(page.locator('.market-breadth-panel')).toBeVisible()
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.locator('.table-panel')).toBeVisible()
+})
+test('sidebar marks only the current page as active', async ({ page }) => {
+  await boot(page)
+  for (const label of ['Tổng quan', 'Danh mục cá nhân', 'Chi tiết mã', 'Đề xuất', 'AI Advisor']) {
+    const target = page.getByRole('button', { name: label, exact: true })
+    await target.click()
+    await expect(target).toHaveClass(/active/)
+    await expect(target).toHaveAttribute('aria-current', 'page')
+    await expect(page.locator('.nav-item.active')).toHaveCount(1)
+  }
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  await expect(page.locator('.market-board-nav-item')).toHaveClass(/active/)
+  await expect(page.locator('.market-board-nav-item')).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('.nav-item.active')).toHaveCount(1)
 })
 test('market breadth exchange scope updates the chart context', async ({ page }) => {
   await boot(page)
@@ -106,7 +144,45 @@ test('overview table controls expose keyboard focus states', async ({ page }) =>
   await expect(sort).toHaveAttribute('type', 'button')
   await expect(sort).toHaveAttribute('title')
 })
-test('overview keeps analysis as a dedicated action without static assessment copy',async({page})=>{await boot(page);await expect(page.getByRole('columnheader',{name:'Phân tích',exact:true})).toBeVisible();await expect(page.getByRole('columnheader',{name:'Nhận định',exact:true})).toHaveCount(0);await expect(page.locator('.overview-assessment .rating-badge:visible')).toHaveCount(0);await expect(page.locator('.overview-assessment > small:visible')).toHaveCount(0);const action=page.getByRole('button',{name:'Mở phân tích chuyên sâu'}).first();await expect(action).toBeVisible();await action.click();await expect(page.getByRole('button',{name:'Chi tiết mã',exact:true})).toHaveClass(/active/);await expect.poll(()=>page.evaluate(()=>Object.entries(sessionStorage).some(([key,value])=>key.startsWith('analysis-requested:')&&value==='1'))).toBe(true)})
+test('overview analysis action opens detail and requests the analysis', async ({ page }) => {
+  let analysisRequests = 0
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.endsWith('/analysis')) analysisRequests += 1
+  })
+  await boot(page)
+  await expect(page.getByRole('columnheader', { name: 'Phân tích', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Nhận định', exact: true })).toHaveCount(0)
+  await expect(page.locator('.overview-assessment .rating-badge:visible')).toHaveCount(0)
+  await expect(page.locator('.overview-assessment > small:visible')).toHaveCount(0)
+  const action = page.getByRole('button', { name: 'Mở phân tích chuyên sâu' }).first()
+  await expect(action).toBeVisible()
+  await action.click()
+  await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
+  await expect(page.locator('.technical-panel .analysis-status-row')).toContainText('Đã phân tích')
+  await expect.poll(() => analysisRequests).toBe(1)
+  await expect.poll(() => page.evaluate(() => Object.entries(sessionStorage).some(([key, value]) => key.startsWith('analysis-requested:') && value === '1'))).toBe(true)
+})
+test('price board hides the empty source column and centers analysis actions', async ({ page }) => {
+  await boot(page)
+  await expect(page.locator('.table-panel thead th').filter({ hasText: 'Nguồn dữ liệu' })).toBeHidden()
+  const analysisCell = page.locator('.overview-analysis-action').first()
+  const action = analysisCell.getByRole('button', { name: 'Mở phân tích chuyên sâu' })
+  await expect(action).toBeVisible()
+  const geometry = await analysisCell.evaluate(cell => {
+    const row = cell.closest('tr').getBoundingClientRect()
+    const cellRect = cell.getBoundingClientRect()
+    const button = cell.querySelector('button').getBoundingClientRect()
+    return {
+      display: getComputedStyle(cell).display,
+      rowCenter: row.top + row.height / 2,
+      cellCenter: cellRect.top + cellRect.height / 2,
+      buttonCenter: button.top + button.height / 2
+    }
+  })
+  expect(geometry.display).toBe('table-cell')
+  expect(Math.abs(geometry.buttonCenter - geometry.cellCenter)).toBeLessThanOrEqual(1)
+  expect(Math.abs(geometry.buttonCenter - geometry.rowCenter)).toBeLessThanOrEqual(1)
+})
 test('opening stock detail does not auto-request advanced analysis', async ({ page }) => {
   let analysisRequests = 0
   page.on('request', request => {
@@ -117,6 +193,24 @@ test('opening stock detail does not auto-request advanced analysis', async ({ pa
   await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
   await page.waitForTimeout(250)
   expect(analysisRequests).toBe(0)
+})
+test('portfolio navigation ignores stale analysis request flags', async ({ page }) => {
+  let analysisRequests = 0
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.endsWith('/analysis')) analysisRequests += 1
+  })
+  await boot(page)
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.evaluate(() => {
+    sessionStorage.setItem('analysis-requested:a', '1')
+    sessionStorage.setItem('analysis-requested:FPT', '1')
+  })
+  await page.getByRole('button', { name: 'Chi tiết mã', exact: true }).click()
+  await expect(page.locator('.detail-analysis-btn')).toHaveText('Phân tích chuyên sâu')
+  await expect(page.locator('.technical-panel .analysis-status-row')).toContainText('Chưa phân tích')
+  await page.waitForTimeout(300)
+  expect(analysisRequests).toBe(0)
+  await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('analysis-requested:')).length)).toBe(0)
 })
 test('data quality banner persists across overview, portfolio and detail pages',async({page})=>{await boot(page);await expect(page.locator('#market-data-quality-overlay')).toContainText('204/551');await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('347');await page.getByRole('button',{name:'Chi tiết mã',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('2026-09-25')})
 test('sidebar collapses to labelled icons and overview headers stay pinned', async ({ page }) => {
@@ -131,10 +225,12 @@ test('sidebar collapses to labelled icons and overview headers stay pinned', asy
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'left')
   await expect.poll(toggleIsInsideSidebar).toBe(true)
   const expandedBackground = await sidebarToggle.evaluate(button => getComputedStyle(button).backgroundColor)
+  const expandedColumns = await page.locator('.dashboard-shell').evaluate(shell => getComputedStyle(shell).gridTemplateColumns)
   await sidebarToggle.focus()
   await expect.poll(() => sidebarToggle.evaluate(button => getComputedStyle(button).outlineWidth)).not.toBe('0px')
   await sidebarToggle.click()
   await expect(page.locator('.dashboard-shell')).toHaveClass(/sidebar-collapsed/)
+  await expect.poll(() => page.locator('.dashboard-shell').evaluate(shell => getComputedStyle(shell).gridTemplateColumns)).not.toBe(expandedColumns)
   await expect(sidebarToggle).toHaveAttribute('aria-label', 'Mở rộng thanh điều hướng')
   await expect(sidebarToggle.locator('.sidebar-toggle-icon')).toHaveAttribute('data-sidebar-direction', 'right')
   await expect.poll(toggleIsInsideSidebar).toBe(true)

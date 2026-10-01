@@ -2,8 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
-const sourcePath = path.join(root, 'src/App.jsx')
-const source = fs.readFileSync(sourcePath, 'utf8')
+const sourcePaths = [
+  path.join(root, 'src/App.jsx'),
+  path.join(root, 'src/components/DetailWorkspace.jsx')
+]
+const source = sourcePaths.map(sourcePath => fs.readFileSync(sourcePath, 'utf8')).join('\n')
 
 // Keep this list aligned with check-bundle-integrity.mjs. These markers are
 // stable DOM/API contracts, unlike compiled variable names.

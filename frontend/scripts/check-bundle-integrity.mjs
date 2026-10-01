@@ -3,7 +3,7 @@ import path from 'node:path'
 
 const root = process.cwd()
 const html = fs.readFileSync(path.join(root, 'dist/index.html'), 'utf8')
-const asset = html.match(/assets\/([^"']+\.js)/)?.[1]
+const asset = html.match(/<script type="module"[^>]+src="\/assets\/([^"']+\.js)"/)?.[1]
 if (!asset) throw new Error('Không tìm thấy JavaScript asset trong dist/index.html')
 const bundle = fs.readFileSync(path.join(root, 'dist/assets', asset), 'utf8')
 const checks = [

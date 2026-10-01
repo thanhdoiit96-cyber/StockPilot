@@ -1,13 +1,41 @@
 (() => {
+  const clearAnalysisRequestFlags = () => {
+    try {
+      Object.keys(sessionStorage)
+        .filter(key => key.startsWith('analysis-requested:'))
+        .forEach(key => sessionStorage.removeItem(key))
+    } catch (_) {}
+  }
+  clearAnalysisRequestFlags()
+
   const installQuoteRequestGuard = () => {
     if (window.__stockpilotQuoteRequestGuard) return
     window.__stockpilotQuoteRequestGuard = true
     const nativeFetch = window.fetch.bind(window)
     const cache = new Map()
     const pending = new Map()
-    const mergedQuoteData = new Map()
     const gatedAnalysis = new Map()
     let analysisRequested = false
+    const formatPrice = value => Number.isFinite(Number(value)) ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 2 }).format(Number(value)) : '—'
+    const syncQuoteRows = payload => {
+      const quotes = payload?.data && typeof payload.data === 'object' ? payload.data : {}
+      if (!Object.keys(quotes).length) return
+      document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+        const symbol = row.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0].toUpperCase()
+        const quote = symbol ? quotes[symbol] : null
+        if (!quote) return
+        const cells = row.children
+        if (cells[2] && Number.isFinite(Number(quote.price))) cells[2].textContent = formatPrice(quote.price)
+        if (cells[3] && Number.isFinite(Number(quote.change))) {
+          cells[3].textContent = `${Number(quote.change) >= 0 ? '+' : ''}${Number(quote.change).toFixed(2)}%`
+          cells[3].classList.toggle('positive', Number(quote.change) >= 0)
+          cells[3].classList.toggle('negative', Number(quote.change) < 0)
+        }
+        if (cells[4] && Number.isFinite(Number(quote.volume))) cells[4].textContent = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(quote.volume))
+        if (cells[5] && (quote.upstream || quote.provider)) cells[5].innerHTML = `<span class="chip neutral">${quote.upstream || quote.provider}</span>`
+      })
+    }
+    window.__stockpilotSyncQuoteRows = syncQuoteRows
     window.__stockpilotRequestAnalysis = () => {
       analysisRequested = true
       for (const [key, request] of gatedAnalysis) {
@@ -19,15 +47,30 @@
       analysisRequested = false
     }
     const ttl = 15000
-    const quoteMergeKey = requestUrl => {
-      const symbols = requestUrl.searchParams.get('symbols')
-      if (!symbols) return requestUrl.pathname
-      const normalized = symbols.split(',').map(symbol => symbol.trim().toUpperCase()).filter(Boolean).sort().join(',')
-      return `${requestUrl.pathname}?symbols=${normalized}`
-    }
     window.fetch = (input, init = {}) => {
       const request = new Request(input, init)
       const requestUrl = new URL(request.url, window.location.href)
+      const isSavedProposalWrite = request.method === 'POST' && requestUrl.pathname === '/api/recommendations/saved'
+      if (isSavedProposalWrite) {
+        return nativeFetch(input, init).then(async response => {
+          if (!response.ok) return response
+          const body = await response.text()
+          try {
+            const payload = JSON.parse(body)
+            if (payload?.success === true && !payload.data) {
+              const requestBody = JSON.parse(await request.clone().text())
+              const saved = {
+                id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                createdAt: new Date().toISOString(),
+                criteria: requestBody.criteria || {},
+                result: requestBody.result || null
+              }
+              return new Response(JSON.stringify({ ...payload, data: saved }), { status: response.status, headers: response.headers })
+            }
+          } catch (_) {}
+          return new Response(body, { status: response.status, headers: response.headers })
+        })
+      }
       const isAnalysisRequest = /^\/api\/stocks\/[^/]+\/analysis$/.test(requestUrl.pathname)
       if (isAnalysisRequest && !analysisRequested) {
         const key = request.url
@@ -52,23 +95,10 @@
         }
         if (response.ok) {
           const body = await response.text()
-          let responseBody = body
           if (isQuoteRequest) {
-            try {
-              const payload = JSON.parse(body)
-              if (payload?.success === true && payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
-                // Providers may return only the symbols that changed in a refresh.
-                // Keep one short-lived market snapshot per quote endpoint so a
-                // partial response cannot blank prices that are still current.
-                const mergeKey = requestUrl.pathname === '/api/stocks/quotes' ? '/api/stocks/quotes' : quoteMergeKey(requestUrl)
-                const merged = { ...(mergedQuoteData.get(mergeKey) || {}), ...payload.data }
-                mergedQuoteData.set(mergeKey, merged)
-                responseBody = JSON.stringify({ ...payload, data: merged })
-              }
-            } catch (_) {
-              responseBody = body
-            }
+            try { const payload = JSON.parse(body); window.setTimeout(() => syncQuoteRows(payload), 0) } catch (_) { /* React keeps the previous valid quote. */ }
           }
+          const responseBody = body
           let cacheable = true
           if (isStockList) {
             try { cacheable = JSON.parse(responseBody)?.success === true && Array.isArray(JSON.parse(responseBody)?.data) } catch (_) { cacheable = false }
@@ -93,10 +123,11 @@
     style.textContent = `
       .table-panel th:nth-child(2), .table-panel td:nth-child(2) { width: 23%; }
       .table-panel th:nth-child(5), .table-panel td:nth-child(5) { width: 13%; }
+      .table-panel th:nth-child(6), .table-panel td:nth-child(6) { display: none !important; }
       .table-panel th:nth-child(7), .table-panel td:nth-child(7) { width: 18%; text-align: center; }
       .table-panel th:nth-child(8), .table-panel td:nth-child(8) { width: 10%; }
       @media (max-width: 700px) { .table-wrap { overflow-x: auto; } }
-      .overview-analysis-action { display: flex; align-items: center; justify-content: center; min-width: 0; }
+      .overview-analysis-action { display: table-cell; min-width: 0; text-align: center; vertical-align: middle !important; }
       .overview-analysis-action .rating-badge,
       .overview-analysis-action > small { display: none !important; }
       .overview-analysis-action .overview-analysis-btn {
@@ -104,8 +135,9 @@
         align-items: center;
         justify-content: center;
         gap: 7px;
-        width: min(100%, 148px);
-        min-height: 34px;
+        width: min(100%, 178px);
+        min-width: 166px;
+        min-height: 40px;
         margin: 0;
         padding: 7px 10px;
         border: 1px solid rgba(94, 234, 212, .38);
@@ -113,7 +145,7 @@
         background: linear-gradient(135deg, rgba(20, 184, 166, .18), rgba(59, 130, 246, .12));
         color: #ccfbf1;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
-        font-size: .72rem;
+        font-size: .78rem;
         font-weight: 700;
         line-height: 1.2;
         text-align: center;
@@ -143,6 +175,7 @@
       .add-portfolio-btn:hover, .add-portfolio-btn:focus-visible { border-color: var(--primary); background: rgba(94, 234, 212, .22); transform: translateY(-1px); outline: none; }
       @media (max-width: 700px) { .table-panel th:last-child, .table-panel td:last-child { min-width: 96px; } .table-panel .add-portfolio-btn { min-width: 86px; writing-mode: horizontal-tb; } }
       .overview-next { display: none !important; }
+      .recommendation-criteria-panel > .saved-proposals { display: none !important; }
       .breadth-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 2px; }
       .breadth-snapshot > div { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(148, 163, 184, .025); }
       .breadth-snapshot span, .breadth-snapshot small { color: var(--muted); font-size: 10px; }
@@ -304,6 +337,241 @@
   }
 
   let leadersLoading = false
+  const parseNumericText = value => Number(String(value || '').replace(/[^0-9+\-.]/g, ''))
+  const ensureOverviewSnapshot = () => {
+    const main = document.querySelector('.main-panel')
+    const stats = main?.querySelector('.stats-grid')
+    const tablePanel = main?.querySelector('.table-panel')
+    if (!main || !stats || !tablePanel) return null
+    const rows = [...tablePanel.querySelectorAll('tbody tr')].flatMap(row => {
+      const cells = row.querySelectorAll('td')
+      const symbol = row.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
+      if (!symbol || cells.length < 6) return []
+      return [{
+        symbol,
+        change: parseNumericText(cells[3]?.textContent),
+        volume: parseNumericText(cells[4]?.textContent),
+        source: cells[5]?.textContent.trim()
+      }]
+    })
+    let metrics = main.querySelector('.overview-metrics')
+    if (!metrics) {
+      metrics = document.createElement('section')
+      metrics.className = 'overview-metrics'
+      stats.after(metrics)
+    }
+    const quoted = rows.filter(row => row.source && !/Chưa có dữ liệu/i.test(row.source)).length
+    const signature = JSON.stringify(rows)
+    if (metrics.dataset.signature !== signature) {
+      metrics.innerHTML = `<article class="overview-metric"><small>Quote intraday</small><strong>${quoted}/${rows.length}</strong></article><article class="overview-metric"><small>Mã cá nhân</small><strong>${document.querySelectorAll('.table-panel .pinned-stock').length}</strong></article><article class="overview-metric"><small>Mã theo dõi</small><strong>${rows.length}</strong></article><article class="overview-metric"><small>Trạng thái</small><strong>${quoted ? 'Trong phiên' : 'EOD'}</strong></article><p class="overview-data-status">${quoted ? 'Có dữ liệu intraday' : 'Đang dùng dữ liệu EOD'}</p>`
+      metrics.dataset.signature = signature
+    }
+    let breadth = main.querySelector('.market-breadth-panel')
+    if (!breadth) {
+      breadth = document.createElement('section')
+      breadth.className = 'panel market-breadth-panel'
+      metrics.after(breadth)
+      breadth.innerHTML = `<div class="market-breadth-header"><div><p class="eyebrow accent">Độ rộng thị trường</p><h3>Nhịp thị trường hiện tại</h3><p></p></div><span class="chip neutral"><span></span></span></div><div class="breadth-counts"><article class="breadth-count up"><span>Tăng</span><strong>0</strong><small></small></article><article class="breadth-count down"><span>Giảm</span><strong>0</strong><small></small></article><article class="breadth-count flat"><span>Đi ngang</span><strong>0</strong><small></small></article></div><div class="breadth-distribution"><span class="breadth-segment up"></span><span class="breadth-segment down"></span><span class="breadth-segment flat"></span></div><p class="breadth-disclaimer"></p>`
+    }
+    if (breadth.querySelector('.breadth-exchange-select')?.value) return breadth
+    const groups = { up: [], down: [], flat: [] }
+    rows.forEach(row => groups[row.change > 0 ? 'up' : row.change < 0 ? 'down' : 'flat'].push(row))
+    const classified = rows.length || 1
+    ;['up', 'down', 'flat'].forEach(key => {
+      const card = breadth.querySelector(`.breadth-count.${key}`)
+      if (card) { card.querySelector('strong').textContent = String(groups[key].length); card.querySelector('small').textContent = `${(groups[key].length / classified * 100).toFixed(1)}% số mã` }
+    })
+    const changes = rows.map(row => row.change).filter(Number.isFinite)
+    const average = changes.length ? changes.reduce((sum, value) => sum + value, 0) / changes.length : null
+    breadth.querySelector('.market-breadth-header > div > p:last-child').textContent = `${rows.length} mã · ${quoted}/${rows.length} mã có quote intraday`
+    breadth.querySelector('.market-breadth-header .chip span').textContent = average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${average >= 0 ? '+' : ''}${average.toFixed(2)}%`
+    breadth.querySelector('.breadth-disclaimer').textContent = 'Phân loại dùng biến động giá mới nhất; nguồn hiện tại không tách khối lượng chủ động bên mua và bên bán.'
+    return breadth
+  }
+  const parseCurrencyText = value => Number(String(value || '').replace(/[^0-9-]/g, '')) || 0
+  const ensurePortfolioPresentation = () => {
+    const page = document.querySelector('.personal-page')
+    if (!page) return
+    let error = page.querySelector('.portfolio-load-error')
+    if (window.__stockpilotPortfolioError) {
+      if (!error) {
+        error = document.createElement('div')
+        error.className = 'error-banner portfolio-load-error'
+        error.setAttribute('role', 'alert')
+        error.innerHTML = '<p></p><button type="button" class="ghost-btn">Thử lại danh mục</button>'
+        error.querySelector('button').addEventListener('click', () => window.dispatchEvent(new CustomEvent('stockpilot:retry-portfolio')))
+        page.querySelector('.personal-grid')?.before(error)
+      }
+      error.querySelector('p').textContent = window.__stockpilotPortfolioError
+      const emptyCell = page.querySelector('.portfolio-table tbody tr td[colspan]')
+      if (emptyCell) emptyCell.textContent = 'Đang chờ thử lại danh mục'
+    } else error?.remove()
+
+    const table = page.querySelector('.portfolio-table table')
+    const header = table?.querySelector('thead tr')
+    if (header && header.children.length < 6) {
+      if (header.children[4]) header.children[4].textContent = 'Lãi/lỗ chưa chốt'
+      const realized = document.createElement('th')
+      realized.textContent = 'Lãi/lỗ đã chốt'
+      header.append(realized)
+    }
+    const positionRows = [...(table?.querySelectorAll('tbody tr') || [])].filter(row => row.querySelector('.symbol, td:first-child') && !row.querySelector('td[colspan]'))
+    positionRows.forEach(row => {
+      if (row.children.length < 6) {
+        const realized = document.createElement('td')
+        realized.textContent = '0 ₫'
+        row.append(realized)
+      }
+      const marketCell = row.children[3]
+      if (marketCell && !marketCell.querySelector('.portfolio-price-source')) {
+        const source = document.createElement('small')
+        source.className = 'portfolio-price-source'
+        source.textContent = 'Intraday'
+        marketCell.append(source)
+      }
+    })
+    if (!positionRows.length) return
+    const positions = positionRows.map(row => ({
+      symbol: row.children[0]?.textContent.trim(),
+      quantity: parseCurrencyText(row.children[1]?.textContent),
+      marketPrice: parseCurrencyText(row.children[3]?.childNodes[0]?.textContent || row.children[3]?.textContent)
+    }))
+    const signature = JSON.stringify(positions)
+    let allocation = page.querySelector('.allocation-panel')
+    if (!allocation) {
+      allocation = document.createElement('section')
+      allocation.className = 'panel allocation-panel'
+      allocation.dataset.runtimeFallback = 'true'
+      page.querySelector('.personal-grid')?.after(allocation)
+    }
+    if (allocation.dataset.runtimeFallback === 'true' && allocation.dataset.signature !== signature) {
+      const total = positions.reduce((sum, position) => sum + position.quantity * position.marketPrice, 0)
+      const colors = ['#5eead4', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa', '#34d399']
+      let cursor = 0
+      const slices = positions.map((position, index) => { const value = position.quantity * position.marketPrice; const weight = total ? value / total * 100 : 0; const start = cursor; cursor += weight; return { position, index, weight, start, end: cursor } })
+      const gradient = slices.map(slice => `${colors[slice.index % colors.length]} ${slice.start.toFixed(2)}% ${slice.end.toFixed(2)}%`).join(', ')
+      allocation.innerHTML = `<div class="allocation-panel-heading"><div><h3>Phân bổ danh mục</h3><p class="muted-text">Tỷ trọng theo giá trị thị trường hiện tại.</p></div><span class="chip neutral">${positions.length} mã</span></div><div class="allocation-visual"><div class="allocation-donut" style="background: conic-gradient(${gradient})"><div><small class="allocation-total-label">Tổng tài sản</small><strong class="allocation-total-value">${new Intl.NumberFormat('vi-VN').format(total)} ₫</strong><small class="allocation-day-change">So với hôm qua: <span>Chưa đủ dữ liệu</span></small></div></div><ol class="allocation-list">${slices.map(slice => `<li><div class="allocation-item-heading"><i style="background:${colors[slice.index % colors.length]}"></i><div><strong>${slice.position.symbol}</strong><small>${new Intl.NumberFormat('vi-VN').format(slice.position.quantity * slice.position.marketPrice)} ₫</small></div><b>${slice.weight.toFixed(1)}%</b></div><div class="allocation-track"><span style="width:${slice.weight.toFixed(2)}%;background:${colors[slice.index % colors.length]}"></span></div></li>`).join('')}</ol></div><p class="allocation-footnote">${positions.length}/${positions.length} mã dùng quote intraday.</p>`
+      allocation.dataset.signature = signature
+    }
+  }
+  const ensureAllocationDonutTooltips = () => {
+    const donut = document.querySelector('.allocation-panel .allocation-donut')
+    const rows = [...document.querySelectorAll('.allocation-panel .allocation-list > li')]
+    if (!donut || !rows.length) return
+
+    const slices = rows.map(row => {
+      const symbol = row.querySelector('.allocation-item-heading strong')?.textContent.trim() || ''
+      const value = row.querySelector('.allocation-item-heading small')?.textContent.trim() || ''
+      const weightText = row.querySelector('.allocation-item-heading b')?.textContent.trim() || ''
+      const weight = Number.parseFloat(weightText.replace(',', '.'))
+      return { symbol, value, weight, weightText }
+    }).filter(slice => slice.symbol && Number.isFinite(slice.weight) && slice.weight > 0)
+    if (!slices.length) return
+
+    const signature = slices.map(slice => `${slice.symbol}:${slice.weight}:${slice.value}`).join('|')
+    const currentLayer = donut.querySelector(':scope > .allocation-donut-interaction-svg')
+    if (currentLayer?.dataset.signature === signature) return
+    currentLayer?.remove()
+    donut.querySelector(':scope > .allocation-donut-tooltip')?.remove()
+
+    // The React SVG is nested in the pointer-events:none centre. Keep it only
+    // as inert legacy markup; this direct child owns hit testing for both the
+    // React chart and the CSS conic-gradient fallback.
+    donut.querySelectorAll('.allocation-donut-svg').forEach(svg => {
+      svg.setAttribute('aria-hidden', 'true')
+      svg.style.pointerEvents = 'none'
+    })
+
+    const svgNamespace = 'http://www.w3.org/2000/svg'
+    const layer = document.createElementNS(svgNamespace, 'svg')
+    layer.classList.add('allocation-donut-interaction-svg')
+    layer.setAttribute('viewBox', '0 0 100 100')
+    layer.setAttribute('aria-label', 'Tỷ trọng từng cổ phiếu trong danh mục')
+    layer.dataset.signature = signature
+
+    const tooltip = document.createElement('output')
+    tooltip.className = 'allocation-donut-tooltip'
+    tooltip.id = `allocation-donut-tooltip-${Math.random().toString(36).slice(2, 9)}`
+    tooltip.setAttribute('role', 'tooltip')
+    tooltip.hidden = true
+    const tooltipSymbol = document.createElement('strong')
+    const tooltipWeight = document.createElement('span')
+    const tooltipValue = document.createElement('small')
+    tooltip.append(tooltipSymbol, tooltipWeight, tooltipValue)
+
+    const point = (radius, degrees) => {
+      const radians = degrees * Math.PI / 180
+      return { x: 50 + radius * Math.cos(radians), y: 50 + radius * Math.sin(radians) }
+    }
+    const annularPath = (startPercent, endPercent) => {
+      const startDegrees = startPercent * 3.6 - 90
+      const span = Math.min((endPercent - startPercent) * 3.6, 359.999)
+      const endDegrees = startDegrees + span
+      const outerStart = point(49, startDegrees)
+      const outerEnd = point(49, endDegrees)
+      const innerEnd = point(35, endDegrees)
+      const innerStart = point(35, startDegrees)
+      const largeArc = span > 180 ? 1 : 0
+      return [
+        `M ${outerStart.x} ${outerStart.y}`,
+        `A 49 49 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+        `L ${innerEnd.x} ${innerEnd.y}`,
+        `A 35 35 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+        'Z'
+      ].join(' ')
+    }
+    const showTooltip = slice => {
+      tooltipSymbol.textContent = slice.symbol
+      tooltipWeight.textContent = slice.weightText || `${slice.weight.toFixed(1)}%`
+      tooltipValue.textContent = slice.value
+      tooltip.hidden = false
+    }
+    const hideTooltip = () => { tooltip.hidden = true }
+
+    let cursor = 0
+    slices.forEach(slice => {
+      const start = cursor
+      const end = cursor + slice.weight
+      cursor = end
+      const label = `${slice.symbol}: ${slice.weightText || `${slice.weight.toFixed(1)}%`}${slice.value ? `, ${slice.value}` : ''}`
+      const path = document.createElementNS(svgNamespace, 'path')
+      path.setAttribute('d', annularPath(start, end))
+      path.setAttribute('tabindex', '0')
+      path.setAttribute('role', 'img')
+      path.setAttribute('aria-label', label)
+      path.setAttribute('aria-describedby', tooltip.id)
+      path.dataset.symbol = slice.symbol
+      const title = document.createElementNS(svgNamespace, 'title')
+      title.textContent = label
+      path.append(title)
+      path.addEventListener('pointerenter', () => showTooltip(slice))
+      path.addEventListener('pointerleave', hideTooltip)
+      path.addEventListener('focus', () => showTooltip(slice))
+      path.addEventListener('blur', hideTooltip)
+      layer.append(path)
+    })
+
+    donut.append(layer, tooltip)
+  }
+  const ensureOverviewResourceErrors = () => {
+    const main = document.querySelector('.main-panel')
+    if (!main) return
+    const errors = window.__stockpilotOverviewErrors || {}
+    let container = main.querySelector('.overview-resource-errors')
+    const entries = [['health', errors.health, 'Thử lại health'], ['cache', errors.cache, 'Thử lại cache']].filter(([, message]) => message)
+    if (!entries.length) { container?.remove(); return }
+    if (!container) {
+      container = document.createElement('section')
+      container.className = 'overview-resource-errors'
+      main.querySelector('.topbar')?.after(container)
+    }
+    const signature = JSON.stringify(entries)
+    if (container.dataset.signature === signature) return
+    container.innerHTML = entries.map(([key, message, label]) => `<div class="error-banner" role="alert" data-resource="${key}"><p>${message}</p><button type="button" class="ghost-btn">${label}</button></div>`).join('')
+    container.querySelector('[data-resource="health"] button')?.addEventListener('click', () => window.__stockpilotRetryHealth?.())
+    container.querySelector('[data-resource="cache"] button')?.addEventListener('click', () => window.__stockpilotRetryCache?.())
+    container.dataset.signature = signature
+  }
   const ensureBreadthExchangeSelect = breadth => {
     if (!breadth) return null
     const existing = breadth.querySelector('.breadth-exchange-select')
@@ -445,6 +713,7 @@
       if (scopeNote) scopeNote.textContent = `${exchange ? `Sàn: ${exchange}` : sector ? `Nhóm ngành: ${sector}` : 'Toàn bộ thị trường'} · Sàn áp dụng cho độ rộng và Top list`
       if (scopeNote && !scopeNote.textContent.includes('chỉ áp dụng cho Top list')) scopeNote.textContent += ' · Sàn chỉ áp dụng cho Top list'
       wrapper.querySelectorAll('.breadth-leader > small').forEach(note => { if (note.textContent.includes('biến động')) note.textContent += ' intraday' })
+      breadth.querySelectorAll('.breadth-leaders').forEach(existing => existing.remove())
       breadth.querySelector('.breadth-snapshot')?.after(wrapper)
       wrapper.querySelectorAll('.breadth-leader li span').forEach(symbolNode => {
         const symbol = symbolNode.textContent.trim()
@@ -486,6 +755,70 @@
   const marketSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '14:45']
   const marketViewKey = 'stockpilot-market-view'
   const boardSectorKey = 'stockpilot-board-sector'
+  const boardLoadingId = 'market-board-loading-overlay'
+  let boardRefreshSequence = 0
+  let boardRefreshController = null
+  const setBoardLoading = loading => {
+    let overlay = document.getElementById(boardLoadingId)
+    if (!loading) {
+      overlay?.remove()
+      return
+    }
+    if (overlay) return
+    overlay = document.createElement('div')
+    overlay.id = boardLoadingId
+    overlay.className = 'loading-overlay market-board-loading-overlay'
+    overlay.setAttribute('role', 'status')
+    overlay.setAttribute('aria-live', 'polite')
+    overlay.innerHTML = '<div class="loading-card"><div class="loading-logo">S</div><span class="loading-spinner"></span><span>Đang lấy giá mới nhất cho Bảng giá...</span></div>'
+    document.body.append(overlay)
+  }
+  const cancelMarketBoardRefresh = () => {
+    boardRefreshSequence += 1
+    boardRefreshController?.abort()
+    boardRefreshController = null
+    setBoardLoading(false)
+  }
+  const marketBoardSymbols = () => [...new Set([...document.querySelectorAll('.table-panel tbody tr .symbol')]
+    .map(node => node.textContent.trim().split(/\s+/)[0].toUpperCase())
+    .filter(Boolean))]
+  const waitForMarketBoardSymbols = async () => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const symbols = marketBoardSymbols()
+      if (symbols.length) return symbols
+      await new Promise(resolve => window.setTimeout(resolve, 50))
+    }
+    return []
+  }
+  const refreshMarketBoardQuotes = async () => {
+    const sequence = ++boardRefreshSequence
+    boardRefreshController?.abort()
+    const controller = new AbortController()
+    boardRefreshController = controller
+    setBoardLoading(true)
+    const timeout = window.setTimeout(() => controller.abort(), 15000)
+    try {
+      const symbols = await waitForMarketBoardSymbols()
+      if (!symbols.length || sequence !== boardRefreshSequence) return
+      const response = await fetch(`/api/stocks/quotes?symbols=${encodeURIComponent(symbols.join(','))}&board_refresh=${Date.now()}`, {
+        cache: 'no-store',
+        signal: controller.signal
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const payload = await response.json()
+      if (sequence !== boardRefreshSequence) return
+      window.__stockpilotSyncQuoteRows?.(payload)
+      await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)))
+    } catch (_) {
+      // EOD rows remain usable; the existing status line reports quote failures.
+    } finally {
+      window.clearTimeout(timeout)
+      if (sequence === boardRefreshSequence) {
+        boardRefreshController = null
+        setBoardLoading(false)
+      }
+    }
+  }
   const marketToday = () => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date())
   const marketTimelineKey = () => `stockpilot-market-session:${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())}`
   const readMarketTimeline = () => { try { return JSON.parse(sessionStorage.getItem(marketTimelineKey()) || '{}') || {} } catch (_) { return {} } }
@@ -534,8 +867,26 @@
     updateMarketTimeline()
   }
 
+  const reconcileDetailChartGap = () => {
+    const panel = document.querySelector('.detail-chart-panel')
+    const gap = panel?.querySelector('.chart-data-gap')
+    if (!panel || !gap) return
+    const representedSessions = new Set([...panel.querySelectorAll('.price-point[data-session-date]')]
+      .map(point => point.getAttribute('data-session-date'))
+      .filter(Boolean))
+    const reported = [...gap.textContent.matchAll(/\b(\d{2})-(\d{2})\b/g)].map(match => ({ month: match[1], day: match[2] }))
+    if (!reported.length) return
+    const missing = reported.filter(({ month, day }) => ![...representedSessions].some(date => date.endsWith(`-${month}-${day}`)))
+    if (!missing.length) {
+      gap.remove()
+      return
+    }
+    gap.textContent = `Phiên gần đây có dữ liệu trong hệ thống nhưng chưa có điểm giá cho mã này: ${missing.map(({ month, day }) => `${day}-${month}`).join(', ')}. Biểu đồ chỉ hiển thị dữ liệu giá ghi nhận được.`
+  }
+
   const enhance = () => {
     installStyles()
+    reconcileDetailChartGap()
     const detailParams = new URLSearchParams(window.location.search)
     const detailSymbol = detailParams.get('symbol')?.trim().toUpperCase()
     const detailResolveKey = 'stockpilot-detail-url-resolved'
@@ -594,6 +945,8 @@
         }
       }
       const leaveBoard = () => {
+        cancelMarketBoardRefresh()
+        clearAnalysisRequestFlags()
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
         window.__stockpilotResetAnalysis?.()
         const boardButton = document.querySelector('.market-board-nav-item')
@@ -605,11 +958,23 @@
         event.preventDefault()
         event.stopPropagation()
         leaveBoard()
+        window.dispatchEvent(new CustomEvent('stockpilot:open-detail', { detail: { symbol } }))
         row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+        window.setTimeout(() => {
+          const detailNav = [...document.querySelectorAll('.nav-item')].find(item => item.textContent.includes('Chi tiết'))
+          document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'))
+          detailNav?.classList.add('active')
+        }, 0)
       })
       row.addEventListener('click', event => {
         if (event.target.closest('button, a, input, select, textarea')) return
         leaveBoard()
+        window.dispatchEvent(new CustomEvent('stockpilot:open-detail', { detail: { symbol } }))
+        window.setTimeout(() => {
+          const detailNav = [...document.querySelectorAll('.nav-item')].find(item => item.textContent.includes('Chi tiết'))
+          document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'))
+          detailNav?.classList.add('active')
+        }, 0)
       })
     })
     document.querySelectorAll('.portfolio-table tbody tr, .recommendation-tracking-table tbody tr').forEach(row => {
@@ -633,8 +998,9 @@
         link.title = `Mở chi tiết mã ${symbol}`
         if (strong) { strong.replaceWith(link); link.append(strong) } else if (textNode) { link.textContent = textNode.textContent.trim(); textNode.replaceWith(link) }
       }
-      row.addEventListener('click', event => { if (!event.target.closest('button, a, input, select, textarea')) window.location.href = href })
-      row.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button, a, input, select, textarea')) { event.preventDefault(); window.location.href = href } })
+      symbolCell?.querySelector('a.stock-detail-link')?.addEventListener('click', clearAnalysisRequestFlags, true)
+      row.addEventListener('click', event => { if (!event.target.closest('button, a, input, select, textarea')) { clearAnalysisRequestFlags(); window.location.href = href } })
+      row.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button, a, input, select, textarea')) { event.preventDefault(); clearAnalysisRequestFlags(); window.location.href = href } })
     })
     if (!document.documentElement.dataset.analysisGateBound) {
       document.documentElement.dataset.analysisGateBound = '1'
@@ -658,17 +1024,13 @@
       const symbol = row?.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
       if (!row || !symbol) return
       button.dataset.detailNavigationBound = '1'
-      button.addEventListener('click', event => {
-        event.preventDefault()
+      button.addEventListener('click', () => {
+        cancelMarketBoardRefresh()
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
-        try { sessionStorage.setItem(`analysis-requested:${symbol}`, '1') } catch (_) { }
         document.querySelector('.market-board-nav-item')?.classList.remove('active')
         document.querySelector('.market-board-nav-item')?.removeAttribute('aria-current')
-        row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-        window.setTimeout(() => {
-          window.__stockpilotRequestAnalysis?.()
-          window.dispatchEvent(new Event('stockpilot:request-analysis'))
-        }, 0)
+        document.querySelector('.dashboard-shell')?.classList.remove('market-board-active')
+        window.__stockpilotRequestAnalysis?.()
       }, true)
     })
   const shell = document.querySelector('.dashboard-shell')
@@ -676,6 +1038,7 @@
   if (shell && !shell.dataset.marketNavigationBound) {
     shell.dataset.marketNavigationBound = '1'
     shell.addEventListener('click', event => {
+      if (event.target.closest('.nav-item:not(.market-board-nav-item), .detail-analysis-btn, .table-panel tbody tr')) cancelMarketBoardRefresh()
       if (event.target.closest('.market-board-nav-item')) return
       if (event.target.closest('.nav-item, .detail-analysis-btn, .table-panel tbody tr, [aria-label*="Thêm"]')) shell.classList.remove('market-board-active')
     })
@@ -694,13 +1057,12 @@
       boardNav.addEventListener('click', () => {
         window.__stockpilotResetAnalysis?.()
         nav.querySelector('.nav-item:not(.market-board-nav-item)')?.click()
-        window.setTimeout(() => {
-          try { sessionStorage.setItem(marketViewKey, 'board') } catch (_) { }
-          shell?.classList.add('market-board-active')
-          boardNav.classList.add('active')
-          boardNav.setAttribute('aria-current', 'page')
-        }, 0)
+        try { sessionStorage.setItem(marketViewKey, 'board') } catch (_) { }
+        shell?.classList.add('market-board-active')
+        boardNav.classList.add('active')
+        boardNav.setAttribute('aria-current', 'page')
         nav.querySelector('.nav-item:not(.market-board-nav-item).active')?.classList.remove('active')
+        refreshMarketBoardQuotes()
       })
     }
     if (!document.documentElement.dataset.portfolioAddBound) {
@@ -716,6 +1078,10 @@
         const price = Number(priceText.replace(/[^0-9-]/g, '')) || null
         event.preventDefault()
         event.stopPropagation()
+        try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
+        document.querySelector('.dashboard-shell')?.classList.remove('market-board-active')
+        document.querySelector('.market-board-nav-item')?.classList.remove('active')
+        document.querySelector('.market-board-nav-item')?.removeAttribute('aria-current')
         if (window.__stockpilotAddToPortfolio) {
           window.__stockpilotAddToPortfolio({ symbol, price })
           window.dispatchEvent(new CustomEvent('stockpilot:add-to-portfolio', { detail: { symbol, price } }))
@@ -740,6 +1106,8 @@
       if (item.dataset.marketViewBound) return
       item.dataset.marketViewBound = '1'
       item.addEventListener('click', () => {
+        cancelMarketBoardRefresh()
+        clearAnalysisRequestFlags()
         window.__stockpilotResetAnalysis?.()
         try { sessionStorage.removeItem(marketViewKey) } catch (_) { }
         try { sessionStorage.removeItem(detailResolveKey) } catch (_) { }
@@ -755,18 +1123,34 @@
       })
     })
     const overviewNav = nav?.querySelector('.nav-item:not(.market-board-nav-item)')
+    const pageNavItems = [...(nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)') || [])]
+    nav?.querySelectorAll('.nav-item').forEach(item => item.removeAttribute('aria-current'))
     if (shell?.classList.contains('market-board-active')) {
-      overviewNav?.classList.remove('active')
+      pageNavItems.forEach(item => item.classList.remove('active'))
       boardNav?.classList.add('active')
-    } else if (document.querySelector('.market-breadth-panel')) {
-      nav?.querySelectorAll('.nav-item:not(.market-board-nav-item)').forEach(item => item.classList.remove('active'))
-      overviewNav?.classList.add('active')
+      boardNav?.setAttribute('aria-current', 'page')
+    } else {
+      boardNav?.classList.remove('active')
+      const activeItems = pageNavItems.filter(item => item.classList.contains('active'))
+      const storedView = sessionStorage.getItem('stockpilot-view') || 'overview'
+      const viewLabels = { overview: 'Tổng quan', portfolio: 'Danh mục cá nhân', detail: 'Chi tiết mã', recommendations: 'Đề xuất', advisor: 'AI Advisor' }
+      const storedItem = pageNavItems.find(item => item.getAttribute('aria-label') === viewLabels[storedView] || item.textContent.trim() === viewLabels[storedView])
+      const currentItem = activeItems.length === 1 ? activeItems[0] : storedItem || overviewNav
+      pageNavItems.forEach(item => item.classList.toggle('active', item === currentItem))
+      currentItem?.setAttribute('aria-current', 'page')
     }
     if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active')) {
       window.setTimeout(() => boardNav.click(), 0)
     }
     document.querySelectorAll('.table-panel thead th').forEach(header => {
-      if (header.textContent.trim() === 'Nhận định') header.textContent = 'Phân tích'
+      if (['Nhận định', 'Đánh giá'].includes(header.textContent.trim())) header.textContent = 'Phân tích'
+    })
+    document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+      const cell = row.children[6]
+      const symbol = row.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
+      if (!cell || !symbol) return
+      cell.classList.add('overview-assessment')
+      if (!cell.querySelector('.overview-analysis-btn')) cell.innerHTML = `<button type="button" class="overview-analysis-btn" aria-label="Mở phân tích chuyên sâu">Phân tích chuyên sâu</button>`
     })
     document.querySelectorAll('.listing-badge.delisted').forEach(badge => {
       if (badge.textContent.trim() === 'Hủy niêm yết') badge.textContent = 'Đã hủy niêm yết'
@@ -789,19 +1173,21 @@
     document.querySelectorAll('.data-time').forEach(meta => {
       if (!meta.title && meta.textContent.trim()) meta.title = meta.textContent.trim()
     })
+    ensurePortfolioPresentation()
+    ensureAllocationDonutTooltips()
     document.querySelectorAll('.allocation-day-change').forEach(change => {
-      const label = change.textContent.trim().replace(/^So\s+[^:]+:/i, 'So với phiên trước:')
-      if (!label) return
-      const normalizedLabel = label.replace(/^So\s+[^:]+:/i, '\u0053\u006f \u0076\u1edbi phi\u00ean tr\u01b0\u1edbc:')
+      const rawText = change.textContent.trim()
+      if (!rawText) return
       // This is a portfolio day change, not a five-minute return:
       // current total minus quantity-weighted previous-session close.
-      change.textContent = label.replace(/^So với hôm qua:/i, 'So với phiên trước:')
-      const parts = normalizedLabel.match(/^([^:]+:)\s*(.*)$/)
-      const value = document.createElement('span')
-      const signedChange = parts?.[2] || label
-      if (parts) {
-        value.textContent = parts[2]
-        change.replaceChildren(document.createTextNode(`${parts[1]} `), value)
+      const signedChange = rawText.replace(/^So\s+[^:]+:\s*/i, '')
+      // Preserve the React-owned value node. Replacing it makes React keep a
+      // detached text node and the day change stops updating when a newer
+      // intraday quote revalues the portfolio.
+      let value = change.querySelector(':scope > span')
+      if (!value) {
+        value = document.createElement('span')
+        change.replaceChildren(document.createTextNode('So với hôm qua: '), value)
       }
       const allocationPanel = change.closest('.allocation-panel')
       const footnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
@@ -817,17 +1203,22 @@
       // even when the portfolio is only partially covered by intraday quotes.
       const rag = direction == null || direction === 0 ? 'amber' : direction > 0 ? 'green' : 'red'
       const ragColor = rag === 'green' ? 'var(--success, #34d399)' : rag === 'red' ? 'var(--danger, #f87171)' : 'var(--warning, #fbbf24)'
+      const amountDisplay = Number.isFinite(amountChange)
+        ? `${amountChange >= 0 ? '+' : '-'}${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.abs(amountChange))} ₫`
+        : ''
+      const percentDisplay = Number.isFinite(percentChange)
+        ? `${percentChange >= 0 ? '+' : '-'}${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(percentChange))}%`
+        : ''
+      const displayValue = amountDisplay && percentDisplay ? `${amountDisplay} ${percentDisplay}` : 'Chưa đủ dữ liệu'
+      if (value.textContent !== displayValue) value.textContent = displayValue
       change.dataset.rag = rag
       change.dataset.dataQuality = partialCoverage ? 'partial' : 'complete'
-      change.style.setProperty('color', 'var(--text)', 'important')
-      if (value) {
-        value.classList.remove('positive', 'negative', 'neutral')
-        value.classList.add(rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral')
-        value.dataset.rag = rag
-        value.style.setProperty('color', ragColor, 'important')
-      }
+      change.style.setProperty('color', '#f8fafc', 'important')
+      value.classList.add(rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral')
+      value.dataset.rag = rag
+      value.style.setProperty('color', ragColor, 'important')
       change.title = `${partialCoverage ? 'Một phần danh mục đang dùng giá fallback hoặc chưa có quote intraday. ' : ''}Tổng giá trị hiện tại trừ tổng (số lượng × giá đóng cửa phiên trước). Không phải thay đổi 5 phút.`
-      change.setAttribute('aria-label', change.title)
+      change.setAttribute('aria-label', `${change.textContent}. ${change.title}`)
     })
     const allocationPanel = document.querySelector('.allocation-panel')
     if (allocationPanel) {
@@ -851,7 +1242,9 @@
       badge.title = `Dữ liệu cũ: giá hoặc khối lượng thuộc phiên ${session}, chưa phải phiên chuẩn mới nhất.`
       badge.setAttribute('aria-label', badge.title)
     })
+    ensureOverviewResourceErrors()
     document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
+    ensureOverviewSnapshot()
     ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
     const breadthHeaderText = breadth?.querySelector('.market-breadth-header p')
@@ -863,22 +1256,30 @@
       down: Number(breadth.querySelector('.breadth-count.down strong')?.textContent || 0),
       flat: Number(breadth.querySelector('.breadth-count.flat strong')?.textContent || 0)
     } : null
-    breadth?.querySelector('.breadth-snapshot')?.remove()
+    let snapshot = breadth?.querySelector('.breadth-snapshot')
     if (breadth && breadthCounts && breadthCounts.up + breadthCounts.down + breadthCounts.flat > 0) {
       const classified = breadthCounts.up + breadthCounts.down + breadthCounts.flat
       const ratio = breadthCounts.down > 0 ? (breadthCounts.up / breadthCounts.down).toFixed(2) : '—'
       const spread = breadthCounts.up - breadthCounts.down
       const percentText = Array.from(breadth.querySelectorAll('.breadth-count small')).map(node => Number.parseFloat(node.textContent)).filter(Number.isFinite)
       const classifiedPercent = percentText.length === 3 ? percentText.reduce((sum, value) => sum + value, 0).toFixed(1) : '—'
-      const snapshot = document.createElement('div')
-      snapshot.className = 'breadth-snapshot'
-      snapshot.setAttribute('aria-label', 'Chỉ số snapshot độ rộng thị trường')
-      snapshot.innerHTML = `<div><span>A/D ratio</span><strong>${ratio}</strong><small>Tăng / giảm</small></div><div><span>Chênh lệch A−D</span><strong class="${spread >= 0 ? 'positive' : 'negative'}">${spread > 0 ? '+' : ''}${spread}</strong><small>Mã tăng trừ mã giảm</small></div><div><span>Đã phân loại</span><strong>${classifiedPercent}%</strong><small>${classified ? 'Dựa trên mã có biến động' : 'Chưa có dữ liệu'}</small></div>`
-      breadth.querySelector('.breadth-counts')?.after(snapshot)
-    }
+      const signature = `${ratio}|${spread}|${classifiedPercent}|${classified}`
+      if (!snapshot) {
+        snapshot = document.createElement('div')
+        snapshot.className = 'breadth-snapshot'
+        snapshot.setAttribute('aria-label', 'Chỉ số snapshot độ rộng thị trường')
+        breadth.querySelector('.breadth-counts')?.after(snapshot)
+      }
+      if (snapshot.dataset.signature !== signature) {
+        snapshot.innerHTML = `<div><span>A/D ratio</span><strong>${ratio}</strong><small>Tăng / giảm</small></div><div><span>Chênh lệch A−D</span><strong class="${spread >= 0 ? 'positive' : 'negative'}">${spread > 0 ? '+' : ''}${spread}</strong><small>Mã tăng trừ mã giảm</small></div><div><span>Đã phân loại</span><strong>${classifiedPercent}%</strong><small>${classified ? 'Dựa trên mã có biến động' : 'Chưa có dữ liệu'}</small></div>`
+        snapshot.dataset.signature = signature
+      }
+    } else snapshot?.remove()
     const sectorSelect = document.querySelector('.sector-select')
     const boardActive = shell?.classList.contains('market-board-active')
     const selectedSector = boardActive ? '' : sectorSelect?.value || ''
+    const leaderPanels = [...document.querySelectorAll('.breadth-leaders')]
+    leaderPanels.slice(1).forEach(panel => panel.remove())
     let exchangeSelect = ensureBreadthExchangeSelect(breadth)
     const selectedExchange = exchangeSelect?.value || ''
     const existingLeaders = breadth?.querySelector('.breadth-leaders')
@@ -916,7 +1317,13 @@
       const openDetail = () => {
         const row = [...document.querySelectorAll('.table-panel tbody tr')].find(item => item.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0].toUpperCase() === symbol.toUpperCase())
         if (row) {
+          window.dispatchEvent(new CustomEvent('stockpilot:open-detail', { detail: { symbol } }))
           row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+          window.setTimeout(() => {
+            const detailNav = [...document.querySelectorAll('.nav-item')].find(item => item.textContent.includes('Chi tiết'))
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'))
+            detailNav?.classList.add('active')
+          }, 0)
           return
         }
         window.location.href = `/?view=detail&symbol=${encodeURIComponent(symbol)}`
@@ -925,6 +1332,16 @@
       symbolNode.addEventListener('click', openDetail)
       symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail() } })
     })
+    const tablePanel = document.querySelector('.table-panel')
+    if (tablePanel && !tablePanel.querySelector('.page-size-control:not(.overview-page-size-control)')) {
+      const controls = document.createElement('div')
+      controls.className = 'table-pagination'
+      controls.innerHTML = '<button type="button" class="ghost-btn" aria-label="Trước">Trước</button><label class="page-size-control"><span>Số mã / trang</span><select aria-label="Số mã mỗi trang"><option value="25">25</option><option value="40" selected>40</option><option value="50">50</option><option value="100">100</option></select></label><button type="button" class="ghost-btn" aria-label="Sau">Sau</button>'
+      controls.querySelector('select').addEventListener('change', event => {
+        window.dispatchEvent(new CustomEvent('stockpilot:page-size', { detail: { value: event.target.value } }))
+      })
+      tablePanel.append(controls)
+    }
     const originalPageSize = document.querySelector('.table-panel .page-size-control:not(.overview-page-size-control) select')
     const originalResultCount = document.querySelector('.table-panel .table-tools > .muted-text')
     const pagination = document.querySelector('.table-panel .table-pagination')
@@ -950,7 +1367,8 @@
           bottomCount.className = 'overview-pagination-count'
           summary.append(bottomCount)
         }
-        const countText = originalResultCount.textContent.trim()
+        const visibleRowCount = document.querySelectorAll('.table-panel tbody tr .symbol').length
+        const countText = `Hiển thị ${visibleRowCount}/${visibleRowCount} mã`
         if (bottomCount.textContent !== countText) bottomCount.textContent = countText
       }
       let bottomControl = summary.querySelector('.overview-page-size-control')
@@ -983,23 +1401,29 @@
       button.setAttribute('aria-label', 'Mở phân tích chuyên sâu')
       button.title = 'Mở trang chi tiết và tải phân tích kỹ thuật'
     })
+    document.querySelectorAll('.saved-proposal .danger-btn').forEach(button => {
+      if (button.textContent.trim().startsWith('X')) button.textContent = '\u0058\u00f3\u0061'
+    })
+    document.querySelectorAll('.recommendation-workbench > .saved-proposals, .recommendation-criteria-panel > .saved-proposals').forEach(section => section.remove())
   }
-
-  const refreshTimeline = () => {
-    if (document.querySelector('.dashboard-shell.market-board-active')) updateMarketTimeline()
-  }
-  window.setInterval(refreshTimeline, 30000)
 
   let scheduled = false
+  let observer
+  const observe = () => observer?.observe(document.body, { childList: true, subtree: true })
   const scheduleEnhance = () => {
     if (scheduled) return
     scheduled = true
     requestAnimationFrame(() => {
       scheduled = false
+      observer?.disconnect()
       enhance()
+      observe()
     })
   }
 
+  window.addEventListener('stockpilot:portfolio-state', scheduleEnhance)
+  window.addEventListener('stockpilot:overview-resource-state', scheduleEnhance)
   enhance()
-  new MutationObserver(scheduleEnhance).observe(document.body, { childList: true, subtree: true })
+  observer = new MutationObserver(scheduleEnhance)
+  observe()
 })()

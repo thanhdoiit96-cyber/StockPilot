@@ -3,7 +3,7 @@ const backendBase = process.env.BACKEND_URL || 'http://127.0.0.1:5000'
 const htmlResponse = await fetch(`${frontendBase}/`)
 if (!htmlResponse.ok) throw new Error(`Preview HTTP ${htmlResponse.status}`)
 const html = await htmlResponse.text()
-const asset = html.match(/assets\/([^"']+\.js)/)?.[1]
+const asset = html.match(/<script type="module" crossorigin src="\/assets\/([^"']+\.js)"/)?.[1]
 if (!asset) throw new Error('Preview JavaScript asset missing')
 const assetResponse = await fetch(`${frontendBase}/assets/${asset}`)
 if (!assetResponse.ok) throw new Error(`Asset HTTP ${assetResponse.status}`)

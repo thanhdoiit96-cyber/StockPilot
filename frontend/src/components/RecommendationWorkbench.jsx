@@ -21,6 +21,7 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
   const [savedProposals, setSavedProposals] = useState(() => {
     try { return JSON.parse(localStorage.getItem('stockpilot.recommendation.saved') || '[]') } catch { return [] }
   })
+  const [selectedProposalId, setSelectedProposalId] = useState('')
   const totalWeight = Object.values(weights).reduce((sum, value) => sum + Number(value || 0), 0)
   const effectiveHistory = useMemo(() => history.filter(run => Number(run.measured_count) > 0), [history])
 
@@ -43,6 +44,7 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
   }
 
   function loadProposal(snapshot) {
+    setSelectedProposalId(snapshot?.id || '')
     setWeights(snapshot.criteria || defaults)
     setResult(snapshot.result || null)
     setError('')
@@ -52,23 +54,20 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     setSavedProposals(current => {
       const next = current.filter(item => item.id !== id)
       localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next))
+      if (selectedProposalId === id) setSelectedProposalId(next[0]?.id || '')
       return next
     })
   }
 
   const recommendations = result?.recommendations || initialData?.recommendations || []
   const learning = result?.learning
-  return <section className="recommendations-page recommendation-workbench">    <div className="recommendation-command-header"><div><span className="eyebrow accent">ĐỀ XUẤT CÁ NHÂN</span><h2>Đề xuất theo tiêu chí</h2><p className="muted-text">Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.</p></div><span className="chip neutral">Mô hình giải thích được</span></div>{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>Cảnh báo tập trung danh mục</strong><span>Tỷ trọng ngành cao nhất đang ở mức {initialData.risk.max_sector_share_pct}%.</span><small>Đang chờ đo lường thêm {initialData.risk.pending || 0} kết quả.</small></div>}<section className="panel recommendation-criteria-panel">
+  return <section className="recommendations-page recommendation-workbench">    <div className="recommendation-command-header"><div><span className="eyebrow accent">ĐỀ XUẤT CÁ NHÂN</span><h2>Đề xuất theo tiêu chí của bạn</h2><p className="muted-text">Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.</p></div><span className="chip neutral">Mô hình giải thích được</span></div>{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>Cảnh báo tập trung danh mục</strong><span>Tỷ trọng ngành cao nhất đang ở mức {initialData.risk.max_sector_share_pct}%.</span><small>Đang chờ đo lường thêm {initialData.risk.pending || 0} kết quả.</small></div>}<section className="panel recommendation-criteria-panel">
       <div className="recommendation-section-heading"><div><span className="eyebrow accent">Tùy chỉnh</span><h3>Bạn muốn ưu tiên điều gì?</h3><p className="muted-text">Tăng trọng số để tiêu chí ảnh hưởng nhiều hơn đến điểm tổng. Mỗi tiêu chí được chuẩn hóa khi tính.</p></div><span className="criteria-total">Tổng trọng số <strong>{totalWeight}</strong></span></div>
       <form onSubmit={generate}>
         <div className="criteria-grid">{criteria.map(item => <label className="criteria-control" key={item.key}><span className="criteria-label"><strong>{item.label}</strong><b>{weights[item.key]} điểm ưu tiên</b></span><small>{item.description}</small><input type="range" min="0" max="60" step="5" value={weights[item.key]} aria-label={`Trọng số ${item.label}`} onChange={event => setWeights(current => ({ ...current, [item.key]: Number(event.target.value) }))} /></label>)}</div>
-        <div className="criteria-actions"><p className="muted-text">Chỉ tiêu kỹ thuật có dữ liệu mới được chấm điểm; tin tức, tâm lý và vĩ mô chưa được cộng điểm nếu chưa có nguồn xác minh trong mô hình.</p><div><button type="button" className="ghost-btn" onClick={() => setWeights(defaults)}>Khôi phục mặc định</button><button type="submit" className="primary-btn" disabled={loading || totalWeight === 0}>{loading ? 'Đang xếp hạng…' : 'Tạo đề xuất cá nhân'}</button></div></div>
+        <div className="criteria-actions"><p className="muted-text">Chỉ tiêu kỹ thuật có dữ liệu mới được chấm điểm; tin tức, tâm lý và vĩ mô chưa được cộng điểm nếu chưa có nguồn xác minh trong mô hình.</p><div className="criteria-action-buttons"><div className="saved-proposal-picker"><label htmlFor="saved-proposal-select">Đề xuất đã lưu</label><select id="saved-proposal-select" className="saved-proposal-select" value={selectedProposalId} onChange={event => { const snapshot = savedProposals.find(item => item.id === event.target.value); setSelectedProposalId(event.target.value); if (snapshot) loadProposal(snapshot) }} disabled={!savedProposals.length}><option value="">{savedProposals.length ? 'Chọn snapshot' : 'Chưa có bản lưu'}</option>{savedProposals.map(snapshot => <option value={snapshot.id} key={snapshot.id}>{new Date(snapshot.createdAt).toLocaleString('vi-VN')} · {snapshot.result?.recommendations?.length || 0} mã</option>)}</select><button type="button" className="ghost-btn small-btn" disabled={!selectedProposalId} onClick={() => loadProposal(savedProposals.find(item => item.id === selectedProposalId))}>Load</button><button type="button" className="ghost-btn small-btn danger-btn" disabled={!selectedProposalId} onClick={() => deleteProposal(selectedProposalId)}>Xóa</button></div><button type="button" className="ghost-btn" onClick={() => setWeights(defaults)}>Khôi phục mặc định</button><button type="submit" className="primary-btn" disabled={loading || totalWeight === 0}>{loading ? 'Đang xếp hạng…' : 'Tạo đề xuất cá nhân'}</button></div></div>
       </form>
       {error && <p role="alert" className="error-text">{error}</p>}
-      <section className="saved-proposals" aria-labelledby="saved-proposals-title">
-        <div className="recommendation-section-heading"><div><span className="eyebrow accent">LƯU TRỮ</span><h3 id="saved-proposals-title">Đề xuất đã tạo</h3><p className="muted-text">Các bản lưu là snapshot bất biến. Bạn chỉ có thể tải lại hoặc xóa.</p></div><span className="chip neutral">{savedProposals.length}/20</span></div>
-        {savedProposals.length ? <div className="saved-proposals-list">{savedProposals.map(snapshot => <article className="saved-proposal" key={snapshot.id}><div><strong>{new Date(snapshot.createdAt).toLocaleString('vi-VN')}</strong><small>{Object.entries(snapshot.criteria || {}).map(([key, value]) => `${key}: ${value}`).join(' · ')}</small><small>{snapshot.result?.recommendations?.length || 0} mã được đề xuất</small></div><div className="saved-proposal-actions"><button type="button" className="ghost-btn small-btn" onClick={() => loadProposal(snapshot)}>Load</button><button type="button" className="ghost-btn small-btn danger-btn" onClick={() => deleteProposal(snapshot.id)}>Xóa</button></div></article>)}</div> : <p className="muted-text saved-proposals-empty">Chưa có bản đề xuất nào được lưu.</p>}
-      </section>
     </section>
 
     <div className="recommendation-grid personalized-results">
