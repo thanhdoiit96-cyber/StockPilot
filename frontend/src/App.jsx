@@ -4,6 +4,7 @@ import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
+import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1126,13 +1127,7 @@ th-form", children: [O.jsx("input", { placeholder: p("Th\xEAm m\xE3, v\xED d\u1E
     S.stopPropagation(), rf(d.Stock.code);
   }, children: p(
   "Xa") })] }, d.stock_id)), !pt.length && O.jsx("li", { className: "muted-text", children: p("Ch\u01B0a c\xF3 m\xE3") })] })] })] })] }),
-  re === "detail" && O.jsxs("section", { className: "detail-page", children: [O.jsxs("form", { className: "detail-symbol\
--search panel", onSubmit: tf, children: [O.jsx("label", { htmlFor: "detail-symbol-input", children: p("M\xE3 c\u1ED5 phi\u1EBFu") }),
-  O.jsxs("div", { children: [O.jsx("input", { id: "detail-symbol-input", list: "detail-symbol-options", value: nl, onChange: (d) => tl(
-  d.target.value.toUpperCase()), placeholder: "Nh\u1EADp m\xE3, v\xED d\u1EE5: HPG", autoComplete: "off" }), O.jsx("data\
-list", { id: "detail-symbol-options", children: si.map((d) => O.jsx("option", { value: d.symbol, children: d.name }, d.id)) }),
-  O.jsx("button", { className: "primary-btn", type: "submit", children: p("Xem m\xE3") })] }), rl && O.jsx("p", { role: "\
-alert", children: rl })] }), Ee.status === "loading" ? O.jsx("div", { className: "loading-shell", children: O.jsx("p", {
+  re === "detail" && O.jsxs("section", { className: "detail-page", children: [O.jsx(DetailSymbolSearch, { value: nl, options: si, error: rl, onChange: tl, onSubmit: tf }), Ee.status === "loading" ? O.jsx("div", { className: "loading-shell", children: O.jsx("p", {
   children: p("\u0110ang t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu") }) }) : Ee.error ? O.jsxs("div", { className: "erro\
 r-banner", role: "alert", children: [O.jsxs("p", { children: [p("Kh\xF4ng th\u1EC3 t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu"),
   ". ", Ee.error] }), O.jsx("button", { className: "ghost-btn", onClick: Ee.retry, children: p("Th\u1EED l\u1EA1i chi ti\u1EBFt") })] }) :

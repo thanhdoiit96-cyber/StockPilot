@@ -3063,3 +3063,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Thêm lệnh `npm run trace:live:market-board`. Lệnh mở Chrome headless, chỉ nhận token qua `MARKET_AUTH_TOKEN` trong môi trường tiến trình, rồi ghi timing navigation và waterfall của `/api/stocks`, `/api/stocks/quotes`, `/api/stocks/quotes/status`. Token không được in ra log hoặc ghi vào file.
 - Đã kiểm tra cú pháp và chạy lệnh không token: script trả JSON `skipped` cùng lý do thiếu `MARKET_AUTH_TOKEN`, không mở phiên giả và không thay đổi dữ liệu. Production build/safe-build cùng bundle integrity tiếp tục pass.
 - Điểm tiếp tục cụ thể: trong một môi trường có session hợp lệ, chạy `MARKET_AUTH_TOKEN=<token> npm run trace:live:market-board`, lưu số liệu request thực tế (không token) vào PROJECT_STATUS, rồi quyết định có cần thay lifecycle cold quote/provider hay không. Tách sâu Chi tiết khỏi `App.jsx` giữ là nhánh P1 song song, chỉ bắt đầu khi có boundary dữ liệu ổn định để không tạo component hình thức.
+
+## Tách boundary đầu tiên của trang Chi tiết — 2026-10-01
+
+- `DetailSymbolSearch` nay sở hữu form tìm mã của Chi tiết: controlled input, chuẩn hoá mã viết hoa, datalist, submit và hiển thị lỗi lookup. `App.jsx` chỉ cung cấp value/options/error và callback, giảm một boundary UI có tương tác khỏi khối page phục hồi.
+- Không thay đổi request, selection hay navigation hiện có; đây là lát cắt đầu tiên có ownership thực thay vì tách một wrapper hình thức. Khối chart/phân tích còn lại ở `App.jsx` vì vẫn dùng chung nhiều state phục hồi và cần tách sau khi có contract dữ liệu riêng.
+- Kiểm chứng: production build/safe-build và bundle integrity pass (`index-E1CApmXG.js`); Playwright lookup Chi tiết **1/1** pass.
+- Điểm tiếp tục P1: tiếp tục tách các boundary Chi tiết có contract rõ (hero/analysis), song song chạy trace Bảng giá authenticated khi session hợp lệ có mặt.
