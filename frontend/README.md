@@ -9,6 +9,8 @@
 | [src/services/api.mjs](src/services/api.mjs) | Kiểm tra HTTP/JSON và cấu trúc dữ liệu cổ phiếu, hủy request và bỏ qua phản hồi cũ |
 | [src/hooks/useApiResource.js](src/hooks/useApiResource.js) | Trạng thái tải/lỗi/dữ liệu theo URL, retry, cleanup khi đổi lựa chọn hoặc unmount |
 | [src/runtime/overview-table-actions.js](src/runtime/overview-table-actions.js) | Chuẩn hóa cột hành động Phân tích trên bảng Tổng quan của bundle đang phục vụ |
+| [src/runtime/market-board-tools.js](src/runtime/market-board-tools.js) | Gắn toolbar, sticky mã và observer giới hạn trong Bảng giá |
+| [src/runtime/market-board-tools-core.mjs](src/runtime/market-board-tools-core.mjs) | Contract thuần cho cấu hình cột và xuất CSV, dùng chung cho runtime/unit test |
 | [src/runtime/sidebar-toggle-icon.js](src/runtime/sidebar-toggle-icon.js) | Hiển thị chevron trái/phải và nhãn truy cập đúng trạng thái cho nút sidebar |
 | [src/styles.css](src/styles.css) | Giao diện |
 | [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc localhost:5000 |
@@ -17,7 +19,7 @@ UI gọi health, thống kê cache, danh sách và chi tiết cổ phiếu. Lị
 
 Health, cache, danh sách và chi tiết tải độc lập. Lỗi HTTP/JSON có thông báo và nút thử lại; danh sách rỗng hợp lệ có trạng thái riêng. Khi đổi cổ phiếu, chi tiết cũ được ẩn ngay trong render và request cũ bị hủy. Lỗi chi tiết chỉ xuất hiện ở trang chi tiết; lỗi cache không làm mất danh sách.
 
-Bộ kiểm thử [api.test.mjs](src/services/api.test.mjs) dùng Node test runner. Kiểm tra HTTP lỗi, JSON sai, empty state, retry, hủy request/phản hồi đến sai thứ tự và lỗi tài nguyên phụ.
+Bộ kiểm thử [api.test.mjs](src/services/api.test.mjs) dùng Node test runner. Kiểm tra HTTP lỗi, JSON sai, empty state, retry, hủy request/phản hồi đến sai thứ tự và lỗi tài nguyên phụ. [market-board-tools.test.mjs](src/runtime/market-board-tools.test.mjs) kiểm tra default cấu hình cột, CSV escaping/formula guard và loại cột hành động khỏi export.
 
 [e2e/loading.spec.mjs](e2e/loading.spec.mjs) dùng Playwright với Chrome headless để kiểm tra tương tác React: chuyển mã khi request còn chờ, lỗi mạng/404/500/JSON, empty state, retry chi tiết và lỗi health/cache độc lập. API được giả lập; kết quả PostgreSQL thật được kiểm tra riêng. [playwright.config.mjs](playwright.config.mjs) tự quản lý Vite ở cổng 4180 và báo cáo HTML. Lệnh chạy/điều kiện nằm trong [QUICK_START](../QUICK_START.md).
 
@@ -65,6 +67,8 @@ Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hi
 Ở viewport tối đa 800 px, sidebar trở thành thanh điều hướng ngang sticky, không giữ chiều cao toàn màn hình và không làm document tràn ngang. Bảng giá cuộn trong container và có hướng dẫn thao tác trên mobile. Topbar đổi theo page hiện tại; AI Advisor dùng live-region và chỉ cho gửi khi câu hỏi có nội dung.
 
 Bảng giá giữ cột mã khi cuộn ngang. Người dùng có thể ẩn/hiện các cột Doanh nghiệp, Khối lượng, Phân tích và Thao tác; lựa chọn được lưu trong trình duyệt. Nút **Xuất CSV** chỉ xuất các dòng của trang/bộ lọc đang hiển thị và các cột dữ liệu đang bật, không xuất nút hành động hay tự tải thêm dữ liệu ngoài phạm vi đó.
+
+Toolbar Bảng giá được phát hành thành runtime module riêng. Observer của module chỉ lên lịch reconcile khi `.table-panel` hoặc cây con của nó thay đổi; toolbar không còn chạy lại trong mọi vòng enhance toàn trang của `overview-table-actions.js`. Đây là bước giảm phạm vi runtime trước khi chuyển toàn bộ Bảng giá thành component React.
 
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 
