@@ -9,7 +9,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     let data = null
     if (path === '/api/stocks') data = [{ id: 'FPT', code: 'FPT', name: 'FPT', price: 120000 }]
     else if (path === '/api/stocks/quotes') data = {}
-    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: savedTransaction ? [{ transaction_id: 'transaction-1', symbol: savedTransaction.symbol, actual_entry_price: Number(savedTransaction.price), traded_at: '2026-09-22', recommendation: savedTransaction.recommendation_context, evaluation: { status: 'pending', sessions_observed: 0, horizon_days: 20, outcome: 'pending' } }] : [] }
+    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [] }
     else if (path === '/api/watchlist') data = []
     else if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user' } } })
     else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }

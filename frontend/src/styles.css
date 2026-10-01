@@ -404,7 +404,7 @@ button, input { font: inherit; }
   border-color: rgba(94, 234, 212, 0.2);
 }
 .watchlist-detail-link:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(94, 234, 212, .16); outline: none; }
-.watchlist-detail-link:hover strong, .watchlist-detail-link:focus-visible strong { color: #99f6e4; text-decoration: underline; text-underline-offset: 3px; }
+.watchlist-detail-link:hover strong, .watchlist-detail-link:focus-visible strong { color: #99f6e4; }
 
 .watchlist li strong,
 .watchlist li small { display: block; }
@@ -927,7 +927,7 @@ th {
 .portfolio-table { margin-top: 14px; }
 .portfolio-row-clickable { cursor: pointer; transition: background-color .16s ease, box-shadow .16s ease; }
 .portfolio-row-clickable:hover, .portfolio-row-clickable:focus-within, .portfolio-row-clickable:focus { background: rgba(94, 234, 212, .10); box-shadow: inset 3px 0 0 var(--primary); outline: none; }
-.portfolio-row-clickable:hover .portfolio-detail-link, .portfolio-row-clickable:focus-within .portfolio-detail-link, .portfolio-row-clickable:focus .portfolio-detail-link { color: #99f6e4; text-decoration: underline; text-underline-offset: 3px; }
+.portfolio-row-clickable:hover .portfolio-detail-link, .portfolio-row-clickable:focus-within .portfolio-detail-link, .portfolio-row-clickable:focus .portfolio-detail-link { color: #99f6e4; }
 .portfolio-detail-link { appearance: none; border: 0; padding: 0; color: var(--primary); background: transparent; font: inherit; font-weight: 750; cursor: pointer; }
 .portfolio-detail-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
 .allocation-row { display: grid; grid-template-columns: 70px 1fr 52px; gap: 8px; align-items: center; margin: 16px 0; }

@@ -782,9 +782,12 @@ api/stocks/${encodeURIComponent(me.id)}` : null, Um), [Kh, du] = D.useState(fals
   }, Zh = async (d) => {
     d.preventDefault();
     try {
-      await je("/api/portfolio/transactions", { method: "POST", token: ue.token, body: Ie });
-      const S = await je("/api/portfolio", { token: ue.token });
-      mt(S.data), on(p("Ghi nh\u1EADn giao d\u1ECBch"));
+      const S = await je("/api/portfolio/transactions", { method: "POST", token: ue.token, body: Ie }), $ = await je("/api/portfolio", { token: ue.token }), A = Ie.recommendation_context, Z = $.data || {};
+      if (A && !(Z.recommendation_entries || []).some((de) => de.transaction_id === (S.data == null ? void 0 : S.data.id))) {
+        const de = { transaction_id: (S.data == null ? void 0 : S.data.id) || `pending-${Date.now()}`, stock_id: null, symbol: Ie.symbol, actual_entry_price: Number(Ie.price), current_eod_price: null, recommendation: A, evaluation: { status: "pending", sessions_observed: 0, horizon_days: A.horizon_days, outcome: "pending" } };
+        $.data = { ...Z, recommendation_entries: [...Z.recommendation_entries || [], de] };
+      }
+      mt($.data), on(p("Ghi nh\u1EADn giao d\u1ECBch"));
     } catch (S) {
       on(S.message);
     }
