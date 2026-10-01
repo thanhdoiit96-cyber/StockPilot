@@ -569,65 +569,6 @@ e.url }), tv = (e) => {
   { label: "\u0110i ngang", detail: "Bi\xEAn \u0111\u1ED9 h\u1EB9p; ch\u1EDD x\xE1c nh\u1EADn xu h\u01B0\u1EDBng." } : {
   label: "Theo di thm", detail: "Ch\u1EDD quote m\u1EDBi \u0111\u1EC3 x\xE1c nh\u1EADn xu h\u01B0\u1EDBng." };
 };
-function rv({ history: e = [], marketSessions: n = [] }) {
-  const [t, r] = D.useState(12), l = e.slice(-t), o = l.map((x) => Number(x.close ?? x.price)).filter(Number.isFinite), a = l.
-  map((x) => Number(x.volume)).filter(Number.isFinite), u = Math.max(1, ...a), c = Math.min(...o, 0), f = Math.max(...o,
-  1), k = Math.max(1, f - c), j = l.map((x, _) => {
-    const P = Number(x.close ?? x.price), g = l.length <= 1 ? 300 : (_ + 0.5) * 600 / l.length, I = 18 + (f - (Number.isFinite(
-    P) ? P : c)) / k * 154;
-    return { item: x, index: _, x: g, y: I, value: P };
-  }), y = [...l].reverse().find((x) => Number.isFinite(Number(x.close ?? x.price))), C = y ? l.lastIndexOf(y) : -1, E = y ?
-  Number(y.close ?? y.price) : null, M = C > 0 ? Number(l[C - 1].close ?? l[C - 1].price) : null, b = E != null && Number.
-  isFinite(M) && M !== 0 ? (E / M - 1) * 100 : null, m = l.reduce((x, _) => Math.max(x, Number(_.high ?? _.close ?? _.price) ||
-  0), 0), h = l.reduce((x, _) => Math.min(x, Number(_.low ?? _.close ?? _.price) || Number.POSITIVE_INFINITY), Number.POSITIVE_INFINITY),
-  v = new Set(e.map((x) => cr(x.observed_at))), w = n.filter((x) => !v.has(x)),
-  z = w.length > 0 && O.jsxs("p", { className: "chart-data-gap", role: "note", children: ["Phi\xEAn g\u1EA7n \u0111\xE2y c\xF3 d\u1EEF li\u1EC7u tron\
-g h\u1EC7 th\u1ED1ng nh\u01B0ng ch\u01B0a c\xF3 n\u1EBFn EOD cho m\xE3 n\xE0y: ", w.map((x) => `${x.slice(8, 10)}-${x.slice(5, 7)}`).join(", "),
-  ". Bi\u1EC3u \u0111\u1ED3 ch\u1EC9 hi\u1EC3n th\u1ECB d\u1EEF li\u1EC7u gi\xE1 ghi nh\u1EADn \u0111\u01B0\u1EE3c."] });
-  return l.length ? O.jsxs(i.Fragment, { children: [z, O.jsxs("div", { className: "chart-range-controls", role: "group",
-  "aria-label": p("S\u1ED1 phi\xEAn hi\u1EC3n th\u1ECB"), children: [O.jsx("span", { children: p("Phi\xEAn") }), [5, 10,
-  12].map((x) => O.jsx("button", { type: "button", className: t === x ? "active" : "", onClick: () => r(x), children: x },
-  x))] }), O.jsxs("div", { className: "combined-price-volume-chart", "data-testid": "combined-price-volume-chart", children: [
-  O.jsxs("div", { className: "price-chart", "aria-label": p("Bi\u1EC3u \u0111\u1ED3 gi\xE1 \u0111\xF3ng c\u1EEDa"), children: [
-  O.jsxs("svg", { viewBox: "0 0 600 190", preserveAspectRatio: "none", role: "img", "aria-label": p("\u0110\u01B0\u1EDDng gi\xE1 \u0111\xF3ng c\u1EEDa \
-theo phi\xEAn"), children: [[18, 70, 121, 172].map((x) => O.jsx("line", { x1: "0", x2: "600", y1: x, y2: x, className: "\
-price-grid-line" }, x)), j.length > 0 && O.jsx("polyline", { points: j.map((x) => x.x + "," + x.y).join(" "), className: "\
-price-line", fill: "none" }), j.map((x) => O.jsx("circle", { cx: x.x, cy: x.y, "data-session-date": cr(x.item.observed_at),
-  r: x.item.interval === "intraday" ? "5" : "4", className: x.item.interval === "intraday" ? "price-point current" : "pr\
-ice-point", tabIndex: "0", "aria-label": He(x.item.observed_at) + " - " + oe(x.value), children: O.jsx("title", { children: He(
-  x.item.observed_at) + "  " + (x.item.interval === "intraday" ? p("Gi\xE1 intraday hi\u1EC7n t\u1EA1i") : p("\u0110\xF3ng c\u1EEDa")) +
-  ": " + oe(x.value) + "  " + p("M\u1EDF c\u1EEDa") + ": " + oe(x.item.open) + "  " + p("Cao") + ": " + oe(x.item.high) +
-  "  " + p("Th\u1EA5p") + ": " + oe(x.item.low) + "  KL: " + Et(x.item.volume) + (x.item.provider ? "  " + x.item.provider :
-  "") + (x.item.fetched_at ? "  " + p("C\u1EADp nh\u1EADt l\xFAc") + ": " + He(x.item.fetched_at) : "") }) }, (x.item.observed_at ||
-  x.index) + "-point"))] }), O.jsx("div", { className: "price-axis-labels", children: l.map((x, _) => {
-    const P = cr(x.observed_at);
-    return O.jsx("small", { "data-session-date": P, children: P.slice(5, 10) || "--" }, (x.observed_at || _) + "-label");
-  }) })] }), O.jsxs("div", { className: "volume-scale", "aria-label": p("Thang \u0111o kh\u1ED1i l\u01B0\u1EE3ng"), children: [
-  O.jsxs("span", { children: [p("KL c\u1ED5 phi\u1EBFu cao nh\u1EA5t"), ": ", Et(u)] }), O.jsx("span", { children: "0" })] }),
-  O.jsx("div", { className: "detail-volume-bars", "data-testid": "detail-volume-bars", "aria-label": p("Kh\u1ED1i l\u01B0\u1EE3ng theo \
-phi\xEAn"), children: l.map((x, _) => {
-    var P, g;
-    const I = Number(x.volume), B = Number(((P = l[_ - 1]) == null ? void 0 : P.close) ?? ((g = l[_ - 1]) == null ? void 0 :
-    g.price)), K = _ === 0 || Number(x.close ?? x.price) >= B;
-    return O.jsx("span", { "data-session-date": cr(x.observed_at), className: K ? "volume-bar rising" : "volume-bar fall\
-ing", style: { height: (Number.isFinite(I) ? Math.max(8, I / u * 52) : 8) + "px" }, tabIndex: "0", "aria-label": He(x.observed_at) +
-    " - " + Et(x.volume), title: He(x.observed_at) + " - " + Et(x.volume) + " " + p("c\u1ED5 phi\u1EBFu"), children: O.jsx(
-    "i", {}) }, (x.observed_at || _) + "-volume");
-  }) }), O.jsxs("div", { className: "chart-legend", role: "group", "aria-label": p("Ch\xFA gi\u1EA3i bi\u1EC3u \u0111\u1ED3"),
-  children: [O.jsxs("span", { className: "chart-legend-item", children: [O.jsx("i", { className: "legend-price" }), O.jsx(
-  "strong", { children: p("Gi\xE1 \u0111\xF3ng c\u1EEDa") })] }), O.jsxs("span", { className: "chart-legend-item", children: [
-  O.jsx("i", { className: "legend-volume-rising" }), O.jsx("strong", { children: p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn t\u0103ng") })] }),
-  O.jsxs("span", { className: "chart-legend-item", children: [O.jsx("i", { className: "legend-volume-falling" }), O.jsx(
-  "strong", { children: p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn gi\u1EA3m") })] })] })] }), O.jsxs("div", { className: "ch\
-art-summary", children: [O.jsxs("span", { children: [O.jsx("small", { children: p("M\u1EDBi nh\u1EA5t") }), O.jsx("stron\
-g", { children: oe(E) }), O.jsx("em", { className: b == null || b >= 0 ? "positive" : "negative", children: Hh(b) })] }),
-  O.jsxs("span", { children: [O.jsx("small", { children: p("Cao nh\u1EA5t") }), O.jsx("strong", { children: oe(m || null) })] }),
-  O.jsxs("span", { children: [O.jsx("small", { children: p("Th\u1EA5p nh\u1EA5t") }), O.jsx("strong", { children: oe(Number.
-  isFinite(h) ? h : null) })] }), O.jsxs("span", { children: [O.jsx("small", { children: p("Kh\u1ED1i l\u01B0\u1EE3ng m\u1EDBi nh\u1EA5t") }),
-  O.jsx("strong", { children: Et(y == null ? void 0 : y.volume) }), O.jsx("em", { children: He(y == null ? void 0 : y.observed_at) })] })] })] }) :
-  O.jsxs(i.Fragment, { children: [z, O.jsx("div", { className: "chart-empty-state", role: "status", children: "Ch\u01B0a c\xF3 l\
-\u1ECBch s\u1EED gi\xE1 t\u1EEB ngu\u1ED3n d\u1EEF li\u1EC7u cho m\xE3 n\xE0y." })] });
-}
 function lv() {
   var e, n, t, r, l, o, a, u, c, f, k, j, y, C, E, M, b, m, h, v, w, z, x, _, P, g, I, B, K, ie, ye, mn, se, Ye, L, R, U,
   W, X, vn, Ae, _n, Ue, gn, Er, Tr, Pr, zr, Mr, Lr;
