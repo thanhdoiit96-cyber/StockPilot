@@ -1,7 +1,7 @@
 (() => {
   const cache = new Map()
   const annotate = () => {
-    document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+    document.querySelectorAll('.table-panel:not([data-react-market-board]) tbody tr').forEach(row => {
       const symbol = row.querySelector('.symbol')?.textContent?.trim().split(/\s+/)[0].toUpperCase()
       const item = cache.get(symbol)
       const volumeCell = row.cells?.[4]
@@ -29,5 +29,5 @@
   }
   load()
   setInterval(load, 60000)
-  new MutationObserver(annotate).observe(document.body, { childList: true, subtree: true })
+  window.addEventListener('stockpilot:react-commit', annotate)
 })()

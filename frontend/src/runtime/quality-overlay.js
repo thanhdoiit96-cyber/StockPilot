@@ -32,9 +32,9 @@
   }
   load()
   setInterval(() => load(true), 60000)
-  new MutationObserver(() => {
+  window.addEventListener('stockpilot:react-commit', () => {
     if (document.getElementById(id)) return
     if (lastData) render(lastData)
     else load()
-  }).observe(document.body, { childList: true, subtree: true })
+  })
 })()

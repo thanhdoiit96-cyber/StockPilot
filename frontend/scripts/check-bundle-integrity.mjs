@@ -43,43 +43,21 @@ const overviewChecks = [
 const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(overviewRuntime)).map(([label]) => label)
 if (missingOverview.length) throw new Error(`Runtime Tổng quan không đạt kiểm tra: ${missingOverview.join(', ')}`)
 
-const marketBoardToolsAsset = 'market-board-tools.js'
-if (!html.includes(`/assets/${marketBoardToolsAsset}`)) {
-  throw new Error(`Bundle không nạp công cụ Bảng giá: ${marketBoardToolsAsset}`)
-}
-const marketBoardToolsPath = path.join(root, 'dist/assets', marketBoardToolsAsset)
-if (!fs.existsSync(marketBoardToolsPath)) {
-  throw new Error(`Thiếu công cụ Bảng giá: ${marketBoardToolsAsset}`)
-}
-const marketBoardTools = fs.readFileSync(marketBoardToolsPath, 'utf8')
-const marketBoardCorePath = path.join(root, 'dist/assets', 'market-board-tools-core.mjs')
-if (!fs.existsSync(marketBoardCorePath)) {
-  throw new Error('Thiếu contract thuần của công cụ Bảng giá: market-board-tools-core.mjs')
-}
-const marketBoardSource = `${marketBoardTools}\n${fs.readFileSync(marketBoardCorePath, 'utf8')}`
 const marketBoardChecks = [
-  ['cột mã sticky', /is-horizontally-scrolled/],
+  ['component Bảng giá React', /data-react-market-board/],
+  ['quote lifecycle Bảng giá', /board_refresh/],
   ['cấu hình cột', /stockpilot-market-columns-v1/],
   ['xuất CSV', /stockpilot-bang-gia-/]
 ]
-const missingMarketBoard = marketBoardChecks.filter(([, marker]) => !marker.test(marketBoardSource)).map(([label]) => label)
+const missingMarketBoard = marketBoardChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
 if (missingMarketBoard.length) throw new Error(`Công cụ Bảng giá không đạt kiểm tra: ${missingMarketBoard.join(', ')}`)
 
-const sidebarRuntimeAsset = 'sidebar-toggle-icon.js'
-if (!html.includes(`/assets/${sidebarRuntimeAsset}`)) {
-  throw new Error(`Bundle không nạp runtime sidebar: ${sidebarRuntimeAsset}`)
-}
-const sidebarRuntimePath = path.join(root, 'dist/assets', sidebarRuntimeAsset)
-if (!fs.existsSync(sidebarRuntimePath)) {
-  throw new Error(`Thiếu runtime sidebar: ${sidebarRuntimeAsset}`)
-}
-const sidebarRuntime = fs.readFileSync(sidebarRuntimePath, 'utf8')
 const sidebarChecks = [
-  ['icon sidebar có hướng', /dataset\.sidebarDirection/],
+  ['icon sidebar có hướng', /data-sidebar-direction/],
   ['nhãn thu gọn', /Thu gọn thanh điều hướng/],
   ['nhãn mở rộng', /Mở rộng thanh điều hướng/]
 ]
-const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(sidebarRuntime)).map(([label]) => label)
+const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
 if (missingSidebar.length) throw new Error(`Runtime sidebar không đạt kiểm tra: ${missingSidebar.join(', ')}`)
 
-console.log(`Bundle integrity passed: ${asset}; runtimes: ${overviewRuntimeAsset}, ${marketBoardToolsAsset}, ${sidebarRuntimeAsset}`)
+console.log(`Bundle integrity passed: ${asset}; runtime: ${overviewRuntimeAsset}; Bảng giá và sidebar: React`)
