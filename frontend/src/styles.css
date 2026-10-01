@@ -953,6 +953,14 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .portfolio-ledger-heading h3 { margin: 0 0 5px; }
 .portfolio-ledger-heading p { margin: 0; }
 .portfolio-ledger-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.portfolio-import-button { position: relative; cursor: pointer; }
+.portfolio-import-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.portfolio-import-button.disabled { cursor: not-allowed; opacity: .5; }
+.portfolio-import-status { display: grid; gap: 8px; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(148, 163, 184, .2); border-radius: 10px; background: rgba(15, 23, 42, .36); }
+.portfolio-import-status p, .portfolio-import-status ul { margin: 0; }
+.portfolio-import-status ul { display: grid; gap: 4px; padding-left: 18px; color: var(--danger); font-size: 11px; }
+.portfolio-import-status small { color: var(--muted); }
+.portfolio-import-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .portfolio-ledger-table { margin-top: 14px; }
 .portfolio-ledger-table table { min-width: 780px; }
 .portfolio-ledger-table td, .portfolio-ledger-table th { white-space: nowrap; }

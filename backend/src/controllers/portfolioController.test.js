@@ -1,6 +1,7 @@
 jest.mock('../models', () => ({
-  Portfolio: { findOne: jest.fn() }, PortfolioTransaction: { findAll: jest.fn() },
-  Stock: {}, StockPrice: { findAll: jest.fn() }
+  Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
+  Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
+  sequelize: { transaction: jest.fn() }
 }));
 jest.mock('../middleware/requireAuth', () => (req, res, next) => { req.user = { sub: 'user-a' }; next(); });
 jest.mock('../services/liveQuoteService', () => ({ liveQuoteService: { load: jest.fn() } }));
@@ -14,9 +15,12 @@ beforeEach(() => {
   jest.clearAllMocks();
   models.Portfolio.findOne.mockResolvedValue({ id: 'p', user_id: 'user-a' });
   models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
+  models.PortfolioTransaction.bulkCreate.mockResolvedValue([{ id: 'import-1' }]);
+  models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
+  models.sequelize.transaction.mockImplementation(callback => callback({ id: 'db-transaction' }));
 });
-const app = express(); app.use('/portfolio', router);
+const app = express(); app.use(express.json()); app.use('/portfolio', router);
 
 test('empty intraday leaves ledger positions and EOD fallback intact', async () => {
   liveQuoteService.load.mockResolvedValue({});
@@ -76,4 +80,40 @@ test('database errors produce an explicit HTTP error rather than an empty portfo
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);
   } finally { spy.mockRestore(); }
+});
+
+test('previews row-level import errors without writing any transaction', async () => {
+  const response = await request(app).post('/portfolio/transactions/import').send({ dry_run: true, rows: [
+    { row_number: 2, symbol: 'FPT', side: 'SELL', quantity: '20', price: '60000', fees: '0', traded_at: '2026-10-01T03:00:00Z' },
+    { row_number: 3, symbol: 'AAA', side: 'BUY', quantity: '1', price: '10000', fees: '0', traded_at: '2026-10-01T03:00:00Z' }
+  ] });
+  expect(response.status).toBe(200);
+  expect(response.body.data.valid).toBe(false);
+  expect(response.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ row: 2, field: 'quantity' }),
+    expect.objectContaining({ row: 3, field: 'symbol' })
+  ]));
+  expect(models.PortfolioTransaction.bulkCreate).not.toHaveBeenCalled();
+});
+
+test('commits a valid import with one atomic bulk write', async () => {
+  const response = await request(app).post('/portfolio/transactions/import').send({ dry_run: false, rows: [
+    { row_number: 2, symbol: 'FPT', side: 'BUY', quantity: '5', price: '61000', fees: '100', traded_at: '2026-10-01T03:00:00Z' }
+  ] });
+  expect(response.status).toBe(201);
+  expect(response.body.data).toMatchObject({ valid: true, dry_run: false, row_count: 1, transaction_ids: ['import-1'] });
+  expect(models.sequelize.transaction).toHaveBeenCalledTimes(1);
+  expect(models.PortfolioTransaction.bulkCreate).toHaveBeenCalledWith([
+    expect.objectContaining({ portfolio_id: 'p', stock_id: 's', side: 'BUY', quantity: 5, price: 61000, fees: 100, recommendation_context: null })
+  ], expect.objectContaining({ transaction: { id: 'db-transaction' }, returning: true }));
+});
+
+test('rejects malformed commit before opening a database transaction', async () => {
+  const response = await request(app).post('/portfolio/transactions/import').send({ dry_run: false, rows: [
+    { row_number: 2, symbol: 'FPT', side: 'BUY', quantity: '-1', price: '61000', traded_at: '2026-10-01T03:00:00Z' }
+  ] });
+  expect(response.status).toBe(422);
+  expect(response.body.success).toBe(false);
+  expect(models.sequelize.transaction).not.toHaveBeenCalled();
+  expect(models.PortfolioTransaction.bulkCreate).not.toHaveBeenCalled();
 });
