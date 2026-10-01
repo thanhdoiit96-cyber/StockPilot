@@ -58,4 +58,10 @@ Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hi
 
 ## Intraday và trạng thái tải
 
-`useLiveQuotes` dùng chung cho Tổng quan, Danh mục và Chi tiết. Chỉ trang đang mở polling, lần tiếp theo sau khi request kết thúc 30 giây; mỗi lượt giới hạn 12 giây và hủy khi đổi trang/mã. Overlay dựa trên trạng thái request đầu tiên, luôn kết thúc cả khi lỗi hoặc rỗng. Quote thành công từng mã được giữ tối đa 90 giây qua lỗi tạm thời, không đổi thời điểm gốc; hết hạn chuyển sang fallback EOD. Danh mục và Watchlist tải độc lập, lỗi Danh mục có nút thử lại và không hiển thị thành danh mục rỗng. Mã UUID được giữ nguyên khi khôi phục Chi tiết qua reload.
+`useLiveQuotes` dùng chung cho Tổng quan, Danh mục và Chi tiết. Chỉ trang đang mở polling, lần tiếp theo sau khi request kết thúc 30 giây; mỗi lượt giới hạn 12 giây và hủy khi đổi trang/mã. Trạng thái cập nhật intraday là toast nền không chặn click hoặc scroll; loading dữ liệu chính vẫn dùng state riêng trong page. Quote thành công từng mã được giữ tối đa 90 giây qua lỗi tạm thời, không đổi thời điểm gốc; hết hạn chuyển sang fallback EOD. Danh mục và Watchlist tải độc lập, lỗi Danh mục có nút thử lại và không hiển thị thành danh mục rỗng. Mã UUID được giữ nguyên khi khôi phục Chi tiết qua reload.
+
+## Responsive và audit theo page
+
+Ở viewport tối đa 800 px, sidebar trở thành thanh điều hướng ngang sticky, không giữ chiều cao toàn màn hình và không làm document tràn ngang. Bảng giá cuộn trong container và có hướng dẫn thao tác trên mobile. Topbar đổi theo page hiện tại; AI Advisor dùng live-region và chỉ cho gửi khi câu hỏi có nội dung.
+
+[page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).

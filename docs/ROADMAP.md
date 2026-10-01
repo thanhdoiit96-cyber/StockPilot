@@ -598,3 +598,11 @@ The remaining incident was worker concurrency and provider instability: simultan
 - In progress: user-provided `index_backup.js` is now the recovery baseline; source extraction and clean rebuild succeed.
 - Open gate: merge the later quote-refresh and overview selector fixes into the recovered baseline, then require full E2E 48/48 before deleting the ignored backup artifact.
 - Prevention: retain a hashed recovery artifact outside `dist`, make the extraction script reproducible, and treat any build from a partial/recovered source as blocked until source parity and full E2E pass.
+
+## Rà soát UI/UX theo page — 2026-10-01
+
+- P0 hoàn thành: mobile shell không tràn document, refresh intraday không khóa thao tác, topbar đúng ngữ cảnh, coverage Tổng quan/Danh mục đúng phạm vi và AI Advisor có trạng thái gửi/accessibility rõ.
+- Audit regression bao phủ Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop `1440×1000` và mobile `390×844`.
+- P1 tiếp theo: chuyển Bảng giá/runtime enhancements thành page/component React, tách `App.jsx`, rồi đo first usable paint/quote settlement/aggregate ở 300 và 500 mã trước khi chọn virtualization hoặc code splitting.
+- P2 chỉ mở sau P1: tính năng sâu theo page như lịch sử độ rộng, cấu hình cột, quản lý ledger, chart benchmark, so sánh snapshot và Advisor có citation/context.
+- Chi tiết, tiêu chí nghiệm thu và giới hạn nằm tại [UI_UX_AUDIT](UI_UX_AUDIT.md).

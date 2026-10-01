@@ -26,6 +26,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | [PROJECT_STRUCTURE](PROJECT_STRUCTURE.md) | Cấu trúc thư mục dự kiến |
 | [MARKET_BREADTH_DESIGN](MARKET_BREADTH_DESIGN.md) | Org chart và cấu trúc thông tin Độ rộng thị trường |
 | [MARKET_PAGES_SPLIT_DESIGN](MARKET_PAGES_SPLIT_DESIGN.md) | Thiết kế tách page Tổng quan và Bảng giá |
+| [UI_UX_AUDIT](UI_UX_AUDIT.md) | Rà soát từng page, thay đổi đã thực hiện và kế hoạch UI/UX-hiệu năng |
 | [TECH_STACK](TECH_STACK.md) | Lựa chọn công nghệ dự kiến; dependencies thực tế ở package.json/lockfile |
 | [API_DESIGN](API_DESIGN.md) | Hợp đồng API mở rộng dự kiến; API hiện có ở Backend README |
 | [DATABASE_SCHEMA](DATABASE_SCHEMA.md) | Schema mục tiêu; schema chạy thực tế do migrations quản lý |
