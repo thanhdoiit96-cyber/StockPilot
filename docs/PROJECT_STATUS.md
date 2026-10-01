@@ -3070,3 +3070,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Không thay đổi request, selection hay navigation hiện có; đây là lát cắt đầu tiên có ownership thực thay vì tách một wrapper hình thức. Khối chart/phân tích còn lại ở `App.jsx` vì vẫn dùng chung nhiều state phục hồi và cần tách sau khi có contract dữ liệu riêng.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-E1CApmXG.js`); Playwright lookup Chi tiết **1/1** pass.
 - Điểm tiếp tục P1: tiếp tục tách các boundary Chi tiết có contract rõ (hero/analysis), song song chạy trace Bảng giá authenticated khi session hợp lệ có mặt.
+
+## Tách hero trang Chi tiết — 2026-10-01
+
+- `DetailHero` nay sở hữu trình bày giá, nguồn Intraday/EOD, link giấy phép an toàn, cảnh báo provider/quote, CTA phân tích và thêm vào Danh mục, cùng trạng thái analysis-ready. Container chỉ truyền dữ liệu đã định dạng và callback request analysis/portfolio.
+- Giữ nguyên semantics lifecycle: callback phân tích vẫn lưu intent theo mã, gọi analysis gate/runtime và retry; callback thêm Danh mục vẫn dùng quote mới nhất nếu có. Chart và panel phân tích chuyên sâu còn ở `App.jsx` vì là boundary state/API lớn hơn.
+- Kiểm chứng: production build/safe-build và bundle integrity pass (`index-BpUwvoG-.js`); Playwright lookup Chi tiết và retry Intraday **2/2** pass.
+- Điểm tiếp tục P1: tách panel chart hoặc analysis theo contract dữ liệu, không làm yếu regression; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.

@@ -5,6 +5,7 @@ import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
+import DetailHero from "./components/DetailHero.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1131,32 +1132,7 @@ th-form", children: [O.jsx("input", { placeholder: p("Th\xEAm m\xE3, v\xED d\u1E
   children: p("\u0110ang t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu") }) }) : Ee.error ? O.jsxs("div", { className: "erro\
 r-banner", role: "alert", children: [O.jsxs("p", { children: [p("Kh\xF4ng th\u1EC3 t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu"),
   ". ", Ee.error] }), O.jsx("button", { className: "ghost-btn", onClick: Ee.retry, children: p("Th\u1EED l\u1EA1i chi ti\u1EBFt") })] }) :
-  Ee.data && O.jsxs(i.Fragment, { children: [O.jsxs("div", { className: "detail-hero panel", children: [O.jsxs("h2", { children: [
-  Ee.data.code, " ", Ee.data.name] }), O.jsx("strong", { children: oe((Te == null ? void 0 : Te.price) ?? Ee.data.price) }),
-  O.jsx("p", { children: Te ? O.jsxs(i.Fragment, { children: [O.jsx("span", { className: "chip success", children: p("Gi\
-\xE1 intraday") }), " ", p("C\u1EADp nh\u1EADt"), ": ", He(Te.fetched_at), " (", Te.upstream, ") ", Te.license_url && O.
-  jsx($i, { url: Te.license_url, children: "Gi\u1EA5y ph\xE9p d\u1EEF li\u1EC7u" })] }) : O.jsxs(i.Fragment, { children: [
-  p("Gi\xE1 \u0111\xF3ng c\u1EEDa EOD"), "  ", p("C\u1EADp nh\u1EADt"), ": ", He(Ee.data.data_fetched_at)] }) }), (pi ==
-  null ? void 0 : pi.status) === "circuit_open" && O.jsx("p", { className: "data-time", children: "Provider t\u1EA1m ng\u1EAFt; gi\
-\xE1 g\u1EA7n nh\u1EA5t v\u1EABn \u0111\u01B0\u1EE3c gi\u1EEF v\xE0 s\u1EBD t\u1EF1 th\u1EED l\u1EA1i." }), (pi == null ?
-  void 0 : pi.status) === "degraded" && O.jsx("p", { className: "data-time", children: "Provider \u0111ang ch\u1EADm; h\u1EC7 th\u1ED1ng s\u1EBD \
-t\u1EF1 c\u1EADp nh\u1EADt l\u1EA1i." }), qh && O.jsx("p", { className: "data-time", children: Te ? "Ch\u01B0a c\u1EADp nh\u1EADt \u0111\u01B0\u1EE3c \
-intraday; \u0111ang gi\u1EEF gi\xE1 ghi nh\u1EADn g\u1EA7n nh\u1EA5t." : "Ch\u01B0a l\u1EA5y \u0111\u01B0\u1EE3c gi\xE1 intraday; \u0111ang hi\u1EC3n th\u1ECB EOD \
-v\xE0 s\u1EBD t\u1EF1 th\u1EED l\u1EA1i." }), O.jsxs("div", { className: "detail-actions", children: [O.jsx("button", { className: "\
-ghost-btn detail-analysis-btn", type: "button", onClick: () => {
-    du(true), hu(!!T.data);
-    try {
-      sessionStorage.setItem(`analysis-requested:${me.id}`, "1");
-    } catch {
-    }
-    window.__stockpilotRequestAnalysis?.(), T.retry();
-  }, children: T.status === "loading" ? p("\u0110ang ph\xE2n t\xEDch...") : T.data ? p("C\u1EADp nh\u1EADt ph\xE2n t\xEDch") :
-  p("Ph\xE2n t\xEDch chuy\xEAn s\xE2u") }), O.jsx("button", { className: "primary-btn detail-add-btn", type: "button", onClick: () => Ao(
-  { symbol: Ee.data.code, price: (Te == null ? void 0 : Te.price) ?? Ee.data.price }), children: p("Th\xEAm v\xE0o danh m\u1EE5c") })] }),
-  ((n = T.data) == null ? void 0 : n.expert_guidance) && O.jsxs("div", { className: "detail-analysis-ready", children: [
-  O.jsx("strong", { children: p("Ph\xE2n t\xEDch n\xE2ng cao \u0111\xE3 s\u1EB5n s\xE0ng") }), O.jsxs("span", { children: [
-  "\u0110i\u1EC3m k\u1EF9 thu\u1EADt ", T.data.expert_guidance.technical_score == null ? "-" : `${T.data.expert_guidance.
-  technical_score}/100`, "  ", T.data.expert_guidance.stance] })] })] }), O.jsxs("div", { className: "detail-content-gri\
+  Ee.data && O.jsxs(i.Fragment, { children: [O.jsx(DetailHero, { symbol: Ee.data.code, name: Ee.data.name, price: oe((Te == null ? void 0 : Te.price) ?? Ee.data.price), quote: Te ? { ...Te, fetchedAt: He(Te.fetched_at) } : null, eodFetchedAt: He(Ee.data.data_fetched_at), providerStatus: pi == null ? void 0 : pi.status, quoteError: qh, analysis: T, onRequestAnalysis: () => { du(true), hu(!!T.data); try { sessionStorage.setItem(`analysis-requested:${me.id}`, "1"); } catch {} window.__stockpilotRequestAnalysis?.(), T.retry(); }, onAddToPortfolio: () => Ao({ symbol: Ee.data.code, price: (Te == null ? void 0 : Te.price) ?? Ee.data.price }) }), O.jsxs("div", { className: "detail-content-gri\
 d", children: [O.jsxs("article", { className: "panel detail-chart-panel", children: [O.jsxs("div", { className: "panel-h\
 eader", children: [O.jsx("h3", { children: p("L\u1ECBch s\u1EED gi\xE1") }), O.jsx("span", { className: `chip ${Te ? "su\
 ccess" : "neutral"}`, children: p(Te ? "Intraday + EOD" : "D\u1EEF li\u1EC7u EOD") }), O.jsxs("p", { className: "chart-v\
