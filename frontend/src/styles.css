@@ -1119,8 +1119,11 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .recommendation-command-header + .recommendation-risk-banner { margin-top: -4px; margin-bottom: 0; }
 @media (max-width: 1050px) { .criteria-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .recommendation-command-header { flex-direction: column; padding: 18px; } .recommendation-command-header > .chip { margin-top: 0; } .criteria-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .criteria-actions { align-items: stretch; flex-direction: column; } .criteria-actions > div { justify-content: flex-end; } }
-.pin-labels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.pin-badge { display: inline-block; border: 1px solid rgba(94, 234, 212, .3); border-radius: 5px; padding: 2px 5px; color: var(--primary); font-size: 10px; font-weight: 500; white-space: nowrap; }
+.pin-labels { display: inline-flex; flex-wrap: wrap; gap: 4px; margin: 5px 0 0 6px; vertical-align: middle; }
+.pin-badge { display: inline-flex; align-items: center; min-height: 19px; border: 1px solid rgba(94, 234, 212, .34); border-radius: 999px; padding: 1px 7px; color: var(--primary); background: rgba(20, 184, 166, .10); font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; white-space: nowrap; }
+.pin-badge.portfolio { border-color: rgba(96, 165, 250, .45); color: #93c5fd; background: rgba(59, 130, 246, .13); }
+.pin-badge.watchlist { border-color: rgba(250, 204, 21, .42); color: #fde68a; background: rgba(234, 179, 8, .12); }
+.market-symbol-cell .symbol { font-weight: 750; }
 .listing-badge { display: inline-block; border: 1px solid rgba(148, 163, 184, .28); border-radius: 5px; padding: 2px 5px; color: var(--muted); font-size: 10px; font-weight: 500; white-space: nowrap; }
 .listing-badge.delisted { border-color: rgba(251, 113, 133, .4); background: rgba(251, 113, 133, .1); color: #fda4af; }
 .listing-badge.listed { color: var(--muted); }
@@ -1304,6 +1307,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 
 /* Keep restored controls visually consistent with the dark StockPilot surface. */
 .table-search,
+.app-select,
 .sector-select,
 .saved-proposal-select,
 .detail-symbol-search input,
@@ -1320,6 +1324,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .detail-symbol-search input::placeholder,
 .prompt-grid + .chat-shell + .input-row input::placeholder { color: var(--muted); }
 .table-search:focus,
+.app-select:focus,
 .sector-select:focus,
 .saved-proposal-select:focus,
 .detail-symbol-search input:focus,
@@ -1328,10 +1333,16 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
   outline: 3px solid rgba(94, 234, 212, .16);
   box-shadow: 0 0 0 1px rgba(94, 234, 212, .18);
 }
+.app-select,
 .sector-select,
-.saved-proposal-select { appearance: auto; }
+.saved-proposal-select { appearance: none; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, #94a3b8 50%), linear-gradient(135deg, #94a3b8 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; cursor: pointer; }
+.app-select option,
 .sector-select option,
 .saved-proposal-select option { color: var(--text); background: #111b2d; }
+.select-control { display: grid; gap: 5px; min-width: 150px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.select-control .app-select { width: 100%; min-height: 40px; }
+.breadth-exchange-control { margin-left: auto; }
+@media (max-width: 700px) { .breadth-exchange-control { width: 100%; margin-left: 0; } .market-breadth-header .chip { order: 2; } }
 .table-search { width: min(320px, 100%); }
 .saved-proposal-select { min-width: 190px; }
 .detail-symbol-search input { width: 100%; }

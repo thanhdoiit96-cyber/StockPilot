@@ -3021,3 +3021,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Đo live 5 mẫu lúc `2026-10-01T08:31:23Z`, Chrome headless tại UI `127.0.0.1:4173`, API `127.0.0.1:5000`: API stocks-500 p50/p95 **13/1815 ms**; quotes-40 **848/2633 ms** (5/5 HTTP 200, 39 quote hợp lệ); UI first usable **217/311 ms**; chuyển Bảng giá **30198/30376 ms**; quote settlement **3/5 ms**. Chỉ stocks/quotes đi tới backend/provider thật; auth và các endpoint phụ được fixture trong browser, nên đây không phải SLA production.
 - Outlier 30 giây khi chuyển Bảng giá không còn là HTTP 500 nhưng vượt xa baseline fixture. Không thêm concurrency hay virtualization để che số đo. Cần trace request live của lần chuyển page (list versus quote/provider) rồi đo lại với phiên đăng nhập production-like trước khi chốt pagination/windowing.
 - Điểm tiếp tục: tách `App.jsx` đã phục hồi thành page modules có tên rõ, bắt đầu với phần Tổng quan/Chi tiết còn lại, đồng thời thêm trace timing có giới hạn cho Bảng giá và lặp lại benchmark live có xác thực.
+
+## Chỉnh controls Bảng giá và trạng thái Đề xuất — 2026-10-01
+
+- Chuẩn hoá select theo surface tối của ứng dụng: select có chevron, focus ring, option theme và kích thước thống nhất. Control Độ rộng thị trường nay có nhãn **Chọn sàn** rõ ràng, không còn là một dropdown rời.
+- Bảng giá phân biệt nhãn mã đã ghim: **Danh mục** màu xanh và **Watchlist** màu vàng; một mã thuộc cả hai hiển thị hai pill riêng thay cho nhãn chung “Cá nhân”.
+- Đã bỏ khối **Lưu trữ / Đề xuất đã tạo** trùng lặp; chỉ giữ select **Đề xuất đã lưu** cùng thao tác Load/Xóa.
+- `GET /api/recommendations/latest` nay trả `learning` (sample count, ngưỡng, trạng thái và evidence), giúp “Đang thu thập dữ liệu đánh giá” hiển thị tiến độ thật ngay khi latest response sẵn sàng. Backend đã khởi động lại; health HTTP 200.
+- Kiểm chứng: backend Jest **110/110**; E2E Recommendation Workbench **1/1**; market board/workflow targeted suite trước đó đạt các trường hợp liên quan; frontend production build/safe-build và bundle integrity pass. Điểm tiếp tục P1 vẫn là trace outlier Bảng giá, chỉ thực hiện sau khi các sửa UI này được chốt.

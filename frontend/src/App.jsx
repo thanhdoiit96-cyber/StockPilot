@@ -321,8 +321,7 @@ function Zm({ initialData: e, history: n = [], token: t, onAddToPortfolio: r }) 
       void 0 : B.id) || ""), K;
     });
   }
-  const _ = (c == null ? void 0 : c.recommendations) || (e == null ? void 0 : e.recommendations) || [], P = c == null ? void 0 :
-  c.learning;
+  const _ = (c == null ? void 0 : c.recommendations) || (e == null ? void 0 : e.recommendations) || [], P = (c == null ? void 0 : c.learning) || (e == null ? void 0 : e.learning);
   return O.jsxs("section", { className: "recommendations-page recommendation-workbench", children: [((l = e == null ? void 0 :
   e.risk) == null ? void 0 : l.concentration_warning) && O.jsx("p", { className: "recommendation-risk-banner", role: "st\
 atus", children: `T\u1EF7 tr\u1ECDng ng\xE0nh cao nh\u1EA5t trong v\u1EE3t \u0111\u1EC1 xu\u1EA5t: ${e.risk.max_sector_share_pct}\
@@ -356,7 +355,7 @@ l\u01B0u" }), E.map((g) => {
   onClick: () => x(b), children: "X\xF3a" })] }), O.jsx("button", { type: "button", className: "ghost-btn", onClick: () => u(
   Oi), children: "Kh\xF4i ph\u1EE5c m\u1EB7c \u0111\u1ECBnh" }), O.jsx("button", { type: "submit", className: "primary-b\
 tn", disabled: k || h === 0, children: k ? "\u0110ang x\u1EBFp h\u1EA1ng -" : "T\u1EA1o \u0111\u1EC1 xu\u1EA5t c\xE1 nh\xE2n" })] })] })] }),
-  O.jsxs("section", { className: "saved-proposals", "aria-labelledby": "saved-proposals-title", children: [O.jsxs("div",
+  false && O.jsxs("section", { className: "saved-proposals", "aria-labelledby": "saved-proposals-title", children: [O.jsxs("div",
   { className: "recommendation-section-heading", children: [O.jsxs("div", { children: [O.jsx("span", { className: "eyebr\
 ow accent", children: "L\u01AFU TR\u1EEE" }), O.jsx("h3", { id: "saved-proposals-title", children: "\u0110\u1EC1 xu\u1EA5t \u0111\xE3 t\u1EA1o" }),
   O.jsx("p", { className: "muted-text", children: "Snapshot b\u1EA5t bi\u1EBFn; ch\u1EC9 c\xF3 th\u1EC3 Load ho\u1EB7c X\xF3a." })] }),
