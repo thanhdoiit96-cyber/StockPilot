@@ -10,6 +10,7 @@ const { SECTOR_CODES, SECTOR_LABELS, CLASSIFIED_CODES, sectorForCode } = require
 const fs = require('node:fs');
 const path = require('node:path');
 const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
+const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 
 module.exports = function(cacheService) {
@@ -103,6 +104,62 @@ module.exports = function(cacheService) {
     } catch (error) {
       console.error('[Stock Controller] Error checking market data quality:', error);
       return res.status(500).json({ success: false, message: 'Unable to inspect market data quality' });
+    }
+  });
+
+  router.get('/breadth/history', async (req, res) => {
+    try {
+      const parsedSessions = Number(req.query.sessions || 20);
+      const sessions = Number.isFinite(parsedSessions) ? Math.min(60, Math.max(1, parsedSessions)) : 20;
+      const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
+      const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : null;
+      const cacheKey = `v1:market-breadth-history:${exchange || 'ALL'}:${sessions}`;
+      const cached = await cacheService.get(cacheKey);
+      if (cached?.data) return res.json({ success: true, data: cached.data, source: 'cache' });
+      const [rows] = await Stock.sequelize.query(`
+        WITH selected_sessions AS (
+          SELECT DISTINCT (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date
+          FROM stock_prices p JOIN stocks s ON s.id = p.stock_id
+          WHERE p.provider = 'vnstock' AND p.interval = '1d' AND p.observed_at IS NOT NULL
+            AND s.listing_status = 'listed' AND ($1::text IS NULL OR s.exchange = $1)
+          ORDER BY session_date DESC LIMIT $2
+        ), ranked AS (
+          SELECT p.stock_id, s.exchange,
+            (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date,
+            COALESCE(p.close, p.price)::numeric AS close,
+            p.volume::numeric AS volume, p.traded_value::numeric AS traded_value,
+            ROW_NUMBER() OVER (PARTITION BY p.stock_id, (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date ORDER BY p.observed_at DESC, p.id DESC) AS row_number
+          FROM stock_prices p JOIN stocks s ON s.id = p.stock_id
+          WHERE p.provider = 'vnstock' AND p.interval = '1d' AND p.observed_at IS NOT NULL
+            AND s.listing_status = 'listed' AND ($1::text IS NULL OR s.exchange = $1)
+            AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date IN (SELECT session_date FROM selected_sessions)
+        ), daily AS (
+          SELECT stock_id, session_date, close, volume, traded_value FROM ranked WHERE row_number = 1 AND close IS NOT NULL
+        ), compared AS (
+          SELECT *, LAG(close) OVER (PARTITION BY stock_id ORDER BY session_date) AS previous_close FROM daily
+        ), aggregated AS (
+          SELECT session_date::text AS session_date,
+            COUNT(*)::int AS covered,
+            COUNT(*) FILTER (WHERE previous_close IS NOT NULL)::int AS classified,
+            COUNT(*) FILTER (WHERE previous_close IS NOT NULL AND close > previous_close)::int AS advances,
+            COUNT(*) FILTER (WHERE previous_close IS NOT NULL AND close < previous_close)::int AS declines,
+            COUNT(*) FILTER (WHERE previous_close IS NOT NULL AND close = previous_close)::int AS unchanged,
+            COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close > previous_close), 0) AS volume_advances,
+            COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close < previous_close), 0) AS volume_declines,
+            COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close = previous_close), 0) AS volume_unchanged,
+            SUM(traded_value) AS traded_value,
+            COUNT(traded_value)::int AS traded_value_observations,
+            (SELECT COUNT(*)::int FROM stocks universe WHERE universe.listing_status = 'listed' AND ($1::text IS NULL OR universe.exchange = $1)) AS universe
+          FROM compared GROUP BY session_date
+        )
+        SELECT * FROM (SELECT * FROM aggregated ORDER BY session_date DESC LIMIT $3) latest ORDER BY session_date ASC
+      `, { bind: [exchange, sessions + 1, sessions] });
+      const data = buildMarketBreadthHistory(rows, { sessions, exchange });
+      await cacheService.set(cacheKey, { data }, 5, 'market_breadth');
+      return res.json({ success: true, data, source: 'database' });
+    } catch (error) {
+      console.error('[Stock Controller] Error fetching market breadth history:', error);
+      return res.status(500).json({ success: false, message: 'Unable to fetch market breadth history' });
     }
   });
 

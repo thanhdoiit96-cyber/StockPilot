@@ -61,13 +61,13 @@ flowchart TD
 | Thanh khoản | Traded value | Mốc 1 phụ thuộc provider | `traded_value` |
 | Phân rã | Top tăng/giảm | Đã có | Change + danh sách mã, có nhãn Intraday/EOD và thời điểm quote gần nhất |
 | Phân rã | Ngành/heatmap | Mốc 3 | Sector + change + volume |
-| Xu hướng | A/D line, 5D/20D | Mốc 2 | Aggregate theo session |
+| Xu hướng | A/D line, 5D/20D | Backend đã có; UI chờ kiểm chứng continuity live | `GET /api/stocks/breadth/history` aggregate theo session |
 | Dòng tiền | Net flow, foreign flow | Mốc 4 | Aggressor side / foreign buy-sell |
 
 ## Trình tự triển khai UI
 
 - **Hiện tại:** snapshot A/D, A−D, coverage, ba nhóm tăng/giảm/đứng giá và Top tăng/giảm/khối lượng đã có. Mỗi Top list có giới hạn, thời điểm quote gần nhất, nhãn nguồn Intraday/EOD và liên kết mở Chi tiết mã.
-- **Tiếp theo:** thêm timeline A/D và bộ lọc 1D/5D/20D khi backend có chuỗi aggregate liên tục theo session.
+- **Tiếp theo:** kiểm chứng endpoint breadth history trên database/live; chỉ thêm timeline A/D và bộ lọc 1D/5D/20D khi response có `continuity.status=continuous` cho khoảng được chọn.
 - **Cuối cùng:** heatmap ngành và net flow chỉ bật khi hợp đồng dữ liệu đáp ứng điều kiện tương ứng.
 
 Mọi khối mới phải có empty state, stale state và nhãn nguồn. Không hiển thị số 0 thay cho trường chưa được provider quan sát.
