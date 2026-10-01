@@ -96,9 +96,9 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
         <p className="muted-text">{exchange ? `${scopedStocks.length} mã thuộc ${exchange}` : `${displayedTotal} mã trong vũ trụ · ${metrics.quoted}/${displayedTotal} mã có quote intraday`}{loading ? ' · Đang cập nhật…' : ''}</p>
       </div>
       <span className="chip neutral"><span className={metrics.average != null && metrics.average < 0 ? 'negative' : 'positive'}>{metrics.average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${metrics.average >= 0 ? '+' : ''}${metrics.average.toFixed(2)}%`}</span></span>
-      <select className="breadth-exchange-select" aria-label="Sàn cho độ rộng và nhóm dẫn dắt" value={exchange} onChange={event => setExchange(event.target.value)}>
+      <label className="select-control breadth-exchange-control"><span>Chọn sàn</span><select className="app-select breadth-exchange-select" aria-label="Sàn cho độ rộng và nhóm dẫn dắt" value={exchange} onChange={event => setExchange(event.target.value)}>
         <option value="">Tất cả sàn</option><option value="HSX">HSX</option><option value="HNX">HNX</option><option value="UPCOM">UPCOM</option>
-      </select>
+      </select></label>
     </div>
     <div className="breadth-counts">{GROUPS.map(([key, label, color]) => <article className={`breadth-count ${color}`} key={key}><span>{label}</span><strong>{metrics[key].count}</strong><small>{metrics.classified ? `${(metrics[key].count / metrics.classified * 100).toFixed(1)}% số mã` : 'Chưa có dữ liệu'}</small></article>)}</div>
     <div className="breadth-distribution" role="img" aria-label={`Tăng ${metrics.up.count}, giảm ${metrics.down.count}, đứng giá ${metrics.flat.count}`}>{GROUPS.map(([key, label, color]) => <span className={`breadth-segment ${color}`} style={{ width: `${metrics.classified ? metrics[key].count / metrics.classified * 100 : 0}%` }} title={`${label}: ${metrics[key].count}`} key={key} />)}</div>

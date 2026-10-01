@@ -13,7 +13,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     else if (path === '/api/watchlist') data = []
     else if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user' } } })
     else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }
-    else if (path === '/api/recommendations/latest') data = { recommendations: [{ id: 'old-1', rank: 1, score: 61, entry_price: 120000, stock: { code: 'FPT' }, rationale: { factors: ['Snapshot gần nhất'] } }] }
+    else if (path === '/api/recommendations/latest') data = { learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) }, recommendations: [{ id: 'old-1', rank: 1, score: 61, entry_price: 120000, stock: { code: 'FPT' }, rationale: { factors: ['Snapshot gần nhất'] } }] }
     else if (path === '/api/recommendations/history') data = [{ id: 'run-1', as_of: '2026-09-01', selected_count: 5, measured_count: 5, pending_count: 0, hit_rate_pct: 60, average_forward_return_pct: 1.2 }]
     else if (path === '/api/recommendations/readiness') data = { coverage: [] }
     else if (path === '/api/recommendations/personalized' && request.method() === 'POST') {
@@ -28,6 +28,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await page.goto('/')
   await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Bạn muốn ưu tiên điều gì?' })).toBeVisible()
+  await expect(page.locator('.saved-proposals')).toHaveCount(0)
   await page.locator('.criteria-control input[type="range"]').nth(1).fill('50')
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()

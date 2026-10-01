@@ -92,7 +92,9 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     return () => window.removeEventListener('stockpilot:quotes-received', receive)
   }, [])
 
-  const pinned = useMemo(() => [...new Set([...portfolioSymbols, ...watchlistSymbols].map(value => String(value).toUpperCase()))].sort(), [portfolioSymbols, watchlistSymbols])
+  const portfolioSet = useMemo(() => new Set(portfolioSymbols.map(value => String(value).toUpperCase())), [portfolioSymbols])
+  const watchlistSet = useMemo(() => new Set(watchlistSymbols.map(value => String(value).toUpperCase())), [watchlistSymbols])
+  const pinned = useMemo(() => [...new Set([...portfolioSet, ...watchlistSet])].sort(), [portfolioSet, watchlistSet])
   const pinnedKey = pinned.join(',')
   useEffect(() => { setPage(1) }, [pinnedKey, query, sector, pageSize])
   useEffect(() => {
@@ -137,9 +139,11 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       price: quote?.price ?? stock.price,
       change: quote?.change ?? stock.change,
       volume: quote?.volume ?? stock.volume,
-      pinned: pinned.includes(symbol)
+      pinned: pinned.includes(symbol),
+      inPortfolio: portfolioSet.has(symbol),
+      inWatchlist: watchlistSet.has(symbol)
     }
-  }), [stocks, mergedQuotes, pinnedKey])
+  }), [stocks, mergedQuotes, pinnedKey, portfolioSet, watchlistSet])
 
   useEffect(() => {
     try { localStorage.setItem(MARKET_COLUMNS_KEY, JSON.stringify(columns)) } catch {}
@@ -201,7 +205,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <th>Nguồn dữ liệu</th><th>Phân tích</th><th>Thao tác</th>
         </tr></thead>
         <tbody>{rows.length ? rows.map(row => <tr className={row.pinned ? 'pinned-stock' : ''} key={row.stock.id} onClick={() => onOpenDetail?.(row.stock)}>
-          <td><button className="symbol" type="button" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock) }}>{row.symbol}</button>{row.pinned && <small className="pin-label">Cá nhân</small>}</td>
+          <td className="market-symbol-cell"><button className="symbol" type="button" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock) }}>{row.symbol}</button>{row.pinned && <span className="pin-labels" aria-label={`Nhãn cá nhân của ${row.symbol}`}>{row.inPortfolio && <small className="pin-badge portfolio">Danh mục</small>}{row.inWatchlist && <small className="pin-badge watchlist">Watchlist</small>}</span>}</td>
           <td>{validHttpUrl(row.stock.website_url)
             ? <a href={row.stock.website_url} target="_blank" rel="noreferrer" title={row.stock.website_url} onClick={event => event.stopPropagation()}>{row.stock.name || row.symbol}</a>
             : row.stock.name || row.symbol}</td>
@@ -216,7 +220,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     </div>
     <div className="table-pagination">
       <span className="overview-pagination-count">Hiển thị {rows.length}/{pagination.total || rows.length} mã</span>
-      <label className="page-size-control overview-page-size-control"><span>Số mã mỗi trang</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
+      <label className="page-size-control overview-page-size-control"><span>Số mã mỗi trang</span><select className="app-select" value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       <div className="pagination-actions"><button type="button" className="ghost-btn small-btn" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>Trước</button><span>Trang {pagination.page || page}/{pagination.totalPages || 1}</span><button type="button" className="ghost-btn small-btn" disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>Sau</button></div>
     </div>
     {active && quoteState.loading && <div id="market-board-loading-overlay" className="loading-overlay market-board-loading-overlay" role="status"><div className="loading-card"><span className="loading-spinner" /><span>Đang cập nhật Bảng giá…</span></div></div>}
