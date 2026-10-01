@@ -13,7 +13,7 @@ const router = require('./portfolioController');
 beforeEach(() => {
   jest.clearAllMocks();
   models.Portfolio.findOne.mockResolvedValue({ id: 'p', user_id: 'user-a' });
-  models.PortfolioTransaction.findAll.mockResolvedValue([{ stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, Stock: { code: 'FPT' } }]);
+  models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
 });
 const app = express(); app.use('/portfolio', router);
@@ -30,6 +30,26 @@ test('uses the same shared intraday quote as detail/overview for valuation', asy
   liveQuoteService.load.mockResolvedValue({ FPT: { symbol: 'FPT', price: 66000, observed_at: '2026-09-25T10:00:00+07:00' } });
   const response = await request(app).get('/portfolio');
   expect(response.body.data.positions[0]).toMatchObject({ market_price: 66000, market_value: 660000, unrealized_pnl: 160000, price_source: 'intraday' });
+});
+
+test('returns the authenticated portfolio transaction history as normalized ledger rows', async () => {
+  models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: '10', price: '50000', fees: '1000', traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
+  liveQuoteService.load.mockResolvedValue({});
+  const response = await request(app).get('/portfolio');
+  expect(response.body.data.transaction_count).toBe(1);
+  expect(response.body.data.transactions).toEqual([{
+    id: 'tx-1',
+    stock_id: 's',
+    symbol: 'FPT',
+    name: 'FPT Corp',
+    side: 'BUY',
+    quantity: 10,
+    price: 50000,
+    fees: 1000,
+    traded_at: '2026-09-24T02:00:00Z',
+    created_at: '2026-09-24T02:01:00Z',
+    source: 'manual'
+  }]);
 });
 
 test('calculates day change from the previous distinct EOD session', async () => {

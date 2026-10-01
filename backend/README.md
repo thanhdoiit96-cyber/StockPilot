@@ -95,7 +95,7 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Personal portfolio and recommendation tracking
 
-- `GET /api/portfolio` is user-scoped through JWT and returns positions plus `recommendation_entries` for BUY transactions explicitly added from a recommendation.
+- `GET /api/portfolio` is user-scoped through JWT and returns positions, normalized `transactions`, plus `recommendation_entries` for BUY transactions explicitly added from a recommendation. Each ledger row includes symbol/name, side, numeric quantity/price/fees, timestamps, and `source=manual|recommendation`; the frontend can export these rows to CSV without a second request.
 - `POST /api/portfolio/transactions` accepts optional `recommendation_context` for a BUY: source/model, generation time, score/rank, reference price, forecast horizon, and selected criterion weights. The context is validated and stored as JSONB; regular/manual transactions remain valid with a null context.
 - Portfolio recommendation entries compare the recommendation reference price with the EOD close after the configured number of sessions. They stay pending until that horizon exists. The frontend separately compares current intraday/EOD price with the user's recorded transaction price.
 - Migration `012_add_portfolio_recommendation_context` adds the nullable ledger field. Apply it with `npm.cmd run migrate`; rollback removes only that field. Existing transactions are not assigned recommendation provenance retroactively.

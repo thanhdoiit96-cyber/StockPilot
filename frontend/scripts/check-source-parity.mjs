@@ -4,7 +4,10 @@ import path from 'node:path'
 const root = process.cwd()
 const sourcePaths = [
   path.join(root, 'src/App.jsx'),
-  path.join(root, 'src/components/DetailWorkspace.jsx')
+  path.join(root, 'src/components/DetailWorkspace.jsx'),
+  path.join(root, 'src/components/PageLoadingOverlay.jsx'),
+  path.join(root, 'src/components/DetailAnalysisStatus.jsx'),
+  path.join(root, 'src/components/DetailExpertGuidance.jsx')
 ]
 const source = sourcePaths.map(sourcePath => fs.readFileSync(sourcePath, 'utf8')).join('\n')
 
