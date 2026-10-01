@@ -1518,6 +1518,30 @@ function lv() {
       }
       return response.data;
     },
+    updatePortfolioTransaction = async (transactionId, values) => {
+      await je(`/api/portfolio/transactions/${encodeURIComponent(transactionId)}`, {
+        method: "PUT",
+        token: ue.token,
+        body: values
+      });
+      const refreshed = await je("/api/portfolio", {
+        token: ue.token
+      });
+      mt(refreshed.data), on(p("Đã sửa giao dịch"));
+    },
+    deletePortfolioTransaction = async transactionId => {
+      await je(`/api/portfolio/transactions/${encodeURIComponent(transactionId)}`, {
+        method: "DELETE",
+        token: ue.token,
+        body: {
+          confirmed: true
+        }
+      });
+      const refreshed = await je("/api/portfolio", {
+        token: ue.token
+      });
+      mt(refreshed.data), on(p("Đã xóa giao dịch"));
+    },
     Jh = d => Ze(() => {
       En(1), ti(S => S.key === d ? {
         key: d,
@@ -2392,7 +2416,9 @@ function lv() {
             providerStatus: hi == null ? void 0 : hi.status
           }), O.jsx(PortfolioLedger, {
             entries: (pe == null ? void 0 : pe.transactions) || [],
-            onImport: importPortfolioTransactions
+            onImport: importPortfolioTransactions,
+            onUpdate: updatePortfolioTransaction,
+            onDelete: deletePortfolioTransaction
           }), false && O.jsxs("article", {
             className: "panel legacy-allocation-panel",
             children: [O.jsxs("div", {

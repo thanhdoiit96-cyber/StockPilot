@@ -117,3 +117,54 @@ test('rejects malformed commit before opening a database transaction', async () 
   expect(models.sequelize.transaction).not.toHaveBeenCalled();
   expect(models.PortfolioTransaction.bulkCreate).not.toHaveBeenCalled();
 });
+
+test('updates a ledger transaction only after validating the locked full timeline', async () => {
+  const update = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-10-01T03:00:00Z', created_at: '2026-10-01T03:00:01Z', recommendation_context: null },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 4, price: 60000, fees: 0, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z', recommendation_context: null, update }
+  ]);
+  const response = await request(app).put('/portfolio/transactions/sell').send({ side: 'SELL', quantity: 5, price: 61000, fees: 100, traded_at: '2026-10-02T03:00:00Z' });
+  expect(response.status).toBe(200);
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ side: 'SELL', quantity: 5, price: 61000, fees: 100 }), { transaction: { id: 'db-transaction' } });
+  expect(models.PortfolioTransaction.findAll).toHaveBeenCalledWith(expect.objectContaining({ transaction: { id: 'db-transaction' }, lock: true }));
+});
+
+test('rejects an edit that would make a later sell exceed the historical position', async () => {
+  const update = jest.fn();
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-10-01T03:00:00Z', created_at: '2026-10-01T03:00:01Z', recommendation_context: null, update },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 8, price: 60000, fees: 0, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z', recommendation_context: null }
+  ]);
+  const response = await request(app).put('/portfolio/transactions/buy').send({ side: 'BUY', quantity: 5, price: 50000, fees: 0, traded_at: '2026-10-01T03:00:00Z' });
+  expect(response.status).toBe(422);
+  expect(response.body.message).toContain('vượt vị thế');
+  expect(update).not.toHaveBeenCalled();
+});
+
+test('requires explicit confirmation and rejects deletion that breaks the remaining timeline', async () => {
+  const destroy = jest.fn();
+  const withoutConfirmation = await request(app).delete('/portfolio/transactions/buy').send({});
+  expect(withoutConfirmation.status).toBe(400);
+  expect(models.sequelize.transaction).not.toHaveBeenCalled();
+
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, traded_at: '2026-10-01T03:00:00Z', created_at: '2026-10-01T03:00:01Z', destroy },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 4, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z' }
+  ]);
+  const response = await request(app).delete('/portfolio/transactions/buy').send({ confirmed: true });
+  expect(response.status).toBe(422);
+  expect(destroy).not.toHaveBeenCalled();
+});
+
+test('deletes a confirmed transaction when the locked remaining timeline stays valid', async () => {
+  const destroy = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, traded_at: '2026-10-01T03:00:00Z', created_at: '2026-10-01T03:00:01Z' },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 4, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z', destroy }
+  ]);
+  const response = await request(app).delete('/portfolio/transactions/sell').send({ confirmed: true });
+  expect(response.status).toBe(200);
+  expect(response.body.data).toEqual({ id: 'sell' });
+  expect(destroy).toHaveBeenCalledWith({ transaction: { id: 'db-transaction' } });
+});

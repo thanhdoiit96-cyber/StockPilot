@@ -962,15 +962,29 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .portfolio-import-status small { color: var(--muted); }
 .portfolio-import-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .portfolio-ledger-table { margin-top: 14px; }
-.portfolio-ledger-table table { min-width: 780px; }
+.portfolio-ledger-table table { min-width: 940px; }
 .portfolio-ledger-table td, .portfolio-ledger-table th { white-space: nowrap; }
 .portfolio-ledger-table td small { display: block; max-width: 180px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; }
+.ledger-row-actions { display: flex; gap: 6px; }
+.ledger-row-actions .danger { color: var(--danger); }
+.ledger-dialog-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: rgba(2, 6, 23, .78); backdrop-filter: blur(4px); }
+.ledger-dialog { width: min(560px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 22px; border: 1px solid rgba(148, 163, 184, .28); border-radius: 16px; outline: none; background: var(--surface); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
+.ledger-dialog h3 { margin: 0 0 8px; }
+.ledger-dialog p { line-height: 1.55; }
+.ledger-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 18px 0 10px; }
+.ledger-edit-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.ledger-edit-grid input, .ledger-edit-grid select { width: 100%; }
+.ledger-edit-time { grid-column: 1 / -1; }
+.ledger-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.danger-btn { border: 1px solid rgba(248, 113, 113, .5); border-radius: 9px; padding: 9px 14px; color: #fff; background: rgba(185, 28, 28, .9); cursor: pointer; }
+.danger-btn:hover:not(:disabled) { background: rgb(220, 38, 38); }
+.danger-btn:disabled { cursor: not-allowed; opacity: .55; }
 .ledger-side { display: inline-flex; min-width: 42px; justify-content: center; padding: 3px 7px; border: 1px solid currentColor; border-radius: 999px; font-size: 10px; font-weight: 750; }
 .ledger-side.buy { color: var(--success); background: rgba(52, 211, 153, .08); }
 .ledger-side.sell { color: var(--danger); background: rgba(248, 113, 113, .08); }
 .portfolio-ledger-toggle { margin-top: 12px; }
 .portfolio-ledger-empty { margin: 16px 0 0; }
-@media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } }
+@media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } .ledger-edit-grid { grid-template-columns: 1fr; } .ledger-edit-time { grid-column: auto; } }
 .panel-header { gap: 14px; }
 .panel-header > div:first-child { min-width: 0; }
 .detail-symbol-search { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 14px 16px; }
