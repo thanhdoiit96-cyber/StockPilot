@@ -6,6 +6,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
+import DetailPriceVolumeChart from "./components/DetailPriceVolumeChart.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1138,7 +1139,7 @@ eader", children: [O.jsx("h3", { children: p("L\u1ECBch s\u1EED gi\xE1") }), O.j
 ccess" : "neutral"}`, children: p(Te ? "Intraday + EOD" : "D\u1EEF li\u1EC7u EOD") }), O.jsxs("p", { className: "chart-v\
 olume-note", children: [O.jsxs("span", { className: "volume-note rising", children: ["- ", p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn t\u0103ng")] }),
   O.jsxs("span", { className: "volume-note falling", children: ["- ", p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn gi\u1EA3m")] })] })] }),
-  O.jsx(rv, { history: ev(Ee.data.price_history || [], Te), marketSessions: Ee.data.market_sessions || [] })] }), O.jsxs(
+  O.jsx(DetailPriceVolumeChart, { history: ev(Ee.data.price_history || [], Te), marketSessions: Ee.data.market_sessions || [], formatDateKey: cr, formatTime: He, formatPrice: oe, formatVolume: Et, formatPercent: Hh, translate: p })] }), O.jsxs(
   "article", { className: "panel summary-panel", children: [O.jsx("h3", { children: p("AI nh\u1EADn \u0111\u1ECBnh") }),
   O.jsxs("ul", { className: "summary-list", children: [O.jsxs("li", { children: [O.jsx("span", { children: p("T\xEDn hi\u1EC7u") }),
   O.jsx("strong", { children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || p("Ch\u01B0\
