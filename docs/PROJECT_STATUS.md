@@ -3137,3 +3137,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `npm run measure:live:market-board` đo API local/live lúc `2026-10-01T12:35:55.024Z`, 5 mẫu, page size 40: list p50/p95 **3/349 ms**; quote p50/p95 **830/867 ms**; mỗi lượt quote trả **39/40** mã. Mẫu list đầu 349 ms là cold/cache miss, các lượt sau 3–4 ms; quote ổn định 780–867 ms trong lượt đo này.
 - Giới hạn: đây là timing request API không xác thực, không đo navigation, render, loading overlay hay waterfall browser, và thiếu một mã quote; không được dùng như SLA production hoặc thay thế gate authenticated.
 - Điểm tiếp tục P1: khi có session hợp lệ, chạy lại trace browser để đối chiếu navigation/list/quote/cache; chỉ sau đó mới đánh giá pagination/windowing, provider hay quote lifecycle. Không thực hiện tối ưu che latency trước bằng chứng đó.
+
+## Hoàn thiện nguồn và thời điểm Top list độ rộng — 2026-10-01
+
+- Do trace Bảng giá authenticated vẫn thiếu session thật, đã chuyển sang lát cắt P2 độc lập của Tổng quan. Top tăng, Top giảm và Top khối lượng nay hiển thị thời điểm quote intraday gần nhất; từng mã có nhãn `Intraday` hoặc `EOD` và tooltip nguồn tương ứng. Ranking, scope sàn và navigation sang Chi tiết mã được giữ nguyên.
+- Sửa hai locator E2E lỗi thời: button trợ giúp native được kiểm tra bằng focus thay vì yêu cầu thuộc tính `tabindex`, và danh sách watchlist dùng selector `ul.watchlist` để không đụng badge cùng tên. Đây là sửa test semantics, không đổi UI/runtime liên quan.
+- Kiểm chứng: production safe-build/bundle integrity pass (`index-DFMrZ0b7.js`); suite Tổng quan/Danh mục **6/6** pass; Market Breadth scope **1/1** và navigation/source fallback **1/1** pass.
+- Điểm tiếp tục: Mốc 1 snapshot/Top list đã đủ các trường hiện có. Mốc 2 lịch sử độ rộng chỉ bắt đầu khi có endpoint aggregate liên tục theo session; không nối điểm thiếu hoặc suy diễn traded value. Trace Bảng giá authenticated vẫn mở song song.
