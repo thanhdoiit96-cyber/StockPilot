@@ -3096,3 +3096,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `DetailAnalysisStatus` nay sở hữu heading, chip trạng thái, error và empty/loading state của panel Phân tích chuyên sâu. Container vẫn giữ data-specific indicators, guidance và risk plan, tránh thay đổi contract response trong lát cắt này.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-Dx0zkBSY.js`); Playwright workflow analysis **4/4** pass, gồm mở từ Tổng quan, không auto-request, session intent và stale flag.
 - Điểm tiếp tục P1: tách nội dung analysis theo các section có contract response rõ (guidance/risk), không đổi lifecycle; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
+
+## Giới hạn boundary nội dung analysis — 2026-10-01
+
+- Đã thử tách thẻ Summary ra khỏi khối indicator nhưng source phục hồi nối lời gọi JSX/`children` giữa Summary và Analysis qua nhiều dòng. Build bắt lỗi cú pháp trước phát hành; thử nghiệm chưa commit đã được hoàn nguyên hoàn toàn, không có thay đổi runtime hoặc artifact bị giữ lại.
+- Production build/safe-build và bundle integrity đã chạy lại trên source sạch và pass. Không đánh dấu Summary component là hoàn thành.
+- Điểm tiếp tục P1: chỉ tách nội dung analysis bằng một boundary lớn có syntax-aware migration hoặc chuyển trước phần JSX phục hồi sang source cấu trúc chuẩn; không thực hiện replacement theo đoạn nhỏ trong khối đó. Trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
