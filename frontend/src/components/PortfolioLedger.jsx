@@ -35,6 +35,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
   const [expanded, setExpanded] = useState(false)
   const [importState, setImportState] = useState({ status: 'idle', rows: [], result: null, fileName: '', error: '' })
   const [mutation, setMutation] = useState(null)
+  const [feedback, setFeedback] = useState('')
   const dialogRef = useRef(null)
   const ordered = useMemo(() => [...entries].sort((left, right) => {
     const time = new Date(right.traded_at || 0).getTime() - new Date(left.traded_at || 0).getTime()
@@ -46,6 +47,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
     event.target.value = ''
     if (!file) return
     try {
+      setFeedback('')
       setImportState({ status: 'loading', rows: [], result: null, fileName: file.name, error: '' })
       const rows = parsePortfolioLedgerCsv(await file.text())
       const result = await onImport(rows, true)
@@ -73,19 +75,22 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [mutation?.kind, mutation?.entry?.id, mutation?.status])
 
-  const openEdit = entry => setMutation({
-    kind: 'edit',
-    entry,
-    status: 'confirm',
-    error: '',
-    form: {
-      side: entry.side,
-      quantity: String(entry.quantity),
-      price: String(entry.price),
-      fees: String(entry.fees || 0),
-      traded_at: editDateTime(entry.traded_at)
-    }
-  })
+  const openEdit = entry => {
+    setFeedback('')
+    setMutation({
+      kind: 'edit',
+      entry,
+      status: 'confirm',
+      error: '',
+      form: {
+        side: entry.side,
+        quantity: String(entry.quantity),
+        price: String(entry.price),
+        fees: String(entry.fees || 0),
+        traded_at: editDateTime(entry.traded_at)
+      }
+    })
+  }
   const updateField = event => {
     const { name, value } = event.target
     setMutation(state => ({ ...state, form: { ...state.form, [name]: value }, error: '' }))
@@ -98,6 +103,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
         ...mutation.form,
         traded_at: new Date(mutation.form.traded_at).toISOString()
       })
+      setFeedback('Đã sửa giao dịch.')
       setMutation(null)
     } catch (error) {
       setMutation(state => ({ ...state, status: 'confirm', error: error.message }))
@@ -107,6 +113,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
     try {
       setMutation(state => ({ ...state, status: 'saving', error: '' }))
       await onDelete(mutation.entry.id)
+      setFeedback('Đã xóa giao dịch.')
       setMutation(null)
     } catch (error) {
       setMutation(state => ({ ...state, status: 'confirm', error: error.message }))
@@ -129,6 +136,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
         <button className="ghost-btn" type="button" disabled={!ordered.length} onClick={() => exportCsv(ordered)}>Xuất CSV</button>
       </div>
     </div>
+    {feedback ? <p className="portfolio-ledger-feedback positive" role="status">{feedback}</p> : null}
     {importState.status !== 'idle' ? <div className="portfolio-import-status" role="status" aria-live="polite">
       {(importState.status === 'loading' || importState.status === 'committing') && <p>{importState.status === 'loading' ? 'Đang kiểm tra file CSV…' : 'Đang nhập giao dịch…'}</p>}
       {importState.status === 'error' && <p className="error-text">{importState.error}</p>}
@@ -156,7 +164,10 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
             <td>{entry.source === 'recommendation' ? 'Đề xuất' : 'Thủ công'}</td>
             <td><div className="ledger-row-actions">
               <button className="ghost-btn small-btn" type="button" disabled={!onUpdate} onClick={() => openEdit(entry)}>Sửa</button>
-              <button className="ghost-btn small-btn danger" type="button" disabled={!onDelete} onClick={() => setMutation({ kind: 'delete', entry, status: 'confirm', error: '' })}>Xóa</button>
+              <button className="ghost-btn small-btn danger" type="button" disabled={!onDelete} onClick={() => {
+                setFeedback('')
+                setMutation({ kind: 'delete', entry, status: 'confirm', error: '' })
+              }}>Xóa</button>
             </div></td>
           </tr>)}</tbody>
         </table>
