@@ -3077,3 +3077,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Giữ nguyên semantics lifecycle: callback phân tích vẫn lưu intent theo mã, gọi analysis gate/runtime và retry; callback thêm Danh mục vẫn dùng quote mới nhất nếu có. Chart và panel phân tích chuyên sâu còn ở `App.jsx` vì là boundary state/API lớn hơn.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-BpUwvoG-.js`); Playwright lookup Chi tiết và retry Intraday **2/2** pass.
 - Điểm tiếp tục P1: tách panel chart hoặc analysis theo contract dữ liệu, không làm yếu regression; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
+
+## Tách chart giá/khối lượng của Chi tiết — 2026-10-01
+
+- `DetailPriceVolumeChart` nay sở hữu chart giá, volume bars, range control, tooltip/ARIA, summary và cảnh báo phiên EOD thiếu. Contract tường minh gồm history, market sessions và formatter/translator do container cung cấp; chart vẫn ghép được điểm Intraday mới nhất trước khi render.
+- Bốn regression hiện có cho căn chỉnh EOD/Intraday, empty history, thiếu nến và không báo gap sai đều pass. `rv` legacy trong `App.jsx` không còn reference runtime (bundle dùng component mới) nhưng vẫn tồn tại như dead recovered source; không xoá hàng loạt trong cùng lát cắt để giữ review an toàn.
+- Kiểm chứng: production build/safe-build và bundle integrity pass (`index-CKpJN0D6.js`); Playwright chart targeted **4/4** pass.
+- Điểm tiếp tục P1: xoá `rv` dead source bằng change có kiểm chứng riêng, sau đó tách panel analysis; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
