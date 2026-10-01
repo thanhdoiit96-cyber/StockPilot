@@ -10,6 +10,7 @@ import DetailPriceVolumeChart from "./components/DetailPriceVolumeChart.jsx";
 import DetailAnalysisStatus from "./components/DetailAnalysisStatus.jsx";
 import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
+import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -2845,6 +2846,10 @@ icle", {
               formatPrice: oe,
               translate: p,
               emptyValue: Xn
+            }), O.jsx(DetailExternalFactors, {
+              externalFactors: T.data?.external_factors,
+              translate: p,
+              formatDate: He
             })]
           })]
         })]
