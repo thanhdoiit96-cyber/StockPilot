@@ -14,6 +14,7 @@
     "check:bundle": "node scripts/check-bundle-integrity.mjs",
     "verify:live-analysis": "node scripts/verify-live-analysis.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
+    "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
     "verify:release": "npm run test -- --runInBand && npm run check:bundle"
   },
   "dependencies": {
