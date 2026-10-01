@@ -3029,3 +3029,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Đã bỏ khối **Lưu trữ / Đề xuất đã tạo** trùng lặp; chỉ giữ select **Đề xuất đã lưu** cùng thao tác Load/Xóa.
 - `GET /api/recommendations/latest` nay trả `learning` (sample count, ngưỡng, trạng thái và evidence), giúp “Đang thu thập dữ liệu đánh giá” hiển thị tiến độ thật ngay khi latest response sẵn sàng. Backend đã khởi động lại; health HTTP 200.
 - Kiểm chứng: backend Jest **110/110**; E2E Recommendation Workbench **1/1**; market board/workflow targeted suite trước đó đạt các trường hợp liên quan; frontend production build/safe-build và bundle integrity pass. Điểm tiếp tục P1 vẫn là trace outlier Bảng giá, chỉ thực hiện sau khi các sửa UI này được chốt.
+
+## Khôi phục điều hướng từ Danh mục sang Chi tiết mã — 2026-10-01
+
+- Dòng vị thế trong bảng Danh mục và item Watchlist nay mở đúng Chi tiết mã bằng click, Enter hoặc Space. Nút xóa Watchlist dừng propagation nên không điều hướng ngoài ý muốn.
+- Thêm affordance chuột/bàn phím: hàng có cursor pointer, nền highlight và mã gạch chân khi hover/focus; focus-visible có viền riêng. Mã trong bảng vẫn là button truy cập được với tooltip “Mở Chi tiết mã”.
+- Kiểm chứng: production build/safe-build và bundle integrity pass; Playwright `portfolio.spec.mjs` **7/7** pass, gồm assertion hover cursor và click dòng vị thế sang Chi tiết mã. Điểm tiếp tục P1 không đổi: trace outlier chuyển Bảng giá trước khi tối ưu hiệu năng.
