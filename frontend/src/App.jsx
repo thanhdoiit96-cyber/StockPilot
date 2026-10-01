@@ -44,15 +44,14 @@ async function je(e, {
       } : {})
     });
   } catch (f) {
-    throw n != null && n.aborted || f.name === "AbortError" ? f : new ur("Kh\xF4ng th\u1EC3 k\u1EBFt n\u1ED1i m\xE1y ch\u1EE7. Vui l\xF2ng th\u1EED l\u1EA1i.");
+    throw n != null && n.aborted || f.name === "AbortError" ? f : new ur("Không thể kết nối máy chủ. Vui lòng thử lại.");
   }
   if (!u.ok) {
     let f = "";
     try {
       f = (await u.clone().json()).message || "";
     } catch {}
-    const k = u.status === 401 && /Invalid or expired token/i.test(f) ? "Phi\xEAn \u0111\u0103ng nh\u1EADp \u0111\xE3 h\u1EBFt h\u1EA1n ho\u1EB7c kh\xF4ng h\u1EE3p l\u1EC7. V\
-ui l\xF2ng \u0111\u0103ng nh\u1EADp l\u1EA1i." : f || (u.status === 404 ? "Kh\xF4ng t\xECm th\u1EA5y d\u1EEF li\u1EC7u \u0111\u01B0\u1EE3c y\xEAu c\u1EA7u." : u.status === 429 ? "C\xF3 qu\xE1 nhi\u1EC1u y\xEAu c\u1EA7u. Vui l\xF2ng ch\u1EDD m\u1ED9t ch\xFAt r\u1ED3i th\u1EED l\u1EA1i." : "M\xE1y ch\u1EE7 kh\xF4ng th\u1EC3 x\u1EED l\xFD y\xEAu c\u1EA7u. Vui l\xF2ng th\u1EED l\u1EA1i.");
+    const k = u.status === 401 && /Invalid or expired token/i.test(f) ? "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại." : f || (u.status === 404 ? "Không tìm thấy dữ liệu được yêu cầu." : u.status === 429 ? "Có quá nhiều yêu cầu. Vui lòng chờ một chút rồi thử lại." : "Máy chủ không thể xử lý yêu cầu. Vui lòng thử lại.");
     throw new ur(`${k} (HTTP ${u.status})`, u.status);
   }
   if (u.status === 204) return {
@@ -63,19 +62,17 @@ ui l\xF2ng \u0111\u0103ng nh\u1EADp l\u1EA1i." : f || (u.status === 404 ? "Kh\xF
   try {
     c = await u.json();
   } catch (f) {
-    throw n != null && n.aborted || f.name === "AbortError" ? f : new ur("Ph\u1EA3n h\u1ED3i m\xE1y ch\u1EE7 kh\xF4ng ph\u1EA3i JSON h\u1EE3p l\u1EC7.");
+    throw n != null && n.aborted || f.name === "AbortError" ? f : new ur("Phản hồi máy chủ không phải JSON hợp lệ.");
   }
-  if (!c || typeof c != "object" || c.success === false) throw new ur("M\xE1y ch\u1EE7 tr\u1EA3 v\u1EC1 d\u1EEF li\u1EC7u kh\xF4ng h\u1EE3p l\u1EC7 ho\u1EB7c y\xEAu c\u1EA7u \
-th\u1EA5t b\u1EA1i.");
+  if (!c || typeof c != "object" || c.success === false) throw new ur("Máy chủ trả về dữ liệu không hợp lệ hoặc yêu cầu thất bại.");
   return c;
 }
 function $m(e) {
-  if (e.success !== true || !e.data || typeof e.data.price != "number") throw new ur("B\u1ED9 gi\xE1 hi\u1EC7n t\u1EA1i tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \
-\u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || typeof e.data.price != "number") throw new ur("Bộ giá hiện tại trả về không đúng định dạng.");
   return e.data;
 }
 function Om(e) {
-  if (e.success !== true || !e.data || typeof e.data != "object" || Array.isArray(e.data) || Object.values(e.data).some(n => !n || !Number.isFinite(n.price) || n.price <= 0 || !n.observed_at || !Number.isFinite(Date.parse(n.fetched_at)))) throw new ur("Danh s\xE1ch b\xE1o gi\xE1 hi\u1EC7n t\u1EA1i tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || typeof e.data != "object" || Array.isArray(e.data) || Object.values(e.data).some(n => !n || !Number.isFinite(n.price) || n.price <= 0 || !n.observed_at || !Number.isFinite(Date.parse(n.fetched_at)))) throw new ur("Danh sách báo giá hiện tại trả về không đúng định dạng.");
   return e.data;
 }
 function ma(e, {
@@ -117,8 +114,7 @@ function ma(e, {
       try {
         const [z, x] = await Promise.allSettled([je(t ? l : `${l}&poll=${q++}`, {
           signal: f.signal
-        }), je("/api/stocks/q\
-uotes/status", {
+        }), je("/api/stocks/quotes/status", {
           signal: f.signal
         })]);
         if (x.status === "fulfilled" && (h = ((C = x.value) == null ? void 0 : C.data) || null), z.status === "rejected") throw z.reason;
@@ -126,9 +122,9 @@ uotes/status", {
           P = t ? $m(_) : null;
         b = P ? {
           [P.symbol || P.stock_code || r]: P
-        } : Om(_), Object.keys(b).length ? Object.values(b).some(g => g.stale) && (m = "Intraday \u0111ang d\xF9ng gi\xE1 ghi nh\u1EADn g\u1EA7n nh\u1EA5t; s\u1EBD t\u1EF1 c\u1EADp nh\u1EADt.") : m = "Ch\u01B0a l\u1EA5y \u0111\u01B0\u1EE3c intraday; s\u1EBD t\u1EF1 th\u1EED l\u1EA1i.";
+        } : Om(_), Object.keys(b).length ? Object.values(b).some(g => g.stale) && (m = "Intraday đang dùng giá ghi nhận gần nhất; sẽ tự cập nhật.") : m = "Chưa lấy được intraday; sẽ tự thử lại.";
       } catch {
-        m = "Ch\u01B0a c\u1EADp nh\u1EADt \u0111\u01B0\u1EE3c intraday; s\u1EBD t\u1EF1 th\u1EED l\u1EA1i.";
+        m = "Chưa cập nhật được intraday; sẽ tự thử lại.";
       } finally {
         clearTimeout(E);
       }
@@ -171,14 +167,10 @@ uotes/status", {
 const Rm = {
   overview: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
   "market-board": "M4 5h16v14H4zM7 9h10M7 13h4M14 13h3M7 16h6",
-  portfolio: "M4 7h16v13H4zM8 7V5h8v2M8 12h8M\
-8 16h5",
+  portfolio: "M4 7h16v13H4zM8 7V5h8v2M8 12h8M8 16h5",
   detail: "M11 4a7 7 0 1 0 4.9 12L20 20l1-1-4.1-4.1A7 7 0 0 0 11 4Zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z",
-  recommendations: "\
-m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15\
-Z",
-  advisor: "M7 8h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3Zm2-4v4m6-4v4M8 13h.01M16 13h.01M9 1\
-6h6"
+  recommendations: "m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z",
+  advisor: "M7 8h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3Zm2-4v4m6-4v4M8 13h.01M16 13h.01M9 16h6"
 };
 function Am({
   name: e
@@ -188,8 +180,7 @@ function Am({
     role: "img",
     focusable: "false",
     "aria-hidden": "true",
-    children: O.jsx("p\
-ath", {
+    children: O.jsx("path", {
       d: Rm[e]
     })
   });
@@ -200,39 +191,34 @@ class Ut extends Error {
   }
 }
 function Pc(e) {
-  if (e.success !== true || !Array.isArray(e.data) || e.data.some(n => !n || typeof n.id != "string")) throw new Ut("D\
-anh s\xE1ch c\u1ED5 phi\u1EBFu tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !Array.isArray(e.data) || e.data.some(n => !n || typeof n.id != "string")) throw new Ut("Danh sách cổ phiếu trả về không đúng định dạng.");
   return e.pagination && Object.defineProperty(e.data, "pagination", {
     value: e.pagination,
     enumerable: false
   }), e.data;
 }
 function Um(e) {
-  if (e.success !== true || !e.data || typeof e.data.id != "string" || !Array.isArray(e.data.price_history)) throw new Ut("Chi ti\u1EBFt c\u1ED5 phi\u1EBFu tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || typeof e.data.id != "string" || !Array.isArray(e.data.price_history)) throw new Ut("Chi tiết cổ phiếu trả về không đúng định dạng.");
   return e.data;
 }
 function bm(e) {
-  if (e.success !== true || !e.data || !e.data.indicators || typeof e.data.observations != "number" || !e.data.quality || !e.data.risk_plan || !e.data.expert_guidance || !Array.isArray(e.data.expert_guidance.score_breakdown)) throw new Ut("\
-Ph\xE2n t\xEDch k\u1EF9 thu\u1EADt tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || !e.data.indicators || typeof e.data.observations != "number" || !e.data.quality || !e.data.risk_plan || !e.data.expert_guidance || !Array.isArray(e.data.expert_guidance.score_breakdown)) throw new Ut("Phân tích kỹ thuật trả về không đúng định dạng.");
   return e.data;
 }
 function Bm(e) {
-  if (e.success !== true || !e.data || typeof e.data.enabled != "boolean" || !Array.isArray(e.data.reasons)) throw new Ut("Tr\u1EA1ng th\xE1i AI Gate tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || typeof e.data.enabled != "boolean" || !Array.isArray(e.data.reasons)) throw new Ut("Trạng thái AI Gate trả về không đúng định dạng.");
   return e.data;
 }
 function Vm(e) {
-  if (e.success !== true || !e.data || !Array.isArray(e.data.recommendations)) throw new Ut("\u0110\u1EC1 xu\u1EA5t c\u1ED5 phi\u1EBFu tr\u1EA3 v\u1EC1 kh\xF4\
-ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || !Array.isArray(e.data.recommendations)) throw new Ut("Đề xuất cổ phiếu trả về không đúng định dạng.");
   return e.data;
 }
 function Hm(e) {
-  if (e.success !== true || !e.data || !Array.isArray(e.data)) throw new Ut("L\u1ECBch s\u1EED \u0111\u1EC1 xu\u1EA5t tr\u1EA3 v\u1EC1 kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng\
-.");
+  if (e.success !== true || !e.data || !Array.isArray(e.data)) throw new Ut("Lịch sử đề xuất trả về không đúng định dạng.");
   return e.data;
 }
 function Qm(e) {
-  if (e.success !== true || !e.data || !Array.isArray(e.data.coverage)) throw new Ut("Tr\u1EA1ng th\xE1i d\u1EEF li\u1EC7u \u0111\u1EC1 xu\u1EA5t tr\u1EA3 v\u1EC1 \
-kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  if (e.success !== true || !e.data || !Array.isArray(e.data.coverage)) throw new Ut("Trạng thái dữ liệu đề xuất trả về không đúng định dạng.");
   return e.data;
 }
 function Km(e, n, t) {
@@ -306,13 +292,11 @@ function $i({
     title: t,
     "aria-label": `${n} - ${t}`,
     target: "_blank",
-    rel: "\
-noopener noreferrer",
+    rel: "noopener noreferrer",
     onClick: r => r.stopPropagation(),
     children: [n, O.jsx("span", {
       "aria-hidden": "true",
-      children: "\
- -"
+      children: "↗"
     })]
   }) : O.jsx(i.Fragment, {
     children: n
@@ -324,21 +308,20 @@ const va = e => new Intl.NumberFormat("vi-VN", {
   }).format(Number(e || 0)),
   Gm = e => e && Number.isFinite(Date.parse(e)) ? new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "medium",
-    timeStyle: "sh\
-ort",
+    timeStyle: "short",
     timeZone: "Asia/Ho_Chi_Minh"
-  }).format(new Date(e)) : "Ch\u01B0a c\xF3 quote",
+  }).format(new Date(e)) : "Chưa có quote",
   ga = [{
     key: "up",
-    label: "T\u0103ng gi\xE1",
+    label: "Tăng giá",
     color: "up"
   }, {
     key: "down",
-    label: "Gi\u1EA3m gi\xE1",
+    label: "Giảm giá",
     color: "down"
   }, {
     key: "flat",
-    label: "\u0110\u1EE9ng gi\xE1",
+    label: "Đứng giá",
     color: "flat"
   }];
 function Ym({
@@ -389,20 +372,17 @@ function Ym({
       className: "panel-header market-breadth-header",
       children: [O.jsxs("div", {
         children: [O.jsx("h3", {
-          id: "\
-market-breadth-heading",
-          children: "\u0110\u1ED9 r\u1ED9ng th\u1ECB tr\u01B0\u1EDDng"
+          id: "market-breadth-heading",
+          children: "Độ rộng thị trường"
         }), O.jsxs("p", {
-          className: "mute\
-d-text",
-          children: [e.length, " M\xE3 trong v\u0169 tr\u1EE5 || ", t.quoted, "/", e.length, " M\xE3 c\xF3 quote intraday c\u1EADp n\
-h\u1EADt g\u1EA7n nh\u1EA5t ", Gm(t.latestQuoteAt)]
+          className: "muted-text",
+          children: [e.length, " mã trong vũ trụ · ", t.quoted, "/", e.length, " mã có quote intraday · Cập nhật gần nhất ", Gm(t.latestQuoteAt)]
         })]
       }), O.jsxs("span", {
         className: "chip neutral",
         children: [O.jsx("span", {
           className: t.averageChange != null && t.averageChange < 0 ? "negative" : "positive",
-          children: t.averageChange == null ? "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u" : `Bi\u1EBFn \u0111\u1ED9ng b\xECnh qu\xE2n ${t.averageChange >= 0 ? "+" : ""}${t.averageChange.toFixed(2)}%`
+          children: t.averageChange == null ? "Chưa đủ dữ liệu" : `Biến động bình quân ${t.averageChange >= 0 ? "+" : ""}${t.averageChange.toFixed(2)}%`
         })]
       })]
     }), O.jsx("div", {
@@ -411,17 +391,16 @@ h\u1EADt g\u1EA7n nh\u1EA5t ", Gm(t.latestQuoteAt)]
         className: `breadth-count ${r.color}`,
         children: [O.jsx("span", {
           children: r.label
-        }), O.jsx("stron\
-g", {
+        }), O.jsx("strong", {
           children: t[r.key].count
         }), O.jsx("small", {
-          children: t.classified ? `${(t[r.key].count / t.classified * 100).toFixed(1)}% s\u1ED1 m\xE3 c\xF3 bi\u1EBFn \u0111\u1ED9ng` : "Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u"
+          children: t.classified ? `${(t[r.key].count / t.classified * 100).toFixed(1)}% số mã có biến động` : "Chưa có dữ liệu"
         })]
       }, r.key))
     }), t.classified > 0 && O.jsx("div", {
       className: "breadth-distribution",
       role: "img",
-      "aria-label": ` rng: tng ${t.up.count}, gi\u1EA3m ${t.down.count}, \u1EE9ng gi ${t.flat.count}`,
+      "aria-label": `Độ rộng: tăng ${t.up.count}, giảm ${t.down.count}, đứng giá ${t.flat.count}`,
       children: ga.map(r => O.jsx("span", {
         className: `breadth-segment ${r.color}`,
         style: {
@@ -432,20 +411,17 @@ g", {
     }), O.jsxs("div", {
       className: "breadth-volume-heading",
       children: [O.jsx("strong", {
-        children: "Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn theo nh\xF3m bi\u1EBFn \
-\u0111\u1ED9ng"
+        children: "Khối lượng phiên theo nhóm biến động"
       }), O.jsxs("span", {
-        children: [va(t.totalVolume), " c\u1ED5 phi\u1EBFu"]
+        children: [va(t.totalVolume), " cổ phiếu"]
       })]
     }), O.jsx("div", {
-      className: "\
-breadth-volume-chart",
+      className: "breadth-volume-chart",
       role: "img",
-      "aria-label": "Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn c\u1EE7a c\xE1c m\xE3 t\u0103ng gi\xE1, gi\u1EA3m gi\xE1 v\xE0 \u0111\u1EE9ng gi\xE1",
+      "aria-label": "Khối lượng phiên của các mã tăng giá, giảm giá và đứng giá",
       children: ga.map(r => O.jsxs("div", {
         className: "breadth-volume-column",
-        title: `${r.label}: ${va(t[r.key].volume)}\
- c phi\u1EBFu`,
+        title: `${r.label}: ${va(t[r.key].volume)} cổ phiếu`,
         children: [O.jsx("div", {
           className: "breadth-volume-track",
           children: O.jsx("span", {
@@ -462,10 +438,7 @@ breadth-volume-chart",
       }, r.key))
     }), O.jsxs("p", {
       className: "breadth-disclaimer",
-      children: ["Ph\xE2n \
-lo\u1EA1i d\xF9ng bi\u1EBFn \u0111\u1ED9ng gi\xE1 m\u1EDBi nh\u1EA5t hi\u1EC7n c\xF3; kh\u1ED1i l\u01B0\u1EE3ng ch\u1EE7 \u0111\u1ED9ng l\u1EA5y t\u1EEB quote intraday theo phi\xEAn. Ngu\u1ED3n hi\u1EC7n t\u1EA1i kh\xF4ng t\xE1c\
-h kh\u1ED1i l\u01B0\u1EE3ng ch\u1EE7 \u0111\u1ED9ng b\xEAn mua v\xE0 b\xEAn b\xE1n. ", t.unknown > 0 && `${t.unknown} m \
-cha c m\u1EE9c bi\u1EBFn \u0111\u1ED9ng  ph\xE2n lo\u1EA1i.`]
+      children: ["Phân loại dùng biến động giá mới nhất hiện có; khối lượng chủ động lấy từ quote intraday theo phiên. Nguồn hiện tại không tách khối lượng chủ động bên mua và bên bán. ", t.unknown > 0 && `${t.unknown} mã chưa có mức biến động để phân loại.`]
     })]
   });
 }
@@ -478,31 +451,28 @@ const Oi = {
   },
   ya = [{
     key: "trend",
-    label: "Xu h\u01B0\u1EDBng gi\
-\xE1",
-    description: "Gi\xE1 so v\u1EDBi SMA20 v\xE0 h\u01B0\u1EDBng xu h\u01B0\u1EDBng"
+    label: "Xu hướng giá",
+    description: "Giá so với SMA20 và hướng xu hướng"
   }, {
     key: "momentum",
-    label: "\u0110\u1ED9\
-ng l\u01B0\u1EE3ng",
-    description: "Bi\u1EBFn \u0111\u1ED9ng gi\xE1 trong kho\u1EA3ng 10 phi\xEAn"
+    label: "Động lượng",
+    description: "Biến động giá trong khoảng 10 phiên"
   }, {
     key: "rsi",
-    label: "\
-RSI c\xE2n b\u1EB1ng",
-    description: "\u01AFu ti\xEAn v\xF9ng \u0111\u1ED9ng l\u01B0\u1EE3ng v\u1EEBa ph\u1EA3i, tr\xE1nh qu\xE1 mua"
+    label: "RSI cân bằng",
+    description: "Ưu tiên vùng động lượng vừa phải, tránh quá mua"
   }, {
     key: "stability",
-    label: "An to\xE0n / r\u1EE7i ro",
-    description: "\u0110i\u1EC3m cao h\u01A1n khi bi\u1EBFn \u0111\u1ED9ng g\u1EA7n \u0111\xE2y th\u1EA5p"
+    label: "An toàn / rủi ro",
+    description: "Điểm cao hơn khi biến động gần đây thấp"
   }, {
     key: "liquidity",
-    label: "Thanh kho\u1EA3n",
-    description: "X\u1EBFp h\u1EA1ng t\u01B0\u01A1ng \u0111\u1ED1i theo kh\u1ED1i l\u01B0\u1EE3ng 20 phi\xEAn"
+    label: "Thanh khoản",
+    description: "Xếp hạng tương đối theo khối lượng 20 phiên"
   }],
   Xm = e => e == null ? "-" : new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 0
-  }).format(e) + " ";
+  }).format(e) + " ₫";
 function Zm({
   initialData: e,
   history: n = [],
@@ -636,43 +606,37 @@ function Zm({
     className: "recommendations-page recommendation-workbench",
     children: [((l = e == null ? void 0 : e.risk) == null ? void 0 : l.concentration_warning) && O.jsx("p", {
       className: "recommendation-risk-banner",
-      role: "st\
-atus",
-      children: `T\u1EF7 tr\u1ECDng ng\xE0nh cao nh\u1EA5t trong v\u1EE3t \u0111\u1EC1 xu\u1EA5t: ${e.risk.max_sector_share_pct}\
-%. C\u1EA7n xem xt r\u1EE7i ro t\u1EADp trung.`
+      role: "status",
+      children: `Tỷ trọng ngành cao nhất trong đợt đề xuất: ${e.risk.max_sector_share_pct}%. Cần xem xét rủi ro tập trung.`
     }), O.jsxs("div", {
       className: "page-heading",
       children: [O.jsxs("div", {
         children: [O.jsx("h2", {
-          children: "\u0110\u1EC1 xu\u1EA5t theo ti\xEAu ch\xED c\u1EE7a b\u1EA1n"
+          children: "Đề xuất theo tiêu chí của bạn"
         }), O.jsx("p", {
-          children: "\
-\u0110i\u1EC1u ch\u1EC9nh \u01B0u ti\xEAn \u0111\u1EC3 x\u1EBFp h\u1EA1ng l\u1EA1i to\xE0n b\u1ED9 m\xE3 \u0111\u1EE7 d\u1EEF li\u1EC7u l\u1ECBch s\u1EED."
+          children: "Điều chỉnh ưu tiên để xếp hạng lại toàn bộ mã đủ dữ liệu lịch sử."
         })]
       }), O.jsx("span", {
         className: "chip neutral",
-        children: "M\xF4 h\xECnh gi\u1EA3i th\xEDch \u0111\u01B0\u1EE3c"
+        children: "Mô hình giải thích được"
       })]
     }), O.jsxs("section", {
       className: "panel recommendation-criteria-panel",
       children: [O.jsxs("div", {
-        className: "recommendat\
-ion-section-heading",
+        className: "recommendation-section-heading",
         children: [O.jsxs("div", {
           children: [O.jsx("span", {
             className: "eyebrow accent",
-            children: "Ti\xEAu\
- ch\xED \u0111\u1EA7u t\u01B0"
+            children: "Tiêu chí đầu tư"
           }), O.jsx("h3", {
-            children: "B\u1EA1n mu\u1ED1n \u01B0u ti\xEAn \u0111i\u1EC1u g\xEC?"
+            children: "Bạn muốn ưu tiên điều gì?"
           }), O.jsx("p", {
             className: "muted-text",
-            children: "T\u0103ng tr\u1ECDng s\u1ED1 \u0111\u1EC3 ti\xEAu ch\xED \u1EA3nh h\u01B0\u1EDFng nhi\u1EC1u h\u01A1n \u0111\u1EBFn \u0111i\u1EC3m t\u1ED5ng. M\u1ED7i ti\xEAu\
- ch\xED \u0111\u01B0\u1EE3c chu\u1EA9n h\xF3a khi t\xEDnh."
+            children: "Tăng trọng số để tiêu chí ảnh hưởng nhiều hơn đến điểm tổng. Mỗi tiêu chí được chuẩn hóa khi tính."
           })]
         }), O.jsxs("span", {
           className: "criteria-total",
-          children: ["T\u1ED5ng tr\u1ECDng s\u1ED1 ", O.jsx("strong", {
+          children: ["Tổng trọng số ", O.jsx("strong", {
             children: h
           })]
         })]
@@ -687,18 +651,17 @@ ion-section-heading",
               children: [O.jsx("strong", {
                 children: g.label
               }), O.jsxs("b", {
-                children: [a[g.key], " \u0110i\u1EC3m \u01B0u ti\xEAn"]
+                children: [a[g.key], " Điểm ưu tiên"]
               })]
             }), O.jsx("small", {
               children: g.description
             }), O.jsx("input", {
-              type: "\
-range",
+              type: "range",
               min: "0",
               max: "60",
               step: "5",
               value: a[g.key],
-              "aria-label": `Tr\u1ECDng s ${g.label}`,
+              "aria-label": `Trọng s ${g.label}`,
               onChange: I => u(B => ({
                 ...B,
                 [g.key]: Number(I.target.value)
@@ -709,17 +672,15 @@ range",
           className: "criteria-actions",
           children: [O.jsx("p", {
             className: "muted-text",
-            children: "Ch\u1EC9 ti\xEAu k\u1EF9 thu\u1EADt c\xF3 d\u1EEF li\u1EC7u m\u1EDBi \u0111\u01B0\u1EE3c ch\u1EA5m \u0111i\u1EC3m; tin t\u1EE9c, t\xE2m l\xFD v\xE0 v\
-\u0129 m\xF4 ch\u01B0a \u0111\u01B0\u1EE3c c\u1ED9ng \u0111i\u1EC3m n\u1EBFu ch\u01B0a c\xF3 ngu\u1ED3n x\xE1c minh trong m\xF4 h\xECnh."
+            children: "Chỉ tiêu kỹ thuật có dữ liệu mới được chấm điểm; tin tức, tâm lý và vĩ mô chưa được cộng điểm nếu chưa có nguồn xác minh trong mô hình."
           }), O.jsxs("div", {
             className: "criteria-action-buttons",
             children: [O.jsxs("div", {
               className: "saved-proposal-picker",
               children: [O.jsx("label", {
                 htmlFor: "saved-proposal-select",
-                children: "\u0110\u1EC1 xu\u1EA5t \u0111\xE3 l\u01B0u"
-              }), O.jsxs("\
-select", {
+                children: "Đề xuất đã lưu"
+              }), O.jsxs("select", {
                 id: "saved-proposal-select",
                 className: "saved-proposal-select",
                 value: b,
@@ -727,13 +688,12 @@ select", {
                 disabled: !E.length,
                 children: [O.jsx("option", {
                   value: "",
-                  children: E.length ? "Ch\u1ECDn snapshot" : "Ch\u01B0a c\xF3 b\u1EA3n \
-l\u01B0u"
+                  children: E.length ? "Chọn snapshot" : "Chưa có bản lưu"
                 }), E.map(g => {
                   var I, B;
                   return O.jsx("option", {
                     value: g.id,
-                    children: `${new Date(g.createdAt).toLocaleString("vi-VN")}  ${((B = (I = g.result) == null ? void 0 : I.recommendations) == null ? void 0 : B.length) || 0} m`
+                    children: `${new Date(g.createdAt).toLocaleString("vi-VN")} · ${((B = (I = g.result) == null ? void 0 : I.recommendations) == null ? void 0 : B.length) || 0} mã`
                   }, g.id);
                 })]
               }), O.jsx("button", {
@@ -747,19 +707,18 @@ l\u01B0u"
                 className: "ghost-btn small-btn danger-btn",
                 disabled: !b,
                 onClick: () => x(b),
-                children: "X\xF3a"
+                children: "Xóa"
               })]
             }), O.jsx("button", {
               type: "button",
               className: "ghost-btn",
               onClick: () => u(Oi),
-              children: "Kh\xF4i ph\u1EE5c m\u1EB7c \u0111\u1ECBnh"
+              children: "Khôi phục mặc định"
             }), O.jsx("button", {
               type: "submit",
-              className: "primary-b\
-tn",
+              className: "primary-btn",
               disabled: k || h === 0,
-              children: k ? "\u0110ang x\u1EBFp h\u1EA1ng -" : "T\u1EA1o \u0111\u1EC1 xu\u1EA5t c\xE1 nh\xE2n"
+              children: k ? "Đang xếp hạng…" : "Tạo đề xuất cá nhân"
             })]
           })]
         })]
@@ -770,23 +729,21 @@ tn",
           className: "recommendation-section-heading",
           children: [O.jsxs("div", {
             children: [O.jsx("span", {
-              className: "eyebr\
-ow accent",
-              children: "L\u01AFU TR\u1EEE"
+              className: "eyebrow accent",
+              children: "LƯU TRỮ"
             }), O.jsx("h3", {
               id: "saved-proposals-title",
-              children: "\u0110\u1EC1 xu\u1EA5t \u0111\xE3 t\u1EA1o"
+              children: "Đề xuất đã tạo"
             }), O.jsx("p", {
               className: "muted-text",
-              children: "Snapshot b\u1EA5t bi\u1EBFn; ch\u1EC9 c\xF3 th\u1EC3 Load ho\u1EB7c X\xF3a."
+              children: "Snapshot bất biến; chỉ có thể Load hoặc Xóa."
             })]
           }), O.jsxs("span", {
             className: "chip neutral",
             children: [E.length, "/20"]
           })]
         }), E.length ? O.jsx("div", {
-          className: "\
-saved-proposals-list",
+          className: "saved-proposals-list",
           children: E.map(g => {
             var I, B;
             return O.jsxs("article", {
@@ -795,14 +752,12 @@ saved-proposals-list",
                 children: [O.jsx("strong", {
                   children: new Date(g.createdAt).toLocaleString("vi-VN")
                 }), O.jsx("small", {
-                  children: Object.entries(g.criteria || {}).map(([K, ie]) => `${K}\
-: ${ie}`).join("  ")
+                  children: Object.entries(g.criteria || {}).map(([K, ie]) => `${K}: ${ie}`).join(" · ")
                 }), O.jsxs("small", {
-                  children: [((B = (I = g.result) == null ? void 0 : I.recommendations) == null ? void 0 : B.length) || 0, "C\xE1c m\xE3 \u0111\u01B0\u1EE3c \u0111\u1EC1 xu\u1EA5t"]
+                  children: [((B = (I = g.result) == null ? void 0 : I.recommendations) == null ? void 0 : B.length) || 0, " mã được đề xuất"]
                 })]
               }), O.jsxs("div", {
-                className: "\
-saved-proposal-actions",
+                className: "saved-proposal-actions",
                 children: [O.jsx("button", {
                   type: "button",
                   className: "ghost-btn small-btn",
@@ -812,14 +767,14 @@ saved-proposal-actions",
                   type: "button",
                   className: "ghost-btn small-btn danger-btn",
                   onClick: () => x(g.id),
-                  children: "Xa"
+                  children: "Xóa"
                 })]
               })]
             }, g.id);
           })
         }) : O.jsx("p", {
           className: "muted-text saved-proposals-empty",
-          children: "Ch\u01B0a c\xF3 \u0111\u1EC1 xu\u1EA5t \u0111\xE3 l\u01B0u."
+          children: "Chưa có đề xuất đã lưu."
         })]
       }), y && O.jsx("p", {
         role: "alert",
@@ -827,40 +782,33 @@ saved-proposal-actions",
         children: y
       })]
     }), O.jsxs("div", {
-      className: "recommendati\
-on-grid personalized-results",
+      className: "recommendation-grid personalized-results",
       children: [O.jsxs("section", {
         className: "panel insights-panel",
         children: [O.jsxs("div", {
           className: "recommendation-section-heading",
           children: [O.jsxs("div", {
             children: [O.jsx("h3", {
-              children: c ? "K\u1EBFt \
-qu\u1EA3 theo ti\xEAu ch\xED \u0111\xE3 ch\u1ECDn" : "\u0110\u1EC1 xu\u1EA5t hi\u1EC7n t\u1EA1i"
+              children: c ? "Kết quả theo tiêu chí đã chọn" : "Đề xuất hiện tại"
             }), O.jsx("p", {
-              className: "\
-muted-text",
-              children: c ? ` r\xFAt g\u1ECDn: ${c.eligible_count} m\xE3 \u0111\u1EE7 \xEDt nh\u1EA5t 50 phi\xEAn.` : "D\u1EEF\
- li\u1EC7u snapshot g\u1EA7n nh\u1EA5t; h\xE3y t\u1EA1o \u0111\u1EC1 xu\u1EA5t c\xE1 nh\xE2n \u0111\u1EC3 x\u1EBFp h\u1EA1ng l\u1EA1i theo b\u1ED9 l\u1ECDc."
+              className: "muted-text",
+              children: c ? `Vũ trụ rút gọn: ${c.eligible_count} mã đủ ít nhất 50 phiên.` : "Dữ liệu snapshot gần nhất; hãy tạo đề xuất cá nhân để xếp hạng lại theo bộ lọc."
             }), O.jsx("div", {
               className: "recommendation-signal-legend",
               children: [O.jsx("span", {
-                children: "- T\xEDch c\u1EF1c: \u0111\u1ED3ng thu\u1EADn\
- xu h\u01B0\u1EDBng"
+                children: "• Tích cực: đồng thuận xu hướng"
               }), O.jsx("span", {
-                children: "- Trung t\xEDnh: c\u1EA7n x\xE1c nh\u1EADn th\xEAm"
+                children: "• Trung tính: cần xác nhận thêm"
               }), O.jsx("span", {
-                children: "- Th\u1EADn tr\u1ECDng: t\xEDn hi\u1EC7u suy y\u1EBFu"
+                children: "• Thận trọng: tín hiệu suy yếu"
               })]
             })]
           }), _.length > 0 && O.jsxs("span", {
-            className: "\
-chip success",
-            children: [_.length, " m\xE3"]
+            className: "chip success",
+            children: [_.length, " mã"]
           })]
         }), _.length ? O.jsx("ol", {
-          className: "insights-list personalized-li\
-st",
+          className: "insights-list personalized-list",
           children: _.map(g => {
             var I, B, K, ie, ye, mn, se, Ye, L, R, U, W, X, vn, Ae, _n, Ue, gn, Er, Tr, Pr, zr, Mr, Lr, Ir, Fr, bt, Dr, Jl, s, $r, Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr, ue, Bt, Un, ei, bn, Vt, dt, on, re, Xe, yn, ni, Cn, ht, be, ti, ft, ri, xn, En, Ht, li, Qt, ii, pt, Bn, Jr, el, pe, mt, nl, tl, rl, vt, gt, yt, Vn, ll;
             const xt = Number(g.score || 0),
@@ -878,11 +826,11 @@ st",
                   children: [O.jsx("b", {
                     children: xt.toFixed(1)
                   }), O.jsx("small", {
-                    children: "/100 \u0111i\u1EC3m"
+                    children: "/100 điểm"
                   })]
                 }), O.jsxs("span", {
                   className: "rank-label",
-                  children: ["H\u1EA1ng ", g.rank]
+                  children: ["Hạng ", g.rank]
                 }), O.jsx("button", {
                   type: "button",
                   className: "ghost-btn small-btn recommendation-add-btn",
@@ -905,7 +853,7 @@ st",
                       }
                     });
                   },
-                  children: " Th\xEAm v\xE0o danh m\u1EE5c"
+                  children: "Thêm vào danh mục"
                 })]
               }), ((gt = g.rationale) == null ? void 0 : gt.score_parts) && O.jsx("div", {
                 className: "score-breakdown",
@@ -913,7 +861,7 @@ st",
                   const Ze = Math.max(0, Math.min(100, Number(g.rationale.score_parts[Be.key] || 0)));
                   return O.jsxs("span", {
                     className: `criterion-${Be.key}`,
-                    title: `${Be.label}: ${Ze} \u0111i\u1EC3m`,
+                    title: `${Be.label}: ${Ze} điểm`,
                     children: [O.jsx("small", {
                       children: Be.label
                     }), O.jsxs("b", {
@@ -933,10 +881,9 @@ st",
               }), O.jsx("div", {
                 className: "recommendation-result-footer",
                 children: O.jsxs("div", {
-                  className: "recommendatio\
-n-data-chips",
+                  className: "recommendation-data-chips",
                   children: [O.jsxs("span", {
-                    children: ["Gi\xE1 tham chi\u1EBFu ", O.jsx("b", {
+                    children: ["Giá tham chiếu ", O.jsx("b", {
                       children: Xm(g.entry_price)
                     }), O.jsx("small", {
                       children: ((B = (I = g.rationale) == null ? void 0 : I.reference_plan) == null ? void 0 : B.price_source) === "intraday" ? "Intraday" : "EOD fallback"
@@ -947,32 +894,27 @@ n-data-chips",
                     })]
                   }), O.jsxs("span", {
                     className: "recommendation-technical-score",
-                    children: ["K\u1EF9 thu\u1EADt ", O.jsx("b", {
+                    children: ["Kỹ thuật ", O.jsx("b", {
                       children: ((K = g.rationale) == null ? void 0 : K.technical_score) == null ? "-" : `${Number(g.rationale.technical_score).toFixed(0)}/100`
                     })]
                   }), O.jsxs("div", {
                     className: "recommendation-signal-chips",
                     children: [O.jsx("span", {
                       className: "signal-chip " + ((((ye = (ie = g.rationale) == null ? void 0 : ie.technical_confirmation) == null ? void 0 : ye.ichimoku) || ((Ye = (se = (mn = g.rationale) == null ? void 0 : mn.indicators) == null ? void 0 : se.ichimoku) == null ? void 0 : Ye.cloud)) === "above_cloud" ? "signal-positive" : (((R = (L = g.rationale) == null ? void 0 : L.technical_confirmation) == null ? void 0 : R.ichimoku) || ((X = (W = (U = g.rationale) == null ? void 0 : U.indicators) == null ? void 0 : W.ichimoku) == null ? void 0 : X.cloud)) === "below_cloud" ? "signal-negative" : "signal-neutral"),
-                      title: "Ichimoku: xu h\u01B0\u1EDBng v\xE0 v\
-\u1ECB tr\xED gi\xE1 so v\u1EDBi m\xE2y",
-                      children: ["Ichimoku ", (((Ae = (vn = g.rationale) == null ? void 0 : vn.technical_confirmation) == null ? void 0 : Ae.ichimoku) || ((gn = (Ue = (_n = g.rationale) == null ? void 0 : _n.indicators) == null ? void 0 : Ue.ichimoku) == null ? void 0 : gn.cloud)) === "above_cloud" ? "Tr\xEAn m\xE2y" : (((Tr = (Er = g.rationale) == null ? void 0 : Er.technical_confirmation) == null ? void 0 : Tr.ichimoku) || ((Mr = (zr = (Pr = g.rationale) == null ? void 0 : Pr.indicators) == null ? void 0 : zr.ichimoku) == null ? void 0 : Mr.cloud)) === "below_cloud" ? "D\u01B0\u1EDBi m\xE2y" : (((Ir = (Lr = g.rationale) == null ? void 0 : Lr.technical_confirmation) == null ? void 0 : Ir.ichimoku) || ((Dr = (bt = (Fr = g.rationale) == null ? void 0 : Fr.indicators) == null ? void 0 : bt.ichimoku) == null ? void 0 : Dr.cloud)) === "inside_cloud" ? "Trong my" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u"]
+                      title: "Ichimoku: xu hướng và vị trí giá so với mây",
+                      children: ["Ichimoku ", (((Ae = (vn = g.rationale) == null ? void 0 : vn.technical_confirmation) == null ? void 0 : Ae.ichimoku) || ((gn = (Ue = (_n = g.rationale) == null ? void 0 : _n.indicators) == null ? void 0 : Ue.ichimoku) == null ? void 0 : gn.cloud)) === "above_cloud" ? "Trên mây" : (((Tr = (Er = g.rationale) == null ? void 0 : Er.technical_confirmation) == null ? void 0 : Tr.ichimoku) || ((Mr = (zr = (Pr = g.rationale) == null ? void 0 : Pr.indicators) == null ? void 0 : zr.ichimoku) == null ? void 0 : Mr.cloud)) === "below_cloud" ? "Dưới mây" : (((Ir = (Lr = g.rationale) == null ? void 0 : Lr.technical_confirmation) == null ? void 0 : Ir.ichimoku) || ((Dr = (bt = (Fr = g.rationale) == null ? void 0 : Fr.indicators) == null ? void 0 : bt.ichimoku) == null ? void 0 : Dr.cloud)) === "inside_cloud" ? "Trong mây" : "Chưa đủ dữ liệu"]
                     }), O.jsx("span", {
-                      className: "signal-chi\
-p " + ((((s = (Jl = g.rationale) == null ? void 0 : Jl.technical_confirmation) == null ? void 0 : s.macd) || ((Rr = (Or = ($r = g.rationale) == null ? void 0 : $r.indicators) == null ? void 0 : Or.macd) == null ? void 0 : Rr.state)) === "\
-bullish" ? "signal-positive" : (((Ur = (Ar = g.rationale) == null ? void 0 : Ar.technical_confirmation) == null ? void 0 : Ur.macd) || ((Vr = (Br = (br = g.rationale) == null ? void 0 : br.indicators) == null ? void 0 : Br.macd) == null ? void 0 : Vr.state)) === "bearish" ? "signal-negative" : "signal-neutral"),
-                      title: "MACD 12/26/9: \u0111\u1ED9ng l\u01B0\u1EE3ng v\xE0 giao c\u1EAFt",
-                      children: ["MACD ", (((Qr = (Hr = g.rationale) == null ? void 0 : Hr.technical_confirmation) == null ? void 0 : Qr.macd) || ((qr = (Wr = (Kr = g.rationale) == null ? void 0 : Kr.indicators) == null ? void 0 : Wr.macd) == null ? void 0 : qr.state)) === "bullish" ? "\u0110\u1ED9ng l\u01B0\u1EE3ng t\u0103ng" : (((Yr = (Gr = g.rationale) == null ? void 0 : Gr.technical_confirmation) == null ? void 0 : Yr.macd) || ((ue = (Zr = (Xr = g.rationale) == null ? void 0 : Xr.indicators) == null ? void 0 : Zr.macd) == null ? void 0 : ue.state)) === "bearish" ? "\u0110\u1ED9ng l\u01B0\u1EE3ng gi\u1EA3m" : (((Un = (Bt = g.rationale) == null ? void 0 : Bt.technical_confirmation) == null ? void 0 : Un.macd) || ((Vt = (bn = (ei = g.rationale) == null ? void 0 : ei.indicators) == null ? void 0 : bn.macd) == null ? void 0 : Vt.state)) === "neutral" ? "Trung tnh" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u"]
+                      className: "signal-chip " + ((((s = (Jl = g.rationale) == null ? void 0 : Jl.technical_confirmation) == null ? void 0 : s.macd) || ((Rr = (Or = ($r = g.rationale) == null ? void 0 : $r.indicators) == null ? void 0 : Or.macd) == null ? void 0 : Rr.state)) === "bullish" ? "signal-positive" : (((Ur = (Ar = g.rationale) == null ? void 0 : Ar.technical_confirmation) == null ? void 0 : Ur.macd) || ((Vr = (Br = (br = g.rationale) == null ? void 0 : br.indicators) == null ? void 0 : Br.macd) == null ? void 0 : Vr.state)) === "bearish" ? "signal-negative" : "signal-neutral"),
+                      title: "MACD 12/26/9: động lượng và giao cắt",
+                      children: ["MACD ", (((Qr = (Hr = g.rationale) == null ? void 0 : Hr.technical_confirmation) == null ? void 0 : Qr.macd) || ((qr = (Wr = (Kr = g.rationale) == null ? void 0 : Kr.indicators) == null ? void 0 : Wr.macd) == null ? void 0 : qr.state)) === "bullish" ? "Động lượng tăng" : (((Yr = (Gr = g.rationale) == null ? void 0 : Gr.technical_confirmation) == null ? void 0 : Yr.macd) || ((ue = (Zr = (Xr = g.rationale) == null ? void 0 : Xr.indicators) == null ? void 0 : Zr.macd) == null ? void 0 : ue.state)) === "bearish" ? "Động lượng giảm" : (((Un = (Bt = g.rationale) == null ? void 0 : Bt.technical_confirmation) == null ? void 0 : Un.macd) || ((Vt = (bn = (ei = g.rationale) == null ? void 0 : ei.indicators) == null ? void 0 : bn.macd) == null ? void 0 : Vt.state)) === "neutral" ? "Trung tính" : "Chưa đủ dữ liệu"]
                     }), O.jsx("span", {
-                      className: "signal-chip " + ((((on = (dt = g.rationale) == null ? void 0 : dt.technical_confirmation) == null ? void 0 : on.bollinger) || ((yn = (Xe = (re = g.rationale) == null ? void 0 : re.indicators) == null ? void 0 : Xe.bollinger) == null ? void 0 : yn.position)) === "\
-above_upper" ? "signal-negative" : "signal-neutral"),
-                      title: "Bollinger Bands: bi\u1EBFn \u0111\u1ED9ng v\xE0 v\xF9ng qu\xE1 xa trung b\xECnh",
-                      children: ["Bollinger ", (((Cn = (ni = g.rationale) == null ? void 0 : ni.technical_confirmation) == null ? void 0 : Cn.bollinger) || ((ti = (be = (ht = g.rationale) == null ? void 0 : ht.indicators) == null ? void 0 : be.bollinger) == null ? void 0 : ti.position)) === "above_upper" ? "V\u01B0\u1EE3t d\u1EA3i tr\xEAn" : (((ri = (ft = g.rationale) == null ? void 0 : ft.technical_confirmation) == null ? void 0 : ri.bollinger) || ((Ht = (En = (xn = g.rationale) == null ? void 0 : xn.indicators) == null ? void 0 : En.bollinger) == null ? void 0 : Ht.position)) === "below_lower" ? "D\u01B0\u1EDBi d\u1EA3i d\u01B0\u1EDBi" : (((Qt = (li = g.rationale) == null ? void 0 : li.technical_confirmation) == null ? void 0 : Qt.bollinger) || ((Bn = (pt = (ii = g.rationale) == null ? void 0 : ii.indicators) == null ? void 0 : pt.bollinger) == null ? void 0 : Bn.position)) === "upper_half" ? "N\u1EEDa tr\xEAn d\u1EA3i" : (((el = (Jr = g.rationale) == null ? void 0 : Jr.technical_confirmation) == null ? void 0 : el.bollinger) || ((nl = (mt = (pe = g.rationale) == null ? void 0 : pe.indicators) == null ? void 0 : mt.bollinger) == null ? void 0 : nl.position)) === "lower_half" ? "N\u1EEDa d\u01B0\u1EDBi d\u1EA3i" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF l\
-i\u1EC7u"]
+                      className: "signal-chip " + ((((on = (dt = g.rationale) == null ? void 0 : dt.technical_confirmation) == null ? void 0 : on.bollinger) || ((yn = (Xe = (re = g.rationale) == null ? void 0 : re.indicators) == null ? void 0 : Xe.bollinger) == null ? void 0 : yn.position)) === "above_upper" ? "signal-negative" : "signal-neutral"),
+                      title: "Bollinger Bands: biến động và vùng quá xa trung bình",
+                      children: ["Bollinger ", (((Cn = (ni = g.rationale) == null ? void 0 : ni.technical_confirmation) == null ? void 0 : Cn.bollinger) || ((ti = (be = (ht = g.rationale) == null ? void 0 : ht.indicators) == null ? void 0 : be.bollinger) == null ? void 0 : ti.position)) === "above_upper" ? "Vượt dải trên" : (((ri = (ft = g.rationale) == null ? void 0 : ft.technical_confirmation) == null ? void 0 : ri.bollinger) || ((Ht = (En = (xn = g.rationale) == null ? void 0 : xn.indicators) == null ? void 0 : En.bollinger) == null ? void 0 : Ht.position)) === "below_lower" ? "Dưới dải dưới" : (((Qt = (li = g.rationale) == null ? void 0 : li.technical_confirmation) == null ? void 0 : Qt.bollinger) || ((Bn = (pt = (ii = g.rationale) == null ? void 0 : ii.indicators) == null ? void 0 : pt.bollinger) == null ? void 0 : Bn.position)) === "upper_half" ? "Nửa trên dải" : (((el = (Jr = g.rationale) == null ? void 0 : Jr.technical_confirmation) == null ? void 0 : el.bollinger) || ((nl = (mt = (pe = g.rationale) == null ? void 0 : pe.indicators) == null ? void 0 : mt.bollinger) == null ? void 0 : nl.position)) === "lower_half" ? "Nửa dưới dải" : "Chưa đủ dữ liệu"]
                     })]
                   }), O.jsxs("span", {
-                    children: ["Quan s\xE1t ", O.jsxs("b", {
-                      children: [((ll = g.rationale) == null ? void 0 : ll.observations) || "-", " phi\xEAn"]
+                    children: ["Quan sát ", O.jsxs("b", {
+                      children: [((ll = g.rationale) == null ? void 0 : ll.observations) || "-", " phiên"]
                     })]
                   })]
                 })
@@ -981,102 +923,86 @@ i\u1EC7u"]
           })
         }) : O.jsx("p", {
           className: "muted-text",
-          children: c ? "Ch\u01B0a c\xF3 m\xE3 \u0111\u1EA1t ng\u01B0\u1EE1ng \u0111i\u1EC3m v\u1EDBi tr\u1ECDng s\u1ED1 n\xE0y. H\xE3y \u0111i\u1EC1u ch\u1EC9\
-nh ti\xEAu ch\xED r\u1ED3i th\u1EED l\u1EA1i." : "Ch\u01B0a c\xF3 \u0111\u1EC1 xu\u1EA5t kh\u1EA3 d\u1EE5ng."
+          children: c ? "Chưa có mã đạt ngưỡng điểm với trọng số này. Hãy điều chỉnh tiêu chí rồi thử lại." : "Chưa có đề xuất khả dụng."
         }), O.jsx("p", {
           className: "analysis-disclaimer",
-          children: "\u0110i\u1EC3m s\u1ED1 h\u1ED7 tr\u1EE3 nghi\xEAn c\u1EE9u, kh\xF4ng ph\u1EA3i l\u1EDDi khuy\xEAn hay l\u1EC7nh mua b\xE1n."
+          children: "Điểm số hỗ trợ nghiên cứu, không phải lời khuyên hay lệnh mua bán."
         })]
       }), O.jsxs("section", {
         className: "panel learning-panel",
         children: [O.jsx("span", {
           className: "eyebrow accent",
-          children: "\
-V\xD2NG PH\u1EA2N H\u1ED2I"
+          children: "VÒNG PHẢN HỒI"
         }), O.jsx("h3", {
-          children: "Hi\u1EC7u qu\u1EA3 c\xE1c \u0111\u1EE3t \u0111\u1EC1 xu\u1EA5t c\u1EE7a h\u1EC7 th\u1ED1ng"
+          children: "Hiệu quả các đợt đề xuất của hệ thống"
         }), O.jsx("p", {
           className: "muted-text",
-          children: "M\u1ED7i d\xF2ng l\u1ECBch s\u1EED l\xE0 m\u1ED9t \u0111\u1EE3t \u0111\u1EC1 xu\u1EA5t chung \u0111\u01B0\u1EE3c t\u1EA1o theo l\u1ECBch. H\u1EC7 th\u1ED1n\
-g so gi\xE1 t\u1EA1i th\u1EDDi \u0111i\u1EC3m \u0111\u1EC1 xu\u1EA5t v\u1EDBi gi\xE1 sau t\u1ED1i \u0111a 20 phi\xEAn: l\u1EE3i nhu\u1EADn d\u01B0\u01A1ng \u0111\u01B0\u1EE3c t\xEDnh l\xE0 m\u1ED9t m\xE3 d\u1EF1 b\xE1o \u0111\xFAng. -T\u1EF7 l\u1EC7 \u0111\xFAng\
-- l\xE0 ph\u1EA7n tr\u0103m m\xE3 c\xF3 k\u1EBFt qu\u1EA3 \u0111\xFAng; -l\u1EE3i nhu\u1EADn trung b\xECnh- l\xE0 m\u1EE9c sinh l\u1EDDi trung b\xECnh c\u1EE7a c\xE1c m\xE3 \u0111\xF3."
+          children: "Mỗi dòng lịch sử là một đợt đề xuất chung được tạo theo lịch. Hệ thống so giá tại thời điểm đề xuất với giá sau tối đa 20 phiên: lợi nhuận dương được tính là một mã dự báo đúng. “Tỷ lệ đúng” là phần trăm mã có kết quả đúng; “lợi nhuận trung bình” là mức sinh lời trung bình của các mã đó."
         }), O.jsxs("div", {
           className: "learning-definition",
           children: [O.jsx("strong", {
-            children: "L\u1ECBch s\u1EED chung v\xE0 k\u1EBFt qu\u1EA3 t\u1EEBn\
-g m\xE3 l\xE0 hai th\u01B0\u1EDBc \u0111o ri\xEAng."
+            children: "Lịch sử chung và kết quả từng mã là hai thước đo riêng."
           }), O.jsxs("span", {
-            children: ["B\u1EA3ng b\xEAn d\u01B0\u1EDBi \u0111o c\xE1c \u0111\u1EE3t \u0111\u1EC1 xu\u1EA5t c\
-hung. Khi b\u1EA1n th\xEAm m\xE3 t\u1EEB k\u1EBFt qu\u1EA3 v\xE0 l\u01B0u giao d\u1ECBch, \u1EE9ng d\u1EE5ng s\u1EBD l\u01B0u \u0111i\u1EC3m, gi\xE1 tham chi\u1EBFu v\xE0 k\u1EF3 h\u1EA1n c\xF9ng giao d\u1ECBch; m\u1EE5c ", O.jsx("b", {
-              children: "Theo d\xF5i m\xE3 th\xEAm t\u1EEB \u0111\u1EC1 xu\u1EA5t"
-            }), " trong Danh m\u1EE5c c\xE1 nh\xE2n s\u1EBD so g\
-i\xE1 th\u1EF1c t\u1EBF c\u1EE7a v\u1ECB th\u1EBF v\xE0 k\u1EBFt qu\u1EA3 cu\u1ED1i k\u1EF3 h\u1EA1n."]
+            children: ["Bảng bên dưới đo các đợt đề xuất chung. Khi bạn thêm mã từ kết quả và lưu giao dịch, ứng dụng sẽ lưu điểm, giá tham chiếu và kỳ hạn cùng giao dịch; mục ", O.jsx("b", {
+              children: "Theo dõi mã thêm từ đề xuất"
+            }), " trong Danh mục cá nhân sẽ so giá thực tế của vị thế và kết quả cuối kỳ hạn."]
           })]
         }), O.jsx("p", {
           className: "muted-text",
-          children: "Khi c\xF3 \u0111\u1EE7 d\u1EEF li\u1EC7u \u0111\xE1nh gi\xE1, k\u1EBFt qu\u1EA3 t\u1EEBng ti\xEAu ch\xED t\u1EEB c\xE1c \u0111\u1EE3t chung c\xF3 th\u1EC3 \u0111i\u1EC1u c\
-h\u1EC9nh nh\u1EB9 tr\u1ECDng s\u1ED1 \u0111\u1EC1 xu\u1EA5t t\u01B0\u01A1ng lai. \u0110\xE2y l\xE0 \u0111i\u1EC1u ch\u1EC9nh th\u1ED1ng k\xEA, kh\xF4ng ch\u1EE9ng minh quan h\u1EC7 nh\xE2n qu\u1EA3."
+          children: "Khi có đủ dữ liệu đánh giá, kết quả từng tiêu chí từ các đợt chung có thể điều chỉnh nhẹ trọng số đề xuất tương lai. Đây là điều chỉnh thống kê, không chứng minh quan hệ nhân quả."
         }), O.jsxs("div", {
           className: "learning-stat-grid",
           children: [O.jsxs("div", {
             children: [O.jsx("small", {
-              children: "\u0110\u1EE3t\
- c\xF3 k\u1EBFt qu\u1EA3"
+              children: "Đợt có kết quả"
             }), O.jsx("strong", {
               children: v.length
             })]
           }), O.jsxs("div", {
             children: [O.jsx("small", {
-              children: "\
-Hit rate TB c\xE1c \u0111\u1EE3t"
+              children: "Hit rate TB các đợt"
             }), O.jsx("strong", {
               children: v.length ? `${(v.reduce((g, I) => g + Number(I.hit_rate_pct || 0), 0) / v.length).toFixed(1)}%` : "-"
             })]
           }), O.jsxs("div", {
             children: [O.jsx("small", {
-              children: "M\xE3 \u1EA3o theo ti\xEAu \
-ch\xED"
+              children: "Mẫu theo tiêu chí"
             }), O.jsx("strong", {
               children: (P == null ? void 0 : P.sample_count) ?? 0
             })]
           })]
         }), O.jsxs("div", {
-          className: `\
-learning-status ${(P == null ? void 0 : P.status) === "calibrated" ? "is-ready" : ""}`,
+          className: `learning-status ${(P == null ? void 0 : P.status) === "calibrated" ? "is-ready" : ""}`,
           role: "status",
           children: [O.jsx("strong", {
-            children: (P == null ? void 0 : P.status) === "calibrated" ? " b\u1EADt \u0111i\u1EC1u ch\u1EC9nh l\u1ECBch s\u1EED" : "\u0110ang thu th\u1EADp d\u1EEF li\u1EC7u \u0111\xE1nh gi\xE1"
+            children: (P == null ? void 0 : P.status) === "calibrated" ? "Đã bật điều chỉnh lịch sử" : "Đang thu thập dữ liệu đánh giá"
           }), O.jsx("span", {
-            children: P ? `${P.sample_count}/${P.minimum_samples} k\u1EBFt qu\u1EA3 c\u1EA7n thi\u1EBFt.` : "Ch\u01B0a c\xF3 \u0111\u1EE7 k\u1EBFt qu\u1EA3 l\u1ECBch s\u1EED theo t\u1EEBng ti\xEAu ch\xED; tr\u1ECDng s\u1ED1 h\u1ECD\
-c v\u1EABn \u1EDF m\u1EE9c trung b\xECnh."
+            children: P ? `${P.sample_count}/${P.minimum_samples} kết quả cần thiết.` : "Chưa có đủ kết quả lịch sử theo từng tiêu chí; trọng số học vẫn ở mức trung bình."
           })]
         }), (P == null ? void 0 : P.evidence) && O.jsx("div", {
-          className: "calib\
-ration-list",
+          className: "calibration-list",
           children: ya.map(g => O.jsxs("span", {
             children: [g.label, O.jsxs("b", {
               children: [P.evidence[g.key].adjustment.toFixed(2), ""]
             }), O.jsxs("small", {
-              children: [P.evidence[g.key].samples, " m\u1EABu"]
+              children: [P.evidence[g.key].samples, " mẫu"]
             })]
           }, g.key))
         }), O.jsx("h4", {
-          children: "L\u1ECBch s\u1EED c\xE1c \u0111\u1EE3t \u0111\u1EC1 xu\u1EA5t chung"
+          children: "Lịch sử các đợt đề xuất chung"
         }), n.length ? O.jsx("div", {
-          className: "\
-table-wrap",
+          className: "table-wrap",
           children: O.jsxs("table", {
             children: [O.jsx("thead", {
               children: O.jsxs("tr", {
                 children: [O.jsx("th", {
-                  children: "\
-Ng\xE0y \u0111\u1EC1 xu\u1EA5t"
+                  children: "Ngày đề xuất"
                 }), O.jsx("th", {
-                  children: "S\u1ED1 m\xE3 \u0111\xFAng / t\u1ED5ng m\xE3"
+                  children: "Số mã đúng / tổng mã"
                 }), O.jsx("th", {
-                  children: "M\xE3 d\u1EF1 b\xE1o \u0111\xFAng"
+                  children: "Mã dự báo đúng"
                 }), O.jsx("th", {
-                  children: "Sinh l\u1EDDi trung b\xECnh c\xE1c m\xE3"
+                  children: "Sinh lời trung bình các mã"
                 })]
               })
             }), O.jsx("tbody", {
@@ -1086,8 +1012,7 @@ Ng\xE0y \u0111\u1EC1 xu\u1EA5t"
                 }), O.jsxs("td", {
                   children: [g.measured_count, "/", g.selected_count]
                 }), O.jsx("td", {
-                  children: g.hit_rate_pct == null ? "\u0110ang\
- ch\u1EDD" : `${g.hit_rate_pct}%`
+                  children: g.hit_rate_pct == null ? "Đang chờ" : `${g.hit_rate_pct}%`
                 }), O.jsx("td", {
                   children: g.average_forward_return_pct == null ? "-" : `${Number(g.average_forward_return_pct).toFixed(2)}%`
                 })]
@@ -1096,8 +1021,7 @@ Ng\xE0y \u0111\u1EC1 xu\u1EA5t"
           })
         }) : O.jsx("p", {
           className: "muted-text",
-          children: "Ch\u01B0a c\xF3 k\u1EF3 \u0111\xE1nh gi\xE1 \u0111\u1EE7 d\u1EEF li\u1EC7\
-u."
+          children: "Chưa có kỳ đánh giá đủ dữ liệu."
         })]
       })]
     })]
@@ -1105,7 +1029,7 @@ u."
 }
 const xa = e => e == null ? "-" : new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 0
-  }).format(Number(e)) + " ",
+  }).format(Number(e)) + " ₫",
   ja = e => e ? new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -1122,16 +1046,14 @@ function Jm({
       className: "recommendation-tracking-heading",
       children: [O.jsxs("div", {
         children: [O.jsx("h3", {
-          id: "\
-recommendation-tracking-title",
-          children: "Theo d\xF5i m\xE3 th\xEAm t\u1EEB \u0111\u1EC1 xu\u1EA5t"
+          id: "recommendation-tracking-title",
+          children: "Theo dõi mã thêm từ đề xuất"
         }), O.jsx("p", {
-          children: "\
-M\u1ED7i giao d\u1ECBch \u0111\u01B0\u1EE3c li\xEAn k\u1EBFt v\u1EDBi \u0111i\u1EC3m, gi\xE1 tham chi\u1EBFu v\xE0 k\u1EF3 h\u1EA1n t\u1EA1i l\xFAc b\u1EA1n th\xEAm m\xE3."
+          children: "Mỗi giao dịch được liên kết với điểm, giá tham chiếu và kỳ hạn tại lúc bạn thêm mã."
         })]
       }), O.jsxs("span", {
         className: "chip neutral",
-        children: [e.length, " giao d\u1ECBch"]
+        children: [e.length, " giao dịch"]
       })]
     }), e.length ? O.jsxs(i.Fragment, {
       children: [O.jsx("div", {
@@ -1140,15 +1062,15 @@ M\u1ED7i giao d\u1ECBch \u0111\u01B0\u1EE3c li\xEAn k\u1EBFt v\u1EDBi \u0111i\u1
           children: [O.jsx("thead", {
             children: O.jsxs("tr", {
               children: [O.jsx("th", {
-                children: "M\xE3 / \u0111\u1EC1 xu\u1EA5t"
+                children: "Mã / đề xuất"
               }), O.jsx("th", {
-                children: "Gi\xE1 v\xE0o th\u1EF1c t\u1EBF"
+                children: "Giá vào thực tế"
               }), O.jsx("th", {
-                children: "Gi\xE1 hi\u1EC7n t\u1EA1i"
+                children: "Giá hiện tại"
               }), O.jsx("th", {
-                children: "Bi\u1EBFn \u0111\u1ED9ng t\u1EEB gi\xE1 v\xE0o"
+                children: "Biến động từ giá vào"
               }), O.jsx("th", {
-                children: "K\u1EBFt qu\u1EA3 d\u1EF1 b\xE1o"
+                children: "Kết quả dự báo"
               })]
             })
           }), O.jsx("tbody", {
@@ -1159,16 +1081,15 @@ M\u1ED7i giao d\u1ECBch \u0111\u01B0\u1EE3c li\xEAn k\u1EBFt v\u1EDBi \u0111i\u1
                 f = (c == null ? void 0 : c.price) ?? o.current_eod_price,
                 k = Number(o.actual_entry_price),
                 j = f != null && k > 0 ? (Number(f) / k - 1) * 100 : null,
-                y = a.status === "pending" ? "pending" : a.outcome === "positive" ? "positive" : a.outcome === "negative" ? "negative" : "\
-flat";
+                y = a.status === "pending" ? "pending" : a.outcome === "positive" ? "positive" : a.outcome === "negative" ? "negative" : "flat";
               return O.jsxs("tr", {
                 children: [O.jsxs("td", {
                   children: [O.jsx("strong", {
                     children: o.symbol
                   }), O.jsxs("small", {
-                    children: ["\u0110i\u1EC3m: ", Number(u.score || 0).toFixed(1), " - ", ja(u.generated_at)]
+                    children: ["Điểm: ", Number(u.score || 0).toFixed(1), " - ", ja(u.generated_at)]
                   }), O.jsx("small", {
-                    children: o.position_status === "active" ? "C\xF2n v\u1ECB th\u1EBF" : "\u0110\xFAng / kh\xF4ng c\xF2n v\u1ECB th\u1EBF"
+                    children: o.position_status === "active" ? "Còn vị thế" : "Đúng / không còn vị thế"
                   })]
                 }), O.jsxs("td", {
                   children: [xa(o.actual_entry_price), O.jsx("small", {
@@ -1176,17 +1097,17 @@ flat";
                   })]
                 }), O.jsxs("td", {
                   children: [xa(f), O.jsx("small", {
-                    children: c ? `Intraday  ${ja(c.observed_at)}` : "Gi EOD"
+                    children: c ? `Intraday · ${ja(c.observed_at)}` : "Giá EOD"
                   })]
                 }), O.jsx("td", {
                   className: j == null ? "" : j >= 0 ? "positive" : "negative",
-                  children: j == null ? "Ch\u01B0a c\xF3 gi\xE1" : `${j >= 0 ? "+" : ""}${j.toFixed(2)}%`
+                  children: j == null ? "Chưa có giá" : `${j >= 0 ? "+" : ""}${j.toFixed(2)}%`
                 }), O.jsxs("td", {
                   children: [O.jsx("span", {
                     className: `recommendation-outcome is-${y}`,
-                    children: a.status === "pending" ? `\u0110ang ch\u1EDD ${a.sessions_observed || 0}/${a.horizon_days || u.horizon_days} phi\xEAn` : a.outcome === "positive" ? `\u0110\xFAng chi\u1EC1u \xB7 +${Number(a.forward_return_pct).toFixed(2)}%` : a.outcome === "negative" ? `Ng\u01B0\u1EE3c chi\u1EC1u \xB7 ${Number(a.forward_return_pct).toFixed(2)}%` : `\u0110i ngang  ${Number(a.forward_return_pct || 0).toFixed(2)}%`
+                    children: a.status === "pending" ? `Đang chờ ${a.sessions_observed || 0}/${a.horizon_days || u.horizon_days} phiên` : a.outcome === "positive" ? `Đúng chiều · +${Number(a.forward_return_pct).toFixed(2)}%` : a.outcome === "negative" ? `Ngược chiều · ${Number(a.forward_return_pct).toFixed(2)}%` : `Đi ngang · ${Number(a.forward_return_pct || 0).toFixed(2)}%`
                   }), O.jsxs("small", {
-                    children: ["So gi\xE1 tham chi\u1EBFu ", xa(u.expected_entry_price), " sau ", a.horizon_days || u.horizon_days, " phi\xEAn"]
+                    children: ["So giá tham chiếu ", xa(u.expected_entry_price), " sau ", a.horizon_days || u.horizon_days, " phiên"]
                   })]
                 })]
               }, o.transaction_id);
@@ -1195,20 +1116,16 @@ flat";
         })
       }), O.jsxs("p", {
         className: "recommendation-tracking-note",
-        children: ["-Bi\u1EBFn \u0111\u1ED9ng t\u1EEB gi\xE1 v\xE0o- so gi\xE1 hi\u1EC7n \
-t\u1EA1i v\u1EDBi gi\xE1 tr\xEAn giao d\u1ECBch \u0111\xE3 ghi nh\u1EADn; \u0111\xE2y kh\xF4ng ph\u1EA3i l\xE3i/l\u1ED7 th\u1EF1c hi\u1EC7n. -K\u1EBFt qu\u1EA3 d\u1EF1 b\xE1o- so gi\xE1 EOD \u1EDF phi\xEAn th\u1EE9 ", ((t = (n = e[0]) == null ? void 0 : n.evaluation) == null ? void 0 : t.horizon_days) || ((l = (r = e[0]) == null ? void 0 : r.recommendation) == null ? void 0 : l.horizon_days) || 20, " v\u1EDBi gi\xE1 tham chi\u1EBFu l\xFAc \u0111\u1EC1 xu\u1EA5t. Tr\u1EA1ng th\xE1i ch\u1EDD t\u1EF1 c\u1EADp nh\
-\u1EADt khi c\xF3 \u0111\u1EE7 phi\xEAn."]
+        children: ["“Biến động từ giá vào” so giá hiện tại với giá trên giao dịch đã ghi nhận; đây không phải lãi/lỗ thực hiện. “Kết quả dự báo” so giá EOD ở phiên thứ ", ((t = (n = e[0]) == null ? void 0 : n.evaluation) == null ? void 0 : t.horizon_days) || ((l = (r = e[0]) == null ? void 0 : r.recommendation) == null ? void 0 : l.horizon_days) || 20, " với giá tham chiếu lúc đề xuất. Trạng thái chờ tự cập nhật khi có đủ phiên."]
       })]
     }) : O.jsx("p", {
       className: "recommendation-tracking-empty",
-      children: "\
-M\xE3 th\xEAm t\u1EEB trang \u0111\u1EC1 xu\u1EA5t s\u1EBD xu\u1EA5t hi\u1EC7n \u1EDF \u0111\xE2y sau khi b\u1EA1n l\u01B0u giao d\u1ECBch. Nh\u1EEFng giao d\u1ECBch c\u0169 kh\xF4ng c\xF3 li\xEAn k\u1EBFt ngu\u1ED3n s\u1EBD kh\xF4\
-ng \u0111\u01B0\u1EE3c g\xE1n ng\u01B0\u1EE3c th\xE0nh giao d\u1ECBch t\u1EEB \u0111\u1EC1 xu\u1EA5t."
+      children: "Mã thêm từ trang đề xuất sẽ xuất hiện ở đây sau khi bạn lưu giao dịch. Những giao dịch cũ không có liên kết nguồn sẽ không được gán ngược thành giao dịch từ đề xuất."
     })]
   });
 }
 const p = e => e,
-  Xn = "Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u",
+  Xn = "Chưa có dữ liệu",
   oe = e => e == null ? Xn : new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
@@ -1220,16 +1137,14 @@ const p = e => e,
   }).format(Number(e || 0)),
   Hh = e => e == null ? Xn : `${Number(e) >= 0 ? "+" : ""}${Number(e).toFixed(2)}%`,
   He = e => e ? new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "\
-medium",
+    dateStyle: "medium",
     timeStyle: "medium",
     timeZone: "Asia/Ho_Chi_Minh"
   }).format(new Date(e)) : Xn,
   cr = e => {
     const n = new Date(e);
     return Number.isNaN(n.getTime()) ? String(e || "").slice(0, 10) : new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/H\
-o_Chi_Minh",
+      timeZone: "Asia/Ho_Chi_Minh",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
@@ -1262,12 +1177,12 @@ function ev(e = [], n = null) {
 const nv = e => ({
     id: e.id,
     symbol: e.code || e.symbol || "N/A",
-    name: e.name || p("Ch\u01B0a c\xF3 t\xEAn"),
+    name: e.name || p("Chưa có tên"),
     price: e.price == null ? null : Number(e.price),
     change: e.change == null ? null : Number(e.change),
     volume: e.volume == null ? null : Number(e.volume),
-    rating: e.rating || p("Ch\u01B0a \u0111\xE1nh gi\xE1"),
-    industry: e.industry || p("Ch\u01B0a ph\xE2n lo\u1EA1i"),
+    rating: e.rating || p("Chưa đánh giá"),
+    industry: e.industry || p("Chưa phân loại"),
     exchange: e.exchange || null,
     listingStatus: e.listing_status || "unknown",
     listingCheckedAt: e.listing_checked_at || null,
@@ -1280,18 +1195,17 @@ const nv = e => ({
     var n;
     const t = Number(((n = e.liveQuote) == null ? void 0 : n.change) ?? e.change);
     return Number.isFinite(t) ? t >= 1 ? {
-      label: "T\u0103ng t\xEDch c\u1EF1c",
-      detail: "\u0110\u1ED9ng l\u01B0\u1EE3ng t\u0103ng; ki\u1EC3m tra v\xF9ng kh\
-\xE1ng c\u1EF1."
+      label: "Tăng tích cực",
+      detail: "Động lượng tăng; kiểm tra vùng kháng cự."
     } : t <= -1 ? {
-      label: "\xC1p l\u1EF1c gi\u1EA3m",
-      detail: "\xC1p l\u1EF1c b\xE1n t\u0103ng; ki\u1EC3m tra v\xF9ng h\u1ED7 tr\u1EE3."
+      label: "Áp lực giảm",
+      detail: "Áp lực bán tăng; kiểm tra vùng hỗ trợ."
     } : {
-      label: "\u0110i ngang",
-      detail: "Bi\xEAn \u0111\u1ED9 h\u1EB9p; ch\u1EDD x\xE1c nh\u1EADn xu h\u01B0\u1EDBng."
+      label: "Đi ngang",
+      detail: "Biên độ hẹp; chờ xác nhận xu hướng."
     } : {
-      label: "Theo di thm",
-      detail: "Ch\u1EDD quote m\u1EDBi \u0111\u1EC3 x\xE1c nh\u1EADn xu h\u01B0\u1EDBng."
+      label: "Theo dõi thêm",
+      detail: "Chờ quote mới để xác nhận xu hướng."
     };
   };
 function lv() {
@@ -1401,7 +1315,7 @@ function lv() {
     const S = new AbortController();
     localStorage.setItem("market-auth", JSON.stringify(ue));
     const $ = A => {
-      d || (A.status === 401 ? (Bt(null), on(A.message)) : Dr("Kh\xF4ng t\u1EA3i \u0111\u01B0\u1EE3c danh m\u1EE5c. Vui l\xF2ng th\u1EED l\u1EA1i."));
+      d || (A.status === 401 ? (Bt(null), on(A.message)) : Dr("Không tải được danh mục. Vui lòng thử lại."));
     };
     return Fr(true), Dr(""), je("/api/watchlist", {
       token: ue.token,
@@ -1424,8 +1338,7 @@ function lv() {
   const wt = Pn("/api/health"),
     ai = Pn("/api/cache/stats"),
     au = Pn("/api/ai-gate", Bm),
-    su = Pn("/api/recommendations/\
-latest", Vm),
+    su = Pn("/api/recommendations/latest", Vm),
     uu = Pn("/api/recommendations/history?limit=5", Hm);
   Pn("/api/recommendations/readiness", Qm);
   const Nt = Pn(`/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`, Pc),
@@ -1461,8 +1374,7 @@ latest", Vm),
     me = Ro.find(d => d.id === Cn) || (Cn ? {
       id: Cn
     } : Ro[0]),
-    Ee = Pn(me != null && me.id ? `/\
-api/stocks/${encodeURIComponent(me.id)}` : null, Um),
+    Ee = Pn(me != null && me.id ? `/api/stocks/${encodeURIComponent(me.id)}` : null, Um),
     [Kh, du] = D.useState(false),
     [Wh, hu] = D.useState(false),
     T = Pn(Kh && me != null && me.id ? `/api/stocks/${encodeURIComponent(me.id)}/analysis${Wh ? "?refresh=1" : ""}` : null, bm),
@@ -1584,7 +1496,7 @@ api/stocks/${encodeURIComponent(me.id)}` : null, Um),
             recommendation_entries: [...(Z.recommendation_entries || []), de]
           };
         }
-        mt($.data), on(p("Ghi nh\u1EADn giao d\u1ECBch"));
+        mt($.data), on(p("Ghi nhận giao dịch"));
       } catch (S) {
         on(S.message);
       }
@@ -1612,8 +1524,7 @@ api/stocks/${encodeURIComponent(me.id)}` : null, Um),
         direction: S.direction === "asc" ? "desc" : "asc"
       } : {
         key: d,
-        direction: "\
-asc"
+        direction: "asc"
       });
     }),
     fu = d => Ze(() => En(Math.max(1, d))),
@@ -1631,7 +1542,7 @@ asc"
             A = Pc($),
             Z = A.find(de => String(de.code || de.symbol).toUpperCase() === S.toUpperCase()) || A[0];
           if (!Z) {
-            vt(p("Kh\xF4ng th\u1EA5y th\u01B0 m\u1EE5c n\xE0y trong danh s\xE1ch."));
+            vt(p("Không thấy thư mục này trong danh sách."));
             return;
           }
           ht(Z.id), tl(""), vt(""), Xe("detail");
@@ -1698,17 +1609,16 @@ asc"
     }).join(", "),
     [of, af] = D.useState([{
       role: "ai",
-      text: p("AI Advisor \u0111ang s\u1EED d\u1EE5ng ph\xE2n t\xEDch rule-based c\xF3 ngu\u1ED3n v\xE0 \
-quality gate.")
+      text: p("AI Advisor đang sử dụng phân tích rule-based có nguồn và quality gate.")
     }]),
     [bo, mu] = D.useState(""),
     Bo = d => {
       var S, $;
       const A = String(d || "").trim();
       if (!A) return;
-      const Z = (me == null ? void 0 : me.symbol) || p("M\xE3 \u0111ang ch\u1ECDn"),
-        de = (($ = (S = T.data) == null ? void 0 : S.insight) == null ? void 0 : $.label) || p("Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u \u0111\u1EC3 t\u1EA1o nh\u1EADn \u0111\u1ECBnh"),
-        Gt = `${Z}: ${de}. ${p("\u0110\xE2y l\xE0 ph\xE2n t\xEDch ph\u1EE5c v\u1EE5 nghi\xEAn c\u1EE9u, kh\xF4ng ph\u1EA3i khuy\u1EBFn ngh\u1ECB mua b\xE1n.")}`;
+      const Z = (me == null ? void 0 : me.symbol) || p("Mã đang chọn"),
+        de = (($ = (S = T.data) == null ? void 0 : S.insight) == null ? void 0 : $.label) || p("Chưa đủ dữ liệu để tạo nhận định"),
+        Gt = `${Z}: ${de}. ${p("Đây là phân tích phục vụ nghiên cứu, không phải khuyến nghị mua bán.")}`;
       af(St => [...St, {
         role: "user",
         text: A
@@ -1736,19 +1646,18 @@ quality gate.")
         })]
       }), O.jsx("p", {
         className: "eyebrow accent",
-        children: p("Ph\xE2n t\xEDch c\xE1 nh\xE2n")
+        children: p("Phân tích cá nhân")
       }), O.jsx("h1", {
-        children: p(Un === "login" ? "\u0110\u0103ng nh\u1EADp" : "T\u1EA1o t\xE0i kho\u1EA3n")
+        children: p(Un === "login" ? "Đăng nhập" : "Tạo tài khoản")
       }), O.jsx("p", {
         className: "muted-text",
-        children: p("\u0110\u0103ng nh\u1EADp \u0111\u1EC3 l\u01B0u watchlist v\xE0 danh m\u1EE5c ri\xEAng.")
+        children: p("Đăng nhập để lưu watchlist và danh mục riêng.")
       }), O.jsxs("form", {
         onSubmit: Yh,
         className: "auth-form",
         children: [O.jsxs("label", {
           children: [p("Email"), O.jsx("input", {
-            "aria-label": p("Email \u0111\u0103\
-ng nh\u1EADp"),
+            "aria-label": p("Email đăng nhập"),
             type: "email",
             placeholder: "you@example.com",
             value: bn.email,
@@ -1759,10 +1668,10 @@ ng nh\u1EADp"),
             required: true
           })]
         }), O.jsxs("label", {
-          children: [p("M\u1EADt kh\u1EA9u"), O.jsx("input", {
-            "aria-label": p("M\u1EADt kh\u1EA9u \u0111\u0103ng nh\u1EADp"),
+          children: [p("Mật khẩu"), O.jsx("input", {
+            "aria-label": p("Mật khẩu đăng nhập"),
             type: "password",
-            placeholder: p("T\u1ED1i thi\u1EC3u 8 k\xFD t\u1EF1"),
+            placeholder: p("Tối thiểu 8 ký tự"),
             value: bn.password,
             onChange: d => Vt({
               ...bn,
@@ -1774,15 +1683,12 @@ ng nh\u1EADp"),
         }), O.jsx("button", {
           className: "primary-btn",
           type: "submit",
-          children: p(Un === "login" ? "\u0110\u0103ng nh\u1EADp" : "\u0110\u0103ng \
-k\xFD")
+          children: p(Un === "login" ? "Đăng nhập" : "Đăng ký")
         }), O.jsx("button", {
           className: "ghost-btn",
           type: "button",
-          onClick: () => ei(Un === "login" ? "register" : "l\
-ogin"),
-          children: p(Un === "login" ? "Ch\u01B0a c\xF3 t\xE0i kho\u1EA3n? \u0110\u0103ng k\xFD" : "\u0110\xE3 c\xF3 t\xE0i kho\u1EA3n? \u0110\u0103ng \
-nh\u1EADp")
+          onClick: () => ei(Un === "login" ? "register" : "login"),
+          children: p(Un === "login" ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")
         }), dt && O.jsx("p", {
           role: "alert",
           className: "error-text",
@@ -1834,13 +1740,11 @@ nh\u1EADp")
   return O.jsxs("div", {
     className: `dashboard-shell ${yn ? "sidebar-collapsed" : ""}`,
     children: [O.jsxs("aside", {
-      className: `\
-sidebar ${yn ? "is-collapsed" : ""}`,
+      className: `sidebar ${yn ? "is-collapsed" : ""}`,
       children: [O.jsxs("div", {
         className: "brand-block",
         children: [O.jsx("div", {
-          className: "\
-brand-mark",
+          className: "brand-mark",
           children: "S"
         }), O.jsxs("div", {
           children: [O.jsx("p", {
@@ -1853,9 +1757,8 @@ brand-mark",
       }), O.jsx("button", {
         type: "button",
         className: "sidebar-toggle",
-        title: yn ? "M\u1EDF r\u1ED9ng thanh \u0111i\u1EC1u h\u01B0\u1EDBng" : "Thu g\u1ECDn thanh \u0111i\u1EC1u h\u01B0\u1EDBng",
-        "aria-\
-label": yn ? "M\u1EDF r\u1ED9ng thanh \u0111i\u1EC1u h\u01B0\u1EDBng" : "Thu g\u1ECDn thanh \u0111i\u1EC1u h\u01B0\u1EDBng",
+        title: yn ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng",
+        "aria-label": yn ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng",
         onClick: () => ni(d => !d),
         children: O.jsx("svg", {
           className: "sidebar-toggle-icon",
@@ -1868,18 +1771,14 @@ label": yn ? "M\u1EDF r\u1ED9ng thanh \u0111i\u1EC1u h\u01B0\u1EDBng" : "Thu g\u
         })
       }), O.jsx("nav", {
         className: "nav",
-        children: [["overview", "T\
-\u1ED5ng quan", "-"], ["market-board", "B\u1EA3ng gi\xE1", "-"], ["portfolio", "Danh m\u1EE5c c\xE1 nh\xE2n", "-"], ["detail", "Chi ti\u1EBFt m\xE3", "-"], ["recom\
-mendations", "\u0110\u1EC1 xu\u1EA5t", "-"], ["advisor", "AI Advisor", "-"]].map(([d, S, $]) => O.jsx("button", {
-          className: `\
-nav-item ${d === "market-board" ? "market-board-nav-item " : ""}${re === d ? "active" : ""}`,
+        children: [["overview", "Tổng quan", "-"], ["market-board", "Bảng giá", "-"], ["portfolio", "Danh mục cá nhân", "-"], ["detail", "Chi tiết mã", "-"], ["recommendations", "Đề xuất", "-"], ["advisor", "AI Advisor", "-"]].map(([d, S, $]) => O.jsx("button", {
+          className: `nav-item ${d === "market-board" ? "market-board-nav-item " : ""}${re === d ? "active" : ""}`,
           onClick: () => navigateToPage(d),
           title: S,
           "aria-label": S,
           "aria-current": re === d ? "page" : void 0,
           children: [O.jsx("span", {
-            className: "\
-nav-icon",
+            className: "nav-icon",
             children: O.jsx(Am, {
               name: d
             })
@@ -1892,17 +1791,16 @@ nav-icon",
         className: "profile-card",
         children: [O.jsx("p", {
           className: "eyebrow",
-          children: p("T\xE0i kho\u1EA3n")
+          children: p("Tài khoản")
         }), O.jsx("strong", {
           className: "profile-email",
           children: ue.user.email
         }), O.jsx("span", {
           className: "role-badge",
-          children: ue.user.role === "admin" ? p("Qu\u1EA3n tr\u1ECB vi\xEAn") : p("Nh\xE0 \u0111\u1EA7u t\u01B0")
+          children: ue.user.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
         }), O.jsx("p", {
-          className: "\
-eyebrow",
-          children: p("Danh m\u1EE5c")
+          className: "eyebrow",
+          children: p("Danh mục")
         })]
       })]
     }), O.jsxs("main", {
@@ -1917,19 +1815,18 @@ eyebrow",
             children: currentPageTitle[1]
           })]
         }), O.jsxs("div", {
-          className: "\
-topbar-actions",
+          className: "topbar-actions",
           children: [O.jsx("span", {
             children: ue.user.email
           }), O.jsx("button", {
             className: "ghost-btn",
             onClick: () => Bt(null),
-            children: p("\u0110\u0103ng xu\u1EA5t")
+            children: p("Đăng xuất")
           })]
         })]
       }), (re === "overview" && cu || re === "portfolio" && ci.loading || re === "detail" && (Ee.status === "loading" || fi.loading) || re === "recommendations" && (su.status === "loading" || uu.status === "loading")) && O.jsx(PageLoadingOverlay, {
         active: true,
-        label: re === "detail" ? p("\u0110ang t\u1EA3i d\u1EEF li\u1EC7u Chi ti\u1EBFt m\u00E3 m\u1EDBi nh\u1EA5t...") : re === "recommendations" ? p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u \u0110\u1EC1 xu\u1EA5t m\u1EDBi nh\u1EA5t...") : re === "portfolio" ? p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u Danh m\u1EE5c m\u1EDBi nh\u1EA5t...") : p("\u0110ang c\u1EADp nh\u1EADt d\u1EEF li\u1EC7u Th\u1ECB tr\u01B0\u1EDDng m\u1EDBi nh\u1EA5t...")
+        label: re === "detail" ? p("Đang tải dữ liệu Chi tiết mã mới nhất...") : re === "recommendations" ? p("Đang cập nhật dữ liệu Đề xuất mới nhất...") : re === "portfolio" ? p("Đang cập nhật dữ liệu Danh mục mới nhất...") : p("Đang cập nhật dữ liệu Thị trường mới nhất...")
       }), re !== "market-board" && (wt.error || ai.error) && O.jsxs("section", {
         className: "api-panel diagnostics-panel",
         children: [wt.error && O.jsxs("p", {
@@ -1937,14 +1834,14 @@ topbar-actions",
           children: [wt.error, " ", O.jsx("button", {
             className: "ghost-btn small-btn",
             onClick: wt.retry,
-            children: p("Th\u1EED l\u1EA1i health")
+            children: p("Thử lại health")
           })]
         }), ai.error && O.jsxs("p", {
           role: "alert",
           children: [ai.error, " ", O.jsx("button", {
             className: "ghost-btn small-btn",
             onClick: ai.retry,
-            children: p("Th\u1EED l\u1EA1i cache")
+            children: p("Thử lại cache")
           })]
         })]
       }), O.jsx(MarketBoardPage, {
@@ -1964,45 +1861,38 @@ topbar-actions",
           className: "overview-hero panel",
           children: [O.jsxs("div", {
             children: [O.jsx("p", {
-              className: "e\
-yebrow accent",
-              children: p("T\u1ED5ng quan th\u1ECB tr\u01B0\u1EDDng")
+              className: "eyebrow accent",
+              children: p("Tổng quan thị trường")
             }), O.jsx("h2", {
-              children: p("Theo d\xF5i gi\xE1 v\xE0 c\
-\xE1c m\xE3 quan t\xE2m c\u1EE7a b\u1EA1n.")
+              children: p("Theo dõi giá và các mã quan tâm của bạn.")
             }), O.jsx("p", {
-              children: p("Gi\xE1 intraday \u0111\u01B0\u1EE3c d\xF9ng khi c\xF3 quote; c\xE1c m\xE3 c\
-\xF2n l\u1EA1i gi\u1EEF gi\xE1 EOD.")
+              children: p("Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD.")
             })]
           }), O.jsxs("div", {
             className: "overview-hero-actions",
-            children: [O.jsx("butt\
-on", {
+            children: [O.jsx("button", {
               className: "primary-btn",
               type: "button",
               onClick: () => Xe("portfolio"),
-              children: p("M\xE3 danh m\u1EE5c c\xE1 nh\xE2n")
+              children: p("Mã danh mục cá nhân")
             }), O.jsx("button", {
               className: "ghost-btn",
               type: "button",
               onClick: () => Xe("recommendations"),
-              children: p("\u0110\u1EBFn tab \u0111\
-\u1EC1 xu\u1EA5t")
+              children: p("Đến tab đề xuất")
             })]
           })]
         }), O.jsxs("section", {
           className: "overview-metrics",
-          "aria-label": p("T\xF3m t\u1EAFt th\u1ECB tr\u01B0\u1EDDng"),
+          "aria-label": p("Tóm tắt thị trường"),
           children: [O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("M\xE3 trong v\u0169\
- tr\u1EE5 d\u1EEF li\u1EC7u")
+              children: p("Mã trong vũ trụ dữ liệu")
             }), O.jsx("strong", {
               children: vu
             }), O.jsx("small", {
-              children: p("K\u1EBFt qu\u1EA3 theo b\u1ED9 l\u1ECDc h\
-i\u1EC7n t\u1EA1i")
+              children: p("Kết quả theo bộ lọc hiện tại")
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
@@ -2012,30 +1902,27 @@ i\u1EC7n t\u1EA1i")
               children: [yi, O.jsxs("small", {
                 children: [" / ", il.length]
               })]
-            }), O.jsx("\
-small", {
-              children: p("M\xE3 c\xF3 quote; c\xF2n l\u1EA1i d\xF9ng EOD")
+            }), O.jsx("small", {
+              children: p("Mã có quote; còn lại dùng EOD")
             })]
           }), O.jsxs("article", {
-            className: "panel ov\
-erview-metric",
+            className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("M\xE3 c\xE1 nh\xE2n")
+              children: p("Mã cá nhân")
             }), O.jsx("strong", {
               children: sf
             }), O.jsx("small", {
-              children: p("Danh m\u1EE5c ho\u1EB7c Watchlist")
+              children: p("Danh mục hoặc Watchlist")
             })]
           }), O.jsxs("article", {
-            className: "panel overview-met\
-ric",
+            className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("Quote m\u1EDBi nh\u1EA5t")
+              children: p("Quote mới nhất")
             }), O.jsx("strong", {
               className: "overview-time",
-              children: yu ? He(yu) : p("Ch\u01B0a c\xF3 quote")
+              children: yu ? He(yu) : p("Chưa có quote")
             }), O.jsx("small", {
-              children: p("Th\u1EDDi \u0111i\u1EC3m provider ghi nh\u1EADn")
+              children: p("Thời điểm provider ghi nhận")
             })]
           })]
         }), O.jsx(MarketBreadth, {
@@ -2046,95 +1933,84 @@ ric",
         }), false && O.jsxs("section", {
           className: "panel legacy-table-panel",
           children: [O.jsxs("div", {
-            className: "\
-panel-header",
+            className: "panel-header",
             children: [O.jsx("h3", {
-              children: p("Danh s\xE1ch c\u1ED5 phi\u1EBFu")
+              children: p("Danh sách cổ phiếu")
             }), O.jsxs("div", {
-              className: "t\
-able-tools",
+              className: "table-tools",
               children: [O.jsxs("div", {
                 className: "table-tabs",
                 children: [O.jsx("button", {
                   className: "tab-btn active",
                   type: "button",
-                  children: p("T\u1EA5t c\u1EA3")
+                  children: p("Tất cả")
                 }), O.jsxs("select", {
                   className: "sector-select",
-                  "aria-label": p("Nh\
-\xF3m ng\xE0nh"),
+                  "aria-label": p("Nhóm ngành"),
                   value: Qt,
                   onChange: d => Ze(() => {
                     En(1), ii(d.target.value);
                   }),
                   children: [O.jsx("option", {
                     value: "",
-                    children: p("Nh\xF3m ng\xE0nh")
+                    children: p("Nhóm ngành")
                   }), O.jsx("option", {
                     value: "technology",
-                    children: p("C\xF4ng ngh\u1EC7")
+                    children: p("Công nghệ")
                   }), O.jsx("option", {
                     value: "banking_finance",
-                    children: p("Ng\xE0nh ng\xE2n h\xE0ng v\xE0 t\xE0i c\
-h\xEDnh")
+                    children: p("Ngành ngân hàng và tài chính")
                   }), O.jsx("option", {
                     value: "securities",
-                    children: p("Ch\u1EE9ng kho\xE1n")
+                    children: p("Chứng khoán")
                   }), O.jsx("option", {
-                    value: "re\
-al_estate",
-                    children: p("B\u1EA5t \u0111\u1ED9ng s\u1EA3n")
+                    value: "real_estate",
+                    children: p("Bất động sản")
                   }), O.jsx("option", {
                     value: "energy_resources",
-                    children: p("T\xE0i nguy\xEAn & n\u0103ng l\u01B0\u1EE3ng")
+                    children: p("Tài nguyên & năng lượng")
                   }), O.jsx("option", {
                     value: "manufacturing",
-                    children: p("S\u1EA3n xu\u1EA5t c\xF4\
-ng nghi\u1EC7p")
+                    children: p("Sản xuất công nghiệp")
                   }), O.jsx("option", {
                     value: "consumer_retail",
-                    children: p("Ti\xEAu d\xF9ng & b\xE1n l\u1EBB")
+                    children: p("Tiêu dùng & bán lẻ")
                   }), O.jsx("option", {
                     value: "construction_infrastructure",
-                    children: p("X\xE2y d\u1EF1ng & h\u1EA1 t\u1EA7ng")
-                  }), O.jsx("optio\
-n", {
+                    children: p("Xây dựng & hạ tầng")
+                  }), O.jsx("option", {
                     value: "other",
-                    children: p("Kh\xE1c / ch\u01B0a ph\xE2n lo\u1EA1i")
+                    children: p("Khác / chưa phân loại")
                   })]
                 })]
               }), O.jsx("input", {
-                className: "tabl\
-e-search",
-                "aria-label": p("T\xECm c\u1ED5 phi\u1EBFu"),
-                placeholder: p("T\xECm m\xE3 ho\u1EB7c t\xEAn c\xF4ng ty"),
+                className: "table-search",
+                "aria-label": p("Tìm cổ phiếu"),
+                placeholder: p("Tìm mã hoặc tên công ty"),
                 value: ft,
                 onChange: d => Ze(() => {
                   En(1), ri(d.target.value);
                 })
               }), O.jsxs("span", {
                 className: "muted-text",
-                children: [p("Hi\u1EC3n th\u1ECB"), " ", al.length, "/", vu, " ", p("\
-m\xE3")]
+                children: [p("Hiển thị"), " ", al.length, "/", vu, " ", p("mã")]
               }), O.jsxs("label", {
                 className: "page-size-control",
-                children: [p("S\u1ED1 m\xE3 /trang"), O.jsxs("select", {
+                children: [p("Số mã /trang"), O.jsxs("select", {
                   value: Ht,
                   onChange: d => ef(d.target.value),
                   children: [O.jsx("option", {
                     value: "25",
                     children: "25"
                   }), O.jsx("option", {
-                    value: "\
-50",
+                    value: "50",
                     children: "50"
                   }), O.jsx("option", {
                     value: "100",
                     children: "100"
                   }), O.jsx("option", {
                     value: "200",
-                    children: "2\
-00"
+                    children: "200"
                   })]
                 })]
               })]
@@ -2144,63 +2020,53 @@ m\xE3")]
             role: "status",
             children: [cu && O.jsx("span", {
               className: "realtime-loading",
-              children: "\u0110ang c\u1EADp nh\u1EADt intraday..."
+              children: "Đang cập nhật intraday..."
             }), ol.error && O.jsx("span", {
               children: ol.error
             }), (ui == null ? void 0 : ui.status) === "circuit_open" && O.jsx("span", {
               className: "data-time",
-              children: "P\
-rovider circuit open; gi\u1EEF d\u1EEF li\u1EC7u g\u1EA7n nh\u1EA5t v\xE0 s\u1EBD t\u1EF1 th\u1EED l\u1EA1i."
+              children: "Provider circuit open; giữ dữ liệu gần nhất và sẽ tự thử lại."
             }), (ui == null ? void 0 : ui.status) === "degraded" && O.jsx("span", {
               className: "data-time",
-              children: "Provider degraded; d\u1EEF \
-li\u1EC7u s\u1EBD ti\u1EBFp t\u1EE5c t\u1EF1 c\u1EADp nh\u1EADt."
+              children: "Provider degraded; dữ liệu sẽ tiếp tục tự cập nhật."
             }), O.jsx("span", {
-              className: yi ? "status-dot is-liv\
-e" : "status-dot"
-            }), p(yi ? "C\xF3 d\u1EEF li\u1EC7u intraday" : "\u0110ang d\xF9ng d\u1EEF li\u1EC7u EOD"), "  ", p("Q\
-uote c\xF3 th\u1EC3 tr\u1EC5; s\u1ED1 li\u1EC7u ph\u1EE5 thu\u1ED9c provider.")]
+              className: yi ? "status-dot is-live" : "status-dot"
+            }), p(yi ? "Có dữ liệu intraday" : "Đang dùng dữ liệu EOD"), "  ", p("Quote có thể trễ; số liệu phụ thuộc provider.")]
           }), O.jsxs("div", {
-            className: "overvie\
-w-source-summary",
+            className: "overview-source-summary",
             role: "note",
             children: [O.jsx("strong", {
-              children: "Ngu\u1ED3n d\u1EEF li\u1EC7u"
+              children: "Nguồn dữ liệu"
             }), gu && O.jsx($i, {
               url: gu,
-              children: "Gi\u1EA5y ph\xE9p d\u1EEF li\u1EC7u"
+              children: "Giấy phép dữ liệu"
             }), O.jsxs("span", {
-              children: [yi, "/", si.length, " m\xE3 c\xF3\
- Intraday t\u1EEB VCI; m\xE3 c\xF2n l\u1EA1i gi\u1EEF EOD g\u1EA7n nh\u1EA5t."]
+              children: [yi, "/", si.length, " mã có Intraday từ VCI; mã còn lại giữ EOD gần nhất."]
             }), O.jsx("span", {
-              className: "overview\
--source-help",
-              title: "Kh\u1ED1i l\u01B0\u1EE3ng Intraday l\xE0 kh\u1ED1i l\u01B0\u1EE3ng giao d\u1ECBch ghi nh\u1EADn; EOD l\xE0 d\u1EEF li\u1EC7u phi\xEAn g\u1EA7n nh\u1EA5t.",
-              "aria-label": "Gi\u1EA3i th\xEDch ngu\u1ED3n d\u1EEF li\u1EC7u",
+              className: "overview-source-help",
+              title: "Khối lượng Intraday là khối lượng giao dịch ghi nhận; EOD là dữ liệu phiên gần nhất.",
+              "aria-label": "Giải thích nguồn dữ liệu",
               children: "i"
             })]
           }), O.jsx("div", {
-            className: "tabl\
-e-wrap",
+            className: "table-wrap",
             children: O.jsxs("table", {
               children: [O.jsx("thead", {
                 children: O.jsxs("tr", {
-                  children: [[["symbol", "M\xE3", "K\xED hi\u1EC7u giao d\u1ECBch"], ["name", "T\xEAn", "T\xEAn doanh nghi\u1EC7p"], ["price", "Gi\xE1", "Gi\xE1 g\u1EA7n nh\u1EA5t"], ["change", "Bi\u1EBFn \u0111\u1ED9ng", "M\u1EE9c t\u0103ng gi\u1EA3m"], ["volume", "Kh\u1ED1i l\u01B0\u1EE3ng", "Kh\u1ED1i \
-l\u01B0\u1EE3ng giao d\u1ECBch"]].map(([d, S, $]) => O.jsx("th", {
+                  children: [[["symbol", "Mã", "Kí hiệu giao dịch"], ["name", "Tên", "Tên doanh nghiệp"], ["price", "Giá", "Giá gần nhất"], ["change", "Biến động", "Mức tăng giảm"], ["volume", "Khối lượng", "Khối lượng giao dịch"]].map(([d, S, $]) => O.jsx("th", {
                     children: O.jsxs("button", {
-                      className: "table-sort-b\
-tn",
+                      className: "table-sort-btn",
                       type: "button",
                       onClick: () => Jh(d),
                       title: p($),
                       children: [p(S), be.key === d ? (be.direction, " ") : ""]
                     })
                   }, d)), O.jsx("th", {
-                    children: p("Ngu\u1ED3n d\u1EEF li\u1EC7u")
+                    children: p("Nguồn dữ liệu")
                   }), O.jsx("th", {
-                    children: p("Nh\u1EADn \u0111\u1ECBnh")
+                    children: p("Nhận định")
                   }), O.jsx("th", {
-                    children: "Thao t\xE1c"
+                    children: "Thao tác"
                   })]
                 })
               }), O.jsx("tbody", {
@@ -2217,15 +2083,14 @@ tn",
                         className: "pin-labels",
                         children: [gt.has(d.symbol) && O.jsx("small", {
                           className: "pin-badge",
-                          children: "Danh m\u1EE5c"
+                          children: "Danh mục"
                         }), yt.has(d.symbol) && O.jsx("small", {
                           className: "pin-badge",
                           children: "Watchlist"
                         }), d.listingStatus === "delisted" ? O.jsx("small", {
-                          className: "\
-listing-badge delisted",
+                          className: "listing-badge delisted",
                           title: d.listingCheckedAt || "Historical symbol",
-                          children: " \u0110\xE3 h\u1EE7y ni\xEAm y\u1EBFt"
+                          children: " Đã hủy niêm yết"
                         }) : d.listingStatus === "listed" && d.exchange ? O.jsx("small", {
                           className: "listing-badge listed",
                           title: d.listingCheckedAt || d.exchange,
@@ -2245,8 +2110,8 @@ listing-badge delisted",
                     }), O.jsxs("td", {
                       children: [Et(d.volume), O.jsx("small", {
                         className: "volume-context",
-                        title: ((S = d.liveQuote) == null ? void 0 : S.interval) === "intraday" ? "Kh\u1ED1i l\u01B0\u1EE3ng giao d\u1ECBch Intraday t\u1EEB quote m\u1EDBi nh\u1EA5t." : "Kh\u1ED1i l\u01B0\u1EE3ng EOD c\u1EE7a phi\xEAn g\u1EA7n nh\u1EA5t.",
-                        "aria-label": (($ = d.liveQuote) == null ? void 0 : $.interval) === "intraday" ? "Kh\u1ED1i l\u01B0\u1EE3ng Intraday" : "Kh\u1ED1i l\u01B0\u1EE3ng EOD",
+                        title: ((S = d.liveQuote) == null ? void 0 : S.interval) === "intraday" ? "Khối lượng giao dịch Intraday từ quote mới nhất." : "Khối lượng EOD của phiên gần nhất.",
+                        "aria-label": (($ = d.liveQuote) == null ? void 0 : $.interval) === "intraday" ? "Khối lượng Intraday" : "Khối lượng EOD",
                         children: "i"
                       })]
                     }), O.jsx("td", {
@@ -2264,8 +2129,7 @@ listing-badge delisted",
                             children: A.detail
                           }), O.jsx("button", {
                             type: "button",
-                            className: "overview-analysis-\
-btn",
+                            className: "overview-analysis-btn",
                             onClick: Z => {
                               Z.stopPropagation(), ht(d.id);
                               try {
@@ -2273,7 +2137,7 @@ btn",
                               } catch {}
                               Xe("detail");
                             },
-                            children: "Ph\xE2n t\xEDch chuy\xEAn s\xE2u"
+                            children: "Phân tích chuyên sâu"
                           })]
                         });
                       })()
@@ -2281,9 +2145,8 @@ btn",
                       children: O.jsx("button", {
                         type: "button",
                         className: "icon-action-btn add-portfolio-btn",
-                        title: `\
-Th\xEAm ${d.symbol} v\xE0o danh m\u1EE5c`,
-                        "aria-label": `Th\xEAm ${d.symbol} v\xE0o danh m\u1EE5c`,
+                        title: `Thêm ${d.symbol} vào danh mục`,
+                        "aria-label": `Thêm ${d.symbol} vào danh mục`,
                         onClick: A => {
                           A.stopPropagation(), Ao(d);
                         },
@@ -2292,7 +2155,7 @@ Th\xEAm ${d.symbol} v\xE0o danh m\u1EE5c`,
                           "aria-hidden": "true",
                           children: "+"
                         }), O.jsx("span", {
-                          children: "Th\xEAm"
+                          children: "Thêm"
                         })]
                       })
                     })]
@@ -2300,7 +2163,7 @@ Th\xEAm ${d.symbol} v\xE0o danh m\u1EE5c`,
                 }) : O.jsx("tr", {
                   children: O.jsx("td", {
                     colSpan: "8",
-                    children: p("Ch\u01B0a c\xF3 c\u1ED5 phi\u1EBFu trong d\u1EEF li\u1EC7u")
+                    children: p("Chưa có cổ phiếu trong dữ liệu")
                   })
                 })
               })]
@@ -2309,18 +2172,15 @@ Th\xEAm ${d.symbol} v\xE0o danh m\u1EE5c`,
             className: "table-pagination",
             children: [O.jsx("button", {
               className: "ghost-btn small-btn",
-              type: "b\
-utton",
+              type: "button",
               disabled: xn <= 1,
               onClick: () => fu(xn - 1),
-              children: p("Tr\u01B0\u1EDBc")
+              children: p("Trước")
             }), O.jsxs("span", {
-              className: "mu\
-ted-text",
+              className: "muted-text",
               children: [p("Trang"), " ", gi.page, "/", gi.totalPages]
             }), O.jsx("button", {
-              className: "ghost-btn small-bt\
-n",
+              className: "ghost-btn small-btn",
               type: "button",
               disabled: xn >= gi.totalPages,
               onClick: () => fu(xn + 1),
@@ -2330,23 +2190,20 @@ n",
             className: "error-banner",
             role: "alert",
             children: [O.jsxs("p", {
-              children: [p("Kh\xF4ng th\u1EC3 t\u1EA3i danh s\xE1ch c\u1ED5 p\
-hi\u1EBFu"), ". ", Nt.error]
+              children: [p("Không thể tải danh sách cổ phiếu"), ". ", Nt.error]
             }), O.jsx("button", {
               className: "ghost-btn",
               onClick: Nt.retry,
-              children: p("Th\u1EED l\u1EA1i danh \
-s\xE1ch")
+              children: p("Thử lại danh sách")
             })]
           })]
         }), O.jsxs("section", {
           className: "overview-next panel",
           children: [O.jsxs("div", {
             children: [O.jsx("h3", {
-              children: p("Ti\u1EBFp t\u1EE5c t\u1EEB \u0111\xE2y")
+              children: p("Tiếp tục từ đây")
             }), O.jsx("p", {
-              children: p("M\u1EDF m\u1ED9t m\xE3 \u0111\u1EC3 xem bi\u1EC3u \u0111\u1ED3 v\
-\xE0 ph\xE2n t\xEDch; qu\u1EA3n l\xFD v\u1ECB th\u1EBF trong danh m\u1EE5c c\xE1 nh\xE2n.")
+              children: p("Mở một mã để xem biểu đồ và phân tích; quản lý vị thế trong danh mục cá nhân.")
             })]
           }), O.jsxs("div", {
             children: [O.jsx("button", {
@@ -2356,12 +2213,12 @@ s\xE1ch")
                 me && (ht(me.id), Xe("detail"));
               },
               disabled: !me,
-              children: p("Chi ti\u1EBFt m\xE3 \u0111ang ch\u1ECDn")
+              children: p("Chi tiết mã đang chọn")
             }), O.jsx("button", {
               className: "ghost-btn",
               type: "button",
               onClick: () => Xe("recommendations"),
-              children: p("Xem nh\u1EADn \u0111\u1ECBnh \u0111\u1EC1 xu\u1EA5t")
+              children: p("Xem nhận định đề xuất")
             })]
           })]
         })]
@@ -2374,36 +2231,32 @@ s\xE1ch")
         className: "personal-page",
         children: [Ir && O.jsx("p", {
           role: "status",
-          children: "\
-\u0110ang t\u1EA3i danh m\u1EE5c..."
+          children: "Đang tải danh mục..."
         }), bt && O.jsxs("div", {
           role: "alert",
           children: [bt, O.jsx("button", {
             onClick: () => s(d => d + 1),
-            children: "Th\u1EED l\u1EA1i danh m\u1EE5c"
+            children: "Thử lại danh mục"
           })]
         }), O.jsxs("div", {
           className: "page-heading",
           children: [O.jsx("h2", {
-            children: p("Danh m\u1EE5c v\xE0 theo d\xF5i")
+            children: p("Danh mục và theo dõi")
           }), O.jsx("p", {
-            children: p("Ch\u1EC9 theo d\xF5i giao d\u1ECBch b\xEAn \
-ngo\xE0i, kh\xF4ng th\u1EF1c hi\u1EC7n mua b\xE1n trong \u1EE9ng d\u1EE5ng.")
+            children: p("Chỉ theo dõi giao dịch bên ngoài, không thực hiện mua bán trong ứng dụng.")
           })]
         }), O.jsxs("div", {
-          className: "person\
-al-grid",
+          className: "personal-grid",
           children: [O.jsxs("article", {
             className: "panel portfolio-panel",
             children: [O.jsx("h3", {
-              children: p("Ghi n\
-h\u1EADn giao d\u1ECBch")
+              children: p("Ghi nhận giao dịch")
             }), O.jsxs("form", {
               className: "transaction-form",
               onSubmit: Zh,
               children: [O.jsxs("label", {
-                children: [p("M\xE3 c\u1ED5 phi\u1EBFu"), O.jsx("input", {
-                  "aria-label": p("M\xE3 giao d\u1ECBch"),
+                children: [p("Mã cổ phiếu"), O.jsx("input", {
+                  "aria-label": p("Mã giao dịch"),
                   value: Ie.symbol,
                   onChange: d => {
                     var S;
@@ -2417,7 +2270,7 @@ h\u1EADn giao d\u1ECBch")
                   required: true
                 })]
               }), O.jsxs("label", {
-                children: [p("Lo\u1EA1i giao d\u1ECBch"), O.jsxs("select", {
+                children: [p("Loại giao dịch"), O.jsxs("select", {
                   value: Ie.side,
                   onChange: d => kt({
                     ...Ie,
@@ -2429,11 +2282,11 @@ h\u1EADn giao d\u1ECBch")
                     children: p("Mua")
                   }), O.jsx("option", {
                     value: "SELL",
-                    children: p("Bn")
+                    children: p("Bán")
                   })]
                 })]
               }), O.jsxs("label", {
-                children: [p("S\u1ED1 l\u01B0\u1EE3ng"), O.jsx("input", {
+                children: [p("Số lượng"), O.jsx("input", {
                   ref: xt,
                   type: "number",
                   min: "1",
@@ -2445,7 +2298,7 @@ h\u1EADn giao d\u1ECBch")
                   required: true
                 })]
               }), O.jsxs("label", {
-                children: [p("Gi\xE1 giao d\u1ECBch (VND/c\u1ED5 phi\u1EBFu)"), O.jsx("input", {
+                children: [p("Giá giao dịch (VND/cổ phiếu)"), O.jsx("input", {
                   type: "number",
                   value: Ie.price,
                   onChange: d => kt({
@@ -2455,10 +2308,9 @@ h\u1EADn giao d\u1ECBch")
                   required: true
                 })]
               }), O.jsx("button", {
-                className: "pri\
-mary-btn",
+                className: "primary-btn",
                 type: "submit",
-                children: p("L\u01B0u giao d\u1ECBch")
+                children: p("Lưu giao dịch")
               })]
             }), dt && O.jsx("p", {
               role: "status",
@@ -2469,17 +2321,17 @@ mary-btn",
                 children: [O.jsx("thead", {
                   children: O.jsxs("tr", {
                     children: [O.jsx("th", {
-                      children: "M\xE3"
+                      children: "Mã"
                     }), O.jsx("th", {
-                      children: p("S\u1ED1 l\u01B0\u1EE3ng")
+                      children: p("Số lượng")
                     }), O.jsx("th", {
-                      children: p("Gi\xE1 v\u1ED1n")
+                      children: p("Giá vốn")
                     }), O.jsx("th", {
-                      children: p("Gi\xE1 hi\u1EC7n t\u1EA1i")
+                      children: p("Giá hiện tại")
                     }), O.jsx("th", {
-                      children: p("L\xE3i/l\u1ED7 ch\u01B0a th\u1EF1c hi\u1EC7n")
+                      children: p("Lãi/lỗ chưa thực hiện")
                     }), O.jsx("th", {
-                      children: p("L\xE3i/l\u1ED7 \u0111\xE3 th\u1EF1c hi\u1EC7n")
+                      children: p("Lãi/lỗ đã thực hiện")
                     })]
                   })
                 }), O.jsxs("tbody", {
@@ -2511,7 +2363,7 @@ mary-btn",
                     }), O.jsxs("td", {
                       children: [oe(d.market_price), O.jsx("small", {
                         className: "data-time",
-                        children: d.quote ? `Intraday - ${He(d.quote.observed_at)}` : p("EOD fallback")
+                        children: d.quote ? `Intraday · ${He(d.quote.observed_at)}` : p("EOD fallback")
                       })]
                     }), O.jsx("td", {
                       className: Number(d.unrealized_pnl) >= 0 ? "positive" : "negative",
@@ -2522,9 +2374,8 @@ mary-btn",
                     })]
                   }, d.stock_id)), !Ir && !bt && !((pe == null ? void 0 : pe.positions) || []).length && O.jsx("tr", {
                     children: O.jsx("td", {
-                      colSpan: "\
-6",
-                      children: p("Ch\u01B0a c\xF3 v\u1ECB th\u1EBF")
+                      colSpan: "6",
+                      children: p("Chưa có vị thế")
                     })
                   })]
                 })]
@@ -2548,45 +2399,40 @@ mary-btn",
               className: "allocation-panel-heading",
               children: [O.jsxs("div", {
                 children: [O.jsx("h3", {
-                  children: p("Ph\xE2n b\u1ED5 danh m\u1EE5c")
+                  children: p("Phân bổ danh mục")
                 }), O.jsx("p", {
                   className: "muted-text",
-                  children: p("T\u1EF7 tr\u1ECDng theo gi\xE1 tr\u1ECB th\u1ECB tr\u01B0\u1EDDng hi\u1EC7n t\u1EA1i.")
+                  children: p("Tỷ trọng theo giá trị thị trường hiện tại.")
                 })]
-              }), O.jsxs("s\
-pan", {
+              }), O.jsxs("span", {
                 className: "chip neutral",
-                children: [Wt.length, " m\xE3"]
+                children: [Wt.length, " mã"]
               })]
             }), Wt.length ? O.jsxs("div", {
-              className: "alloc\
-ation-visual",
+              className: "allocation-visual",
               children: [O.jsx("div", {
                 className: "allocation-donut",
                 role: "img",
-                "aria-label": p("Bi\u1EC3u \u0111\u1ED3 ph\xE2n b\u1ED5 da\
-nh m\u1EE5c"),
+                "aria-label": p("Biểu đồ phân bổ danh mục"),
                 style: {
                   background: pu ? "conic-gradient(" + pu + ")" : "var(--border)"
                 },
                 children: O.jsxs("div", {
                   children: [O.jsx("small", {
                     className: "allocation-total-label",
-                    children: p("T\u1ED5ng gi\xE1 tr\u1ECB")
+                    children: p("Tổng giá trị")
                   }), O.jsx("strong", {
-                    className: "\
-allocation-total-value",
+                    className: "allocation-total-value",
                     children: oe(vi)
                   }), O.jsx("small", {
                     className: "allocation-day-change",
                     children: (() => {
                       const d = mi.reduce(($, A) => $ + Number(A.quantity || 0) * Number(A.previous_market_price || 0), 0),
                         S = d > 0 ? vi - d : null;
-                      return S == null ? "Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u h\xF4m qua" : O.jsxs(i.Fragment, {
-                        children: ["So v\u1EDBi h\xF4m qua:\
- ", O.jsx("span", {
+                      return S == null ? "Chưa có dữ liệu hôm qua" : O.jsxs(i.Fragment, {
+                        children: ["So với hôm qua: ", O.jsx("span", {
                           className: S > 0 ? "positive" : S < 0 ? "negative" : "neutral",
-                          children: `${oe(S)}  ${S >= 0 ? "+" : ""}${d > 0 ? (S / d * 100).toFixed(2) : "0"}%`
+                          children: `${oe(S)} · ${S >= 0 ? "+" : ""}${d > 0 ? (S / d * 100).toFixed(2) : "0"}%`
                         })]
                       });
                     })()
@@ -2605,11 +2451,10 @@ allocation-total-value",
                         ul = Tn => 50 + de * Math.sin(Tn * Math.PI / 180),
                         xu = d.weight > 50 ? 1 : 0;
                       return O.jsxs("path", {
-                        d: `M${Gt($)} ${St($)} A${Z} ${Z} 0 ${xu} 1 ${Gt(A)} ${St(A)} L${sl(A)} ${ul(A)} A${de} ${de}\
- 0 ${xu} 0 ${sl($)} ${ul($)} Z`,
+                        d: `M${Gt($)} ${St($)} A${Z} ${Z} 0 ${xu} 1 ${Gt(A)} ${St(A)} L${sl(A)} ${ul(A)} A${de} ${de} 0 ${xu} 0 ${sl($)} ${ul($)} Z`,
                         fill: "transparent",
                         children: [O.jsx("title", {
-                          children: `${d.symbol}: ${d.weight.toFixed(1)}%  ${oe(d.market_value)}`
+                          children: `${d.symbol}: ${d.weight.toFixed(1)}% · ${oe(d.market_value)}`
                         })]
                       }, d.stock_id);
                     })
@@ -2618,8 +2463,7 @@ allocation-total-value",
               }), O.jsx("ol", {
                 className: "allocation-list",
                 children: Wt.map((d, S) => O.jsxs("li", {
-                  title: `${d.symbol}\
-: ${d.weight.toFixed(1)}%  ${oe(d.market_value)}`,
+                  title: `${d.symbol}: ${d.weight.toFixed(1)}% · ${oe(d.market_value)}`,
                   children: [O.jsxs("div", {
                     className: "allocation-item-heading",
                     children: [O.jsx("i", {
@@ -2648,30 +2492,26 @@ allocation-total-value",
               })]
             }) : O.jsx("p", {
               className: "muted-text",
-              children: p("Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u ph\xE2n b\
-\u1ED5.")
+              children: p("Chưa có dữ liệu phân bổ.")
             }), O.jsxs("p", {
               className: "allocation-footnote",
-              children: [Object.keys(di).length, "/", Oo.length, " ", p("M\xE3 c\xF3 quote intraday"), " ? ", Qh || Object.keys(di).length < Oo.length ? p("M\xE3 thi\u1EBFu quote d\xF9ng gi\xE1 EOD; t\u1EF7 tr\
-\u1ECDng k\u1EBFt h\u1EE3p d\u1EEF li\u1EC7u hi\u1EC7n c\xF3.") : p("T\u1EF7 tr\u1ECDng d\u1EF1a tr\xEAn quote intraday m\u1EDBi nh\u1EA5t."), (hi == null ? void 0 : hi.status) === "circuit_open" ? " Provider t\u1EA1m ng\u1EAFt, s\u1EBD t\u1EF1 th\u1EED l\u1EA1i." : (hi == null ? void 0 : hi.status) === "degraded" ? " Provider \u0111ang ch\u1EADm." : ""]
+              children: [Object.keys(di).length, "/", Oo.length, " ", p("mã có quote intraday"), " · ", Qh || Object.keys(di).length < Oo.length ? p("Mã thiếu quote dùng giá EOD; tỷ trọng kết hợp dữ liệu hiện có.") : p("Tỷ trọng dựa trên quote intraday mới nhất."), (hi == null ? void 0 : hi.status) === "circuit_open" ? " Provider tạm ngắt, sẽ tự thử lại." : (hi == null ? void 0 : hi.status) === "degraded" ? " Provider đang chậm." : ""]
             })]
           }), O.jsxs("article", {
-            className: "\
-panel watchlist-panel",
+            className: "panel watchlist-panel",
             children: [O.jsx("h3", {
               children: "Watchlist"
             }), O.jsxs("form", {
               onSubmit: Xh,
-              className: "au\
-th-form",
+              className: "auth-form",
               children: [O.jsx("input", {
-                placeholder: p("Th\xEAm m\xE3, v\xED d\u1EE5 FPT"),
+                placeholder: p("Thêm mã, ví dụ FPT"),
                 value: Jr,
                 onChange: d => el(d.target.value.toUpperCase())
               }), O.jsx("button", {
                 className: "primary-btn",
                 type: "submit",
-                children: p("Th\xEAm m\xE3")
+                children: p("Thêm mã")
               })]
             }), O.jsxs("ul", {
               className: "watchlist",
@@ -2694,11 +2534,11 @@ th-form",
                   onClick: S => {
                     S.stopPropagation(), rf(d.Stock.code);
                   },
-                  children: p("Xa")
+                  children: p("Xóa")
                 })]
               }, d.stock_id)), !pt.length && O.jsx("li", {
                 className: "muted-text",
-                children: p("Ch\u01B0a c\xF3 m\xE3")
+                children: p("Chưa có mã")
               })]
             })]
           })]
@@ -2714,18 +2554,17 @@ th-form",
         }), Ee.status === "loading" ? O.jsx("div", {
           className: "loading-shell",
           children: O.jsx("p", {
-            children: p("\u0110ang t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu")
+            children: p("Đang tải chi tiết cổ phiếu")
           })
         }) : Ee.error ? O.jsxs("div", {
-          className: "erro\
-r-banner",
+          className: "error-banner",
           role: "alert",
           children: [O.jsxs("p", {
-            children: [p("Kh\xF4ng th\u1EC3 t\u1EA3i chi ti\u1EBFt c\u1ED5 phi\u1EBFu"), ". ", Ee.error]
+            children: [p("Không thể tải chi tiết cổ phiếu"), ". ", Ee.error]
           }), O.jsx("button", {
             className: "ghost-btn",
             onClick: Ee.retry,
-            children: p("Th\u1EED l\u1EA1i chi ti\u1EBFt")
+            children: p("Thử lại chi tiết")
           })]
         }) : Ee.data && O.jsxs(i.Fragment, {
           children: [O.jsx(DetailHero, {
@@ -2752,28 +2591,24 @@ r-banner",
               price: (Te == null ? void 0 : Te.price) ?? Ee.data.price
             })
           }), O.jsxs("div", {
-            className: "detail-content-gri\
-d",
+            className: "detail-content-grid",
             children: [O.jsxs("article", {
               className: "panel detail-chart-panel",
               children: [O.jsxs("div", {
-                className: "panel-h\
-eader",
+                className: "panel-header",
                 children: [O.jsx("h3", {
-                  children: p("L\u1ECBch s\u1EED gi\xE1")
+                  children: p("Lịch sử giá")
                 }), O.jsx("span", {
-                  className: `chip ${Te ? "su\
-ccess" : "neutral"}`,
-                  children: p(Te ? "Intraday + EOD" : "D\u1EEF li\u1EC7u EOD")
+                  className: `chip ${Te ? "success" : "neutral"}`,
+                  children: p(Te ? "Intraday + EOD" : "Dữ liệu EOD")
                 }), O.jsxs("p", {
-                  className: "chart-v\
-olume-note",
+                  className: "chart-volume-note",
                   children: [O.jsxs("span", {
                     className: "volume-note rising",
-                    children: ["- ", p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn t\u0103ng")]
+                    children: ["↑ ", p("Khối lượng phiên tăng")]
                   }), O.jsxs("span", {
                     className: "volume-note falling",
-                    children: ["- ", p("Kh\u1ED1i l\u01B0\u1EE3ng phi\xEAn gi\u1EA3m")]
+                    children: ["↓ ", p("Khối lượng phiên giảm")]
                   })]
                 })]
               }), O.jsx(DetailPriceVolumeChart, {
@@ -2789,46 +2624,42 @@ olume-note",
             }), O.jsxs("article", {
               className: "panel summary-panel",
               children: [O.jsx("h3", {
-                children: p("AI nh\u1EADn \u0111\u1ECBnh")
+                children: p("AI nhận định")
               }), O.jsxs("ul", {
                 className: "summary-list",
                 children: [O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: p("T\xEDn hi\u1EC7u")
+                    children: p("Tín hiệu")
                   }), O.jsx("strong", {
-                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || p("Ch\u01B0\
-a c\xF3 nh\u1EADn \u0111\u1ECBnh")
+                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || p("Chưa có nhận định")
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
                     children: p("RSI14")
-                  }), O.jsx("str\
-ong", {
+                  }), O.jsx("strong", {
                     children: ((Hr = (Vr = T.data) == null ? void 0 : Vr.indicators) == null ? void 0 : Hr.rsi14) ?? Xn
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: p("Quan s\xE1t")
+                    children: p("Quan sát")
                   }), O.jsxs("strong", {
-                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", p("phi\xEAn")]
+                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", p("phiên")]
                   })]
                 })]
               })]
             })]
           }), O.jsxs("section", {
-            className: "panel technica\
-l-panel",
+            className: "panel technical-panel",
             children: [O.jsx(DetailAnalysisStatus, {
               analysis: T,
               translate: p
             }), T.data && O.jsxs("p", {
-              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || p("Ch\u01B0a c\xF3 nh\u1EADn \u0111\u1ECBnh"), "  ", p("Ch\u1EA5t l\u01B0\u1EE3ng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
+              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || p("Chưa có nhận định"), " · ", p("Chất lượng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
             }), T.data && O.jsx("p", {
               className: "data-time",
-              children: ["C\u1EADp nh\u1EADt ph\xE2n t\xEDch: ", He((t = T.data.insight) == null ? void 0 : t.generated_at)]
+              children: ["Cập nhật phân tích: ", He((t = T.data.insight) == null ? void 0 : t.generated_at)]
             }), ((r = T.data) == null ? void 0 : r.evaluation_factors) && O.jsx("div", {
-              className: "eva\
-luation-factors-grid",
+              className: "evaluation-factors-grid",
               children: T.data.evaluation_factors.map(d => O.jsxs("div", {
                 className: "evaluation-factor-card",
                 children: [O.jsxs("div", {
@@ -2836,7 +2667,7 @@ luation-factors-grid",
                     children: d.label
                   }), O.jsx("span", {
                     className: `chip ${d.status === "verified" || d.status === "available" ? "success" : "neutral"}`,
-                    children: d.score == null ? "Ch\u01B0a c\xF3 \u0111i\u1EC3m" : `${d.score}/100`
+                    children: d.score == null ? "Chưa có điểm" : `${d.score}/100`
                   })]
                 }), O.jsx("p", {
                   children: d.detail
@@ -2844,8 +2675,7 @@ luation-factors-grid",
               }, d.key))
             }), ((l = T.data) == null ? void 0 : l.horizon_advice) && O.jsx("div", {
               className: "horizon-advice-grid",
-              children: Object.values(T.data.horizon_advice).map(d => O.jsxs("art\
-icle", {
+              children: Object.values(T.data.horizon_advice).map(d => O.jsxs("article", {
                 className: "horizon-advice-card",
                 children: [O.jsx("strong", {
                   children: d.label
@@ -2877,26 +2707,22 @@ icle", {
       }), re === "advisor" && O.jsxs("section", {
         className: "advisor-page panel",
         children: [O.jsxs("div", {
-          className: "panel-\
-header",
+          className: "panel-header",
           children: [O.jsxs("div", {
             children: [O.jsx("h3", {
               children: "AI Advisor"
             }), O.jsx("p", {
-              className: "muted-t\
-ext",
-              children: p("H\u1EC7 th\u1ED1ng tr\u1EA3 l\u1EDDi d\u1EF1a tr\xEAn d\u1EEF li\u1EC7u v\xE0 ph\xE2n t\xEDch rule-based.")
+              className: "muted-text",
+              children: p("Hệ thống trả lời dựa trên dữ liệu và phân tích rule-based.")
             })]
           }), O.jsx("span", {
             className: `chip ${(Xr = au.data) != null && Xr.enabled ? "success" : "neutral"}`,
-            children: (Zr = au.data) != null && Zr.enabled ? p("Generative AI  m") : p("Generative AI \u0111ang kh\xF3a")
+            children: (Zr = au.data) != null && Zr.enabled ? p("Generative AI đã mở") : p("Generative AI đang khóa")
           })]
         }), O.jsx("div", {
-          className: "\
-prompt-grid",
-          children: [p("Ph\xE2n t\xEDch xu h\u01B0\u1EDBng ng\u1EAFn h\u1EA1n"), p("M\u1EE9c stop loss v\xE0 ch\u1ED1t l\u1EDDi"), p("Y\u1EBFu t\u1ED1 b\xEAn ngo\xE0i t\xE1c \u0111\u1ED9ng th\u1EBF n\xE0o?")].map(d => O.jsx("button", {
-            className: "\
-prompt-chip",
+          className: "prompt-grid",
+          children: [p("Phân tích xu hướng ngắn hạn"), p("Mức stop loss và chốt lời"), p("Yếu tố bên ngoài tác động thế nào?")].map(d => O.jsx("button", {
+            className: "prompt-chip",
             type: "button",
             onClick: () => Bo(d),
             children: d
@@ -2922,7 +2748,7 @@ prompt-chip",
             onKeyDown: d => {
               d.key === "Enter" && Bo(bo);
             },
-            placeholder: p("Nh\u1EADp c\xE2u h\u1ECFi cho AI Advisor..."),
+            placeholder: p("Nhập câu hỏi cho AI Advisor..."),
             "aria-label": "Câu hỏi cho AI Advisor"
           }), O.jsx("button", {
             className: "primary-btn",
@@ -2930,7 +2756,7 @@ prompt-chip",
             disabled: !bo.trim(),
             title: !bo.trim() ? "Nhập câu hỏi trước khi gửi" : "Gửi câu hỏi",
             onClick: () => Bo(bo),
-            children: p("G\u1EEDi")
+            children: p("Gửi")
           })]
         })]
       })]
