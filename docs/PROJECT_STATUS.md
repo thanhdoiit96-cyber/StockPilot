@@ -3123,3 +3123,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Migration thay đúng một AST boundary và script migration một lần đã bị xoá sau khi áp dụng. Không thay đổi request analysis, retry, session intent, quote lifecycle hoặc công thức chuẩn hoá `Gh`.
 - Kiểm chứng: production safe-build/bundle integrity pass (`index-C-G6V-T4.js`); workflow analysis targeted **1/1** pass, bao gồm scenario stop/take được điều chỉnh; page audit desktop/mobile **2/2** pass.
 - Điểm tiếp tục P1: tách External Factors/citation list nếu contract link/citation được đóng gói riêng; nếu không, ưu tiên trace Bảng giá authenticated khi có session thật thay vì mở rộng refactor presentation. Không dùng token/fixture giả để đóng performance gate.
+
+## Khôi phục và tách External Factors của Chi tiết — 2026-10-01
+
+- Rà soát ngay sau Risk Plan phát hiện migration trước đó đã vô tình bỏ External Factors khỏi cây render dù build vẫn xanh. Hành vi đã được khôi phục trong `DetailExternalFactors`; component sở hữu status nguồn, disclaimer, danh sách factor và citation, dùng `SourceLink` hiện có để giữ nguyên allowlist HTTP(S), `noopener noreferrer` và chặn click bubbling.
+- Thêm class semantic `external-factors-panel` để component/test không nhầm với layout class của Risk Plan. Regression analysis dùng fixture nguồn có citation và kiểm tra cả nội dung lẫn `href` đã được chuẩn hoá.
+- Kiểm chứng: production safe-build/bundle integrity pass (`index-Bd4f6ZOu.js`); workflow analysis targeted **1/1** pass sau khi khôi phục. Page audit desktop/mobile **2/2** đã pass trên cùng UI trước thay đổi class semantic (class này không đổi layout).
+- Điểm tiếp tục P1: presentation của panel Analysis đã có boundary rõ; ưu tiên trace Bảng giá authenticated khi có session thật. Chỉ tiếp tục tách page/module lớn hơn sau khi có dữ liệu trace hoặc một contract state/API độc lập, không mở rộng refactor thuần trình bày.
