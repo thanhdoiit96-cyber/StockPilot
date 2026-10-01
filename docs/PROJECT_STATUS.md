@@ -3057,3 +3057,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Chuẩn hoá `Nguồn dữ liệu`: nhãn riêng, pill provider (VCI) hoặc EOD fallback, mô tả rõ chiến lược Intraday/EOD và nút trợ giúp `?`; không còn chuỗi văn bản dính với ký tự `i` ở cuối.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-Bfq0OeUV.js`); loading suite **23/23** pass, gồm gate request xác nhận overlay khóa navigation/End-scroll và khôi phục khi quote settle; Bảng giá productivity **3/3** và page audit desktop/mobile **2/2** pass. Fixture performance mới: 300 mã `490/617/47 ms`, 500 mã `647/813/100 ms` (first usable/chuyển trang/quote settlement).
 - Điểm tiếp tục P1 không đổi: trace navigation Bảng giá trên browser với session authenticated hợp lệ để đối chiếu cold quote/cache; không dùng số fixture hoặc API không xác thực làm SLA production.
+
+## Chuẩn bị trace browser authenticated cho Bảng giá — 2026-10-01
+
+- Thêm lệnh `npm run trace:live:market-board`. Lệnh mở Chrome headless, chỉ nhận token qua `MARKET_AUTH_TOKEN` trong môi trường tiến trình, rồi ghi timing navigation và waterfall của `/api/stocks`, `/api/stocks/quotes`, `/api/stocks/quotes/status`. Token không được in ra log hoặc ghi vào file.
+- Đã kiểm tra cú pháp và chạy lệnh không token: script trả JSON `skipped` cùng lý do thiếu `MARKET_AUTH_TOKEN`, không mở phiên giả và không thay đổi dữ liệu. Production build/safe-build cùng bundle integrity tiếp tục pass.
+- Điểm tiếp tục cụ thể: trong một môi trường có session hợp lệ, chạy `MARKET_AUTH_TOKEN=<token> npm run trace:live:market-board`, lưu số liệu request thực tế (không token) vào PROJECT_STATUS, rồi quyết định có cần thay lifecycle cold quote/provider hay không. Tách sâu Chi tiết khỏi `App.jsx` giữ là nhánh P1 song song, chỉ bắt đầu khi có boundary dữ liệu ổn định để không tạo component hình thức.
