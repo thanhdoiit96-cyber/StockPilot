@@ -3102,3 +3102,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Đã thử tách thẻ Summary ra khỏi khối indicator nhưng source phục hồi nối lời gọi JSX/`children` giữa Summary và Analysis qua nhiều dòng. Build bắt lỗi cú pháp trước phát hành; thử nghiệm chưa commit đã được hoàn nguyên hoàn toàn, không có thay đổi runtime hoặc artifact bị giữ lại.
 - Production build/safe-build và bundle integrity đã chạy lại trên source sạch và pass. Không đánh dấu Summary component là hoàn thành.
 - Điểm tiếp tục P1: chỉ tách nội dung analysis bằng một boundary lớn có syntax-aware migration hoặc chuyển trước phần JSX phục hồi sang source cấu trúc chuẩn; không thực hiện replacement theo đoạn nhỏ trong khối đó. Trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
+
+## Chuẩn hoá AST nguồn phục hồi cho Chi tiết — 2026-10-01
+
+- Đã thêm `frontend/scripts/normalize-recovered-source.mjs` và lệnh `npm run normalize:recovered-source`. Công cụ parse `src/App.jsx` bằng Babel AST rồi generate lại toàn file; `--check` xác nhận source đã chuẩn hoá. Đây là thay đổi trình bày/cú pháp cơ học, không đổi API, state hay quote/analysis lifecycle.
+- `App.jsx` không còn các xuống dòng continuation khó xác định ranh giới JSX sau quá trình recovery, nên lần tách guidance/risk tiếp theo có thể thao tác theo node/range cú pháp thay vì thay chuỗi cục bộ dễ làm hỏng biểu thức `children`.
+- Kiểm chứng: production safe-build và bundle integrity pass (`index-Dx0zkBSY.js`); Playwright workflow **19/19** pass (17 case đầu và 2 case cuối được xác nhận bằng lượt chạy tách riêng).
+- Điểm tiếp tục P1: dùng AST boundary đã chuẩn hoá để tách một section analysis có contract độc lập (ưu tiên guidance hoặc risk), chỉ commit khi build và targeted regression tiếp tục xanh. Trace Bảng giá authenticated vẫn chờ session hợp lệ, không thay bằng credential/fixture giả.
