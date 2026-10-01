@@ -1,5 +1,5 @@
 'use strict';
-const { MAX_IMPORT_ROWS, normalizePortfolioImportRows, validatePortfolioImport } = require('./portfolioImport');
+const { MAX_IMPORT_ROWS, normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('./portfolioImport');
 
 test('normalizes valid rows and reports field errors with CSV row numbers', () => {
   const result = normalizePortfolioImportRows([
@@ -45,4 +45,18 @@ test('accepts an ordered buy then sell and assigns deterministic creation order'
   const result = validatePortfolioImport({ rows, stocks: [{ id: 's', code: 'FPT' }], now: 1000 });
   expect(result.errors).toEqual([]);
   expect(result.rows.map(row => row.created_at.getTime())).toEqual([1000, 1001]);
+});
+
+test('validates the complete candidate timeline before a ledger mutation', () => {
+  const valid = validatePortfolioTimeline([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, traded_at: '2026-10-01T03:00:00Z', created_at: '2026-10-01T03:00:01Z' },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 4, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z' }
+  ]);
+  expect(valid).toEqual([]);
+
+  const invalid = validatePortfolioTimeline([
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 4, traded_at: '2026-10-02T03:00:00Z', created_at: '2026-10-02T03:00:01Z' },
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, traded_at: '2026-10-03T03:00:00Z', created_at: '2026-10-01T03:00:01Z' }
+  ]);
+  expect(invalid).toEqual([expect.objectContaining({ stock_id: 's', transaction_id: 'sell', message: expect.stringContaining('vượt vị thế') })]);
 });

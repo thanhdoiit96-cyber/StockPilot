@@ -52,6 +52,45 @@ const transactionKey = tx => [
   new Date(tx.traded_at).toISOString()
 ].join('|');
 
+function compareTransactions(left, right) {
+  const traded = new Date(left.traded_at).getTime() - new Date(right.traded_at).getTime();
+  if (traded) return traded;
+  const created = new Date(left.created_at || 0).getTime() - new Date(right.created_at || 0).getTime();
+  if (created) return created;
+  return String(left.id || '').localeCompare(String(right.id || ''));
+}
+
+function validatePortfolioTimeline(transactions = []) {
+  const errors = [];
+  const byStock = new Map();
+  for (const tx of transactions) {
+    const stockId = String(tx.stock_id || '');
+    const quantity = Number(tx.quantity);
+    const tradedAt = new Date(tx.traded_at);
+    if (!stockId || !['BUY', 'SELL'].includes(tx.side) || !Number.isFinite(quantity) || quantity <= 0 || Number.isNaN(tradedAt.getTime())) {
+      errors.push({ stock_id: stockId || null, transaction_id: tx.id || null, message: 'Ledger có giao dịch không hợp lệ' });
+      continue;
+    }
+    if (!byStock.has(stockId)) byStock.set(stockId, []);
+    byStock.get(stockId).push(tx);
+  }
+  for (const [stockId, rows] of byStock) {
+    let position = 0;
+    for (const tx of [...rows].sort(compareTransactions)) {
+      position += tx.side === 'BUY' ? Number(tx.quantity) : -Number(tx.quantity);
+      if (position < -1e-8) {
+        errors.push({
+          stock_id: stockId,
+          transaction_id: tx.id || null,
+          message: 'Số lượng bán vượt vị thế tại thời điểm giao dịch'
+        });
+        break;
+      }
+    }
+  }
+  return errors;
+}
+
 function validatePortfolioImport({ rows, stocks = [], existingTransactions = [], now = Date.now() }) {
   const errors = [];
   const stockByCode = new Map(stocks.map(stock => [String(stock.code || '').toUpperCase(), stock]));
@@ -94,13 +133,7 @@ function validatePortfolioImport({ rows, stocks = [], existingTransactions = [],
   }
 
   for (const [stockId, transactions] of allByStock) {
-    transactions.sort((left, right) => {
-      const traded = new Date(left.traded_at).getTime() - new Date(right.traded_at).getTime();
-      if (traded) return traded;
-      const created = new Date(left.created_at || 0).getTime() - new Date(right.created_at || 0).getTime();
-      if (created) return created;
-      return String(left.id || '').localeCompare(String(right.id || ''));
-    });
+    transactions.sort(compareTransactions);
     let quantity = 0;
     let existingTimelineInvalid = false;
     for (const tx of transactions) {
@@ -121,4 +154,4 @@ function validatePortfolioImport({ rows, stocks = [], existingTransactions = [],
   return { rows: prepared, errors: uniqueErrors };
 }
 
-module.exports = { MAX_IMPORT_ROWS, normalizePortfolioImportRows, validatePortfolioImport };
+module.exports = { MAX_IMPORT_ROWS, normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline };
