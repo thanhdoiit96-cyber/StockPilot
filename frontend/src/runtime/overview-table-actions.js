@@ -431,6 +431,13 @@
       }
     })
     if (!positionRows.length) return
+    const intradayCount = positionRows.filter(row => /Intraday/i.test(row.children[3]?.textContent || '')).length
+    const allocationFootnote = page.querySelector('.allocation-footnote')
+    if (allocationFootnote) {
+      allocationFootnote.textContent = intradayCount < positionRows.length
+        ? `${intradayCount}/${positionRows.length} mã có quote intraday · Mã còn lại dùng giá EOD gần nhất; tỷ trọng kết hợp dữ liệu hiện có.`
+        : `${intradayCount}/${positionRows.length} mã có quote intraday · Tỷ trọng dựa trên quote intraday mới nhất.`
+    }
     const positions = positionRows.map(row => ({
       symbol: row.children[0]?.textContent.trim(),
       quantity: parseCurrencyText(row.children[1]?.textContent),
@@ -884,6 +891,69 @@
     gap.textContent = `Phiên gần đây có dữ liệu trong hệ thống nhưng chưa có điểm giá cho mã này: ${missing.map(({ month, day }) => `${day}-${month}`).join(', ')}. Biểu đồ chỉ hiển thị dữ liệu giá ghi nhận được.`
   }
 
+  const pageContexts = {
+    'Tổng quan': ['THỊ TRƯỜNG', 'Tổng quan'],
+    'Bảng giá': ['THỊ TRƯỜNG', 'Bảng giá'],
+    'Danh mục cá nhân': ['TÀI SẢN CÁ NHÂN', 'Danh mục'],
+    'Chi tiết mã': ['NGHIÊN CỨU', 'Chi tiết mã'],
+    'Đề xuất': ['HỖ TRỢ QUYẾT ĐỊNH', 'Đề xuất'],
+    'AI Advisor': ['TRỢ LÝ PHÂN TÍCH', 'AI Advisor']
+  }
+
+  const syncPageContext = () => {
+    const shell = document.querySelector('.dashboard-shell')
+    const active = shell?.classList.contains('market-board-active')
+      ? 'Bảng giá'
+      : document.querySelector('.nav-item.active:not(.market-board-nav-item) .nav-label')?.textContent.trim()
+    const context = pageContexts[active] || pageContexts['Tổng quan']
+    const topbar = document.querySelector('.topbar')
+    const eyebrow = topbar?.querySelector('.eyebrow')
+    const heading = topbar?.querySelector('h1')
+    if (eyebrow && eyebrow.textContent !== context[0]) eyebrow.textContent = context[0]
+    if (heading && heading.textContent !== context[1]) heading.textContent = context[1]
+    if (shell) shell.dataset.activePage = active || 'Tổng quan'
+  }
+
+  const ensureTableScrollHint = () => {
+    const wrap = document.querySelector('.table-panel .table-wrap')
+    if (!wrap || wrap.previousElementSibling?.classList.contains('table-scroll-hint')) return
+    const hint = document.createElement('p')
+    hint.className = 'table-scroll-hint'
+    hint.setAttribute('role', 'note')
+    hint.textContent = 'Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác.'
+    wrap.before(hint)
+  }
+
+  const enhanceAdvisor = () => {
+    const chat = document.querySelector('.advisor-page .chat-shell')
+    const input = document.querySelector('.advisor-page .input-row input')
+    const send = document.querySelector('.advisor-page .input-row button')
+    if (chat) {
+      chat.setAttribute('role', 'log')
+      chat.setAttribute('aria-live', 'polite')
+      chat.setAttribute('aria-relevant', 'additions text')
+      chat.setAttribute('aria-label', 'Lịch sử trao đổi với AI Advisor')
+    }
+    const gate = document.querySelector('.advisor-page .panel-header .chip')
+    if (gate) {
+      const enabled = gate.classList.contains('success')
+      gate.textContent = enabled ? 'AI tạo sinh: bật' : 'AI tạo sinh: khóa'
+      gate.title = enabled ? 'Generative AI đang bật' : 'Generative AI đang khóa; trợ lý dùng phân tích rule-based.'
+    }
+    if (!input || !send) return
+    input.setAttribute('aria-label', 'Câu hỏi cho AI Advisor')
+    const updateSendState = () => {
+      const empty = !input.value.trim()
+      send.disabled = empty
+      send.title = empty ? 'Nhập câu hỏi trước khi gửi' : 'Gửi câu hỏi'
+    }
+    if (!input.dataset.advisorInputBound) {
+      input.dataset.advisorInputBound = '1'
+      input.addEventListener('input', updateSendState)
+    }
+    updateSendState()
+  }
+
   const enhance = () => {
     installStyles()
     reconcileDetailChartGap()
@@ -1248,7 +1318,13 @@
     ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
     const breadthHeaderText = breadth?.querySelector('.market-breadth-header p')
-    if (breadthHeaderText && !breadthHeaderText.textContent.includes('Bình quân')) breadthHeaderText.textContent += ' · Bình quân chỉ trên mã có biến động hợp lệ'
+    if (breadthHeaderText) {
+      const tableCount = document.querySelectorAll('.table-panel tbody tr .symbol').length
+      const sourceCoverage = document.querySelector('.overview-source-summary')?.textContent.match(/(\d+)\s*\/\s*(\d+)\s*mã có Intraday/i)
+      const quoted = sourceCoverage ? Number(sourceCoverage[1]) : tableCount
+      const universe = sourceCoverage ? Number(sourceCoverage[2]) : tableCount
+      breadthHeaderText.textContent = `${universe} mã trong vũ trụ · ${quoted}/${universe} mã có quote intraday · Bình quân chỉ trên mã có biến động hợp lệ`
+    }
     const breadthAverageChip = breadth?.querySelector('.market-breadth-header .chip span')
     if (breadthAverageChip) breadthAverageChip.title = 'Bình quân thay đổi của các mã có dữ liệu biến động hợp lệ trong phạm vi đang chọn.'
     const breadthCounts = breadth ? {
@@ -1405,6 +1481,9 @@
       if (button.textContent.trim().startsWith('X')) button.textContent = '\u0058\u00f3\u0061'
     })
     document.querySelectorAll('.recommendation-workbench > .saved-proposals, .recommendation-criteria-panel > .saved-proposals').forEach(section => section.remove())
+    ensureTableScrollHint()
+    enhanceAdvisor()
+    syncPageContext()
   }
 
   let scheduled = false

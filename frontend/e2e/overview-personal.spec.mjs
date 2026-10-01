@@ -134,7 +134,7 @@ test('failed save does not pin a stock', async ({ page }) => {
   await page.getByRole('button', { name: 'Thêm AAA vào danh mục', exact: true }).click()
   await page.locator('.transaction-form input').nth(1).fill('5')
   await page.getByRole('button', { name: 'Lưu giao dịch', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('Không thể lưu')
+  await expect(page.getByRole('status').filter({ hasText: 'Không thể lưu' })).toContainText('Không thể lưu')
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.locator('.table-panel')).toBeVisible()
   await expect(page.locator('.table-panel .pinned-stock')).toHaveCount(2)
