@@ -22,26 +22,15 @@ const checks = [
 const missing = checks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
 if (missing.length) throw new Error(`Bundle không đạt kiểm tra: ${missing.join(', ')}`)
 
-const overviewRuntimeAsset = 'overview-table-actions.js'
-if (!html.includes(`/assets/${overviewRuntimeAsset}`)) {
-  throw new Error(`Bundle không nạp runtime Tổng quan: ${overviewRuntimeAsset}`)
-}
-const overviewRuntimePath = path.join(root, 'dist/assets', overviewRuntimeAsset)
-if (!fs.existsSync(overviewRuntimePath)) {
-  throw new Error(`Thiếu runtime Tổng quan: ${overviewRuntimeAsset}`)
-}
-const overviewRuntime = fs.readFileSync(overviewRuntimePath, 'utf8')
 const overviewChecks = [
   ['cột Phân tích', /overview-analysis-action/],
-  ['nhãn mở phân tích', /Mở phân tích chuyên sâu/],
-  ['trạng thái hủy niêm yết', /Đã hủy niêm yết/],
-  ['chú thích dữ liệu theo ngữ cảnh', /Giải thích Intraday, EOD và dữ liệu cũ/],
-  ['bộ chọn số mã ở hàng phân trang', /overview-page-size-control/],
-  ['bộ đếm mã ở hàng phân trang', /overview-pagination-count/],
-  ['tìm kiếm và nhóm ngành cùng hàng', /overview-filter-row/]
+  ['nhãn mở phân tích', /Phân tích chuyên sâu/],
+  ['độ rộng thị trường', /market-breadth-panel/],
+  ['phân bổ danh mục', /allocation-panel/],
+  ['biểu đồ chi tiết', /detail-chart-panel/]
 ]
-const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(overviewRuntime)).map(([label]) => label)
-if (missingOverview.length) throw new Error(`Runtime Tổng quan không đạt kiểm tra: ${missingOverview.join(', ')}`)
+const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
+if (missingOverview.length) throw new Error(`Component React không đạt kiểm tra: ${missingOverview.join(', ')}`)
 
 const marketBoardChecks = [
   ['component Bảng giá React', /data-react-market-board/],
@@ -60,4 +49,4 @@ const sidebarChecks = [
 const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
 if (missingSidebar.length) throw new Error(`Runtime sidebar không đạt kiểm tra: ${missingSidebar.join(', ')}`)
 
-console.log(`Bundle integrity passed: ${asset}; runtime: ${overviewRuntimeAsset}; Bảng giá và sidebar: React`)
+console.log(`Bundle integrity passed: ${asset}; Tổng quan, Bảng giá, Danh mục, Chi tiết và sidebar: React`)

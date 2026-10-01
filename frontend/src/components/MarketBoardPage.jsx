@@ -72,16 +72,16 @@ function MarketTimeline({ rows }) {
   </section>
 }
 
-export default function MarketBoardPage({ active, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio }) {
+export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio }) {
   const [query, setQuery] = useState('')
   const [sector, setSector] = useState('')
   const [sort, setSort] = useState({ key: 'volume', direction: 'desc' })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(40)
-  const [stocks, setStocks] = useState([])
+  const [stocks, setStocks] = useState(overviewStocks)
   const [listAttempt, setListAttempt] = useState(0)
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 40, total: 0, totalPages: 1 })
-  const [listState, setListState] = useState({ loading: true, error: '' })
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 40, total: overviewTotal || overviewStocks.length, totalPages: Math.max(1, Math.ceil((overviewTotal || overviewStocks.length) / 40)) })
+  const [listState, setListState] = useState({ loading: !overviewStocks.length, error: '' })
   const [columns, setColumns] = useState(loadColumns)
   const [sharedQuotes, setSharedQuotes] = useState(() => window.__stockpilotRecentQuotes || {})
 
@@ -96,6 +96,19 @@ export default function MarketBoardPage({ active, overviewQuotes = {}, portfolio
   const pinnedKey = pinned.join(',')
   useEffect(() => { setPage(1) }, [pinnedKey, query, sector, pageSize])
   useEffect(() => {
+    if (!active) {
+      if (overviewStocks.length) {
+        setStocks(overviewStocks)
+        setPagination({ page: 1, pageSize: 40, total: overviewTotal || overviewStocks.length, totalPages: Math.max(1, Math.ceil((overviewTotal || overviewStocks.length) / 40)) })
+        setListState({ loading: false, error: '' })
+      }
+      return
+    }
+    if (overviewStocks.length && page === 1 && !query && !sector) {
+      setStocks(overviewStocks)
+      setPagination({ page: 1, pageSize: 40, total: overviewTotal || overviewStocks.length, totalPages: Math.max(1, Math.ceil((overviewTotal || overviewStocks.length) / 40)) })
+      setListState({ loading: false, error: '' })
+    }
     const controller = new AbortController()
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sort: sort.key, direction: sort.direction })
     if (query.trim()) params.set('q', query.trim())
@@ -111,7 +124,7 @@ export default function MarketBoardPage({ active, overviewQuotes = {}, portfolio
       })
       .catch(error => { if (!controller.signal.aborted) setListState({ loading: false, error: error.message }) })
     return () => controller.abort()
-  }, [page, pageSize, query, sector, sort.key, sort.direction, pinnedKey, listAttempt])
+  }, [active, page, pageSize, query, sector, sort.key, sort.direction, pinnedKey, listAttempt, overviewStocks, overviewTotal])
 
   const symbols = useMemo(() => stocks.map(getSymbol).filter(Boolean), [stocks])
   const quoteState = useLiveQuotes(symbols, { enabled: active, requestParam: 'board_refresh' })

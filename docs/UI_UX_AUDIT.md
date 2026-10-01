@@ -44,7 +44,7 @@ Trạng thái: hoàn thành trong đợt 2026-10-01.
 Trạng thái: đang thực hiện.
 
 1. Hoàn thành: chuyển Bảng giá từ runtime DOM injection thành `MarketBoardPage`; React sở hữu render, navigation/phân trang, loading/error/empty state, toolbar và quote lifecycle. `market-board-tools.js`, sidebar runtime và toàn bộ `MutationObserver` trong source frontend đã bị loại.
-2. Tiếp theo: tách các enhancement Tổng quan/Danh mục/Chi tiết còn nằm trong runtime và phần `App.jsx` đã phục hồi thành module page/component có tên rõ; chỉ khi source parity và full E2E còn xanh mới code-split Detail, Đề xuất và Advisor.
+2. Hoàn thành: `overview-table-actions.js` đã được bỏ; `MarketBreadth` (Tổng quan), `PortfolioAllocation` (Danh mục) và lifecycle phân tích Chi tiết là component/service React, không dùng observer DOM. Tiếp theo tách `App.jsx` thành module page có tên rõ; chỉ code-split Detail, Đề xuất và Advisor khi source parity và full E2E còn xanh.
 3. Baseline trước tách module gồm bốn lượt Chrome headless/build production cục bộ với mock API: p50 quan sát 300 mã `583/556/150 ms`, 500 mã `790/848/193 ms` theo first usable/chuyển Bảng giá/quote settlement. Hai lượt sau tách module lần lượt là `647/552/131 ms` và `986/722/182 ms`; tất cả vẫn trong budget regression. Mẫu nhỏ và API tức thời nên đây chưa phải SLA production; bước tiếp theo là đo nhiều lượt bằng API/live data và ghi cấu hình máy.
 4. Sau phép đo, ưu tiên server pagination/windowing, memo hóa aggregate và lazy mount khối phân tích ngoài viewport nếu vượt budget được thống nhất.
 

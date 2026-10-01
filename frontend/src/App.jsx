@@ -1,6 +1,8 @@
 import * as D from "react";
 import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
+import MarketBreadth from "./components/MarketBreadth.jsx";
+import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -924,6 +926,8 @@ loading-card", children: [O.jsx("div", { className: "loading-logo", children: "S
   ai.error && O.jsxs("p", { role: "alert", children: [ai.error, " ", O.jsx("button", { className: "ghost-btn small-btn",
   onClick: ai.retry, children: p("Th\u1EED l\u1EA1i cache") })] })] }), O.jsx(MarketBoardPage, {
     active: re === "market-board",
+    overviewStocks: il,
+    overviewTotal: vu,
     overviewQuotes: an,
     portfolioSymbols: [...gt],
     watchlistSymbols: [...yt],
@@ -946,7 +950,7 @@ erview-metric", children: [O.jsx("span", { children: p("M\xE3 c\xE1 nh\xE2n") })
   "small", { children: p("Danh m\u1EE5c ho\u1EB7c Watchlist") })] }), O.jsxs("article", { className: "panel overview-met\
 ric", children: [O.jsx("span", { children: p("Quote m\u1EDBi nh\u1EA5t") }), O.jsx("strong", { className: "overview-time",
   children: yu ? He(yu) : p("Ch\u01B0a c\xF3 quote") }), O.jsx("small", { children: p("Th\u1EDDi \u0111i\u1EC3m provider ghi nh\u1EADn") })] })] }),
-  O.jsx(Ym, { stocks: si, quotes: an }), false && O.jsxs("section", { className: "panel legacy-table-panel", children: [O.jsxs("div", { className: "\
+  O.jsx(MarketBreadth, { stocks: si, quotes: an, universeTotal: vu, onOpenDetail: openMarketStock }), false && O.jsxs("section", { className: "panel legacy-table-panel", children: [O.jsxs("div", { className: "\
 panel-header", children: [O.jsx("h3", { children: p("Danh s\xE1ch c\u1ED5 phi\u1EBFu") }), O.jsxs("div", { className: "t\
 able-tools", children: [O.jsxs("div", { className: "table-tabs", children: [O.jsx("button", { className: "tab-btn active",
   type: "button", children: p("T\u1EA5t c\u1EA3") }), O.jsxs("select", { className: "sector-select", "aria-label": p("Nh\
@@ -993,7 +997,7 @@ tn", type: "button", onClick: () => Jh(d), title: p($), children: [p(S), be.key 
     }, children: [O.jsxs("td", { className: "symbol", children: [d.symbol, O.jsxs("span", { className: "pin-labels", children: [
     gt.has(d.symbol) && O.jsx("small", { className: "pin-badge", children: "Danh m\u1EE5c" }), yt.has(d.symbol) && O.jsx(
     "small", { className: "pin-badge", children: "Watchlist" }), d.listingStatus === "delisted" ? O.jsx("small", { className: "\
-listing-badge delisted", title: d.listingCheckedAt || "Historical symbol", children: " H\u1EE7y ni\xEAm y\u1EBFt" }) : d.
+listing-badge delisted", title: d.listingCheckedAt || "Historical symbol", children: " \u0110\xE3 h\u1EE7y ni\xEAm y\u1EBFt" }) : d.
     listingStatus === "listed" && d.exchange ? O.jsx("small", { className: "listing-badge listed", title: d.listingCheckedAt ||
     d.exchange, children: d.exchange }) : null] })] }), O.jsx("td", { children: O.jsx($i, { url: d.url, children: d.name }) }),
     O.jsx("td", { children: oe(d.price) }), O.jsx("td", { className: d.change >= 0 ? "positive" : "negative", children: Hh(
@@ -1063,8 +1067,15 @@ mary-btn", type: "submit", children: p("L\u01B0u giao d\u1ECBch") })] }), dt && 
   O.jsx("td", { className: Number(d.unrealized_pnl) >= 0 ? "positive" : "negative", children: oe(d.unrealized_pnl) }), O.
   jsx("td", { className: Number(d.realized_pnl) >= 0 ? "positive" : "negative", children: oe(d.realized_pnl) })] }, d.stock_id)),
   !Ir && !bt && !((pe == null ? void 0 : pe.positions) || []).length && O.jsx("tr", { children: O.jsx("td", { colSpan: "\
-6", children: p("Ch\u01B0a c\xF3 v\u1ECB th\u1EBF") }) })] })] }) }), O.jsx(Jm, { entries: lf })] }), O.jsxs("article", {
-  className: "panel allocation-panel", children: [O.jsxs("div", { className: "allocation-panel-heading", children: [O.jsxs(
+6", children: p("Ch\u01B0a c\xF3 v\u1ECB th\u1EBF") }) })] })] }) }), O.jsx(Jm, { entries: lf })] }), O.jsx(PortfolioAllocation, {
+    allocations: Wt,
+    positions: mi,
+    quoteCount: Oo.filter((symbol) => di[symbol]).length,
+    positionCount: Oo.length,
+    quoteError: Qh,
+    providerStatus: hi == null ? void 0 : hi.status
+  }), false && O.jsxs("article", {
+  className: "panel legacy-allocation-panel", children: [O.jsxs("div", { className: "allocation-panel-heading", children: [O.jsxs(
   "div", { children: [O.jsx("h3", { children: p("Ph\xE2n b\u1ED5 danh m\u1EE5c") }), O.jsx("p", { className: "muted-text",
   children: p("T\u1EF7 tr\u1ECDng theo gi\xE1 tr\u1ECB th\u1ECB tr\u01B0\u1EDDng hi\u1EC7n t\u1EA1i.") })] }), O.jsxs("s\
 pan", { className: "chip neutral", children: [Wt.length, " m\xE3"] })] }), Wt.length ? O.jsxs("div", { className: "alloc\
@@ -1130,7 +1141,7 @@ ghost-btn detail-analysis-btn", type: "button", onClick: () => {
       sessionStorage.setItem(`analysis-requested:${me.id}`, "1");
     } catch {
     }
-    T.retry();
+    window.__stockpilotRequestAnalysis?.(), T.retry();
   }, children: T.status === "loading" ? p("\u0110ang ph\xE2n t\xEDch...") : T.data ? p("C\u1EADp nh\u1EADt ph\xE2n t\xEDch") :
   p("Ph\xE2n t\xEDch chuy\xEAn s\xE2u") }), O.jsx("button", { className: "primary-btn detail-add-btn", type: "button", onClick: () => Ao(
   { symbol: Ee.data.code, price: (Te == null ? void 0 : Te.price) ?? Ee.data.price }), children: p("Th\xEAm v\xE0o danh m\u1EE5c") })] }),
@@ -1255,13 +1266,13 @@ ext", children: p("H\u1EC7 th\u1ED1ng tr\u1EA3 l\u1EDDi d\u1EF1a tr\xEAn d\u1EEF
   data) != null && Zr.enabled ? p("Generative AI  m") : p("Generative AI \u0111ang kh\xF3a") })] }), O.jsx("div", { className: "\
 prompt-grid", children: [p("Ph\xE2n t\xEDch xu h\u01B0\u1EDBng ng\u1EAFn h\u1EA1n"), p("M\u1EE9c stop loss v\xE0 ch\u1ED1t l\u1EDDi"),
   p("Y\u1EBFu t\u1ED1 b\xEAn ngo\xE0i t\xE1c \u0111\u1ED9ng th\u1EBF n\xE0o?")].map((d) => O.jsx("button", { className: "\
-prompt-chip", type: "button", onClick: () => Bo(d), children: d }, d)) }), O.jsx("div", { className: "chat-shell", children: of.
+prompt-chip", type: "button", onClick: () => Bo(d), children: d }, d)) }), O.jsx("div", { className: "chat-shell", role: "log", "aria-live": "polite", "aria-relevant": "additions text", "aria-label": "Lịch sử trao đổi với AI Advisor", children: of.
   map((d, S) => O.jsx("div", { className: `message-row ${d.role}`, children: O.jsx("div", { className: "message-bubble",
   children: d.text }) }, `${d.role}-${S}`)) }), O.jsxs("div", { className: "input-row", children: [O.jsx("input", { value: bo,
   onChange: (d) => mu(d.target.value), onKeyDown: (d) => {
     d.key === "Enter" && Bo(bo);
-  }, placeholder: p("Nh\u1EADp c\xE2u h\u1ECFi cho AI Advisor..."), "aria-label": p("C\xE2u h\u1ECFi AI Advisor") }), O.
-  jsx("button", { className: "primary-btn", type: "button", onClick: () => Bo(bo), children: p("G\u1EEDi") })] })] })] })] });
+  }, placeholder: p("Nh\u1EADp c\xE2u h\u1ECFi cho AI Advisor..."), "aria-label": "Câu hỏi cho AI Advisor" }), O.
+  jsx("button", { className: "primary-btn", type: "button", disabled: !bo.trim(), title: !bo.trim() ? "Nhập câu hỏi trước khi gửi" : "Gửi câu hỏi", onClick: () => Bo(bo), children: p("G\u1EEDi") })] })] })] })] });
 }
 var i = O;
 var App_default = lv;

@@ -5,8 +5,7 @@ import path from 'node:path'
 
 const runtimeAssets = [
   'quality-overlay.js',
-  'stale-volume-overlay.js',
-  'overview-table-actions.js'
+  'stale-volume-overlay.js'
 ]
 
 const externalRuntimeAssets = () => {
