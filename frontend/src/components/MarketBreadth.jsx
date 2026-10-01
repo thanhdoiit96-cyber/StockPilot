@@ -9,6 +9,9 @@ const GROUPS = [
 
 const symbolOf = stock => String(stock.symbol || stock.code || '').toUpperCase()
 const compact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
+const formatDateTime = value => value && Number.isFinite(Date.parse(value))
+  ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value))
+  : null
 const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase()] || null
 
 function metricsFor(stocks, quotes) {
@@ -32,7 +35,7 @@ function metricsFor(stocks, quotes) {
       metrics[key].count += 1
       if (Number.isFinite(volume) && volume > 0) metrics[key].volume += volume
     }
-    return { stock, symbol, change, volume }
+    return { stock, symbol, change, volume, quote, observedAt: quote?.observed_at || stock.data_fetched_at || null }
   })
   metrics.classified = metrics.up.count + metrics.down.count + metrics.flat.count
   metrics.average = metrics.changes.length ? metrics.changes.reduce((sum, value) => sum + value, 0) / metrics.changes.length : null
@@ -111,7 +114,7 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
     <div className="breadth-volume-chart">{GROUPS.map(([key, label, color]) => <div className="breadth-volume-column" key={key}><div className="breadth-volume-track"><span className={color} style={{ height: `${metrics[key].volume / metrics.maxVolume * 100}%` }} /></div><strong>{compact(metrics[key].volume)}</strong><small>{label}</small></div>)}</div>
     <div className="breadth-leaders">
       <div className="breadth-leaders-header"><div><strong>Nhóm dẫn dắt</strong><small>{exchange ? `Sàn: ${exchange}` : 'Toàn bộ thị trường'} · Sàn áp dụng cho độ rộng và Top list</small></div></div>
-      {leaders.map(([label, items, field]) => <section className="breadth-leader" key={label}><strong>{label}</strong><small>{field === 'change' ? 'Xếp theo % biến động intraday' : 'Xếp theo khối lượng'}</small>{items.length ? <ol>{items.map(row => <li key={row.symbol}><button type="button" data-breadth-symbol={row.symbol} title={`Mở Chi tiết mã ${row.symbol}`} aria-label={`Mở Chi tiết mã ${row.symbol}`} onClick={() => onOpenDetail?.(row.stock)}><span>{row.symbol}</span></button><b>{field === 'change' ? `${row.change >= 0 ? '+' : ''}${row.change.toFixed(2)}%` : compact(row.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
+      {leaders.map(([label, items, field]) => <section className="breadth-leader" key={label}><strong>{label}</strong><small>{field === 'change' ? 'Xếp theo % biến động mới nhất' : 'Xếp theo khối lượng mới nhất'}</small><small className="breadth-leader-timestamp">{metrics.latestQuoteAt ? `Quote gần nhất ${formatDateTime(metrics.latestQuoteAt)}` : 'Chưa có thời điểm quote intraday'}</small>{items.length ? <ol>{items.map(row => <li key={row.symbol}><button type="button" data-breadth-symbol={row.symbol} title={`Mở Chi tiết mã ${row.symbol} · ${row.quote ? `Intraday ${formatDateTime(row.observedAt) || ''}` : 'EOD fallback'}`} aria-label={`Mở Chi tiết mã ${row.symbol}`} onClick={() => onOpenDetail?.(row.stock)}><span>{row.symbol}</span><small className={`breadth-leader-source ${row.quote ? 'intraday' : 'eod'}`}>{row.quote ? 'Intraday' : 'EOD'}</small></button><b>{field === 'change' ? `${row.change >= 0 ? '+' : ''}${row.change.toFixed(2)}%` : compact(row.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
     </div>
     <p className="breadth-disclaimer">Phân loại dùng biến động giá mới nhất{exchange ? ` trong phạm vi ${exchange}` : ''}; nguồn hiện tại không tách khối lượng chủ động bên mua và bên bán.</p>
   </section>
