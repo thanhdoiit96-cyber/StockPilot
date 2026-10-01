@@ -6,12 +6,11 @@
 | --- | --- |
 | [src/main.jsx](src/main.jsx) | Khởi tạo React |
 | [src/App.jsx](src/App.jsx) | Dashboard, chọn cổ phiếu, tải API, biểu đồ minh họa, danh mục và chat demo |
+| [src/components/MarketBoardPage.jsx](src/components/MarketBoardPage.jsx) | Page Bảng giá: tải danh sách, render, phân trang, toolbar và vòng đời quote bằng React |
 | [src/services/api.mjs](src/services/api.mjs) | Kiểm tra HTTP/JSON và cấu trúc dữ liệu cổ phiếu, hủy request và bỏ qua phản hồi cũ |
 | [src/hooks/useApiResource.js](src/hooks/useApiResource.js) | Trạng thái tải/lỗi/dữ liệu theo URL, retry, cleanup khi đổi lựa chọn hoặc unmount |
 | [src/runtime/overview-table-actions.js](src/runtime/overview-table-actions.js) | Chuẩn hóa cột hành động Phân tích trên bảng Tổng quan của bundle đang phục vụ |
-| [src/runtime/market-board-tools.js](src/runtime/market-board-tools.js) | Gắn toolbar, sticky mã và observer giới hạn trong Bảng giá |
 | [src/runtime/market-board-tools-core.mjs](src/runtime/market-board-tools-core.mjs) | Contract thuần cho cấu hình cột và xuất CSV, dùng chung cho runtime/unit test |
-| [src/runtime/sidebar-toggle-icon.js](src/runtime/sidebar-toggle-icon.js) | Hiển thị chevron trái/phải và nhãn truy cập đúng trạng thái cho nút sidebar |
 | [src/styles.css](src/styles.css) | Giao diện |
 | [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc localhost:5000 |
 
@@ -68,7 +67,7 @@ Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hi
 
 Bảng giá giữ cột mã khi cuộn ngang. Người dùng có thể ẩn/hiện các cột Doanh nghiệp, Khối lượng, Phân tích và Thao tác; lựa chọn được lưu trong trình duyệt. Nút **Xuất CSV** chỉ xuất các dòng của trang/bộ lọc đang hiển thị và các cột dữ liệu đang bật, không xuất nút hành động hay tự tải thêm dữ liệu ngoài phạm vi đó.
 
-Toolbar Bảng giá được phát hành thành runtime module riêng. Observer của module chỉ lên lịch reconcile khi `.table-panel` hoặc cây con của nó thay đổi; toolbar không còn chạy lại trong mọi vòng enhance toàn trang của `overview-table-actions.js`. Đây là bước giảm phạm vi runtime trước khi chuyển toàn bộ Bảng giá thành component React.
+Bảng giá là component React riêng và sở hữu tải danh sách, render, điều hướng/phân trang, loading/error/empty state, timeline, toolbar và vòng đời quote. Các runtime `market-board-tools.js` và `sidebar-toggle-icon.js` đã được loại khỏi source/build; toàn bộ source frontend không còn dùng `MutationObserver`. Runtime Tổng quan còn lại nhận tín hiệu commit tường minh từ React cho các enhancement của những page chưa được tách.
 
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 

@@ -20,7 +20,7 @@
     const syncQuoteRows = payload => {
       const quotes = payload?.data && typeof payload.data === 'object' ? payload.data : {}
       if (!Object.keys(quotes).length) return
-      document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+      document.querySelectorAll('.table-panel:not([data-react-market-board]) tbody tr').forEach(row => {
         const symbol = row.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0].toUpperCase()
         const quote = symbol ? quotes[symbol] : null
         if (!quote) return
@@ -95,8 +95,16 @@
         }
         if (response.ok) {
           const body = await response.text()
-          if (isQuoteRequest) {
-            try { const payload = JSON.parse(body); window.setTimeout(() => syncQuoteRows(payload), 0) } catch (_) { /* React keeps the previous valid quote. */ }
+          if (isQuoteRequest && requestUrl.pathname === '/api/stocks/quotes') {
+            try {
+              const payload = JSON.parse(body)
+              const valid = Object.fromEntries(Object.entries(payload.data || {}).filter(([, quote]) =>
+                quote && Number.isFinite(quote.price) && quote.price > 0 && quote.observed_at && Number.isFinite(Date.parse(quote.fetched_at))))
+              if (Object.keys(valid).length) {
+                window.__stockpilotRecentQuotes = { ...(window.__stockpilotRecentQuotes || {}), ...valid }
+                window.dispatchEvent(new Event('stockpilot:quotes-received'))
+              }
+            } catch (_) { /* Invalid quote responses are handled by React. */ }
           }
           const responseBody = body
           let cacheable = true
@@ -187,8 +195,6 @@
       .breadth-leader ol { display: grid; gap: 5px; margin: 10px 0 0; padding-left: 17px; color: var(--muted); font-size: 11px; }.breadth-leader li { display: flex; justify-content: space-between; gap: 8px; padding-left: 2px; }.breadth-leader li span { color: var(--text); font-weight: 700; }.breadth-leader li b { font-variant-numeric: tabular-nums; }.breadth-leader > p { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
       .breadth-leader li span[data-breadth-symbol] { cursor: pointer; border-radius: 4px; }.breadth-leader li span[data-breadth-symbol]:hover, .breadth-leader li span[data-breadth-symbol]:focus-visible { color: var(--primary); outline: 2px solid rgba(94, 234, 212, .5); outline-offset: 2px; }
       .breadth-exchange-select { min-width: 96px; border: 1px solid var(--border); border-radius: 8px; padding: 7px 28px 7px 10px; color: var(--text); background: var(--panel); font: inherit; font-size: .8rem; }
-      .dashboard-shell:not(.market-board-active) .table-panel { display: none !important; }
-      .dashboard-shell.market-board-active .main-panel > :not(.topbar):not(.table-panel) { display: none !important; }
       .market-board-nav-item { position: relative; }
       .market-board-nav-item .nav-icon { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
       .market-session-timeline { margin: 0 0 14px; padding: 13px 14px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 12px; background: rgba(15, 23, 42, .28); }
@@ -874,23 +880,6 @@
     updateMarketTimeline()
   }
 
-  const reconcileDetailChartGap = () => {
-    const panel = document.querySelector('.detail-chart-panel')
-    const gap = panel?.querySelector('.chart-data-gap')
-    if (!panel || !gap) return
-    const representedSessions = new Set([...panel.querySelectorAll('.price-point[data-session-date]')]
-      .map(point => point.getAttribute('data-session-date'))
-      .filter(Boolean))
-    const reported = [...gap.textContent.matchAll(/\b(\d{2})-(\d{2})\b/g)].map(match => ({ month: match[1], day: match[2] }))
-    if (!reported.length) return
-    const missing = reported.filter(({ month, day }) => ![...representedSessions].some(date => date.endsWith(`-${month}-${day}`)))
-    if (!missing.length) {
-      gap.remove()
-      return
-    }
-    gap.textContent = `Phiên gần đây có dữ liệu trong hệ thống nhưng chưa có điểm giá cho mã này: ${missing.map(({ month, day }) => `${day}-${month}`).join(', ')}. Biểu đồ chỉ hiển thị dữ liệu giá ghi nhận được.`
-  }
-
   const pageContexts = {
     'Tổng quan': ['THỊ TRƯỜNG', 'Tổng quan'],
     'Bảng giá': ['THỊ TRƯỜNG', 'Bảng giá'],
@@ -901,6 +890,7 @@
   }
 
   const syncPageContext = () => {
+    if (document.querySelector('[data-react-market-board]')) return
     const shell = document.querySelector('.dashboard-shell')
     const active = shell?.classList.contains('market-board-active')
       ? 'Bảng giá'
@@ -956,7 +946,7 @@
 
   const enhance = () => {
     installStyles()
-    reconcileDetailChartGap()
+    const reactMarketBoard = document.querySelector('[data-react-market-board]')
     const detailParams = new URLSearchParams(window.location.search)
     const detailSymbol = detailParams.get('symbol')?.trim().toUpperCase()
     const detailResolveKey = 'stockpilot-detail-url-resolved'
@@ -996,7 +986,7 @@
       link.textContent = symbol
       node.replaceChildren(link)
     })
-    document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+    document.querySelectorAll('.table-panel:not([data-react-market-board]) tbody tr').forEach(row => {
       if (row.dataset.marketDetailBound) return
       const symbolCell = row.querySelector('.symbol')
       const symbol = symbolCell ? ([...symbolCell.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim())?.textContent.trim() || '') : ''
@@ -1105,7 +1095,7 @@
     })
   const shell = document.querySelector('.dashboard-shell')
   const nav = document.querySelector('.nav')
-  if (shell && !shell.dataset.marketNavigationBound) {
+  if (!reactMarketBoard && shell && !shell.dataset.marketNavigationBound) {
     shell.dataset.marketNavigationBound = '1'
     shell.addEventListener('click', event => {
       if (event.target.closest('.nav-item:not(.market-board-nav-item), .detail-analysis-btn, .table-panel tbody tr')) cancelMarketBoardRefresh()
@@ -1115,6 +1105,7 @@
   }
 
     let boardNav = nav?.querySelector('.market-board-nav-item')
+    if (!reactMarketBoard) {
     boardNav?.setAttribute('title', 'Mở Bảng giá')
     if (nav && !boardNav) {
       boardNav = document.createElement('button')
@@ -1212,10 +1203,11 @@
     if (sessionStorage.getItem(marketViewKey) === 'board' && shell && !shell.classList.contains('market-board-active')) {
       window.setTimeout(() => boardNav.click(), 0)
     }
-    document.querySelectorAll('.table-panel thead th').forEach(header => {
+    }
+    document.querySelectorAll('.table-panel:not([data-react-market-board]) thead th').forEach(header => {
       if (['Nhận định', 'Đánh giá'].includes(header.textContent.trim())) header.textContent = 'Phân tích'
     })
-    document.querySelectorAll('.table-panel tbody tr').forEach(row => {
+    document.querySelectorAll('.table-panel:not([data-react-market-board]) tbody tr').forEach(row => {
       const cell = row.children[6]
       const symbol = row.querySelector('.symbol')?.textContent.trim().split(/\s+/)[0]
       if (!cell || !symbol) return
@@ -1255,10 +1247,7 @@
       // detached text node and the day change stops updating when a newer
       // intraday quote revalues the portfolio.
       let value = change.querySelector(':scope > span')
-      if (!value) {
-        value = document.createElement('span')
-        change.replaceChildren(document.createTextNode('So với hôm qua: '), value)
-      }
+      if (!value) return
       const allocationPanel = change.closest('.allocation-panel')
       const footnote = allocationPanel?.querySelector('.allocation-footnote')?.textContent || ''
       const coverage = footnote.match(/(\d+)\s*\/\s*(\d+)/)
@@ -1314,8 +1303,8 @@
     })
     ensureOverviewResourceErrors()
     document.querySelector('.table-panel .table-tools')?.classList.add('overview-filter-row')
-    ensureOverviewSnapshot()
-    ensureMarketTimeline()
+    if (!reactMarketBoard) ensureOverviewSnapshot()
+    if (!reactMarketBoard) ensureMarketTimeline()
     const breadth = document.querySelector('.market-breadth-panel')
     const breadthHeaderText = breadth?.querySelector('.market-breadth-header p')
     const activeBreadthExchange = breadth?.querySelector('.breadth-exchange-select')?.value || ''
@@ -1414,6 +1403,7 @@
       symbolNode.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail() } })
     })
     const tablePanel = document.querySelector('.table-panel')
+    if (!tablePanel?.matches('[data-react-market-board]')) {
     if (tablePanel && !tablePanel.querySelector('.page-size-control:not(.overview-page-size-control)')) {
       const controls = document.createElement('div')
       controls.className = 'table-pagination'
@@ -1482,6 +1472,7 @@
       button.setAttribute('aria-label', 'Mở phân tích chuyên sâu')
       button.title = 'Mở trang chi tiết và tải phân tích kỹ thuật'
     })
+    }
     document.querySelectorAll('.saved-proposal .danger-btn').forEach(button => {
       if (button.textContent.trim().startsWith('X')) button.textContent = '\u0058\u00f3\u0061'
     })
@@ -1492,22 +1483,17 @@
   }
 
   let scheduled = false
-  let observer
-  const observe = () => observer?.observe(document.body, { childList: true, subtree: true })
   const scheduleEnhance = () => {
     if (scheduled) return
     scheduled = true
     requestAnimationFrame(() => {
       scheduled = false
-      observer?.disconnect()
       enhance()
-      observe()
     })
   }
 
+  window.addEventListener('stockpilot:react-commit', scheduleEnhance)
   window.addEventListener('stockpilot:portfolio-state', scheduleEnhance)
   window.addEventListener('stockpilot:overview-resource-state', scheduleEnhance)
   enhance()
-  observer = new MutationObserver(scheduleEnhance)
-  observe()
 })()

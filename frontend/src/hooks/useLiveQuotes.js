@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { requestJson, stockQuote, stockQuotes } from '../services/api.mjs'
 
+let quoteRequestSequence = 0
+
 // Loading describes a request, never the presence/absence of market data.
 // Poll only the active page, serially, and retain successful results briefly
 // through a transient failure without confusing them with a new observation.
-export default function useLiveQuotes(symbols, { enabled = true, stockId = null } = {}) {
+export default function useLiveQuotes(symbols, { enabled = true, stockId = null, requestParam = 'poll' } = {}) {
   const key = [...new Set(symbols.filter(Boolean))].sort().join(',')
   const url = !enabled ? null : stockId ? `/api/stocks/${encodeURIComponent(stockId)}/quote`
     : key ? `/api/stocks/quotes?symbols=${encodeURIComponent(key)}` : null
@@ -19,7 +21,7 @@ export default function useLiveQuotes(symbols, { enabled = true, stockId = null 
       controller = new AbortController()
       let quotes = {}, error = ''
       let providerStatus = null
-      const quoteUrl = stockId ? url : `${url}&poll=${pollCount++}`
+      const quoteUrl = stockId ? url : `${url}&${encodeURIComponent(requestParam)}=${++quoteRequestSequence}-${pollCount++}`
       try {
         const [quoteResult, statusResult] = await Promise.allSettled([
           requestJson(quoteUrl, { signal: controller.signal, timeoutMs: 0 }),
@@ -49,7 +51,7 @@ export default function useLiveQuotes(symbols, { enabled = true, stockId = null 
     }
     load()
     return () => { cancelled = true; clearTimeout(poll); controller?.abort() }
-  }, [url, stockId, key])
+  }, [url, stockId, key, requestParam])
   if (!url) return { data: {}, loading: false, error: '', providerStatus: null }
   return state.url === url ? state : { data: {}, loading: true, error: '', providerStatus: null }
 }
