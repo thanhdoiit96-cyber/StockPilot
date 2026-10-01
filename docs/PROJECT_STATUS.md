@@ -3116,3 +3116,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Migration thay đúng một logical JSX node bằng AST rồi loại bỏ script migration một lần; component trả `null` khi analysis chưa có để giữ nguyên trạng thái trước khi request settle. Bổ sung regression xác nhận panel mới hiển thị sau luồng Tổng quan → Chi tiết → Phân tích chuyên sâu.
 - Kiểm chứng: production safe-build và bundle integrity pass (`index-D-ucO0-Z.js`); page audit desktop/mobile **2/2** pass; workflow analysis targeted **1/1** pass.
 - Điểm tiếp tục P1: tách Risk Plan theo boundary AST độc lập, giữ `Gh` (risk normalization) và price formatter trong contract rõ ràng. Trace Bảng giá authenticated vẫn là gate hiệu năng còn thiếu khi session hợp lệ có mặt.
+
+## Tách Risk Plan của Chi tiết — 2026-10-01
+
+- `DetailRiskPlan` nay sở hữu bảng kịch bản tham khảo và disclaimer. Component nhận `riskPlan`, hàm `Gh` chuẩn hoá stop/take theo giá hiện hành, formatter giá, translator và empty-value từ container; external factors vẫn ở container để giữ phạm vi contract nhỏ.
+- Migration thay đúng một AST boundary và script migration một lần đã bị xoá sau khi áp dụng. Không thay đổi request analysis, retry, session intent, quote lifecycle hoặc công thức chuẩn hoá `Gh`.
+- Kiểm chứng: production safe-build/bundle integrity pass (`index-C-G6V-T4.js`); workflow analysis targeted **1/1** pass, bao gồm scenario stop/take được điều chỉnh; page audit desktop/mobile **2/2** pass.
+- Điểm tiếp tục P1: tách External Factors/citation list nếu contract link/citation được đóng gói riêng; nếu không, ưu tiên trace Bảng giá authenticated khi có session thật thay vì mở rộng refactor presentation. Không dùng token/fixture giả để đóng performance gate.

@@ -9,6 +9,7 @@ import DetailHero from "./components/DetailHero.jsx";
 import DetailPriceVolumeChart from "./components/DetailPriceVolumeChart.jsx";
 import DetailAnalysisStatus from "./components/DetailAnalysisStatus.jsx";
 import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
+import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -2838,75 +2839,12 @@ icle", {
               indicators: T.data?.indicators,
               translate: p,
               formatDate: He
-            }), ((Yr = (Gr = T.data) == null ? void 0 : Gr.risk_plan) == null ? void 0 : Yr.horizons) && O.jsxs("div", {
-              className: "external-facto\
-r-box",
-              children: [O.jsx("strong", {
-                children: p("K\u1ECBch b\u1EA3n tham kh\u1EA3o")
-              }), O.jsx("div", {
-                className: "tab\
-le-wrap risk-table",
-                children: O.jsxs("table", {
-                  children: [O.jsx("thead", {
-                    children: O.jsxs("tr", {
-                      children: [O.jsx("\
-th", {
-                        children: p("Khung th\u1EDDi gian")
-                      }), O.jsx("th", {
-                        children: p("K\u1EF3 v\u1ECDng")
-                      }), O.jsx("th", {
-                        children: p("T\u1EF7 tr\u1ECDng")
-                      }), O.jsx("th", {
-                        children: p("Ch\u1ED1t l\u1EDDi")
-                      }), O.jsx("th", {
-                        children: "Stop loss"
-                      })]
-                    })
-                  }), O.jsx("tbody", {
-                    children: Object.values(T.data.risk_plan.horizons).map(d => {
-                      const S = Gh(d);
-                      return O.jsxs("tr", {
-                        children: [O.jsx("td", {
-                          children: d.label
-                        }), O.jsx("td", {
-                          children: d.expectation_pct ? `${d.expectation_pct.min}% - ${d.expectation_pct.max}%` : Xn
-                        }), O.jsxs("td", {
-                          children: [Number(d.allocation_pct || 0).toFixed(1), "%"]
-                        }), O.jsx("td", {
-                          children: S.displayTake == null ? Xn : oe(S.displayTake)
-                        }), O.jsxs("td", {
-                          children: [S.displayStop == null ? Xn : oe(S.displayStop), S.adjusted && O.jsx("small", {
-                            className: "data-time",
-                            children: p("\
- \u0111i\u1EC1u ch\u1EC9nh theo gi\xE1 hi\u1EC7n t\u1EA1i")
-                          })]
-                        })]
-                      }, d.label);
-                    })
-                  })]
-                })
-              }), O.jsx("p", {
-                className: "analysis-disclaimer",
-                children: T.data.risk_plan.disclaimer
-              }), ((qr = T.data) == null ? void 0 : qr.external_factors) && O.jsxs("div", {
-                className: "external-factor-box",
-                children: [O.jsx("strong", {
-                  children: p("Y\u1EBFu t\u1ED1 b\xEAn ngo\xE0i")
-                }), O.jsx("span", {
-                  className: "chip neutral",
-                  children: T.data.external_factors.status === "available" ? p(" Ngu\u1ED3n x\xE1c minh") : p("Ch\u01B0a c\xF3 ngu\u1ED3n x\xE1c minh")
-                }), O.jsx("p", {
-                  className: "\
-muted-text",
-                  children: T.data.external_factors.disclaimer || p("Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u tin t\u1EE9c ho\u1EB7c v\u0129 m\xF4 cho m\xE3 n\xE0y.")
-                }), (T.data.external_factors.factors || []).map((d, S) => O.jsxs("p", {
-                  className: "muted-text",
-                  children: [d.type, ": ", O.jsx($i, {
-                    url: d.source_url || d.url,
-                    children: d.title || p("S\u1EF1 ki\u1EC7n kh\xF4ng c\xF3 ti\xEAu \u0111\u1EC1")
-                  }), " - ", d.source || p("Ngu\u1ED3n ch\u01B0a x\xE1c nh\u1EADn"), " - ", He(d.published_at)]
-                }, `${d.source || "factor"}-${S}`))]
-              })]
+            }), O.jsx(DetailRiskPlan, {
+              riskPlan: T.data?.risk_plan,
+              normalizeRisk: Gh,
+              formatPrice: oe,
+              translate: p,
+              emptyValue: Xn
             })]
           })]
         })]

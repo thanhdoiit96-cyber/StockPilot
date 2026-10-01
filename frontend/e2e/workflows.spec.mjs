@@ -7,7 +7,7 @@ async function boot(page, options = {}) {
     let payload = { success: true, data: null }
     if (path === '/api/stocks') payload = list()
     else if (path === '/api/stocks/data-quality') payload = { success: true, data: { session_date: '2026-09-25', listed: 551, covered: 204, missing: 347, missing_symbols: ['VPB'], ready: false, provider: {} } }
-    else if (path.endsWith('/analysis')) payload = { success: true, data: { observations: 90, indicators: {}, quality: { score: 100 }, risk_plan: { horizons: {} }, expert_guidance: { technical_score: 75, stance: 'Tích cực', confirmation: 'Dữ liệu kiểm thử', score_breakdown: [] } } }
+    else if (path.endsWith('/analysis')) payload = { success: true, data: { observations: 90, indicators: {}, quality: { score: 100 }, risk_plan: { horizons: { short_term: { label: 'Ngắn hạn', expectation_pct: { min: 3, max: 8 }, allocation_pct: 25, take_profit: 119000, stop_loss: 121000 } }, disclaimer: 'Kịch bản kiểm thử' }, expert_guidance: { technical_score: 75, stance: 'Tích cực', confirmation: 'Dữ liệu kiểm thử', score_breakdown: [] } } }
     else if (/^\/api\/stocks\/[^/]+$/.test(path)) {
       const stock = stocks.find(item => item.id === decodeURIComponent(path.split('/').pop())) || stocks[0]
       payload = { success: true, data: { ...stock, price_history: [] } }
@@ -151,6 +151,9 @@ test('overview analysis action opens detail and requests the analysis', async ({
   await expect(page.locator('.technical-panel .analysis-status-row')).toContainText('Đã phân tích')
   await expect(page.locator('.expert-guidance-panel')).toBeVisible()
   await expect(page.locator('.expert-guidance-panel')).toContainText('Dữ liệu kiểm thử')
+  await expect(page.locator('.risk-table')).toBeVisible()
+  await expect(page.locator('.risk-table')).toContainText('Ngắn hạn')
+  await expect(page.locator('.risk-table')).toContainText('điều chỉnh theo giá hiện tại')
   await expect.poll(() => analysisRequests).toBe(1)
   await expect.poll(() => page.evaluate(() => Object.entries(sessionStorage).some(([key, value]) => key.startsWith('analysis-requested:') && value === '1'))).toBe(true)
 })
