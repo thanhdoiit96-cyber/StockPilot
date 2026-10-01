@@ -149,6 +149,8 @@ test('overview analysis action opens detail and requests the analysis', async ({
   await action.click()
   await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
   await expect(page.locator('.technical-panel .analysis-status-row')).toContainText('Đã phân tích')
+  await expect(page.locator('.expert-guidance-panel')).toBeVisible()
+  await expect(page.locator('.expert-guidance-panel')).toContainText('Dữ liệu kiểm thử')
   await expect.poll(() => analysisRequests).toBe(1)
   await expect.poll(() => page.evaluate(() => Object.entries(sessionStorage).some(([key, value]) => key.startsWith('analysis-requested:') && value === '1'))).toBe(true)
 })

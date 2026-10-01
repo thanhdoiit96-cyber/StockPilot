@@ -8,6 +8,7 @@ import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
 import DetailPriceVolumeChart from "./components/DetailPriceVolumeChart.jsx";
 import DetailAnalysisStatus from "./components/DetailAnalysisStatus.jsx";
+import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -2829,158 +2830,14 @@ icle", {
                   children: d.advice
                 })]
               }, d.label))
-            }), ((o = T.data) == null ? void 0 : o.expert_guidance) && O.jsxs("div", {
-              className: "expert-guidance-panel",
-              children: [O.jsxs("div", {
-                className: "expert-guidance-header",
-                children: [O.jsx("strong", {
-                  children: p("Nh\u1EADn \u0111\u1ECBnh ch\
-uy\xEAn gia")
-                }), O.jsxs("span", {
-                  className: "chip neutral",
-                  children: [T.data.expert_guidance.stance, T.data.expert_guidance.technical_score != null ? `  ${T.data.expert_guidance.technical_score}/100` : ""]
-                }), O.jsx("i", {
-                  className: "technic\
-al-score-meter",
-                  style: {
-                    width: `${Math.max(0, Math.min(100, Number(T.data.expert_guidance.technical_score || 0)))}%`
-                  },
-                  title: "\u0110i\u1EC3m k\u1EF9 thu\u1EADt t\u1ED5ng h\u1EE3p"
-                })]
-              }), O.jsx("p", {
-                children: T.data.expert_guidance.confirmation
-              }), O.jsxs("div", {
-                className: "analysis-context-strip",
-                children: [O.jsxs("span", {
-                  children: [O.jsx("strong", {
-                    children: "\
-D\u1EEF li\u1EC7u "
-                  }), T.data.observations, " phi\xEAn"]
-                }), O.jsxs("span", {
-                  children: [O.jsx("strong", {
-                    children: "\u0110\
-\u1EBFn "
-                  }), He(T.data.as_of)]
-                }), O.jsxs("span", {
-                  children: [O.jsx("strong", {
-                    children: "Ch\u1EA5t l\u01B0\u1EE3ng "
-                  }), ((a = T.data.quality) == null ? void 0 : a.score) == null ? "-" : `${T.data.quality.score}/100`]
-                })]
-              }), O.jsxs("div", {
-                className: "ichimoku-summary",
-                children: [O.jsx("strong", {
-                  children: p("Ichimoku")
-                }), O.jsxs("span", {
-                  children: ["Tenkan ", ((c = (u = T.data.indicators) == null ? void 0 : u.ichimoku) == null ? void 0 : c.conversion) ?? "-", "  Ki\
-jun ", ((k = (f = T.data.indicators) == null ? void 0 : f.ichimoku) == null ? void 0 : k.base) ?? "-", "  My ", ((y = (j = T.data.indicators) == null ? void 0 : j.ichimoku) == null ? void 0 : y.cloud) === "above_cloud" ? "Tr\xEAn m\xE2y" : ((E = (C = T.data.indicators) == null ? void 0 : C.ichimoku) == null ? void 0 : E.cloud) === "below_cloud" ? "D\u01B0\u1EDBi m\xE2y" : ((b = (M = T.data.indicators) == null ? void 0 : M.ichimoku) == null ? void 0 : b.cloud) === "inside_cloud" ? "Trong m\
-y" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u", "  MACD ", ((h = (m = T.data.indicators) == null ? void 0 : m.macd) == null ? void 0 : h.state) === "bullish" ? "T\u0103ng" : ((w = (v = T.data.indicators) == null ? void 0 : v.macd) == null ? void 0 : w.state) === "bearish" ? "Gi\u1EA3m" : ((x = (z = T.data.indicators) == null ? void 0 : z.macd) == null ? void 0 : x.state) === "neutral" ? "Trung tnh" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u", "  Bollinger ", ((P = (_ = T.data.indicators) == null ? void 0 : _.bollinger) == null ? void 0 : P.position) === "above_upper" ? "V\u01B0\u1EE3t d\u1EA3i tr\xEAn" : ((I = (g = T.data.indicators) == null ? void 0 : g.bollinger) == null ? void 0 : I.position) === "below_lower" ? "D\u01B0\u1EDBi d\u1EA3i d\
-\u01B0\u1EDBi" : ((K = (B = T.data.indicators) == null ? void 0 : B.bollinger) == null ? void 0 : K.position) === "upper\
-_half" ? "N\u1EEDa tr\xEAn d\u1EA3i" : ((ye = (ie = T.data.indicators) == null ? void 0 : ie.bollinger) == null ? void 0 : ye.position) === "lower_half" ? "N\u1EEDa d\u01B0\u1EDBi d\u1EA3i" : "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u"]
-                })]
-              }), O.jsx("div", {
-                className: "advanced-indicator-grid",
-                children: [O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "\
-SMA20 / SMA50"
-                  }), O.jsxs("b", {
-                    children: [((mn = T.data.indicators) == null ? void 0 : mn.sma20) == null ? "-" : Number(T.data.indicators.sma20).toFixed(2), " / ", ((se = T.data.indicators) == null ? void 0 : se.sma50) == null ? "-" : Number(T.data.indicators.sma50).toFixed(2)]
-                  }), O.jsx("small", {
-                    children: "N\u1EC1n xu h\u01B0\u1EDBng trung h\u1EA1n"
-                  })]
-                }), O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "EMA12 / EMA26"
-                  }), O.jsxs("b", {
-                    children: [((Ye = T.data.indicators) == null ? void 0 : Ye.ema12) == null ? "-" : Number(T.data.indicators.ema12).toFixed(2), " / ", ((L = T.data.indicators) == null ? void 0 : L.ema26) == null ? "-" : Number(T.data.indicators.ema26).toFixed(2)]
-                  }), O.jsx("small", {
-                    children: "\u0110\u1ED9ng l\u01B0\u1EE3ng ng\u1EAFn h\u1EA1n"
-                  })]
-                }), O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "RSI14"
-                  }), O.jsx("b", {
-                    children: ((R = T.data.indicators) == null ? void 0 : R.rsi14) == null ? "-" : Number(T.data.indicators.rsi14).toFixed(1)
-                  }), O.jsx("small", {
-                    children: "Tr\xEAn 70: qu\xE1 mua \xB7 d\u01B0\u1EDBi 30: qu\xE1 b\xE1n"
-                  })]
-                }), O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "MACD"
-                  }), O.jsxs("b", {
-                    children: [((W = (U = T.data.indicators) == null ? void 0 : U.macd) == null ? void 0 : W.line) == null ? "-" : Number(T.data.indicators.macd.line).toFixed(2), "  \
-H ", ((vn = (X = T.data.indicators) == null ? void 0 : X.macd) == null ? void 0 : vn.histogram) == null ? "-" : Number(T.data.indicators.macd.histogram).toFixed(2)]
-                  }), O.jsx("small", {
-                    children: "\u0110\u01B0\u1EDDng MACD v\xE0 histogram"
-                  })]
-                }), O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "Bollinger 20/2"
-                  }), O.jsxs("b", {
-                    children: [((_n = (Ae = T.data.indicators) == null ? void 0 : Ae.bollinger) == null ? void 0 : _n.lower) == null ? "-" : Number(T.data.indicators.bollinger.lower).toFixed(2), " - ", ((gn = (Ue = T.data.indicators) == null ? void 0 : Ue.bollinger) == null ? void 0 : gn.upper) == null ? "-" : Number(T.data.indicators.bollinger.upper).toFixed(2)]
-                  }), O.jsx("small", {
-                    children: "Bi\xEAn d\
-\u01B0\u1EDBi - bi\xEAn tr\xEAn"
-                  })]
-                }), O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: "Ichimoku"
-                  }), O.jsxs("b", {
-                    children: ["T ", ((Tr = (Er = T.data.indicators) == null ? void 0 : Er.ichimoku) == null ? void 0 : Tr.conversion) == null ? "-" : Number(T.data.indicators.ichimoku.conversion).toFixed(2), "  K ", ((zr = (Pr = T.data.indicators) == null ? void 0 : Pr.ichimoku) == null ? void 0 : zr.base) == null ? "-" : Number(T.data.indicators.ichimoku.base).toFixed(2)]
-                  }), O.jsx("small", {
-                    children: ((Lr = (Mr = T.data.indicators) == null ? void 0 : Mr.ichimoku) == null ? void 0 : Lr.cloud) || "Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u"
-                  })]
-                })]
-              }), O.jsx("div", {
-                className: "expert-score-grid",
-                children: (T.data.expert_guidance.score_breakdown || []).map(d => O.jsxs("article", {
-                  children: [O.jsxs("div", {
-                    children: [O.jsx("str\
-ong", {
-                      children: d.label
-                    }), O.jsx("b", {
-                      children: d.score == null ? "-" : `${d.score} \u0111i\u1EC3m`
-                    })]
-                  }), O.jsx("\
-small", {
-                    children: d.detail
-                  })]
-                }, d.key))
-              }), O.jsxs("div", {
-                className: "expert-guidance-columns",
-                children: [O.jsxs("div", {
-                  children: [O.jsx("strong", {
-                    children: p("C\u1EA7n theo d\xF5i")
-                  }), O.jsx("ul", {
-                    children: (T.data.expert_guidance.watch || []).map(d => O.jsx("li", {
-                      children: d
-                    }, d))
-                  })]
-                }), O.jsxs("div", {
-                  children: [O.jsx("strong", {
-                    children: p("N\xEAn tr\xE1nh")
-                  }), O.jsx("ul", {
-                    children: (T.data.expert_guidance.avoid || []).map(d => O.jsx("li", {
-                      children: d
-                    }, d))
-                  })]
-                })]
-              }), O.jsx("div", {
-                className: "expert-forecast-grid",
-                children: Object.entries(T.data.expert_guidance.forecast || {}).map(([d, S]) => O.jsxs("article", {
-                  children: [O.jsx("strong", {
-                    children: d === "short_term" ? "Ng\u1EAFn h\u1EA1n" : d === "medium_term" ? "Trung h\u1EA1n" : "D\xE0i h\u1EA1n"
-                  }), O.jsx("small", {
-                    children: d === "short_term" ? "1-20 p\
-hi\xEAn (~1 th\xE1ng)" : d === "medium_term" ? "1-6 th\xE1ng" : "Tr\xEAn 6 th\xE1ng"
-                  }), O.jsx("p", {
-                    children: S
-                  })]
-                }, d))
-              }), O.jsx("p", {
-                className: "analysis-disclaimer",
-                children: T.data.expert_guidance.risk_note
-              })]
+            }), O.jsx(DetailExpertGuidance, {
+              guidance: T.data?.expert_guidance,
+              observations: T.data?.observations,
+              asOf: T.data?.as_of,
+              qualityScore: T.data?.quality?.score,
+              indicators: T.data?.indicators,
+              translate: p,
+              formatDate: He
             }), ((Yr = (Gr = T.data) == null ? void 0 : Gr.risk_plan) == null ? void 0 : Yr.horizons) && O.jsxs("div", {
               className: "external-facto\
 r-box",

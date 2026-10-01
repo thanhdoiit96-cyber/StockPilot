@@ -3109,3 +3109,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `App.jsx` không còn các xuống dòng continuation khó xác định ranh giới JSX sau quá trình recovery, nên lần tách guidance/risk tiếp theo có thể thao tác theo node/range cú pháp thay vì thay chuỗi cục bộ dễ làm hỏng biểu thức `children`.
 - Kiểm chứng: production safe-build và bundle integrity pass (`index-Dx0zkBSY.js`); Playwright workflow **19/19** pass (17 case đầu và 2 case cuối được xác nhận bằng lượt chạy tách riêng).
 - Điểm tiếp tục P1: dùng AST boundary đã chuẩn hoá để tách một section analysis có contract độc lập (ưu tiên guidance hoặc risk), chỉ commit khi build và targeted regression tiếp tục xanh. Trace Bảng giá authenticated vẫn chờ session hợp lệ, không thay bằng credential/fixture giả.
+
+## Tách Expert Guidance của Chi tiết — 2026-10-01
+
+- `DetailExpertGuidance` nay sở hữu phần nhận định chuyên gia: technical score, context dữ liệu, Ichimoku/MACD/Bollinger, indicator grid, score breakdown, watch/avoid, forecast và disclaimer. Container chỉ truyền analysis data, formatter ngày và translator; không đổi request, retry, session intent hay quote lifecycle.
+- Migration thay đúng một logical JSX node bằng AST rồi loại bỏ script migration một lần; component trả `null` khi analysis chưa có để giữ nguyên trạng thái trước khi request settle. Bổ sung regression xác nhận panel mới hiển thị sau luồng Tổng quan → Chi tiết → Phân tích chuyên sâu.
+- Kiểm chứng: production safe-build và bundle integrity pass (`index-D-ucO0-Z.js`); page audit desktop/mobile **2/2** pass; workflow analysis targeted **1/1** pass.
+- Điểm tiếp tục P1: tách Risk Plan theo boundary AST độc lập, giữ `Gh` (risk normalization) và price formatter trong contract rõ ràng. Trace Bảng giá authenticated vẫn là gate hiệu năng còn thiếu khi session hợp lệ có mặt.
