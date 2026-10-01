@@ -3144,3 +3144,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Sửa hai locator E2E lỗi thời: button trợ giúp native được kiểm tra bằng focus thay vì yêu cầu thuộc tính `tabindex`, và danh sách watchlist dùng selector `ul.watchlist` để không đụng badge cùng tên. Đây là sửa test semantics, không đổi UI/runtime liên quan.
 - Kiểm chứng: production safe-build/bundle integrity pass (`index-DFMrZ0b7.js`); suite Tổng quan/Danh mục **6/6** pass; Market Breadth scope **1/1** và navigation/source fallback **1/1** pass.
 - Điểm tiếp tục: Mốc 1 snapshot/Top list đã đủ các trường hiện có. Mốc 2 lịch sử độ rộng chỉ bắt đầu khi có endpoint aggregate liên tục theo session; không nối điểm thiếu hoặc suy diễn traded value. Trace Bảng giá authenticated vẫn mở song song.
+
+## Endpoint lịch sử độ rộng theo session — 2026-10-01
+
+- Thêm `GET /api/stocks/breadth/history?sessions=1..60&exchange=HSX|HNX|UPCOM`. Query lấy EOD Vnstock theo ngày Việt Nam, dedupe mỗi mã/session, so close với phiên lưu trước bằng `LAG`, rồi tổng hợp tăng/giảm/đứng giá, A/D ratio, spread, coverage và volume breadth. Query bị giới hạn và cache PostgreSQL 5 phút theo sàn/số session.
+- Contract trả `continuity.status` (`continuous`, `gapped`, `insufficient_data`) cùng danh sách gap. Thiếu mã bị loại khỏi classified, không nội suy; `traded_value=null` nếu không có observation provider. Query `sessions` không hợp lệ fallback 20, tối đa 60.
+- Kiểm chứng: targeted service/controller **15/15** pass; toàn bộ backend **114/114** pass trước thay đổi fallback cuối, sau đó targeted chạy lại xanh. Chưa restart backend/live-smoke endpoint trong checkpoint này, nên chưa có bằng chứng continuity từ database thực tế và UI timeline chưa được bật.
+- Điểm tiếp tục: restart/deploy backend an toàn rồi gọi endpoint 1D/5D/20D trên database live; chỉ triển khai timeline khi khoảng tương ứng trả `continuous` và coverage được hiển thị cạnh chart. Trace Bảng giá authenticated vẫn là gate riêng cho quote lifecycle.
