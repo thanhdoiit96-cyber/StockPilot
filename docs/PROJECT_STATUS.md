@@ -3035,3 +3035,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Dòng vị thế trong bảng Danh mục và item Watchlist nay mở đúng Chi tiết mã bằng click, Enter hoặc Space. Nút xóa Watchlist dừng propagation nên không điều hướng ngoài ý muốn.
 - Thêm affordance chuột/bàn phím: hàng có cursor pointer, nền highlight và mã gạch chân khi hover/focus; focus-visible có viền riêng. Mã trong bảng vẫn là button truy cập được với tooltip “Mở Chi tiết mã”.
 - Kiểm chứng: production build/safe-build và bundle integrity pass; Playwright `portfolio.spec.mjs` **7/7** pass, gồm assertion hover cursor và click dòng vị thế sang Chi tiết mã. Điểm tiếp tục P1 không đổi: trace outlier chuyển Bảng giá trước khi tối ưu hiệu năng.
+
+## Hiển thị ngay mã thêm từ Đề xuất — 2026-10-01
+
+- Sau khi API đã xác nhận lưu một giao dịch mua có `recommendation_context`, Danh mục nay hoà giải lạc quan: nếu lượt đọc `/api/portfolio` ngay sau đó chưa có `recommendation_entries`, UI bổ sung một dòng **Đang chờ** từ dữ liệu giao dịch vừa lưu. Backend vẫn là nguồn dữ liệu chuẩn ở những lượt tải sau; cơ chế này không tự liên kết các giao dịch cũ không có ngữ cảnh Đề xuất.
+- Bỏ gạch chân khi hover/focus ở link Chi tiết trong bảng Danh mục và Watchlist; vẫn giữ màu, nền highlight, cursor và focus-visible để không làm mất affordance điều hướng/khả năng truy cập.
+- Kiểm chứng: production build/safe-build và bundle integrity pass (`index-CbPBG7Tk.js`); Playwright `recommendation-workbench.spec.mjs` và `portfolio.spec.mjs` **8/8** pass. Test Đề xuất cố ý cho `/api/portfolio` trả `recommendation_entries: []` sau khi lưu, rồi xác nhận FPT vẫn hiện trong bảng theo dõi.
+- Điểm tiếp tục P1 không đổi: trace outlier chuyển Bảng giá với phiên authenticated production-like, sau đó lặp benchmark live trước khi quyết định tối ưu hiệu năng.
