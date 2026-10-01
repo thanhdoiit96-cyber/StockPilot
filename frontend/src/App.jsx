@@ -1514,7 +1514,7 @@ function lv() {
         const refreshed = await je("/api/portfolio", {
           token: ue.token
         });
-        mt(refreshed.data), on(p("Đã nhập nhật ký giao dịch"));
+        mt(refreshed.data);
       }
       return response.data;
     },
@@ -1527,7 +1527,7 @@ function lv() {
       const refreshed = await je("/api/portfolio", {
         token: ue.token
       });
-      mt(refreshed.data), on(p("Đã sửa giao dịch"));
+      mt(refreshed.data);
     },
     deletePortfolioTransaction = async transactionId => {
       await je(`/api/portfolio/transactions/${encodeURIComponent(transactionId)}`, {
@@ -1540,7 +1540,7 @@ function lv() {
       const refreshed = await je("/api/portfolio", {
         token: ue.token
       });
-      mt(refreshed.data), on(p("Đã xóa giao dịch"));
+      mt(refreshed.data);
     },
     Jh = d => Ze(() => {
       En(1), ti(S => S.key === d ? {
