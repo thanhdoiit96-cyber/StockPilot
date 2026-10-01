@@ -948,6 +948,21 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .portfolio-panel h3, .allocation-panel h3 { font-size: 18px; }
 .portfolio-table table { min-width: 620px; }
 .portfolio-table td, .portfolio-table th { white-space: nowrap; }
+.portfolio-ledger-panel { grid-column: 1 / -1; min-width: 0; }
+.portfolio-ledger-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.portfolio-ledger-heading h3 { margin: 0 0 5px; }
+.portfolio-ledger-heading p { margin: 0; }
+.portfolio-ledger-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.portfolio-ledger-table { margin-top: 14px; }
+.portfolio-ledger-table table { min-width: 780px; }
+.portfolio-ledger-table td, .portfolio-ledger-table th { white-space: nowrap; }
+.portfolio-ledger-table td small { display: block; max-width: 180px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; }
+.ledger-side { display: inline-flex; min-width: 42px; justify-content: center; padding: 3px 7px; border: 1px solid currentColor; border-radius: 999px; font-size: 10px; font-weight: 750; }
+.ledger-side.buy { color: var(--success); background: rgba(52, 211, 153, .08); }
+.ledger-side.sell { color: var(--danger); background: rgba(248, 113, 113, .08); }
+.portfolio-ledger-toggle { margin-top: 12px; }
+.portfolio-ledger-empty { margin: 16px 0 0; }
+@media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } }
 .panel-header { gap: 14px; }
 .panel-header > div:first-child { min-width: 0; }
 .detail-symbol-search { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 14px 16px; }

@@ -94,6 +94,19 @@ router.get('/', async (req, res) => {
   res.json({ success: true, data: {
     portfolio,
     positions,
+    transactions: transactions.map(tx => ({
+      id: tx.id,
+      stock_id: tx.stock_id,
+      symbol: tx.Stock?.code || null,
+      name: tx.Stock?.name || null,
+      side: tx.side,
+      quantity: Number(tx.quantity),
+      price: Number(tx.price),
+      fees: Number(tx.fees || 0),
+      traded_at: tx.traded_at,
+      created_at: tx.created_at,
+      source: tx.recommendation_context ? 'recommendation' : 'manual'
+    })),
     recommendation_entries: recommendationEntries.map(entry => ({
       ...entry,
       current_quote: currentQuotes[String(entry.symbol || '').toUpperCase()] || null

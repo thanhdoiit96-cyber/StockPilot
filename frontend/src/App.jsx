@@ -3,6 +3,7 @@ import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
+import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -2521,6 +2522,8 @@ mary-btn",
             positionCount: Oo.length,
             quoteError: Qh,
             providerStatus: hi == null ? void 0 : hi.status
+          }), O.jsx(PortfolioLedger, {
+            entries: (pe == null ? void 0 : pe.transactions) || []
           }), false && O.jsxs("article", {
             className: "panel legacy-allocation-panel",
             children: [O.jsxs("div", {
