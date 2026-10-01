@@ -3084,3 +3084,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Bốn regression hiện có cho căn chỉnh EOD/Intraday, empty history, thiếu nến và không báo gap sai đều pass. `rv` legacy trong `App.jsx` không còn reference runtime (bundle dùng component mới) nhưng vẫn tồn tại như dead recovered source; không xoá hàng loạt trong cùng lát cắt để giữ review an toàn.
 - Kiểm chứng: production build/safe-build và bundle integrity pass (`index-CKpJN0D6.js`); Playwright chart targeted **4/4** pass.
 - Điểm tiếp tục P1: xoá `rv` dead source bằng change có kiểm chứng riêng, sau đó tách panel analysis; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
+
+## Dọn helper chart không còn dùng — 2026-10-01
+
+- Đã xoá hoàn toàn `rv` legacy khỏi `App.jsx`; `rg` không còn reference `rv` trong `frontend/src`. `DetailPriceVolumeChart` là implementation chart duy nhất.
+- Kiểm chứng: production build/safe-build và bundle integrity pass; Playwright chart targeted **4/4** pass (EOD/Intraday alignment, empty history, EOD gap và gap suppression cho current Intraday).
+- Điểm tiếp tục P1: tách panel analysis theo contract dữ liệu rõ ràng; trace Bảng giá authenticated vẫn là gate hiệu năng khi session hợp lệ có mặt.
