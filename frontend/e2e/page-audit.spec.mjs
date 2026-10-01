@@ -71,7 +71,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       await expect(page.locator('.topbar h1')).toHaveText(heading)
       await expect(page.locator('.nav-item.active')).toHaveCount(1)
       await expect(page.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-current', 'page')
-      await expect(page.locator('.loading-overlay')).toHaveCount(0)
+      await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       expect(overflow, `${label} should not overflow the viewport`).toBeLessThanOrEqual(1)
       if (label === 'Tổng quan') await expect(page.locator('.market-breadth-header')).toContainText('4 mã trong vũ trụ · 4/4 mã có quote intraday')
