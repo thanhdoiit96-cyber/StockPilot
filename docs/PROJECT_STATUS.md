@@ -3151,3 +3151,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Contract trả `continuity.status` (`continuous`, `gapped`, `insufficient_data`) cùng danh sách gap. Thiếu mã bị loại khỏi classified, không nội suy; `traded_value=null` nếu không có observation provider. Query `sessions` không hợp lệ fallback 20, tối đa 60.
 - Kiểm chứng: targeted service/controller **15/15** pass; toàn bộ backend **114/114** pass trước thay đổi fallback cuối, sau đó targeted chạy lại xanh. Chưa restart backend/live-smoke endpoint trong checkpoint này, nên chưa có bằng chứng continuity từ database thực tế và UI timeline chưa được bật.
 - Điểm tiếp tục: restart/deploy backend an toàn rồi gọi endpoint 1D/5D/20D trên database live; chỉ triển khai timeline khi khoảng tương ứng trả `continuous` và coverage được hiển thị cạnh chart. Trace Bảng giá authenticated vẫn là gate riêng cho quote lifecycle.
+
+## Live-smoke và timeline A/D 1D/5D/20D — 2026-10-01
+
+- Đã dừng đúng backend cũ trên PID 19336, khởi động lại backend mới ở chế độ ẩn và xác nhận health HTTP 200. Live-smoke 12 tổ hợp (ALL/HSX/HNX/UPCOM × 1/5/20 phiên) đều trả đủ số phiên, `continuity=continuous`, không gap; thời gian lượt database 24–426 ms. Request cache tiếp theo trả `source=cache`, lần lặp nóng 3 ms.
+- Phiên mới nhất `2026-10-01` có coverage: ALL **60,6%**, HSX **91,8%**, HNX **65%**, UPCOM **34,5%**. `traded_value` vẫn null trên mẫu live và không được thay bằng 0.
+- Thêm `MarketBreadthHistory`: range control 1D/5D/20D, A/D tích lũy, A/D phiên mới nhất và coverage. Component gọi lại theo scope sàn; khi API trả `gapped` hoặc `insufficient_data`, UI hiển thị trạng thái và không render đường nối. Loading/error/retry là cục bộ, không khóa toàn trang đã tải.
+- Kiểm chứng: production safe-build/bundle integrity pass (`index-C2kxeS5M.js`); suite Tổng quan/Danh mục **7/7** pass gồm case gapped không vẽ chart; page audit desktop/mobile **2/2** pass.
+- Điểm tiếp tục P2: historical volume breadth và divergence cần contract benchmark/index series trước khi triển khai; nhánh độc lập khả thi tiếp theo là ledger import/export hoặc Advisor context/conversation. Trace Bảng giá authenticated vẫn mở khi có session hợp lệ.

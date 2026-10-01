@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { requestJson, stockList } from '../services/api.mjs'
+import MarketBreadthHistory from './MarketBreadthHistory.jsx'
 
 const GROUPS = [
   ['up', 'Tăng giá', 'up'],
@@ -116,6 +117,7 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
       <div className="breadth-leaders-header"><div><strong>Nhóm dẫn dắt</strong><small>{exchange ? `Sàn: ${exchange}` : 'Toàn bộ thị trường'} · Sàn áp dụng cho độ rộng và Top list</small></div></div>
       {leaders.map(([label, items, field]) => <section className="breadth-leader" key={label}><strong>{label}</strong><small>{field === 'change' ? 'Xếp theo % biến động mới nhất' : 'Xếp theo khối lượng mới nhất'}</small><small className="breadth-leader-timestamp">{metrics.latestQuoteAt ? `Quote gần nhất ${formatDateTime(metrics.latestQuoteAt)}` : 'Chưa có thời điểm quote intraday'}</small>{items.length ? <ol>{items.map(row => <li key={row.symbol}><button type="button" data-breadth-symbol={row.symbol} title={`Mở Chi tiết mã ${row.symbol} · ${row.quote ? `Intraday ${formatDateTime(row.observedAt) || ''}` : 'EOD fallback'}`} aria-label={`Mở Chi tiết mã ${row.symbol}`} onClick={() => onOpenDetail?.(row.stock)}><span>{row.symbol}</span><small className={`breadth-leader-source ${row.quote ? 'intraday' : 'eod'}`}>{row.quote ? 'Intraday' : 'EOD'}</small></button><b>{field === 'change' ? `${row.change >= 0 ? '+' : ''}${row.change.toFixed(2)}%` : compact(row.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
     </div>
+    <MarketBreadthHistory exchange={exchange} />
     <p className="breadth-disclaimer">Phân loại dùng biến động giá mới nhất{exchange ? ` trong phạm vi ${exchange}` : ''}; nguồn hiện tại không tách khối lượng chủ động bên mua và bên bán.</p>
   </section>
 }
