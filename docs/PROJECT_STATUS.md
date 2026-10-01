@@ -3130,3 +3130,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Thêm class semantic `external-factors-panel` để component/test không nhầm với layout class của Risk Plan. Regression analysis dùng fixture nguồn có citation và kiểm tra cả nội dung lẫn `href` đã được chuẩn hoá.
 - Kiểm chứng: production safe-build/bundle integrity pass (`index-Bd4f6ZOu.js`); workflow analysis targeted **1/1** pass sau khi khôi phục. Page audit desktop/mobile **2/2** đã pass trên cùng UI trước thay đổi class semantic (class này không đổi layout).
 - Điểm tiếp tục P1: presentation của panel Analysis đã có boundary rõ; ưu tiên trace Bảng giá authenticated khi có session thật. Chỉ tiếp tục tách page/module lớn hơn sau khi có dữ liệu trace hoặc một contract state/API độc lập, không mở rộng refactor thuần trình bày.
+
+## Đo lại Bảng giá live và kiểm tra gate authenticated — 2026-10-01
+
+- `npm run trace:live:market-board` đã chạy mà không có token và trả `skipped` với lý do bắt buộc `MARKET_AUTH_TOKEN`; script không mở phiên giả, không ghi token ra log/đĩa và không thay đổi dữ liệu. Vì vậy trace navigation browser authenticated vẫn chưa có bằng chứng.
+- `npm run measure:live:market-board` đo API local/live lúc `2026-10-01T12:35:55.024Z`, 5 mẫu, page size 40: list p50/p95 **3/349 ms**; quote p50/p95 **830/867 ms**; mỗi lượt quote trả **39/40** mã. Mẫu list đầu 349 ms là cold/cache miss, các lượt sau 3–4 ms; quote ổn định 780–867 ms trong lượt đo này.
+- Giới hạn: đây là timing request API không xác thực, không đo navigation, render, loading overlay hay waterfall browser, và thiếu một mã quote; không được dùng như SLA production hoặc thay thế gate authenticated.
+- Điểm tiếp tục P1: khi có session hợp lệ, chạy lại trace browser để đối chiếu navigation/list/quote/cache; chỉ sau đó mới đánh giá pagination/windowing, provider hay quote lifecycle. Không thực hiện tối ưu che latency trước bằng chứng đó.
