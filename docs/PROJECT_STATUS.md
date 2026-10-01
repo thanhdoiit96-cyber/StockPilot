@@ -1,6 +1,6 @@
 # Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-09-30.
+Cập nhật: 2026-10-01.
 
 ## Yêu cầu làm việc đã ghi nhận
 
@@ -2982,3 +2982,13 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Runtime giờ giữ nguyên `span` của React và chỉ chuẩn hóa nội dung/style tại chỗ. Bổ sung kiểm thử chờ quote intraday rồi xác nhận cả chiều tăng `+100.000 ₫ +8,33%` và chiều giảm `-100.000 ₫ -7,14%`.
 - Kiểm chứng cuối baseline: frontend service tests **14/14**, encoding **25 file**, build/safe-build và bundle integrity đạt; `portfolio.spec.mjs` **7/7** và toàn bộ Playwright **56/56 pass**. Artifact production hiện tại là `index-DAMQoB1v.js`.
 - Giới hạn: E2E dùng mock API; chưa phải xác nhận dữ liệu/provider production. Cảnh báo Vite CJS API vẫn còn. Đợt tiếp theo bắt đầu từ audit có hệ thống từng page, ưu tiên cải tiến có thể đo và giữ source/dist tái tạo được.
+
+## Audit toàn bộ page và lát cắt P1 Bảng giá — 2026-10-01
+
+- Đã tạo checkpoint `30c770e` cho P0 sau khi rà Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Checkpoint gồm sửa overflow/loading/topbar/coverage/accessibility, tài liệu audit và regression theo page.
+- Lát cắt P1 bổ sung cột Mã sticky khi cuộn ngang, bộ chọn ẩn/hiện Doanh nghiệp/Khối lượng/Phân tích/Thao tác có lưu `localStorage`, và xuất CSV đúng các dòng/cột dữ liệu đang hiển thị. CSV không tải ngầm phần ngoài trang và không chứa nút hành động.
+- Regression 300/500 mã phát hiện coverage có thể hiển thị `300/40` hoặc `500/40` khi quote đầy đủ đến trước pagination summary. Runtime giờ lấy mẫu số không nhỏ hơn số dòng, số quote và universe được báo, nên không còn tỷ lệ bất khả thi.
+- Bốn lượt Chrome headless/build production cục bộ cho p50 quan sát first usable/chuyển Bảng giá/quote settlement: 300 mã `583/556/150 ms`, 500 mã `790/848/193 ms`; khoảng quan sát tương ứng là `527–675/476–643/134–157 ms` và `718–930/818–977/189–202 ms`. Fixture dùng mock API tức thời và mẫu nhỏ nên chưa phải SLA/p95 hoặc xác nhận production.
+- Kiểm chứng cuối: frontend unit **14/14**, encoding **25 file**, source parity **9/9**, production build/safe-build và bundle integrity đạt; full Playwright **61/61 pass**, gồm page audit desktop/mobile, sticky/persistence/CSV, 300/500 mã, exchange scope và toàn bộ workflow cũ. Artifact chính `index-UJz_OEKK.js`.
+- Giới hạn: `App.jsx` phục hồi vẫn gần-minified và Bảng giá còn dựa vào runtime/MutationObserver; runtime tăng lên khoảng `105,97 kB` chưa gzip. Chưa thêm virtualization vì số đo fixture chưa chứng minh nhu cầu và chưa có p95 với API/live data.
+- Điểm tiếp tục cụ thể: chuyển Bảng giá cùng toolbar mới thành component/route React, tách dần `App.jsx`; sau đó đo nhiều lượt bằng API/live data để có p50/p95 trước khi chọn server pagination/windowing hoặc memoization. Các backlog sâu theo page tiếp tục theo [UI_UX_AUDIT](UI_UX_AUDIT.md), không đánh dấu hoàn tất khi chưa có contract và acceptance tương ứng.
