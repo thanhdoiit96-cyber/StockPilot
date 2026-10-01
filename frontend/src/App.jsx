@@ -1060,7 +1060,13 @@ mary-btn", type: "submit", children: p("L\u01B0u giao d\u1ECBch") })] }), dt && 
   jsxs("tr", { children: [O.jsx("th", { children: "M\xE3" }), O.jsx("th", { children: p("S\u1ED1 l\u01B0\u1EE3ng") }), O.
   jsx("th", { children: p("Gi\xE1 v\u1ED1n") }), O.jsx("th", { children: p("Gi\xE1 hi\u1EC7n t\u1EA1i") }), O.jsx("th", {
   children: p("L\xE3i/l\u1ED7 ch\u01B0a th\u1EF1c hi\u1EC7n") }), O.jsx("th", { children: p("L\xE3i/l\u1ED7 \u0111\xE3 th\u1EF1c hi\u1EC7n") })] }) }),
-  O.jsxs("tbody", { children: [mi.map((d) => O.jsxs("tr", { children: [O.jsx("td", { children: d.symbol }), O.jsx("td", {
+  O.jsxs("tbody", { children: [mi.map((d) => O.jsxs("tr", { className: "portfolio-row-clickable", role: "link", tabIndex: 0, "aria-label": `Mở Chi tiết mã ${d.symbol}`, onClick: () => {
+    ht(d.stock_id), Xe("detail");
+  }, onKeyDown: (S) => {
+    (S.key === "Enter" || S.key === " ") && (S.preventDefault(), ht(d.stock_id), Xe("detail"));
+  }, children: [O.jsx("td", { children: O.jsx("button", { type: "button", className: "symbol portfolio-detail-link", title: `Mở Chi tiết mã ${d.symbol}`, onClick: (S) => {
+    S.stopPropagation(), ht(d.stock_id), Xe("detail");
+  }, children: d.symbol }) }), O.jsx("td", {
   children: Et(d.quantity) }), O.jsx("td", { children: oe(d.avg_cost) }), O.jsxs("td", { children: [oe(d.market_price), O.
   jsx("small", { className: "data-time", children: d.quote ? `Intraday - ${He(d.quote.observed_at)}` : p("EOD fallback") })] }),
   O.jsx("td", { className: Number(d.unrealized_pnl) >= 0 ? "positive" : "negative", children: oe(d.unrealized_pnl) }), O.
@@ -1109,8 +1115,14 @@ allocation-total-value", children: oe(vi) }), O.jsx("small", { className: "alloc
 panel watchlist-panel", children: [O.jsx("h3", { children: "Watchlist" }), O.jsxs("form", { onSubmit: Xh, className: "au\
 th-form", children: [O.jsx("input", { placeholder: p("Th\xEAm m\xE3, v\xED d\u1EE5 FPT"), value: Jr, onChange: (d) => el(
   d.target.value.toUpperCase()) }), O.jsx("button", { className: "primary-btn", type: "submit", children: p("Th\xEAm m\xE3") })] }),
-  O.jsxs("ul", { className: "watchlist", children: [pt.map((d) => O.jsxs("li", { children: [O.jsx("strong", { children: d.
-  Stock.code }), O.jsx("button", { className: "ghost-btn small-btn", type: "button", onClick: () => rf(d.Stock.code), children: p(
+  O.jsxs("ul", { className: "watchlist", children: [pt.map((d) => O.jsxs("li", { className: "watchlist-detail-link", role: "link", tabIndex: 0, "aria-label": `Mở Chi tiết mã ${d.Stock.code}`, onClick: () => {
+    d.Stock.id && (ht(d.Stock.id), Xe("detail"));
+  }, onKeyDown: (S) => {
+    d.Stock.id && (S.key === "Enter" || S.key === " ") && (S.preventDefault(), ht(d.Stock.id), Xe("detail"));
+  }, children: [O.jsx("strong", { children: d.
+  Stock.code }), O.jsx("button", { className: "ghost-btn small-btn", type: "button", onClick: (S) => {
+    S.stopPropagation(), rf(d.Stock.code);
+  }, children: p(
   "Xa") })] }, d.stock_id)), !pt.length && O.jsx("li", { className: "muted-text", children: p("Ch\u01B0a c\xF3 m\xE3") })] })] })] })] }),
   re === "detail" && O.jsxs("section", { className: "detail-page", children: [O.jsxs("form", { className: "detail-symbol\
 -search panel", onSubmit: tf, children: [O.jsx("label", { htmlFor: "detail-symbol-input", children: p("M\xE3 c\u1ED5 phi\u1EBFu") }),
