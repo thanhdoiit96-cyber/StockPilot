@@ -3323,3 +3323,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Rà toàn bộ file chưa commit xác nhận đây là một lát cắt duy nhất nối tiếp commit preset cột, không trộn thay đổi ngoài phạm vi và không có đoạn triển khai bị cắt dở. Contract frontend dùng đúng filter hiện có của Bảng giá; endpoint giữ thêm `exchange/coverage` để tương thích stock-list contract.
 - Chạy lại toàn bộ kiểm chứng: backend **31 suite / 134 test**, frontend unit/service/encoding **33/33**, full Playwright **77/77**, production safe-build và bundle integrity đều đạt. `git diff --check` không phát hiện whitespace error; cảnh báo LF→CRLF là cấu hình working copy hiện hữu.
 - Khởi động lại backend cổng 5000 và frontend production preview cổng 4173. Smoke tích hợp đạt: frontend HTML 200, backend health 200/success=true, CSV đi qua proxy frontend 200 với 3 mã FPT, `X-Export-Limit=2000`, `X-Export-Truncated=false`, content type và UTF-8 BOM đúng contract. Hai dịch vụ được giữ chạy để tiếp tục kiểm tra thủ công.
+
+## Đồng bộ preference cột Bảng giá giữa nhiều tab — 2026-10-02
+
+- Historical breadth divergence và benchmark chart vẫn thiếu series chỉ số cùng lịch phiên/contract gap, nên chọn lát cắt P2 độc lập đã được bàn giao. `MarketBoardPage` lắng nghe đúng khóa `stockpilot-market-columns-v1`, normalize object hợp lệ và dọn listener khi unmount; không gọi lại list/quote.
+- Tab nhận bỏ qua JSON hỏng, primitive và array để preference hiện tại không bị phá. Xóa khóa ở tab khác phục hồi cấu hình **Đầy đủ**. Việc ghi từ tab nguồn vẫn dùng persistence hiện có; không tạo kênh đồng bộ hoặc storage key mới.
+- Kiểm chứng: frontend unit/service/encoding **33/33**, targeted Bảng giá **4/4**, full Playwright **78/78**, production safe-build/bundle integrity pass với artifact `index-DuBUH7qj.js`. E2E mở hai tab thật, xác nhận preset Theo dõi đồng bộ, payload hỏng bị bỏ qua và remove/reset trở về Đầy đủ.
+- Điểm tiếp tục: các cải tiến dữ liệu lớn vẫn chờ benchmark/index contract. Lát cắt frontend độc lập kế tiếp có thể là thu gọn tiêu chí Đề xuất sau khi có kết quả; phải giữ toàn bộ tiêu chí accessible và không thay logic rerank.
