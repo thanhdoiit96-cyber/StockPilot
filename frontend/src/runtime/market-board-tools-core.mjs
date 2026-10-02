@@ -7,9 +7,21 @@ export const MARKET_COLUMN_DEFINITIONS = [
   { key: 'actions', label: 'Thao tác', index: 7 }
 ]
 
+export const MARKET_COLUMN_PRESETS = [
+  { key: 'full', label: 'Đầy đủ', columns: { name: true, volume: true, analysis: true, actions: true } },
+  { key: 'watch', label: 'Theo dõi', columns: { name: true, volume: true, analysis: false, actions: false } },
+  { key: 'analysis', label: 'Phân tích', columns: { name: true, volume: true, analysis: true, actions: false } },
+  { key: 'trading', label: 'Giao dịch', columns: { name: false, volume: true, analysis: false, actions: true } }
+]
+
 export const normalizeMarketColumns = (saved = {}) => Object.fromEntries(
   MARKET_COLUMN_DEFINITIONS.map(column => [column.key, saved?.[column.key] !== false])
 )
+
+export const marketColumnPresetKey = columns => {
+  const normalized = normalizeMarketColumns(columns)
+  return MARKET_COLUMN_PRESETS.find(preset => MARKET_COLUMN_DEFINITIONS.every(column => preset.columns[column.key] === normalized[column.key]))?.key || 'custom'
+}
 
 export const csvCell = value => {
   const normalized = String(value || '').replace(/\s+/g, ' ').trim()

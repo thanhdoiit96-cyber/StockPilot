@@ -1554,6 +1554,12 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .table-panel[data-react-market-board] tbody tr:hover td:first-child { background: #13233a; }
 .table-panel[data-react-market-board] .symbol { appearance: none; border: 0; padding: 0; color: inherit; background: transparent; font: inherit; cursor: pointer; }
 .market-board-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: -8px 0 12px; }
+.market-board-presets { display: flex; align-items: center; gap: 5px; margin-right: auto; }
+.market-board-presets > span:first-child { margin-right: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.market-board-preset { min-height: 32px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 11px; cursor: pointer; }
+.market-board-preset:hover, .market-board-preset:focus-visible { border-color: var(--primary); color: var(--text); }
+.market-board-preset.is-active { border-color: rgba(94, 234, 212, .55); background: rgba(20, 184, 166, .12); color: var(--primary); }
+.market-board-custom-state { padding: 5px 9px; border-radius: 999px; background: rgba(148, 163, 184, .1); color: var(--muted); font-size: 10px; }
 .market-board-column-picker { position: relative; }
 .market-board-column-picker > summary { list-style: none; min-height: 36px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; color: var(--muted); cursor: pointer; }
 .market-board-column-picker > summary::-webkit-details-marker { display: none; }
@@ -1592,7 +1598,10 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 @media (max-width: 700px) {
   .table-panel[data-react-market-board] > .panel-header, .market-session-timeline-header { align-items: stretch; flex-direction: column; }
   .market-board-toolbar { justify-content: stretch; }
+  .market-board-toolbar { flex-wrap: wrap; }
   .market-board-toolbar > * { flex: 1 1 0; }
+  .market-board-presets { flex: 1 1 100%; overflow-x: auto; padding-bottom: 3px; }
+  .market-board-presets > * { flex: 0 0 auto; }
   .market-board-toolbar .ghost-btn, .market-board-column-picker > summary { width: 100%; text-align: center; }
   .market-session-timeline-grid { gap: 4px; }
   .market-session-slot { padding-inline: 3px; }
