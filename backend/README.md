@@ -140,6 +140,8 @@ Sequential ingestion batches pause for `VNSTOCK_EOD_BATCH_DELAY_MS` (default 100
 
 Gap retries are fair across the current process lifetime: symbols with fewer attempts are selected first, while previous-session volume only orders symbols with the same attempt count. This prevents a repeatedly empty high-volume group from starving later missing symbols. Restarting the backend resets attempt counters but does not alter persisted prices or evidence.
 
+Before applying that fair order, each gap retry makes a bounded, read-only VCI price-board probe (batches of at most 200, at most 600 missing symbols). A symbol is promoted only when price, accumulated volume, and source timestamp all prove trading in the target Vietnam session. The promoted symbol is still persisted exclusively through the EOD ingestion adapter; price-board rows are never converted into daily candles. A partial or total price-board failure is recorded in the retry evidence and falls back to the fair EOD order without failing the retry. Set `VNSTOCK_EOD_TRADE_PRIORITY=false` to disable this signal or `VNSTOCK_EOD_TRADE_PRIORITY_TIMEOUT_MS` to change its per-batch timeout (default 10000 ms, minimum 1000 ms).
+
 Default EOD ingestion and coverage operate on rows whose `listing_status` is `listed`. Delisted or unknown rows remain in PostgreSQL for historical integrity but do not consume scheduled ingestion/retry capacity. An explicitly supplied symbol list remains explicit, which allows bounded diagnostics without silently rewriting operator intent.
 
 Restart the backend to load scheduler changes after any active ingestion completes. No schema migration is required.
