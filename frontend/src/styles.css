@@ -1552,3 +1552,16 @@ html[data-page-loading="true"]{overscroll-behavior:none}
   .market-session-timeline-grid { gap: 4px; }
   .market-session-slot { padding-inline: 3px; }
 }
+
+/* Saved recommendation evidence */
+.snapshot-comparison { margin-bottom: 18px; }
+.snapshot-comparison-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0 12px; }
+.snapshot-comparison-controls label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.snapshot-comparison-controls select { width: 100%; min-width: 0; }
+.snapshot-comparison-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.snapshot-criteria-delta { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
+.snapshot-change { display: inline-flex; padding: 3px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+.snapshot-change.is-added { color: #5eead4; background: rgba(20, 184, 166, .14); }
+.snapshot-change.is-removed { color: #fca5a5; background: rgba(248, 113, 113, .14); }
+.snapshot-change.is-retained { color: #cbd5e1; background: rgba(148, 163, 184, .14); }
+@media (max-width: 700px) { .snapshot-comparison-controls { grid-template-columns: 1fr; } }

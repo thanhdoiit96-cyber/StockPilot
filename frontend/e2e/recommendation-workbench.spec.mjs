@@ -3,6 +3,10 @@ import { test, expect } from '@playwright/test'
 test('recommendation criteria rerank the eligible universe and show historical learning readiness', async ({ page }) => {
   let submitted
   let savedTransaction
+  const savedSnapshots = [
+    { id: 'snapshot-new', createdAt: '2026-09-21T03:00:00.000Z', criteria: { trend: 20, momentum: 40 }, result: { recommendations: [{ symbol: 'VCB', rank: 1, score: 76 }, { symbol: 'HPG', rank: 2, score: 68 }] } },
+    { id: 'snapshot-old', createdAt: '2026-09-20T03:00:00.000Z', criteria: { trend: 30, momentum: 20 }, result: { recommendations: [{ symbol: 'FPT', rank: 1, score: 80 }, { symbol: 'VCB', rank: 2, score: 70 }] } }
+  ]
   await page.route('**/api/**', async route => {
     const request = route.request()
     const path = new URL(request.url()).pathname
@@ -16,6 +20,11 @@ test('recommendation criteria rerank the eligible universe and show historical l
     else if (path === '/api/recommendations/latest') data = { learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) }, recommendations: [{ id: 'old-1', rank: 1, score: 61, entry_price: 120000, stock: { code: 'FPT' }, rationale: { factors: ['Snapshot gần nhất'] } }] }
     else if (path === '/api/recommendations/history') data = [{ id: 'run-1', as_of: '2026-09-01', selected_count: 5, measured_count: 5, pending_count: 0, hit_rate_pct: 60, average_forward_return_pct: 1.2 }]
     else if (path === '/api/recommendations/readiness') data = { coverage: [] }
+    else if (path === '/api/recommendations/saved' && request.method() === 'GET') data = savedSnapshots
+    else if (path === '/api/recommendations/saved' && request.method() === 'POST') {
+      const body = request.postDataJSON()
+      data = { id: 'snapshot-generated', createdAt: '2026-09-22T03:01:00.000Z', criteria: body.criteria, result: body.result }
+    }
     else if (path === '/api/recommendations/personalized' && request.method() === 'POST') {
       submitted = request.postDataJSON()
       data = { recommendations: [{ stock_id: 'FPT', symbol: 'FPT', rank: 1, score: 83.2, entry_price: 121000, horizon_days: 20, rationale: { score_parts: { trend: 100, momentum: 80, rsi: 70, stability: 65, liquidity: 90 }, weights: submitted.criteria, indicators: { rsi14: 55 }, observations: 90, factors: ['Điểm được tính lại theo tiêu chí đã chọn'] } }], eligible_count: 131, model: 'personalized_rule_v1', generated_at: '2026-09-22T03:00:00.000Z', criteria: submitted.criteria, learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) } }
@@ -29,6 +38,12 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Bạn muốn ưu tiên điều gì?' })).toBeVisible()
   await expect(page.locator('.saved-proposals')).toHaveCount(0)
+  const comparison = page.locator('.snapshot-comparison')
+  await expect(comparison).toContainText('Thêm 1')
+  await expect(comparison).toContainText('Giữ 1')
+  await expect(comparison).toContainText('Bớt 1')
+  await expect(comparison.locator('tbody')).toContainText('VCB')
+  await expect(comparison.locator('tbody')).toContainText('+1')
   await page.locator('.criteria-control input[type="range"]').nth(1).fill('50')
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()
@@ -37,12 +52,12 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await expect(page.locator('.learning-definition')).toContainText('Lịch sử chung và kết quả từng mã là hai thước đo riêng')
   await expect(page.getByRole('heading', { name: 'Lịch sử các đợt đề xuất chung' })).toBeVisible()
   const savedPicker = page.locator('#saved-proposal-select')
-  await expect(savedPicker.locator('option')).toHaveCount(2)
+  await expect(savedPicker.locator('option')).toHaveCount(4)
   await savedPicker.selectOption({ index: 1 })
   await page.locator('.saved-proposal-picker').getByRole('button', { name: 'Load' }).click()
   await expect(page.locator('.criteria-control input[type="range"]').nth(1)).toHaveValue('50')
   await page.locator('.saved-proposal-picker').getByRole('button', { name: 'Xóa' }).click()
-  await expect(savedPicker.locator('option')).toHaveCount(1)
+  await expect(savedPicker.locator('option')).toHaveCount(3)
   expect(submitted.criteria.momentum).toBe(50)
   expect(submitted.limit).toBe(10)
   await page.getByRole('button', { name: /Thêm vào danh mục/ }).click()
