@@ -12,6 +12,7 @@
 | [src/components/RecommendationSnapshotComparison.jsx](src/components/RecommendationSnapshotComparison.jsx) | So sánh hai snapshot Đề xuất đã lưu theo tiêu chí, membership, hạng và điểm |
 | [src/components/AdvisorWorkspace.jsx](src/components/AdvisorWorkspace.jsx) | Advisor rule-based với phạm vi mã/Danh mục/Thị trường và citation theo từng câu trả lời |
 | [src/components/DetailSectionNav.jsx](src/components/DetailSectionNav.jsx) | Mục lục dính của Chi tiết mã, cuộn và chuyển focus tới Tổng quan/Biểu đồ/Phân tích |
+| [src/components/DetailPriceVolumeChart.jsx](src/components/DetailPriceVolumeChart.jsx) | Biểu đồ giá/khối lượng có range, gap notice và tooltip dùng chung cho hover/focus bàn phím |
 | [src/services/api.mjs](src/services/api.mjs) | Kiểm tra HTTP/JSON và cấu trúc dữ liệu cổ phiếu, hủy request và bỏ qua phản hồi cũ |
 | [src/services/requestCoordinator.js](src/services/requestCoordinator.js) | Cache/dedupe request, giữ quote hợp lệ và analysis gate không phụ thuộc DOM runtime |
 | [src/hooks/useApiResource.js](src/hooks/useApiResource.js) | Trạng thái tải/lỗi/dữ liệu theo URL, retry, cleanup khi đổi lựa chọn hoặc unmount |
