@@ -129,6 +129,24 @@ test('price board settles a realtime quote while cached data remains visible', a
   await expect(page.locator('.dashboard-shell')).toBeVisible()
 })
 
+test('detail chart zooms and pans across only the loaded sessions', async ({ page }) => {
+  const history = Array.from({ length: 8 }, (_, index) => ({ observed_at: `2026-09-${String(10 + index).padStart(2, '0')}T09:00:00+07:00`, open: 10000 + index * 10, high: 10100 + index * 10, low: 9900 + index * 10, close: 10000 + index * 20, volume: 1000 + index * 100 }))
+  await setup(page, { '/api/stocks/a': route => route.fulfill({ json: { success: true, data: { ...stocks[0], price_history: history, market_sessions: history.map(item => item.observed_at.slice(0, 10)) } } }) })
+  await select(page, 'AAA')
+  await expect(page.locator('.detail-page')).toBeVisible()
+  const chart = page.getByTestId('combined-price-volume-chart')
+  await page.locator('.chart-range-controls button', { hasText: '5' }).click()
+  await expect(chart.locator('.price-point')).toHaveCount(5)
+  await expect(page.locator('.chart-zoom-controls')).toContainText('Phiên 4–8/8')
+  await page.getByRole('button', { name: 'Phóng to biểu đồ' }).click()
+  await expect(chart.locator('.price-point')).toHaveCount(3)
+  await page.getByRole('button', { name: 'Thu nhỏ biểu đồ' }).click()
+  await expect(chart.locator('.price-point')).toHaveCount(5)
+  await page.getByRole('button', { name: 'Cũ hơn' }).click()
+  await expect(page.locator('.chart-zoom-controls')).toContainText('Phiên 2–6/8')
+  await expect(page.getByRole('button', { name: 'Mới hơn' })).toBeEnabled()
+})
+
 test('detail workspace can look up and open a specific stock symbol', async ({ page }) => {
   await setup(page)
   await select(page, 'AAA')

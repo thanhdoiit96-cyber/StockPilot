@@ -1,10 +1,17 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { getChartWindow } from '../services/chartWindow.mjs'
 
 export default function DetailPriceVolumeChart({ history = [], marketSessions = [], formatDateKey, formatTime, formatPrice, formatVolume, formatPercent, translate = value => value }) {
   const [range, setRange] = useState(12)
+  const [offset, setOffset] = useState(0)
   const [activePoint, setActivePoint] = useState(null)
   const chartRef = useRef(null)
-  const visible = useMemo(() => history.slice(-range), [history, range])
+  const window = useMemo(() => getChartWindow(history, range, offset), [history, range, offset])
+  const visible = window.items
+  useEffect(() => {
+    setOffset(current => Math.min(current, Math.max(0, history.length - range)))
+    setActivePoint(null)
+  }, [history.length, range])
   const prices = visible.map(item => Number(item.close ?? item.price)).filter(Number.isFinite)
   const volumes = visible.map(item => Number(item.volume)).filter(Number.isFinite)
   const maxVolume = Math.max(1, ...volumes)
@@ -45,12 +52,18 @@ export default function DetailPriceVolumeChart({ history = [], marketSessions = 
       event.currentTarget.blur()
     }
   }
+  const chooseRange = value => { setRange(value); setOffset(0) }
+  const zoom = direction => setRange(current => Math.max(3, Math.min(history.length || 3, current + direction * 2)))
+  const pan = direction => setOffset(current => {
+    const step = Math.max(1, Math.floor(range / 2))
+    return Math.max(0, Math.min(Math.max(0, history.length - range), current + direction * step))
+  })
 
   if (!visible.length) return <>{dataGap}<div className="chart-empty-state" role="status">Chưa có lịch sử giá từ nguồn dữ liệu cho mã này.</div></>
 
   return <>
     {dataGap}
-    <div className="chart-range-controls" role="group" aria-label={translate('Số phiên hiển thị')}><span>{translate('Phiên')}</span>{[5, 10, 12].map(value => <button type="button" className={range === value ? 'active' : ''} onClick={() => setRange(value)} key={value}>{value}</button>)}</div>
+    <div className="chart-navigation-controls"><div className="chart-range-controls" role="group" aria-label={translate('Số phiên hiển thị')}><span>{translate('Phiên')}</span>{[5, 10, 12].map(value => <button type="button" className={range === value && offset === 0 ? 'active' : ''} onClick={() => chooseRange(value)} key={value}>{value}</button>)}</div><div className="chart-zoom-controls" role="group" aria-label="Zoom và dịch biểu đồ"><button type="button" disabled={range <= 3} onClick={() => zoom(-1)} aria-label="Phóng to biểu đồ">＋</button><button type="button" disabled={range >= history.length} onClick={() => zoom(1)} aria-label="Thu nhỏ biểu đồ">−</button><button type="button" disabled={!window.hasOlder} onClick={() => pan(1)}>Cũ hơn</button><span aria-live="polite">Phiên {window.total ? window.start + 1 : 0}–{window.end}/{window.total}</span><button type="button" disabled={!window.hasNewer} onClick={() => pan(-1)}>Mới hơn</button></div></div>
     <div className="combined-price-volume-chart" data-testid="combined-price-volume-chart" ref={chartRef} onMouseLeave={() => setActivePoint(current => current?.trigger === 'mouse' ? null : current)}>
       {activePoint ? <div className="detail-chart-tooltip" id="detail-chart-tooltip" role="tooltip"><strong>{formatTime(activePoint.item.observed_at)}</strong><span>{activePoint.item.interval === 'intraday' ? translate('Giá intraday hiện tại') : translate('Đóng cửa')}: {formatPrice(activePoint.item.close ?? activePoint.item.price)}</span><span>{translate('Mở cửa')}: {formatPrice(activePoint.item.open)} · {translate('Cao')}: {formatPrice(activePoint.item.high)} · {translate('Thấp')}: {formatPrice(activePoint.item.low)}</span><span>KL: {formatVolume(activePoint.item.volume)}{activePoint.item.provider ? ` · ${activePoint.item.provider}` : ''}</span></div> : null}
       <div className="price-chart" aria-label={translate('Biểu đồ giá đóng cửa')}>

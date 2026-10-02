@@ -3226,3 +3226,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Focus vào điểm hiển thị cùng tooltip như hover và liên kết bằng `aria-describedby`. Arrow Left/Right chuyển tuần tự, có wrap trong nhóm điểm giá hoặc khối lượng; Escape đóng tooltip và bỏ focus. Trạng thái phân biệt mouse/focus để mouseleave không đóng tooltip của phần tử vẫn đang được bàn phím focus.
 - Kiểm chứng: frontend unit/service/encoding **25/25**; production safe-build và bundle integrity pass với artifact `index-C8hfEvg9.js`; regression loading/detail cùng audit desktop/mobile **25/25** và toàn bộ Playwright **68/68** pass.
 - Điểm tiếp tục: đánh giá zoom chart không phụ thuộc thư viện và giữ dữ liệu thật; benchmark vẫn chờ series chỉ số cùng lịch phiên và contract continuity/gap.
+
+## Zoom và dịch cửa sổ biểu đồ Chi tiết — 2026-10-02
+
+- Thêm zoom in/out và pan **Cũ hơn / Mới hơn** cho `DetailPriceVolumeChart` mà không thêm thư viện. UI hiển thị chính xác `Phiên x–y/tổng`, khóa action khi tới biên và giữ các preset 5/10/12 phiên; chọn preset quay lại cửa sổ mới nhất.
+- `getChartWindow` là helper thuần clamp size/offset rồi chỉ `slice` lịch sử đã tải. Vì vậy zoom/pan không nội suy, nối qua gap hoặc tạo phiên giả. Thay đổi cửa sổ dọn tooltip đang mở; layout action tự wrap trên mobile.
+- Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-BGTZI-N0.js`; regression loading/detail cùng audit desktop/mobile **26/26** và toàn bộ Playwright **69/69** pass, gồm zoom 5→3→5 và pan trên 8 phiên fixture.
+- Điểm tiếp tục: chart benchmark và historical divergence vẫn chờ series benchmark/index đồng bộ lịch phiên; nếu contract tiếp tục chưa sẵn sàng, chọn drill-down evidence Đề xuất chỉ khi snapshot có provenance nguồn thật.
