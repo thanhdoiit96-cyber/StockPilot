@@ -19,7 +19,7 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
-import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
+import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1285,6 +1285,8 @@ function lv() {
     }).filter(Boolean)), [pt]),
     Vn = D.useMemo(() => /* @__PURE__ */new Set([...gt, ...yt]), [gt, yt]),
     ll = [...Vn].sort().join(",");
+  const currentAuthRef = D.useRef(ue);
+  currentAuthRef.current = ue;
   const endSession = (message = "", notice = "") => {
     clearStoredAuth();
     $r.current = null;
@@ -1312,9 +1314,30 @@ function lv() {
   }, []);
   D.useEffect(() => {
     const handleAuthStorage = event => {
-      if (event.key === AUTH_STORAGE_KEY && event.newValue === null) {
-        endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      if (event.key !== AUTH_STORAGE_KEY) return;
+      if (event.newValue === null) return endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      let nextAuth;
+      try {
+        nextAuth = authFromStorageValue(event.newValue);
+      } catch {
+        return endSession("Dữ liệu phiên từ tab khác không hợp lệ. Vui lòng đăng nhập lại.");
       }
+      if (nextAuth.token === currentAuthRef.current?.token) return;
+      $r.current = null;
+      Bn([]);
+      mt(null);
+      Vt({
+        email: "",
+        password: ""
+      });
+      setAuthError("");
+      setAuthCredentialCleared(false);
+      setAuthNotice("");
+      setAuthVerification({
+        status: "verifying",
+        message: ""
+      });
+      Bt(nextAuth);
     };
     window.addEventListener("storage", handleAuthStorage);
     return () => window.removeEventListener("storage", handleAuthStorage);

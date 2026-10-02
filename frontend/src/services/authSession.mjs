@@ -22,13 +22,7 @@ export function isStoredAuth(value) {
   )
 }
 
-export function authFromResponse(payload) {
-  const value = payload && typeof payload === 'object'
-    ? { token: payload.token, user: payload.user }
-    : null
-  if (!isStoredAuth(value)) {
-    throw new Error('Máy chủ trả về phiên đăng nhập không hợp lệ. Vui lòng thử lại.')
-  }
+function normalizeAuth(value) {
   return {
     token: value.token.trim(),
     user: {
@@ -39,12 +33,28 @@ export function authFromResponse(payload) {
   }
 }
 
+export function authFromStorageValue(serialized) {
+  let value
+  try { value = JSON.parse(serialized) } catch {}
+  if (!isStoredAuth(value)) throw new Error('Dữ liệu phiên đăng nhập không hợp lệ.')
+  return normalizeAuth(value)
+}
+
+export function authFromResponse(payload) {
+  const value = payload && typeof payload === 'object'
+    ? { token: payload.token, user: payload.user }
+    : null
+  if (!isStoredAuth(value)) {
+    throw new Error('Máy chủ trả về phiên đăng nhập không hợp lệ. Vui lòng thử lại.')
+  }
+  return normalizeAuth(value)
+}
+
 export function readStoredAuth() {
   try {
     const serialized = localStorage.getItem(AUTH_STORAGE_KEY)
     if (!serialized) return null
-    const value = JSON.parse(serialized)
-    if (isStoredAuth(value)) return value
+    return authFromStorageValue(serialized)
   } catch {}
   clearStoredAuth()
   return null

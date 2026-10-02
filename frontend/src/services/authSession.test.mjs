@@ -1,6 +1,6 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { AUTH_STORAGE_KEY, authFromResponse, isStoredAuth, readStoredAuth } from './authSession.mjs'
+import { AUTH_STORAGE_KEY, authFromResponse, authFromStorageValue, isStoredAuth, readStoredAuth } from './authSession.mjs'
 
 const originalLocalStorage = globalThis.localStorage
 
@@ -47,5 +47,15 @@ test('normalizes a valid auth response and rejects incomplete 2xx payloads', () 
   )
   for (const payload of [null, {}, { success: true }, { token: 'token', user: {} }, { token: '', user: { email: 'a@b.c', role: 'user' } }]) {
     assert.throws(() => authFromResponse(payload), /phiên đăng nhập không hợp lệ/)
+  }
+})
+
+test('parses cross-tab auth values without trusting malformed storage payloads', () => {
+  assert.deepEqual(
+    authFromStorageValue(JSON.stringify({ token: ' next-token ', user: { email: ' next@example.com ', role: ' user ' } })),
+    { token: 'next-token', user: { email: 'next@example.com', role: 'user' } }
+  )
+  for (const serialized of ['{bad json', 'null', '[]', JSON.stringify({ token: 'token', user: {} })]) {
+    assert.throws(() => authFromStorageValue(serialized), /Dữ liệu phiên đăng nhập không hợp lệ/)
   }
 })
