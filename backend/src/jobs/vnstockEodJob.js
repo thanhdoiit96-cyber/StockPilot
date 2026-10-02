@@ -16,6 +16,7 @@ const runtimeStatus = {
   finished_at: null,
   last_error: null
 };
+const gapRetryAttempts = new Map();
 
 async function latestPersistedSession(sequelize) {
   if (!sequelize?.query) return null;
@@ -33,7 +34,7 @@ function completedSessionDate(checkedAt = new Date(), holidays = holidaySet()) {
   return target.toISOString().slice(0, 10);
 }
 
-async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit) {
+async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit, attemptCounts = gapRetryAttempts) {
   if (!sequelize?.query || !symbols.length) return symbols.slice(0, limit);
   const [rows] = await sequelize.query(`
     SELECT s.code, COALESCE(previous.volume, 0)::numeric AS volume
@@ -46,9 +47,15 @@ async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit) 
     ) previous ON TRUE
     WHERE s.code = ANY($1::text[])
     ORDER BY volume DESC, s.code ASC
-    LIMIT $3
-  `, { bind: [symbols, sessionDate, limit] });
-  return rows.map(row => row.code);
+  `, { bind: [symbols, sessionDate] });
+  const missing = new Set(symbols);
+  for (const symbol of attemptCounts.keys()) if (!missing.has(symbol)) attemptCounts.delete(symbol);
+  return rows.sort((left, right) => {
+    const attemptDifference = (attemptCounts.get(left.code) || 0) - (attemptCounts.get(right.code) || 0);
+    if (attemptDifference) return attemptDifference;
+    const volumeDifference = Number(right.volume || 0) - Number(left.volume || 0);
+    return volumeDifference || left.code.localeCompare(right.code);
+  }).slice(0, limit).map(row => row.code);
 }
 
 function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5' } = {}) {
@@ -148,6 +155,7 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
     runtimeStatus.last_error = null;
     const retryLimit = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT || 25));
     const selectedSymbols = await prioritizeMissingSymbols(models.sequelize, sessionDate, coverage.missing_symbols, retryLimit);
+    for (const symbol of selectedSymbols) gapRetryAttempts.set(symbol, (gapRetryAttempts.get(symbol) || 0) + 1);
     const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length, selected: selectedSymbols.length, retry_limit: retryLimit, selected_symbols: selectedSymbols };
     try {
       const options = buildOptions(sessionDate);
@@ -192,5 +200,6 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
 
 module.exports = startVnstockEodJob;
 module.exports.completedSessionDate = completedSessionDate;
+module.exports.prioritizeMissingSymbols = prioritizeMissingSymbols;
 module.exports.getEodRetryStatus = () => ({ ...runtimeStatus });
 

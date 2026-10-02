@@ -77,6 +77,18 @@ Set-Location D:\MyProject\backend
 npm.cmd run check:vnstock-runtime
 ```
 
+Probe read-only một nhóm mã qua listing, price board và lịch sử EOD (tối đa 100 mã):
+
+```powershell
+Set-Location D:\MyProject\backend
+$env:VNSTOCK_PROBE_SYMBOLS = 'FPT,SSI'
+$env:VNSTOCK_PROBE_FROM = '2026-09-01'
+$env:VNSTOCK_PROBE_TO = '2026-10-02'
+npm.cmd run probe:vnstock-history-gaps
+```
+
+Lệnh ghi evidence cục bộ nhưng không ghi giá vào PostgreSQL.
+
 ## Chạy backend
 
 Mở terminal thứ hai:

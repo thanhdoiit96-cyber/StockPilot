@@ -7,7 +7,7 @@ jest.mock('../services/recommendationPersistence', () => ({ generateRecommendati
 
 const cron = require('node-cron');
 const startVnstockEodJob = require('./vnstockEodJob');
-const { completedSessionDate } = startVnstockEodJob;
+const { completedSessionDate, prioritizeMissingSymbols } = startVnstockEodJob;
 const { ingestVnstockEod } = require('../market-data/vnstockEodIngestion');
 const { eodCoverage } = require('../market-data/eodCoverage');
 const fs = require('node:fs/promises');
@@ -20,6 +20,18 @@ describe('vnstock EOD scheduler', () => {
   test('rolls Sunday and configured holidays back to the latest completed weekday', () => {
     expect(completedSessionDate(new Date('2026-09-27T03:00:00.000Z'))).toBe('2026-09-25');
     expect(completedSessionDate(new Date('2026-09-28T10:00:00.000Z'), new Set(['2026-09-28']))).toBe('2026-09-25');
+  });
+
+  test('rotates gap retries before reusing high-volume symbols', async () => {
+    const sequelize = { query: jest.fn().mockResolvedValue([[
+      { code: 'AAA', volume: '1000' },
+      { code: 'BBB', volume: '500' },
+      { code: 'CCC', volume: '0' }
+    ]]) };
+    const attempts = new Map([['AAA', 1]]);
+    await expect(prioritizeMissingSymbols(sequelize, '2026-10-02', ['AAA', 'BBB', 'CCC'], 2, attempts))
+      .resolves.toEqual(['BBB', 'CCC']);
+    expect(sequelize.query.mock.calls[0][1].bind).toEqual([['AAA', 'BBB', 'CCC'], '2026-10-02']);
   });
 
   test('starts by default so daily EOD rows cannot be silently skipped', () => {

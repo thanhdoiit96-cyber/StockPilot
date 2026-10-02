@@ -41,6 +41,7 @@
     ,"probe:eodhd-session": "node scripts/probe-eodhd-session.cjs"
     ,"measure:scale": "node scripts/measure-scale.cjs"
     ,"classify:universe-gaps": "node scripts/classify-universe-gaps.cjs"
+    ,"probe:vnstock-history-gaps": "node scripts/probe-vnstock-history-gaps.cjs"
   },
   "keywords": [
     "stock",
