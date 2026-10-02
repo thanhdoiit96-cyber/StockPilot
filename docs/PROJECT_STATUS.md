@@ -3338,3 +3338,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Chạy ingest 02/10 trên toàn universe với batch 25: provider reset/từ chối nhiều nhóm, chỉ ghi 61 mã. Lượt retry batch 1 cho FPT/HPG/SSI/VCB/VHM/MWG/MBB/TCB/CTG/VIC đạt 10/10 (9 insert, 1 idempotent skip). Coverage thực sau cùng là **70/551, 12,7%**; dữ liệu chưa đủ và banner phải tiếp tục cảnh báo.
 - Stock list nay tải hai phiên EOD gần nhất và tính `change` từ `reference_price` hoặc close phiên trước khi Intraday thiếu; vẫn giữ null nếu không đủ cơ sở. Cache key tăng lên v10 để không phục vụ payload null cũ. Live API FPT trả phiên 02/10, giá 62.100, change **-0,9569%**, volume 3.199.600 và `data_is_stale=false`; Chi tiết cũng dùng phiên 02/10.
 - Kiểm chứng: backend **31 suite / 135 test** đạt; worker và backend health đạt. Worker hiện chạy như tiến trình của workspace, chưa phải Windows/service-manager daemon bền qua reboot. Điểm tiếp tục là giảm lỗi provider bằng retry batch nhỏ có pacing và vận hành worker bằng supervisor; không tăng concurrency hoặc tuyên bố coverage đầy đủ khi chưa đo đạt.
+
+## Bảng lệnh build và chạy — 2026-10-02
+
+- Thêm `RUN_COMMANDS.md` ở thư mục gốc với các lệnh PowerShell cho cài dependency, migrations/seed có điều kiện, Vnstock worker, backend, frontend production/development và các nhóm kiểm thử.
+- README và INDEX chỉ thêm liên kết điều hướng. `QUICK_START.md` tiếp tục là nguồn cấu hình/vận hành chuẩn; bảng lệnh mới không thay thế hướng dẫn quyền PostgreSQL, biến môi trường hoặc xử lý lỗi ở đó.
+- Đây là thay đổi tài liệu; đã đối chiếu tên script với `backend/package.json`, `frontend/package.json` và worker hiện hành, không chạy lại test ứng dụng.

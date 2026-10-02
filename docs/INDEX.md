@@ -8,6 +8,7 @@ Người mới bắt đầu từ [README](../README.md), chạy ứng dụng the
 | --- | --- |
 | Tổng quan và vai trò tài liệu | [README](../README.md) |
 | Cài đặt, cấu hình, chạy demo, xử lý lỗi | [QUICK_START](../QUICK_START.md) |
+| Bảng lệnh build/run PowerShell | [RUN_COMMANDS](../RUN_COMMANDS.md) |
 | Quy tắc làm việc và cập nhật tài liệu | [AGENTS](../AGENTS.md) |
 | Hiện trạng, bằng chứng và bàn giao | [PROJECT_STATUS](PROJECT_STATUS.md) |
 | Ưu tiên, mốc phát triển và tiêu chí nghiệm thu | [ROADMAP](ROADMAP.md) |
