@@ -36,6 +36,8 @@ Bootstrap chỉ khôi phục `market-auth` khi object có token và identity g�
 
 Response login/register phải qua cùng contract trước khi vào React state hoặc storage. Payload 2xx thiếu token/email/role được hiển thị như lỗi xác thực có focus và giữ input để thử lại; payload hợp lệ được chuẩn hóa khoảng trắng.
 
+Phiên đọc từ storage phải được `/api/auth/me` xác minh trước khi dashboard mount. Pending dùng loading overlay toàn trang; 401 thu hồi phiên, còn lỗi kết nối giữ dữ liệu cá nhân ẩn và cung cấp retry hoặc quay lại đăng nhập. Phiên vừa login/register thành công không xác minh lặp.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes

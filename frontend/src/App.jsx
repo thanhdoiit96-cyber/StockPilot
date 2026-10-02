@@ -9,6 +9,7 @@ import RecommendationSnapshotComparison from "./components/RecommendationSnapsho
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
 import AuthErrorMessage from "./components/AuthErrorMessage.jsx";
+import AuthSessionGate from "./components/AuthSessionGate.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -1226,6 +1227,10 @@ function lv() {
     $r = D.useRef(null);
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
   const [ue, Bt] = D.useState(readStoredAuth),
+    [authVerification, setAuthVerification] = D.useState(() => ({
+      status: ue ? "verifying" : "idle",
+      message: ""
+    })),
     [Un, ei] = D.useState("login"),
     [bn, Vt] = D.useState({
       email: "",
@@ -1293,6 +1298,10 @@ function lv() {
     setAuthError(message);
     setAuthCredentialCleared(Boolean(message));
     setAuthNotice(notice);
+    setAuthVerification({
+      status: "idle",
+      message: ""
+    });
     on("");
     Bt(null);
   };
@@ -1301,6 +1310,36 @@ function lv() {
     window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
+  D.useEffect(() => {
+    if (!ue || authVerification.status !== "verifying") return;
+    let active = true;
+    const controller = new AbortController();
+    je("/api/auth/me", {
+      token: ue.token,
+      signal: controller.signal
+    }).then(response => {
+      if (!active) return;
+      const verified = authFromResponse({
+        token: ue.token,
+        user: response.user
+      });
+      Bt(verified);
+      setAuthVerification({
+        status: "verified",
+        message: ""
+      });
+    }).catch(error => {
+      if (!active || controller.signal.aborted || error.status === 401) return;
+      setAuthVerification({
+        status: "error",
+        message: error.message
+      });
+    });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [ue == null ? void 0 : ue.token, authVerification.status]);
   D.useEffect(() => {
     En(1);
   }, [ll]);
@@ -1339,6 +1378,7 @@ function lv() {
       Bn([]), mt(null);
       return;
     }
+    if (authVerification.status !== "verified") return;
     $r.current !== ue.token && (Bn([]), mt(null), $r.current = ue.token);
     let d = false;
     const S = new AbortController();
@@ -1363,7 +1403,7 @@ function lv() {
     }), () => {
       d = true, S.abort();
     };
-  }, [ue, Jl]);
+  }, [ue, Jl, authVerification.status]);
   const wt = Pn("/api/health"),
     ai = Pn("/api/cache/stats"),
     au = Pn("/api/ai-gate", Bm),
@@ -1458,7 +1498,10 @@ function lv() {
             body: bn
           }),
           $ = authFromResponse(S);
-        Bt($), Vt({
+        setAuthVerification({
+          status: "verified",
+          message: ""
+        }), Bt($), Vt({
           email: "",
           password: ""
         }), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
@@ -1665,6 +1708,15 @@ function lv() {
     const $ = Uo;
     return Uo += d.weight, `${qt[S % qt.length]} ${$}% ${Uo}%`;
   }).join(", ");
+  if (ue && authVerification.status !== "verified") return O.jsx(AuthSessionGate, {
+    status: authVerification.status,
+    message: authVerification.message,
+    onRetry: () => setAuthVerification({
+      status: "verifying",
+      message: ""
+    }),
+    onSignIn: () => endSession("", "Vui lòng đăng nhập lại để tiếp tục.")
+  });
   if (!ue) return O.jsx("div", {
     className: "auth-page",
     children: O.jsxs("section", {

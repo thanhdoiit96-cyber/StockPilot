@@ -3275,3 +3275,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Lỗi contract giữ nguyên email/mật khẩu để người dùng thử lại, dùng chung `AuthErrorMessage` nên vẫn nhận focus và công bố qua alert. Unit test kiểm tra normalize payload hợp lệ cùng năm payload 2xx thiếu schema; E2E xác nhận response orphan token ở lại form, giữ input và storage rỗng.
 - Kiểm chứng: frontend unit/service/encoding **31/31**; production safe-build và bundle integrity pass với artifact `index-Dw-c0JEV.js`; targeted auth cùng page audit desktop/mobile **6/6** và toàn bộ Playwright **73/73** pass.
 - Điểm tiếp tục: xác minh stored session với `/api/auth/me` trước khi cho dashboard render để token đúng schema nhưng đã hết hạn/không hợp lệ không gây flash nội dung riêng tư. Cookie/session hardening và password recovery vẫn là phụ thuộc backend riêng.
+
+## Gate `/api/auth/me` trước dashboard — 2026-10-02
+
+- Stored session đúng schema nay bắt đầu ở trạng thái `verifying` và gọi `/api/auth/me` trước khi mount `dashboard-shell`. Trong lúc chờ, `AuthSessionGate` dùng `PageLoadingOverlay` chung nên khóa pointer, keyboard và scroll; không có nội dung Danh mục/Watchlist nằm phía sau để lộ thoáng qua.
+- 401 đi qua lifecycle thu hồi phiên hiện có. Lỗi mạng/5xx giữ dashboard chưa mount và hiển thị màn hình lỗi có **Thử xác minh lại** hoặc **Đăng nhập lại**; retry thành công mới cho tải Watchlist/Danh mục. Login/register vừa thành công được đánh dấu verified ngay, không tạo request `/auth/me` thừa.
+- Kiểm chứng: frontend unit/service/encoding **31/31**; production safe-build và bundle integrity pass với artifact `index-9kolQJXu.js`; targeted auth cùng page audit desktop/mobile **8/8** và toàn bộ Playwright **75/75** pass.
+- Điểm tiếp tục: đồng bộ logout/session-expired giữa nhiều tab bằng `storage` event để tab khác dọn state ngay, không chờ request 401 tiếp theo. Chuyển token sang cookie HttpOnly và password recovery vẫn cần contract backend.
