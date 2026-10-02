@@ -18,7 +18,7 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
-import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, clearStoredAuth, notifySessionExpired } from "./services/authSession.mjs";
+import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1225,13 +1225,7 @@ function lv() {
     [Jl, s] = D.useState(0),
     $r = D.useRef(null);
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
-  const [ue, Bt] = D.useState(() => {
-      try {
-        return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null");
-      } catch {
-        return null;
-      }
-    }),
+  const [ue, Bt] = D.useState(readStoredAuth),
     [Un, ei] = D.useState("login"),
     [bn, Vt] = D.useState({
       email: "",

@@ -3261,3 +3261,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khi phiên hết hạn, UI xóa token, email/mật khẩu, Watchlist và dữ liệu Danh mục khỏi React state ngay lập tức nhưng vẫn giữ thông báo nguyên nhân có focus/alert. Đăng xuất chủ động dùng cùng cleanup, hiển thị **Bạn đã đăng xuất an toàn** bằng live status và không gắn nhãn lỗi. Reload sau cả hai nhánh không phục hồi token cũ.
 - Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-C3IhE9j2.js`; targeted auth cùng page audit desktop/mobile **4/4** và toàn bộ Playwright **71/71** pass.
 - Điểm tiếp tục: hardening cookie/session phía server và khôi phục mật khẩu vẫn cần contract backend. Lát cắt frontend độc lập tiếp theo là kiểm tra/loại bỏ auth object lưu sai schema hoặc hỏng JSON ngay lúc bootstrap, trước khi render dashboard.
+
+## Xác thực auth object khi bootstrap — 2026-10-02
+
+- Thêm `readStoredAuth`/`isStoredAuth` làm contract duy nhất khi khôi phục `market-auth`: chỉ object có token không rỗng và user có email/role không rỗng mới được dùng. JSON hỏng, `null`, array, object thiếu trường hoặc credential rỗng bị xóa khỏi `localStorage` ngay trong state initializer; dashboard không render với dữ liệu phiên chưa hợp lệ.
+- Unit test bao phủ contract hợp lệ, không mutation phiên hợp lệ và năm dạng payload lỗi. E2E đặt object có token nhưng thiếu user identity trước bootstrap, xác nhận chỉ màn hình auth xuất hiện, dashboard không mount và storage đã sạch.
+- Kiểm chứng: frontend unit/service/encoding **30/30**; production safe-build và bundle integrity pass với artifact `index-Bk_n3E5w.js`; targeted auth cùng page audit desktop/mobile **5/5** và toàn bộ Playwright **72/72** pass.
+- Điểm tiếp tục: áp dụng cùng contract cho response đăng nhập/đăng ký trước khi persist để response 2xx sai schema không thể tạo phiên lỗi. Cookie/session hardening và password recovery vẫn phụ thuộc contract backend.
