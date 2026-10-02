@@ -3377,3 +3377,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Sửa coverage và ingest mặc định chỉ lấy `listing_status='listed'`. Danh sách symbol được truyền tường minh vẫn được tôn trọng để không phá các probe/backfill có chủ đích; dữ liệu lịch sử của mã delisted không bị xóa hoặc sửa.
 - Thêm regression cho query coverage và default ingestion. Kiểm chứng database read-only trả **551 symbol, 284 covered, 267 missing**; targeted **10/10**, toàn backend **32 suite / 138 test** đạt. Backend đã restart và health/startup thành công.
 - Điểm tiếp tục: evidence retry của phiên giao dịch kế tiếp phải có `symbols=551`, không chứa mã delisted và thể hiện fairness xoay vòng. Đây là runtime gate còn thiếu; test/live helper hiện chưa thay thế được một cron thật sau restart.
+
+## Hiển thị đúng evidence gap retry — 2026-10-02
+
+- Chẩn đoán `data-quality` luôn trả `last_run_at=null` dù có các artifact `eod-retry-*`: controller chỉ đọc prefix `eod-scheduled-*`. Tách helper evidence để đọc cả hai loại, chọn `checked_at` mới nhất và bỏ qua JSON hỏng/dang ghi.
+- API bổ sung `last_run_mode`, `last_run_file`, `last_run_universe` và `last_run_covered`; giữ `last_run_remaining`, số pass và complete theo đúng artifact. Sau restart, live API trả lượt `gap_retry` lúc **2026-10-02T12:45:00.920Z**, file kết thúc 19:47 giờ địa phương, một pass và `complete=false` thay vì null.
+- Artifact này thuộc code cũ nên còn ghi universe 624/remaining 340; current quality bên ngoài evidence là 551/284/267. Hai bộ số được giữ tách biệt để không viết lại lịch sử vận hành. Evidence phiên kế tiếp là gate xác nhận universe mới 551 và fairness mới.
+- Kiểm chứng: targeted controller/evidence **17/17**, toàn backend **33 suite / 140 test** đạt. Backend đã restart và health/live data-quality đạt.

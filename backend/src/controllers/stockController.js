@@ -7,9 +7,9 @@ const { evaluateInsightQuality } = require('../services/analysisQuality');
 const { buildRiskPlan } = require('../services/riskPlan');
 const { sectorFromIndustry, industryCondition } = require('../services/sectorClassifier');
 const { SECTOR_CODES, SECTOR_LABELS, CLASSIFIED_CODES, sectorForCode } = require('../services/sectorCatalog');
-const fs = require('node:fs');
 const path = require('node:path');
 const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
+const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const { serializeStockCsv } = require('../services/stockCsv');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
@@ -68,10 +68,7 @@ module.exports = function(cacheService) {
       let lastEodRun = null;
       try {
         const evidenceDir = path.resolve(__dirname, '../../evidence');
-        const files = fs.existsSync(evidenceDir)
-          ? fs.readdirSync(evidenceDir).filter(file => file.startsWith(`eod-scheduled-${summary.session_date}-`) && file.endsWith('.json')).sort().reverse()
-          : [];
-        if (files[0]) lastEodRun = JSON.parse(fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8'));
+        lastEodRun = readLatestEodEvidence(evidenceDir, summary.session_date);
       } catch (_) { /* evidence is optional operational metadata */ }
       const retryPasses = Math.max(0, Number(process.env.VNSTOCK_EOD_GAP_RETRIES || 2));
       const coveragePct = Number(summary.listed) ? Number((Number(summary.covered) / Number(summary.listed) * 100).toFixed(1)) : null;
@@ -95,10 +92,14 @@ module.exports = function(cacheService) {
           schedule: process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5',
           gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
           configured_passes: retryPasses,
-          last_run_at: lastEodRun?.checked_at || null,
-          last_run_passes: Array.isArray(lastEodRun?.retries) ? lastEodRun.retries.length : 0,
-          last_run_remaining: lastEodRun?.after?.missing_symbols?.length ?? null,
-          last_run_complete: lastEodRun?.complete ?? null,
+          last_run_at: lastEodRun?.evidence?.checked_at || null,
+          last_run_mode: lastEodRun?.mode || null,
+          last_run_file: lastEodRun?.file || null,
+          last_run_passes: Array.isArray(lastEodRun?.evidence?.retries) ? lastEodRun.evidence.retries.length : 0,
+          last_run_universe: lastEodRun?.evidence?.after?.symbols ?? null,
+          last_run_covered: lastEodRun?.evidence?.after?.covered ?? null,
+          last_run_remaining: lastEodRun?.evidence?.after?.missing_symbols?.length ?? null,
+          last_run_complete: lastEodRun?.evidence?.complete ?? null,
           runtime: getEodRetryStatus()
         }
       } });
