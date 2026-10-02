@@ -6,6 +6,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import RecommendationSnapshotComparison from "./components/RecommendationSnapshotComparison.jsx";
+import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -1632,29 +1633,9 @@ function lv() {
     qt = ["#38bdf8", "#34d399", "#fbbf24", "#a78bfa", "#fb7185", "#2dd4bf", "#f97316", "#818cf8"];
   let Uo = 0;
   const pu = Wt.map((d, S) => {
-      const $ = Uo;
-      return Uo += d.weight, `${qt[S % qt.length]} ${$}% ${Uo}%`;
-    }).join(", "),
-    [of, af] = D.useState([{
-      role: "ai",
-      text: p("AI Advisor đang sử dụng phân tích rule-based có nguồn và quality gate.")
-    }]),
-    [bo, mu] = D.useState(""),
-    Bo = d => {
-      var S, $;
-      const A = String(d || "").trim();
-      if (!A) return;
-      const Z = (me == null ? void 0 : me.symbol) || p("Mã đang chọn"),
-        de = (($ = (S = T.data) == null ? void 0 : S.insight) == null ? void 0 : $.label) || p("Chưa đủ dữ liệu để tạo nhận định"),
-        Gt = `${Z}: ${de}. ${p("Đây là phân tích phục vụ nghiên cứu, không phải khuyến nghị mua bán.")}`;
-      af(St => [...St, {
-        role: "user",
-        text: A
-      }, {
-        role: "ai",
-        text: Gt
-      }]), mu("");
-    };
+    const $ = Uo;
+    return Uo += d.weight, `${qt[S % qt.length]} ${$}% ${Uo}%`;
+  }).join(", ");
   if (!ue) return O.jsx("div", {
     className: "auth-page",
     children: O.jsxs("section", {
@@ -2677,61 +2658,14 @@ function lv() {
             })]
           })]
         })]
-      }), re === "advisor" && O.jsxs("section", {
-        className: "advisor-page panel",
-        children: [O.jsxs("div", {
-          className: "panel-header",
-          children: [O.jsxs("div", {
-            children: [O.jsx("h3", {
-              children: "AI Advisor"
-            }), O.jsx("p", {
-              className: "muted-text",
-              children: p("Hệ thống trả lời dựa trên dữ liệu và phân tích rule-based.")
-            })]
-          }), O.jsx("span", {
-            className: `chip ${(Xr = au.data) != null && Xr.enabled ? "success" : "neutral"}`,
-            children: (Zr = au.data) != null && Zr.enabled ? p("Generative AI đã mở") : p("Generative AI đang khóa")
-          })]
-        }), O.jsx("div", {
-          className: "prompt-grid",
-          children: [p("Phân tích xu hướng ngắn hạn"), p("Mức stop loss và chốt lời"), p("Yếu tố bên ngoài tác động thế nào?")].map(d => O.jsx("button", {
-            className: "prompt-chip",
-            type: "button",
-            onClick: () => Bo(d),
-            children: d
-          }, d))
-        }), O.jsx("div", {
-          className: "chat-shell",
-          role: "log",
-          "aria-live": "polite",
-          "aria-relevant": "additions text",
-          "aria-label": "Lịch sử trao đổi với AI Advisor",
-          children: of.map((d, S) => O.jsx("div", {
-            className: `message-row ${d.role}`,
-            children: O.jsx("div", {
-              className: "message-bubble",
-              children: d.text
-            })
-          }, `${d.role}-${S}`))
-        }), O.jsxs("div", {
-          className: "input-row",
-          children: [O.jsx("input", {
-            value: bo,
-            onChange: d => mu(d.target.value),
-            onKeyDown: d => {
-              d.key === "Enter" && Bo(bo);
-            },
-            placeholder: p("Nhập câu hỏi cho AI Advisor..."),
-            "aria-label": "Câu hỏi cho AI Advisor"
-          }), O.jsx("button", {
-            className: "primary-btn",
-            type: "button",
-            disabled: !bo.trim(),
-            title: !bo.trim() ? "Nhập câu hỏi trước khi gửi" : "Gửi câu hỏi",
-            onClick: () => Bo(bo),
-            children: p("Gửi")
-          })]
-        })]
+      }), re === "advisor" && O.jsx(AdvisorWorkspace, {
+        aiEnabled: (Xr = au.data) == null ? void 0 : Xr.enabled,
+        selectedStock: me,
+        analysis: T.data,
+        positions: mi,
+        marketStocks: al,
+        quotes: an,
+        providerLicenseUrl: gu
       })]
     })]
   });
