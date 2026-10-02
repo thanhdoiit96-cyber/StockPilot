@@ -40,6 +40,8 @@ Phiên đọc từ storage phải được `/api/auth/me` xác minh trước khi
 
 Logout hoặc 401 xóa `market-auth` sẽ đồng bộ tới các tab cùng origin bằng `storage` event. Tab khác dọn private state và unmount dashboard ngay, kèm thông báo phiên đã kết thúc ở tab khác; không cần chờ API tiếp theo trả 401.
 
+Nếu tab khác thay token/identity, tab nhận không dùng trực tiếp email trong storage: dữ liệu cá nhân cũ bị dọn, token mới qua schema validation và `/api/auth/me` gate rồi identity server mới được render. Payload cross-tab lỗi làm thu hồi phiên fail-closed trên các tab.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes

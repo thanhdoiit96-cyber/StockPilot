@@ -147,3 +147,37 @@ test('logout in one tab immediately clears private state in another tab', async 
   await expect(secondPage.getByRole('status')).toHaveText('Phiên đăng nhập đã kết thúc ở một tab khác.')
   await expect.poll(() => secondPage.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
 })
+
+test('a replacement session from another tab is verified before switching identity', async ({ context, page }) => {
+  let releaseReplacement
+  await context.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'old-token', user: { email: 'old@example.com', role: 'user' } })))
+  await context.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') {
+      const token = route.request().headers().authorization?.replace('Bearer ', '')
+      if (token === 'new-token') {
+        await new Promise(resolve => { releaseReplacement = resolve })
+        return route.fulfill({ json: { success: true, user: { email: 'new@example.com', role: 'user' } } })
+      }
+      return route.fulfill({ json: { success: true, user: { email: 'old@example.com', role: 'user' } } })
+    }
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  const secondPage = await context.newPage()
+  await Promise.all([page.goto('/'), secondPage.goto('/')])
+  await expect(secondPage.getByText('old@example.com').first()).toBeVisible()
+  await page.evaluate(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'new-token', user: { email: 'untrusted@example.com', role: 'user' } })))
+  await expect(secondPage.getByText('Đang xác minh phiên đăng nhập...')).toBeVisible()
+  await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
+  await expect.poll(() => typeof releaseReplacement).toBe('function')
+  releaseReplacement()
+  await expect(secondPage.locator('.dashboard-shell')).toBeVisible()
+  await expect(secondPage.getByText('new@example.com').first()).toBeVisible()
+  await page.evaluate(() => localStorage.setItem('market-auth', '{invalid-json'))
+  await expect(secondPage.locator('.auth-page')).toBeVisible()
+  await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
+  await expect(secondPage.getByRole('alert')).toContainText('Dữ liệu phiên từ tab khác không hợp lệ')
+  await expect.poll(() => secondPage.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+})
