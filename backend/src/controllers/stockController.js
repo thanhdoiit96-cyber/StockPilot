@@ -100,6 +100,7 @@ module.exports = function(cacheService) {
           last_run_covered: lastEodRun?.evidence?.after?.covered ?? null,
           last_run_remaining: lastEodRun?.evidence?.after?.missing_symbols?.length ?? null,
           last_run_complete: lastEodRun?.evidence?.complete ?? null,
+          last_run_failed: Boolean(lastEodRun?.evidence?.error),
           runtime: getEodRetryStatus()
         }
       } });
