@@ -866,6 +866,16 @@ th {
   border-color: rgba(94, 234, 212, 0.2);
 }
 
+.message-bubble > p { margin: 0; }
+.advisor-context { display: grid; grid-template-columns: auto minmax(180px, 320px) 1fr; align-items: center; gap: 10px; }
+.advisor-context label { color: var(--text); font-size: 12px; font-weight: 750; }
+.advisor-context small, .advisor-message-context { color: var(--muted); font-size: 10px; }
+.advisor-message-context { display: block; margin-top: 7px; }
+.advisor-citations { display: grid; gap: 4px; margin: 10px 0 0; padding: 9px 0 0 18px; border-top: 1px solid rgba(148, 163, 184, .16); color: var(--muted); font-size: 10px; }
+.advisor-citations::before { content: "Nguồn tham chiếu"; margin-left: -18px; color: var(--text); font-weight: 750; }
+.advisor-citations a { color: var(--primary); text-decoration: none; }
+.advisor-citations a:hover, .advisor-citations a:focus-visible { text-decoration: underline; }
+
 .input-row {
   display: flex;
   gap: 12px;
@@ -1552,6 +1562,8 @@ html[data-page-loading="true"]{overscroll-behavior:none}
   .market-session-timeline-grid { gap: 4px; }
   .market-session-slot { padding-inline: 3px; }
 }
+
+@media (max-width: 700px) { .advisor-context { grid-template-columns: 1fr; align-items: stretch; } .message-bubble { max-width: 88%; } }
 
 /* Saved recommendation evidence */
 .snapshot-comparison { margin-bottom: 18px; }

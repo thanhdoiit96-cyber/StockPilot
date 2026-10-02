@@ -80,8 +80,16 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       if (label === 'AI Advisor') {
         const input = page.getByLabel('Câu hỏi cho AI Advisor')
         const send = page.getByRole('button', { name: 'Gửi', exact: true })
+        const context = page.getByLabel('Ngữ cảnh trả lời')
         await expect(page.locator('.chat-shell')).toHaveAttribute('role', 'log')
         await expect(send).toBeDisabled()
+        await context.selectOption('portfolio')
+        await page.getByRole('button', { name: 'Tóm tắt trạng thái danh mục' }).click()
+        await expect(page.locator('.chat-shell')).toContainText('Ngữ cảnh: Danh mục')
+        await expect(page.getByRole('list', { name: 'Nguồn tham chiếu' })).toContainText('ledger đã xác thực')
+        await context.selectOption('market')
+        await page.getByRole('button', { name: 'Tóm tắt độ phủ dữ liệu' }).click()
+        await expect(page.locator('.chat-shell')).toContainText('Ngữ cảnh: Thị trường')
         await input.fill('Phân tích FPT')
         await expect(send).toBeEnabled()
       }

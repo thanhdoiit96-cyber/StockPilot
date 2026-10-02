@@ -59,7 +59,7 @@ Trạng thái: backlog sau P1.
 - Danh mục: lịch sử, export/import CSV nguyên tử, sửa/xóa có xác nhận và bộ lọc vị thế đang mở/đã đóng đã có; chỉ thêm phân trang ledger khi có bằng chứng về quy mô.
 - Chi tiết: chart tương tác, benchmark và điều hướng section.
 - Đề xuất: đã có so sánh hai snapshot theo trọng số, mã thêm/giữ/bớt, hạng và điểm; tiếp theo là drill-down evidence theo từng mã khi backend lưu đủ provenance nguồn.
-- Advisor: context selector, citation và quản lý hội thoại.
+- Advisor: đã có context selector Mã/Danh mục/Thị trường và citation gắn với từng câu trả lời; tiếp theo là quản lý nhiều hội thoại khi có API lưu trữ và chính sách retention.
 - Đăng nhập: khôi phục mật khẩu và hardening session/cookie trước public.
 
 Mỗi tính năng chỉ được đánh dấu hoàn thành khi có contract/backend tương ứng, empty/error/loading states, keyboard/mobile acceptance và bằng chứng kiểm thử.
