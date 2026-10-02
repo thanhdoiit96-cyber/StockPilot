@@ -3384,3 +3384,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - API bổ sung `last_run_mode`, `last_run_file`, `last_run_universe` và `last_run_covered`; giữ `last_run_remaining`, số pass và complete theo đúng artifact. Sau restart, live API trả lượt `gap_retry` lúc **2026-10-02T12:45:00.920Z**, file kết thúc 19:47 giờ địa phương, một pass và `complete=false` thay vì null.
 - Artifact này thuộc code cũ nên còn ghi universe 624/remaining 340; current quality bên ngoài evidence là 551/284/267. Hai bộ số được giữ tách biệt để không viết lại lịch sử vận hành. Evidence phiên kế tiếp là gate xác nhận universe mới 551 và fairness mới.
 - Kiểm chứng: targeted controller/evidence **17/17**, toàn backend **33 suite / 140 test** đạt. Backend đã restart và health/live data-quality đạt.
+
+## Đưa trạng thái EOD job lên quality banner — 2026-10-02
+
+- Quality overlay nay hiển thị job đang chạy theo `runtime.phase/session_date`; khi idle, hiển thị loại lượt EOD chính/bù thiếu gần nhất, thời điểm Asia/Ho_Chi_Minh và trạng thái hoàn tất/gặp lỗi/chưa hoàn tất. Coverage hiện tại tiếp tục là số chính, không thay bằng số trong artifact cũ.
+- Backend bổ sung cờ `last_run_failed` từ evidence nhưng không đưa raw error lên HTML. Nếu phiên chưa có evidence, banner nói rõ thay vì chỉ lặp số mã thiếu.
+- Lượt E2E đầu thất bại vì Playwright preview dùng dist cũ sau khi safe-build trong sandbox bị `spawn EPERM`; safe-build đã phục hồi dist đúng thiết kế. Chạy build ngoài sandbox thành công với artifact `index-C7-jxeKt.js`, bundle integrity đạt; chạy lại targeted quality banner **1/1** đạt.
+- Backend đã restart để nạp `last_run_failed`; frontend preview cổng 4173 tiếp tục phục vụ dist mới. Điểm tiếp tục vẫn là runtime evidence của phiên giao dịch kế tiếp cho universe/fairness; UI đã sẵn sàng phản ánh kết quả đó.

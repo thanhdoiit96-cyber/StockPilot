@@ -6,7 +6,7 @@ async function boot(page, options = {}) {
     const path = new URL(route.request().url()).pathname
     let payload = { success: true, data: null }
     if (path === '/api/stocks') payload = list()
-    else if (path === '/api/stocks/data-quality') payload = { success: true, data: { session_date: '2026-09-25', listed: 551, covered: 204, missing: 347, missing_symbols: ['VPB'], ready: false, provider: {} } }
+    else if (path === '/api/stocks/data-quality') payload = { success: true, data: { session_date: '2026-09-25', listed: 551, covered: 204, missing: 347, missing_symbols: ['VPB'], ready: false, provider: {}, eod_retry: { last_run_at: '2026-09-25T12:45:00.000Z', last_run_mode: 'gap_retry', last_run_complete: false, last_run_failed: false, runtime: { running: false, phase: 'idle' } } } }
     else if (path.endsWith('/analysis')) payload = { success: true, data: { observations: 90, indicators: {}, quality: { score: 100 }, risk_plan: { horizons: { short_term: { label: 'Ngắn hạn', expectation_pct: { min: 3, max: 8 }, allocation_pct: 25, take_profit: 119000, stop_loss: 121000 } }, disclaimer: 'Kịch bản kiểm thử' }, expert_guidance: { technical_score: 75, stance: 'Tích cực', confirmation: 'Dữ liệu kiểm thử', score_breakdown: [] }, external_factors: { status: 'available', disclaimer: 'Nguồn kiểm thử', factors: [{ type: 'macro', title: 'Economic data', source: 'Provider', source_url: 'https://example.test/data', published_at: '2026-10-01T03:20:00Z' }] } } }
     else if (/^\/api\/stocks\/[^/]+$/.test(path)) {
       const stock = stocks.find(item => item.id === decodeURIComponent(path.split('/').pop())) || stocks[0]
@@ -210,7 +210,7 @@ test('portfolio navigation ignores stale analysis request flags', async ({ page 
   expect(analysisRequests).toBe(0)
   await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('analysis-requested:')).length)).toBe(0)
 })
-test('data quality banner persists across overview, portfolio and detail pages',async({page})=>{await boot(page);await expect(page.locator('#market-data-quality-overlay')).toContainText('204/551');await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('347');await page.getByRole('button',{name:'Chi tiết mã',exact:true}).click();await expect(page.locator('#market-data-quality-overlay')).toContainText('2026-09-25')})
+test('data quality banner persists across pages and exposes the latest retry',async({page})=>{await boot(page);const banner=page.locator('#market-data-quality-overlay');await expect(banner).toContainText('204/551');await expect(banner).toContainText('Lượt bù thiếu gần nhất');await expect(banner).toContainText('chưa hoàn tất');await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(banner).toContainText('347');await page.getByRole('button',{name:'Chi tiết mã',exact:true}).click();await expect(banner).toContainText('2026-09-25')})
 test('sidebar collapses to labelled icons while overview headers and symbols stay pinned', async ({ page }) => {
   await boot(page)
   const sidebarToggle = page.locator('.sidebar-toggle')
