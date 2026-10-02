@@ -1,6 +1,6 @@
 # Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-10-01.
+Cập nhật: 2026-10-02.
 
 ## Yêu cầu làm việc đã ghi nhận
 
@@ -3191,3 +3191,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Xác nhận “Đã xóa giao dịch” không phải tên bảng: tiêu đề đúng là “Nhật ký giao dịch”, nhưng status dùng chung của form Ghi nhận giao dịch đã render thông báo mutation ngay phía trên bảng vị thế nên gây hiểu nhầm. Sửa/xóa nay hiển thị phản hồi thành công bên trong panel Nhật ký; import tiếp tục dùng trạng thái cục bộ có sẵn. Vùng dưới form chỉ còn phản hồi của thao tác ghi nhận mới.
 - Kiểm chứng: normalize/encoding và frontend service **22/22**, production safe-build/bundle integrity pass với `index-BeSSfiDv.js`, Playwright Danh mục **12/12**; regression xác nhận thông báo xóa có trong ledger và không còn trong panel vị thế.
+
+## Lọc vị thế đang mở và đã đóng — 2026-10-02
+
+- `GET /api/portfolio` nay trả thêm `closed_positions` và `position_counts`, đều được suy ra từ toàn bộ ledger trong đúng scope JWT. Contract giữ `positions` là các mã còn số lượng dương để không phá vỡ consumer cũ. Mã đã bán hết rồi mua lại được coi là đang mở; vị thế đóng có lãi/lỗ đã thực hiện và `closed_at` là giao dịch gần nhất, không có market value hoặc unrealized P/L giả.
+- Tách bảng vị thế thành `PortfolioPositions`: bộ lọc **Đang mở/Đã đóng** có số lượng, trạng thái rỗng riêng, click/Enter/Space sang Chi tiết mã và layout mobile. Tab đóng chỉ trình bày mã, trạng thái, thời điểm đóng và lãi/lỗ đã thực hiện; các chỉ số hiện tại vẫn chỉ thuộc tab đang mở.
+- Kiểm chứng: accounting/controller mục tiêu **20/20**; toàn bộ backend **30 suite / 131 test**; frontend service/encoding **22/22**; production safe-build và bundle integrity pass với artifact `index-DG_JjWqL.js`; Playwright Danh mục **13/13** và toàn bộ Playwright **68/68**. Full E2E lượt đầu đã phát hiện fixture cache retry luôn trả `success=false`; fixture/assertion được sửa để mô phỏng recovery thật và kiểm tra đúng hai lỗi health/cache thay vì đếm mọi alert của page.
+- Điểm tiếp tục P2: chỉ thêm phân trang ledger khi đo số dòng thực tế chứng minh cần thiết. Historical volume breadth/divergence vẫn chờ contract benchmark/index; trace Bảng giá authenticated vẫn chờ session thật và không được thay bằng token fixture.

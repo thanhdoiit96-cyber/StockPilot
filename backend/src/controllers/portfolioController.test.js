@@ -56,6 +56,19 @@ test('returns the authenticated portfolio transaction history as normalized ledg
   }]);
 });
 
+test('returns fully sold symbols separately from open positions', async () => {
+  models.PortfolioTransaction.findAll.mockResolvedValue([
+    { id: 'buy', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 100, traded_at: '2026-09-20T02:00:00Z', created_at: '2026-09-20T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } },
+    { id: 'sell', stock_id: 's', side: 'SELL', quantity: 10, price: 60000, fees: 100, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }
+  ]);
+  const response = await request(app).get('/portfolio');
+  expect(response.status).toBe(200);
+  expect(response.body.data.positions).toEqual([]);
+  expect(response.body.data.closed_positions).toEqual([expect.objectContaining({ symbol: 'FPT', status: 'closed', quantity: 0, realized_pnl: 99800, closed_at: '2026-09-24T02:00:00Z' })]);
+  expect(response.body.data.position_counts).toEqual({ open: 0, closed: 1 });
+  expect(liveQuoteService.load).not.toHaveBeenCalled();
+});
+
 test('calculates day change from the previous distinct EOD session', async () => {
   models.StockPrice.findAll.mockResolvedValue([
     { stock_id: 's', close: 60000, observed_at: '2026-09-25T00:00:00Z' },

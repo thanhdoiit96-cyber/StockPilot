@@ -4,6 +4,7 @@ import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
+import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -2339,71 +2340,14 @@ function lv() {
             }), dt && O.jsx("p", {
               role: "status",
               children: dt
-            }), O.jsx("div", {
-              className: "table-wrap portfolio-table",
-              children: O.jsxs("table", {
-                children: [O.jsx("thead", {
-                  children: O.jsxs("tr", {
-                    children: [O.jsx("th", {
-                      children: "Mã"
-                    }), O.jsx("th", {
-                      children: p("Số lượng")
-                    }), O.jsx("th", {
-                      children: p("Giá vốn")
-                    }), O.jsx("th", {
-                      children: p("Giá hiện tại")
-                    }), O.jsx("th", {
-                      children: p("Lãi/lỗ chưa thực hiện")
-                    }), O.jsx("th", {
-                      children: p("Lãi/lỗ đã thực hiện")
-                    })]
-                  })
-                }), O.jsxs("tbody", {
-                  children: [mi.map(d => O.jsxs("tr", {
-                    className: "portfolio-row-clickable",
-                    role: "link",
-                    tabIndex: 0,
-                    "aria-label": `Mở Chi tiết mã ${d.symbol}`,
-                    onClick: () => {
-                      ht(d.stock_id), Xe("detail");
-                    },
-                    onKeyDown: S => {
-                      (S.key === "Enter" || S.key === " ") && (S.preventDefault(), ht(d.stock_id), Xe("detail"));
-                    },
-                    children: [O.jsx("td", {
-                      children: O.jsx("button", {
-                        type: "button",
-                        className: "symbol portfolio-detail-link",
-                        title: `Mở Chi tiết mã ${d.symbol}`,
-                        onClick: S => {
-                          S.stopPropagation(), ht(d.stock_id), Xe("detail");
-                        },
-                        children: d.symbol
-                      })
-                    }), O.jsx("td", {
-                      children: Et(d.quantity)
-                    }), O.jsx("td", {
-                      children: oe(d.avg_cost)
-                    }), O.jsxs("td", {
-                      children: [oe(d.market_price), O.jsx("small", {
-                        className: "data-time",
-                        children: d.quote ? `Intraday · ${He(d.quote.observed_at)}` : p("EOD fallback")
-                      })]
-                    }), O.jsx("td", {
-                      className: Number(d.unrealized_pnl) >= 0 ? "positive" : "negative",
-                      children: oe(d.unrealized_pnl)
-                    }), O.jsx("td", {
-                      className: Number(d.realized_pnl) >= 0 ? "positive" : "negative",
-                      children: oe(d.realized_pnl)
-                    })]
-                  }, d.stock_id)), !Ir && !bt && !((pe == null ? void 0 : pe.positions) || []).length && O.jsx("tr", {
-                    children: O.jsx("td", {
-                      colSpan: "6",
-                      children: p("Chưa có vị thế")
-                    })
-                  })]
-                })]
-              })
+            }), O.jsx(PortfolioPositions, {
+              positions: mi,
+              closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
+              loading: Ir,
+              error: bt,
+              onOpenDetail: d => {
+                ht(d), Xe("detail");
+              }
             }), O.jsx(Jm, {
               entries: lf
             })]

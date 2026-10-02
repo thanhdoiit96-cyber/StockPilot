@@ -82,20 +82,26 @@ function evaluateRecommendationEntry({ recommendation = {}, actualEntryPrice = n
   };
 }
 
-function summarizePortfolioTransactions(transactions = [], prices = new Map()) {
+function summarizePortfolioHoldings(transactions = [], prices = new Map()) {
   const byStock = new Map();
   for (const tx of transactions) {
     const key = tx.stock_id;
-    const current = byStock.get(key) || { stock_id: key, symbol: tx.Stock?.code, name: tx.Stock?.name, quantity: 0, cost: 0, realized_pnl: 0 };
+    const current = byStock.get(key) || { stock_id: key, symbol: tx.Stock?.code, name: tx.Stock?.name, quantity: 0, cost: 0, realized_pnl: 0, first_traded_at: tx.traded_at, last_traded_at: tx.traded_at };
     const quantity = Number(tx.quantity); const price = normalizeTransactionPrice(tx.price); const fees = Number(tx.fees || 0);
     if (tx.side === 'BUY') { current.cost += quantity * price + fees; current.quantity += quantity; }
     else if (tx.side === 'SELL') { const average = current.quantity ? current.cost / current.quantity : 0; current.realized_pnl += quantity * (price - average) - fees; current.cost -= quantity * average; current.quantity -= quantity; }
+    current.last_traded_at = tx.traded_at;
     byStock.set(key, current);
   }
-  return [...byStock.values()].filter(item => item.quantity > 0).map(item => {
+  return [...byStock.values()].map(item => {
+    const isOpen = item.quantity > 1e-8;
     const marketPrice = prices.get(item.stock_id) ?? null; const marketValue = marketPrice == null ? null : item.quantity * marketPrice;
-    return { ...item, avg_cost: item.quantity ? item.cost / item.quantity : 0, market_price: marketPrice, market_value: marketValue, unrealized_pnl: marketValue == null ? null : marketValue - item.cost };
+    return { ...item, status: isOpen ? 'open' : 'closed', quantity: isOpen ? item.quantity : 0, cost: isOpen ? item.cost : 0, avg_cost: isOpen ? item.cost / item.quantity : 0, market_price: isOpen ? marketPrice : null, market_value: isOpen ? marketValue : null, unrealized_pnl: isOpen && marketValue != null ? marketValue - item.cost : null, closed_at: isOpen ? null : item.last_traded_at };
   });
 }
 
-module.exports = { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioTransactions };
+function summarizePortfolioTransactions(transactions = [], prices = new Map()) {
+  return summarizePortfolioHoldings(transactions, prices).filter(item => item.status === 'open');
+}
+
+module.exports = { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions };

@@ -1,4 +1,4 @@
-const { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioTransactions } = require('./portfolioAccounting');
+const { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions } = require('./portfolioAccounting');
 
 test('normalizes legacy thousand-unit input to VND per share', () => {
   expect(normalizeTransactionPrice(21.55)).toBe(21550);
@@ -50,4 +50,19 @@ test('orders are supplied by the controller with created_at tie-breaker', () => 
   ]);
   expect(positions[0].avg_cost).toBe(10000);
   expect(positions[0].quantity).toBe(1);
+});
+
+test('keeps a fully sold symbol as a closed holding with realized P/L', () => {
+  const holdings = summarizePortfolioHoldings([
+    { stock_id: 'a', side: 'BUY', quantity: 10, price: 10000, fees: 100, traded_at: '2026-09-01T03:00:00Z', Stock: { code: 'FPT', name: 'FPT Corp' } },
+    { stock_id: 'a', side: 'SELL', quantity: 10, price: 12000, fees: 100, traded_at: '2026-09-10T03:00:00Z', Stock: { code: 'FPT', name: 'FPT Corp' } }
+  ], new Map([['a', 13000]]));
+  expect(holdings).toEqual([expect.objectContaining({
+    stock_id: 'a', symbol: 'FPT', status: 'closed', quantity: 0, market_price: null,
+    unrealized_pnl: null, realized_pnl: 19800, closed_at: '2026-09-10T03:00:00Z'
+  })]);
+  expect(summarizePortfolioTransactions([
+    { stock_id: 'a', side: 'BUY', quantity: 1, price: 10000, fees: 0 },
+    { stock_id: 'a', side: 'SELL', quantity: 1, price: 12000, fees: 0 }
+  ])).toEqual([]);
 });

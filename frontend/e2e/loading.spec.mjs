@@ -229,13 +229,18 @@ test('health and cache failures do not discard stocks; both can retry', async ({
   let fail = true
   await setup(page, {
     '/api/health': route => route.fulfill({ status: fail ? 503 : 200, json: { success: !fail } }),
-    '/api/cache/stats': route => route.fulfill({ status: fail ? 500 : 200, json: { success: false } })
+    '/api/cache/stats': route => route.fulfill({ status: fail ? 500 : 200, json: { success: !fail } })
   })
   await openOverview(page)
-  await expect(page.getByRole('alert')).toHaveCount(2)
+  const healthRetry = page.getByRole('button', { name: /Th.*l.*health/i })
+  const cacheRetry = page.getByRole('button', { name: /Th.*l.*cache/i })
+  await expect(healthRetry).toBeVisible()
+  await expect(cacheRetry).toBeVisible()
   fail = false
-  await page.getByRole('button', { name: /Th.*l.*health/i }).click()
-  await page.getByRole('button', { name: /Th.*l.*cache/i }).click()
+  await healthRetry.click()
+  await cacheRetry.click()
+  await expect(healthRetry).toHaveCount(0)
+  await expect(cacheRetry).toHaveCount(0)
   await openBoard(page)
   await expect(page.getByRole('alert')).toHaveCount(0)
   await expect(page.locator('tbody tr')).toHaveCount(2)
