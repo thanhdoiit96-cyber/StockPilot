@@ -118,29 +118,31 @@ describe('stock API', () => {
   });
   test('returns bounded cached market breadth history without imputing unavailable fields', async () => {
     Stock.sequelize.query.mockResolvedValueOnce([[
-      { session_date: '2026-09-29', advances: '2', declines: '1', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '100', volume_declines: '50', volume_unchanged: '0', traded_value: null, traded_value_observations: '0' },
-      { session_date: '2026-09-30', advances: '1', declines: '2', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '80', volume_declines: '120', volume_unchanged: '0', traded_value: null, traded_value_observations: '0' }
+      { session_date: '2026-09-29', advances: '2', declines: '1', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '100', volume_declines: '50', volume_unchanged: '0', volume_observations: '3', traded_value: null, traded_value_observations: '0' },
+      { session_date: '2026-09-30', advances: '1', declines: '2', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '80', volume_declines: '120', volume_unchanged: '0', volume_observations: '3', traded_value: null, traded_value_observations: '0' }
     ], {}]);
     const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 2, exchange: 'hsx' });
     expect(result.status).toBe(200);
     expect(result.body.data).toMatchObject({ exchange: 'HSX', requested_sessions: 2, returned_sessions: 2, continuity: { status: 'continuous' } });
     expect(result.body.data.points[0]).toMatchObject({ ad_ratio: 2, coverage_pct: 75, traded_value: null });
-    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('LAG(close)'), { bind: ['HSX', 3, 2] });
-    expect(cache.set).toHaveBeenCalledWith('v1:market-breadth-history:HSX:2', { data: result.body.data }, 5, 'market_breadth');
+    expect(result.body.data.points[1].volume).toMatchObject({ net: -40, net_pct: -20, signal: 'confirmation' });
+    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN LATERAL'), { bind: ['HSX', 2, 2] });
+    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('COUNT(volume)'), { bind: ['HSX', 2, 2] });
+    expect(cache.set).toHaveBeenCalledWith('v3:market-breadth-history:HSX:2', { data: result.body.data }, 5, 'market_breadth');
   });
   test('bounds breadth history sessions and serves cached results', async () => {
     cache.get.mockResolvedValueOnce({ data: { requested_sessions: 60, points: [] } });
     const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 999, exchange: 'invalid' });
     expect(result.status).toBe(200);
     expect(result.body.source).toBe('cache');
-    expect(cache.get).toHaveBeenCalledWith('v1:market-breadth-history:ALL:60');
+    expect(cache.get).toHaveBeenCalledWith('v3:market-breadth-history:ALL:60');
     expect(Stock.sequelize.query).not.toHaveBeenCalled();
   });
   test('falls back to 20 breadth sessions when the query is not numeric', async () => {
     cache.get.mockResolvedValueOnce({ data: { requested_sessions: 20, points: [] } });
     const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 'not-a-number' });
     expect(result.status).toBe(200);
-    expect(cache.get).toHaveBeenCalledWith('v1:market-breadth-history:ALL:20');
+    expect(cache.get).toHaveBeenCalledWith('v3:market-breadth-history:ALL:20');
   });
   test('limits detail history by market observation time, not import/update time', async () => {
     Stock.findByPk.mockResolvedValue({

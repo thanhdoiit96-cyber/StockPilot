@@ -130,7 +130,7 @@ module.exports = function(cacheService) {
       const sessions = Number.isFinite(parsedSessions) ? Math.min(60, Math.max(1, parsedSessions)) : 20;
       const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
       const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : null;
-      const cacheKey = `v1:market-breadth-history:${exchange || 'ALL'}:${sessions}`;
+      const cacheKey = `v3:market-breadth-history:${exchange || 'ALL'}:${sessions}`;
       const cached = await cacheService.get(cacheKey);
       if (cached?.data) return res.json({ success: true, data: cached.data, source: 'cache' });
       const [rows] = await Stock.sequelize.query(`
@@ -153,7 +153,16 @@ module.exports = function(cacheService) {
         ), daily AS (
           SELECT stock_id, session_date, close, volume, traded_value FROM ranked WHERE row_number = 1 AND close IS NOT NULL
         ), compared AS (
-          SELECT *, LAG(close) OVER (PARTITION BY stock_id ORDER BY session_date) AS previous_close FROM daily
+          SELECT daily.*, previous.close AS previous_close
+          FROM daily
+          LEFT JOIN LATERAL (
+            SELECT COALESCE(p.close, p.price)::numeric AS close
+            FROM stock_prices p
+            WHERE p.stock_id = daily.stock_id AND p.provider = 'vnstock' AND p.interval = '1d'
+              AND p.observed_at IS NOT NULL
+              AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date < daily.session_date
+            ORDER BY p.observed_at DESC, p.id DESC LIMIT 1
+          ) previous ON TRUE
         ), aggregated AS (
           SELECT session_date::text AS session_date,
             COUNT(*)::int AS covered,
@@ -164,13 +173,14 @@ module.exports = function(cacheService) {
             COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close > previous_close), 0) AS volume_advances,
             COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close < previous_close), 0) AS volume_declines,
             COALESCE(SUM(volume) FILTER (WHERE previous_close IS NOT NULL AND close = previous_close), 0) AS volume_unchanged,
+            COUNT(volume) FILTER (WHERE previous_close IS NOT NULL)::int AS volume_observations,
             SUM(traded_value) AS traded_value,
             COUNT(traded_value)::int AS traded_value_observations,
             (SELECT COUNT(*)::int FROM stocks universe WHERE universe.listing_status = 'listed' AND ($1::text IS NULL OR universe.exchange = $1)) AS universe
           FROM compared GROUP BY session_date
         )
         SELECT * FROM (SELECT * FROM aggregated ORDER BY session_date DESC LIMIT $3) latest ORDER BY session_date ASC
-      `, { bind: [exchange, sessions + 1, sessions] });
+      `, { bind: [exchange, sessions, sessions] });
       const data = buildMarketBreadthHistory(rows, { sessions, exchange });
       await cacheService.set(cacheKey, { data }, 5, 'market_breadth');
       return res.json({ success: true, data, source: 'database' });
