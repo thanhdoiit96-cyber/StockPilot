@@ -3240,3 +3240,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Chế độ đăng ký mô tả yêu cầu ít nhất 8 ký tự qua `aria-describedby` và dùng `autocomplete=new-password`; đăng nhập dùng `current-password`. Trường phát hiện Caps Lock từ sự kiện bàn phím, công bố cảnh báo bằng `role=status` và dọn cảnh báo khi blur. Không thay đổi API/auth contract hoặc tự áp thêm quy tắc mật khẩu khác backend.
 - Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-Cm2GAC-H.js`; page audit desktop/mobile **2/2** và toàn bộ Playwright **69/69** pass, gồm type/aria/autocomplete/requirement và không tràn viewport.
 - Điểm tiếp tục: luồng quên mật khẩu chỉ triển khai khi backend có token/expiry/delivery contract; lát cắt frontend độc lập kế tiếp là đưa lỗi auth vào focus có ngữ cảnh và giữ thông báo accessible.
+
+## Lỗi xác thực có ngữ cảnh và focus — 2026-10-02
+
+- Thêm `AuthErrorMessage` với tiêu đề **Không thể đăng nhập** hoặc **Không thể tạo tài khoản**, nội dung server, hướng dẫn dữ liệu nhập vẫn được giữ, `role=alert`, `aria-live=assertive` và `aria-atomic=true`. Khi message mới xuất hiện, vùng lỗi nhận focus lập trình để người dùng bàn phím/screen reader không phải tìm lại cuối form.
+- Tách lỗi submit auth khỏi status dùng chung của ứng dụng. Email/mật khẩu được giữ sau lỗi để người dùng sửa; đổi chế độ và logout dọn cả lỗi auth lẫn status cũ, tránh thông báo của page trước rò sang form. Không thay đổi mapping lỗi HTTP hoặc API contract.
+- Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-DYx65cdB.js`; targeted auth cùng page audit desktop/mobile **3/3** và toàn bộ Playwright **70/70** pass, gồm focus, nội dung theo ngữ cảnh, giữ input và dọn lỗi khi đổi chế độ.
+- Điểm tiếp tục: khôi phục mật khẩu vẫn bị chặn bởi backend token/expiry/delivery contract. Hạng mục frontend độc lập tiếp theo là rà loading/submission state của auth để chống gửi lặp và diễn đạt tiến trình rõ ràng.

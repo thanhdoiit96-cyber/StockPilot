@@ -8,6 +8,7 @@ import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import RecommendationSnapshotComparison from "./components/RecommendationSnapshotComparison.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
+import AuthErrorMessage from "./components/AuthErrorMessage.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -1234,6 +1235,7 @@ function lv() {
       email: "",
       password: ""
     }),
+    [authError, setAuthError] = D.useState(""),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
@@ -1425,6 +1427,7 @@ function lv() {
   }, [ft, Qt, be, xn, Ht]);
   const Yh = async d => {
       d.preventDefault();
+      setAuthError("");
       try {
         const S = await je(`/api/auth/${Un}`, {
           method: "POST",
@@ -1436,9 +1439,9 @@ function lv() {
         }), Vt({
           email: "",
           password: ""
-        }), on("");
+        }), setAuthError(""), on("");
       } catch (S) {
-        on(S.message);
+        setAuthError(S.message);
       }
     },
     Xh = async d => {
@@ -1692,12 +1695,13 @@ function lv() {
         }), O.jsx("button", {
           className: "ghost-btn",
           type: "button",
-          onClick: () => ei(Un === "login" ? "register" : "login"),
+          onClick: () => {
+            ei(Un === "login" ? "register" : "login"), setAuthError(""), on("");
+          },
           children: p(Un === "login" ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")
-        }), dt && O.jsx("p", {
-          role: "alert",
-          className: "error-text",
-          children: dt
+        }), O.jsx(AuthErrorMessage, {
+          message: authError || dt,
+          mode: Un
         })]
       })]
     })
@@ -1825,7 +1829,9 @@ function lv() {
             children: ue.user.email
           }), O.jsx("button", {
             className: "ghost-btn",
-            onClick: () => Bt(null),
+            onClick: () => {
+              setAuthError(""), on(""), Bt(null);
+            },
             children: p("Đăng xuất")
           })]
         })]
