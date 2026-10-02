@@ -1311,6 +1311,15 @@ function lv() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
   D.useEffect(() => {
+    const handleAuthStorage = event => {
+      if (event.key === AUTH_STORAGE_KEY && event.newValue === null) {
+        endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      }
+    };
+    window.addEventListener("storage", handleAuthStorage);
+    return () => window.removeEventListener("storage", handleAuthStorage);
+  }, []);
+  D.useEffect(() => {
     if (!ue || authVerification.status !== "verifying") return;
     let active = true;
     const controller = new AbortController();

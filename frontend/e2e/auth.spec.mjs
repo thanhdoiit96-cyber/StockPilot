@@ -126,3 +126,24 @@ test('session verification failure keeps private UI hidden and can retry', async
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   expect(attempts).toBe(2)
 })
+
+test('logout in one tab immediately clears private state in another tab', async ({ context, page }) => {
+  await context.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'shared-token', user: { email: 'investor@example.com', role: 'user' } })))
+  await context.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  const secondPage = await context.newPage()
+  await Promise.all([page.goto('/'), secondPage.goto('/')])
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  await expect(secondPage.locator('.dashboard-shell')).toBeVisible()
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  await expect(page.getByRole('status')).toHaveText('Bạn đã đăng xuất an toàn.')
+  await expect(secondPage.locator('.auth-page')).toBeVisible()
+  await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
+  await expect(secondPage.getByRole('status')).toHaveText('Phiên đăng nhập đã kết thúc ở một tab khác.')
+  await expect.poll(() => secondPage.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+})

@@ -38,6 +38,8 @@ Response login/register phải qua cùng contract trước khi vào React state 
 
 Phiên đọc từ storage phải được `/api/auth/me` xác minh trước khi dashboard mount. Pending dùng loading overlay toàn trang; 401 thu hồi phiên, còn lỗi kết nối giữ dữ liệu cá nhân ẩn và cung cấp retry hoặc quay lại đăng nhập. Phiên vừa login/register thành công không xác minh lặp.
 
+Logout hoặc 401 xóa `market-auth` sẽ đồng bộ tới các tab cùng origin bằng `storage` event. Tab khác dọn private state và unmount dashboard ngay, kèm thông báo phiên đã kết thúc ở tab khác; không cần chờ API tiếp theo trả 401.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes
