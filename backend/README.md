@@ -24,6 +24,7 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | --- | --- | --- |
 | GET | /api/health | success, message, timestamp; không kiểm tra lại database theo request |
 | GET | /api/stocks | Danh sách cổ phiếu, sàn/trạng thái niêm yết, giá gần nhất, cache 5 phút |
+| GET | /api/stocks/export.csv | CSV EOD read-only theo cùng q/sector/exchange/coverage/sort/direction/pinned, tối đa 2.000 dòng, không cache |
 | GET | /api/stocks/breadth/history | Chuỗi A/D EOD theo 1–60 session, tùy chọn sàn, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |
 | GET | /api/stocks/:id | Chi tiết, sàn/trạng thái niêm yết và tối đa 20 giá, mới nhất trước; cache 5 phút |
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
@@ -34,6 +35,8 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | POST | /api/stocks/cache/clear | Xóa toàn bộ cache; cần khóa quản trị |
 
 GET dữ liệu cổ phiếu trả { success, data, source }; source là cache hoặc database. Không áp dụng định dạng này cho mọi endpoint. Cổ phiếu không tồn tại trả 404; lỗi query trả 500; body cập nhật không hợp lệ trả 400.
+
+`GET /api/stocks/export.csv` trả `text/csv; charset=utf-8` có BOM và chống formula injection. Query `columns=name,volume` chọn hai cột tùy chọn; Mã, Giá EOD và Nguồn dữ liệu luôn có. Response khai báo `X-Export-Count`, `X-Export-Limit=2000` và `X-Export-Truncated`; endpoint chỉ dùng giá EOD đã lưu, không gọi quote provider và không tải universe vào state frontend. Quyền tải/redistribute dữ liệu vẫn phải tuân theo license provider của môi trường triển khai.
 
 Stock list/detail include nullable `exchange`, `listing_status` (`listed`, `delisted`, or `unknown`), and `listing_checked_at`. Listing metadata comes from VCI. Delisted symbols remain searchable and retain their historical prices; status does not remove or mutate price history. Apply migrations 013 and 014 before using these fields. `npm run sync:vnstock-listing` refreshes listing metadata only for codes already present in `stocks`; it does not create symbols or ingest prices. The weekday metadata-only scheduler runs at 15:15 Asia/Ho_Chi_Minh by default; configure `VNSTOCK_LISTING_SYNC_ENABLED=false` to disable it or set `VNSTOCK_LISTING_SYNC_CRON` and `VNSTOCK_LISTING_SYNC_TIMEZONE` to customize it. The full universe ingestion also updates listing metadata for rows it processes.
 

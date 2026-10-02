@@ -41,7 +41,15 @@ const logger = winston.createLogger({
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(value => value.trim()) : '*' }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(value => value.trim()) : '*',
+  exposedHeaders: [
+    'Content-Disposition',
+    'X-Export-Count',
+    'X-Export-Limit',
+    'X-Export-Truncated',
+  ],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

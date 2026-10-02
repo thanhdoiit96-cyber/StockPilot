@@ -11,6 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
+const { serializeStockCsv } = require('../services/stockCsv');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 
 module.exports = function(cacheService) {
@@ -193,6 +194,55 @@ module.exports = function(cacheService) {
       price_unit: priceRecord?.price_unit || null
     };
   };
+
+  router.get('/export.csv', async (req, res) => {
+    try {
+      const exportLimit = 2000;
+      const query = String(req.query.q || '').trim();
+      const coverage = ['ready', 'incomplete'].includes(String(req.query.coverage)) ? String(req.query.coverage) : '';
+      const requestedSector = String(req.query.sector || '').trim();
+      const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : '';
+      const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
+      const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : '';
+      const requestedSort = String(req.query.sort || 'name');
+      const sort = ['code', 'name', 'price', 'volume'].includes(requestedSort) ? requestedSort : 'name';
+      const direction = String(req.query.direction || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+      const pinned = [...new Set(String(req.query.pinned || '').toUpperCase().split(',').map(code => code.trim()).filter(code => /^[A-Z0-9]{1,10}$/.test(code)))].sort().slice(0, 200);
+      const filters = [];
+      if (query) filters.push({ [Op.or]: [{ code: { [Op.iLike]: `%${query}%` } }, { name: { [Op.iLike]: `%${query}%` } }] });
+      if (sector === 'other') filters.push({ code: { [Op.notIn]: CLASSIFIED_CODES } });
+      else if (sector) filters.push({ [Op.or]: [{ code: { [Op.in]: SECTOR_CODES[sector] } }, industryCondition(Op, sector)] });
+      if (exchange) filters.push({ exchange });
+      if (coverage) filters.push(Stock.sequelize.literal(`(SELECT COUNT(*) FROM stock_prices AS coverage_prices WHERE coverage_prices.stock_id = "Stock"."id") ${coverage === 'ready' ? '>=' : '<'} 50`));
+      const where = filters.length === 1 ? filters[0] : filters.length ? { [Op.and]: filters } : undefined;
+      const latestValue = field => Stock.sequelize.literal(`(SELECT COALESCE(sp.${field === 'price' ? 'close' : field}, sp.${field === 'price' ? 'price' : field}) FROM stock_prices AS sp WHERE sp.stock_id = "Stock"."id" AND sp.observed_at IS NOT NULL ORDER BY sp.observed_at DESC NULLS LAST, sp.id DESC LIMIT 1)`);
+      const orderColumn = sort === 'price' || sort === 'volume' ? latestValue(sort) : sort;
+      const order = sort === 'price' || sort === 'volume' ? [[Stock.sequelize.literal(`CASE WHEN ${latestValue(sort).val} IS NULL THEN 1 ELSE 0 END`), 'ASC'], [orderColumn, direction]] : [[orderColumn, direction]];
+      if (pinned.length) order.unshift([Stock.sequelize.literal(`CASE WHEN "Stock"."code" IN (${pinned.map(code => `'${code}'`).join(',')}) THEN 0 ELSE 1 END`), 'ASC']);
+      if (sort !== 'code') order.push(['code', 'ASC']);
+      const rows = await Stock.findAll({
+        where,
+        include: [{ association: 'prices', separate: true, where: { observed_at: { [Op.not]: null } }, limit: 1, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] }],
+        order,
+        limit: exportLimit + 1
+      });
+      const normalized = rows.slice(0, exportLimit).map(stock => normalizeStock(stock));
+      const requestedColumns = new Set(String(req.query.columns || 'name,volume').split(',').map(value => value.trim()));
+      const csv = serializeStockCsv(normalized, { name: requestedColumns.has('name'), volume: requestedColumns.has('volume') });
+      res.set({
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv"`,
+        'Cache-Control': 'no-store',
+        'X-Export-Count': String(normalized.length),
+        'X-Export-Limit': String(exportLimit),
+        'X-Export-Truncated': rows.length > exportLimit ? 'true' : 'false'
+      });
+      return res.send(csv);
+    } catch (error) {
+      console.error('[Stock Controller] Error exporting stocks:', error);
+      return res.status(500).json({ success: false, message: 'Error exporting stocks' });
+    }
+  });
 
   router.get('/', async (req, res) => {
     try {

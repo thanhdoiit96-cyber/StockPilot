@@ -23,7 +23,13 @@ async function boot(page, count = 4) {
     const url = new URL(request.url())
     const path = url.pathname
     let payload = { success: true, data: null }
-    if (path === '/api/stocks') {
+    if (path === '/api/stocks/export.csv') {
+      return route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="stockpilot-bang-gia-full.csv"', 'X-Export-Count': '4', 'X-Export-Limit': '2000', 'X-Export-Truncated': 'false' },
+        body: '\uFEFF"Mã","Giá EOD","Khối lượng","Nguồn dữ liệu"\r\n"FPT","100000","1200","vnstock"\r\n'
+      })
+    } else if (path === '/api/stocks') {
       stockListRequests += 1
       payload = { success: true, data: stocks, pagination: { page: 1, pageSize: count, total: count, totalPages: 1 } }
     }
@@ -90,6 +96,17 @@ test('market board keeps the symbol visible, saves column preferences and export
   expect(content).toContain('FPT')
   expect(content).not.toContain('FPT Corporation')
   expect(content).not.toContain('Phân tích chuyên sâu')
+
+  const fullDownloadPromise = page.waitForEvent('download')
+  await page.getByLabel('Phạm vi xuất CSV').selectOption('all')
+  const fullRequestPromise = page.waitForRequest(request => request.url().includes('/api/stocks/export.csv'))
+  await page.getByRole('button', { name: 'Xuất toàn bộ CSV' }).click()
+  const [fullDownload, exportRequest] = await Promise.all([fullDownloadPromise, fullRequestPromise])
+  expect(fullDownload.suggestedFilename()).toBe('stockpilot-bang-gia-full.csv')
+  const fullContent = await readFile(await fullDownload.path(), 'utf8')
+  expect(fullContent).toContain('Giá EOD')
+  expect(new URL(exportRequest.url()).searchParams.get('columns')).toBe('volume')
+  await expect(page.locator('.market-board-export-notice')).toContainText('Đã xuất 4 mã EOD')
 
   await expect(page.getByText('Tùy chỉnh', { exact: true })).toBeVisible()
   const requestsBeforePresets = metrics.stockListRequests()

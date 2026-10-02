@@ -11,6 +11,7 @@ Model metadata hiện là `short_term_rule_v2`, nhưng điểm hiện tại ch�
 ## Bổ sung đã triển khai — 2026-09-21
 
 - `GET /api/stocks` hỗ trợ `pinned=FPT,VCB` và `exchange=HSX|HNX|UPCOM`: ưu tiên mã trước sắp xếp/phân trang, vẫn áp dụng tìm kiếm/lọc ngành/sàn; các tham số được đưa vào khóa cache. Đây là tùy chọn hiển thị, không phải bằng chứng quyền sở hữu. Contract hiện hành nằm trong [backend README](../backend/README.md).
+- `GET /api/stocks/export.csv` áp cùng `q/sector/exchange/coverage/sort/direction/pinned`, xuất EOD đã lưu tối đa 2.000 dòng và công bố count/limit/truncated qua response header. CSV có BOM, chống formula injection; không gọi provider realtime hoặc cache response.
 - `GET /api/stocks/:id/analysis` trả `source_url` (hoặc `null`) trong từng phần tử `data.external_factors.factors` đã xác minh.
 - `GET /api/stocks/breadth/history?sessions=20&exchange=HSX|HNX|UPCOM` trả tối đa 60 điểm EOD theo session gồm A/D, spread, coverage, volume breadth và continuity. Endpoint cache 5 phút; không nội suy phiên/mã thiếu và chỉ trả `traded_value` khi có observation thật.
 - Những ví dụ thiết kế bên dưới vẫn là đề xuất, không được xem là contract runtime chỉ vì bổ sung này đã triển khai.

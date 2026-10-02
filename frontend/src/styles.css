@@ -1560,6 +1560,10 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .market-board-preset:hover, .market-board-preset:focus-visible { border-color: var(--primary); color: var(--text); }
 .market-board-preset.is-active { border-color: rgba(94, 234, 212, .55); background: rgba(20, 184, 166, .12); color: var(--primary); }
 .market-board-custom-state { padding: 5px 9px; border-radius: 999px; background: rgba(148, 163, 184, .1); color: var(--muted); font-size: 10px; }
+.market-board-export-scope { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+.market-board-export-scope .app-select { min-height: 36px; }
+.market-board-export-error { margin: -4px 0 12px; }
+.market-board-export-notice { margin: -4px 0 12px; color: var(--primary); font-size: 11px; font-weight: 700; }
 .market-board-column-picker { position: relative; }
 .market-board-column-picker > summary { list-style: none; min-height: 36px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; color: var(--muted); cursor: pointer; }
 .market-board-column-picker > summary::-webkit-details-marker { display: none; }
@@ -1602,6 +1606,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
   .market-board-toolbar > * { flex: 1 1 0; }
   .market-board-presets { flex: 1 1 100%; overflow-x: auto; padding-bottom: 3px; }
   .market-board-presets > * { flex: 0 0 auto; }
+  .market-board-export-scope { flex: 1 1 auto; }
   .market-board-toolbar .ghost-btn, .market-board-column-picker > summary { width: 100%; text-align: center; }
   .market-session-timeline-grid { gap: 4px; }
   .market-session-slot { padding-inline: 3px; }
