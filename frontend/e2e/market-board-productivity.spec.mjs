@@ -130,6 +130,26 @@ test('market board keeps the symbol visible, saves column preferences and export
   await expect(page.getByRole('button', { name: 'Đầy đủ', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('market board synchronizes valid column preferences across tabs and ignores malformed storage', async ({ page, context }) => {
+  await boot(page)
+  const secondPage = await context.newPage()
+  await boot(secondPage)
+  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  await secondPage.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+
+  await page.getByRole('button', { name: 'Theo dõi', exact: true }).click()
+  await expect(secondPage.getByRole('button', { name: 'Theo dõi', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(secondPage.locator('.table-panel')).toHaveClass(/market-board-hide-analysis/)
+  await expect(secondPage.locator('.table-panel')).toHaveClass(/market-board-hide-actions/)
+
+  await page.evaluate(() => localStorage.setItem('stockpilot-market-columns-v1', '{malformed'))
+  await expect(secondPage.getByRole('button', { name: 'Theo dõi', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
+  await page.evaluate(() => localStorage.removeItem('stockpilot-market-columns-v1'))
+  await expect(secondPage.getByRole('button', { name: 'Đầy đủ', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await secondPage.close()
+})
+
 for (const count of [300, 500]) {
   test(`market board remains within interaction budgets for a ${count}-symbol universe`, async ({ page }) => {
     test.setTimeout(60000)

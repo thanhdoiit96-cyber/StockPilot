@@ -87,7 +87,7 @@ Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hi
 
 Bảng giá giữ cột mã khi cuộn ngang. Người dùng có thể ẩn/hiện các cột Doanh nghiệp, Khối lượng, Phân tích và Thao tác; lựa chọn được lưu trong trình duyệt. Nút **Xuất CSV** chỉ xuất các dòng của trang/bộ lọc đang hiển thị và các cột dữ liệu đang bật, không xuất nút hành động hay tự tải thêm dữ liệu ngoài phạm vi đó.
 
-Toolbar có preset **Đầy đủ**, **Theo dõi**, **Phân tích** và **Giao dịch** để đổi nhanh nhóm cột mà không request lại list/quote. Checkbox thủ công tiếp tục tạo cấu hình **Tùy chỉnh** và persist qua reload; preset cũng dùng cùng preference key để tương thích dữ liệu cũ.
+Toolbar có preset **Đầy đủ**, **Theo dõi**, **Phân tích** và **Giao dịch** để đổi nhanh nhóm cột mà không request lại list/quote. Checkbox thủ công tiếp tục tạo cấu hình **Tùy chỉnh** và persist qua reload; preset cũng dùng cùng preference key để tương thích dữ liệu cũ. Thay đổi preference được đồng bộ giữa các tab cùng origin; payload storage sai bị bỏ qua và xóa khóa sẽ phục hồi cấu hình mặc định.
 
 Phạm vi CSV có **Trang hiện tại** và **Toàn bộ kết quả (EOD)**. Trang hiện tại dùng đúng quote/dòng đang hiển thị; toàn bộ gọi `GET /api/stocks/export.csv` với filter/sort/pinned và cột đang bật, không nạp universe vào state. Server giới hạn 2.000 dòng, chống formula injection và không gọi realtime provider.
 

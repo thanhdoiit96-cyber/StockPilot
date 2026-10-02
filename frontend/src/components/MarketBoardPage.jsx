@@ -156,6 +156,23 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     try { localStorage.setItem(MARKET_COLUMNS_KEY, JSON.stringify(columns)) } catch {}
   }, [columns])
 
+  useEffect(() => {
+    const receiveColumnPreference = event => {
+      if (event.key !== MARKET_COLUMNS_KEY) return
+      if (event.newValue === null) {
+        setColumns(normalizeMarketColumns())
+        return
+      }
+      try {
+        const saved = JSON.parse(event.newValue)
+        if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return
+        setColumns(normalizeMarketColumns(saved))
+      } catch {}
+    }
+    window.addEventListener('storage', receiveColumnPreference)
+    return () => window.removeEventListener('storage', receiveColumnPreference)
+  }, [])
+
   const toggleSort = key => setSort(current => current.key === key
     ? { key, direction: current.direction === 'asc' ? 'desc' : 'asc' }
     : { key, direction: 'asc' })
