@@ -13,7 +13,7 @@ Playwright kiểm tra page đích hiển thị, chỉ một mục điều hướ
 | Page | Hiện trạng và vấn đề chính | Đã thực hiện trong đợt này | Đề xuất tiếp theo |
 | --- | --- | --- | --- |
 | Đăng nhập | Form gọn, có trạng thái đăng nhập/đăng ký; chưa có luồng khôi phục mật khẩu. | Password control accessible; schema auth được kiểm tra; stored/replacement token qua `/api/auth/me`; logout, 401 và đổi identity đồng bộ fail-closed giữa các tab. | Thêm quên mật khẩu và HttpOnly cookie khi backend có contract. |
-| Tổng quan | Phân cấp hero → KPI → độ rộng hợp lý. Dòng phạm vi từng ghi `0/0` dù các nhóm tăng/giảm đã có dữ liệu. | Đồng bộ topbar; sửa dòng phạm vi từ coverage thực của bảng; giữ cảnh báo chất lượng dữ liệu gần đầu page. | Thêm xu hướng độ rộng nhiều snapshot, hiệu suất ngành và lưu bộ lọc; chỉ triển khai khi backend có contract nhất quán. |
+| Tổng quan | Phân cấp hero → KPI → độ rộng hợp lý. Dòng phạm vi từng ghi `0/0` dù các nhóm tăng/giảm đã có dữ liệu. | Đồng bộ topbar; sửa coverage; thêm A/D 1/5/20 phiên và volume breadth/phân kỳ nội tại với continuity gate. | Thêm drill-down/hiệu suất ngành và lưu bộ lọc; benchmark chỉ khi có series chỉ số cùng phiên. |
 | Bảng giá | Bảng, timeline, filter và action đã rõ trên desktop. Mobile cần cuộn ngang nhưng trước đây kéo rộng cả document và không có chỉ dẫn. | Cô lập cuộn, giữ mã sticky; preset/custom column persistence đồng bộ đa tab; CSV trang hiện tại hoặc full-scope EOD phía server có filter/sort/limit và pending/error state. | Tiếp tục trace authenticated trước quyết định pagination/windowing/streaming; chỉ mở rộng khi số đo vượt budget. |
 | Danh mục cá nhân | Có ghi giao dịch, vị thế, P/L, donut, watchlist và lịch sử ledger theo người dùng. Form từng rơi về nền sáng; coverage quote ghi `4/1` vì đếm quote toàn thị trường. | Đồng bộ dark theme cho form thêm và modal sửa; coverage chỉ đếm dòng vị thế có Intraday; refresh nền không khóa form; giữ tooltip donut cho chuột và bàn phím; thêm nhật ký, export/import CSV nguyên tử, sửa/xóa qua dialog xác nhận và revalidation toàn timeline, cùng bộ lọc vị thế đang mở/đã đóng. | Chỉ thêm phân trang ledger khi dữ liệu thực tế đủ lớn; giữ invariant timeline cho mọi mutation. |
 | Chi tiết mã | Tìm mã, giá hiện tại, lịch sử và phân tích lazy rõ ràng; page dài trên mobile sau khi mở phân tích. | Topbar đúng ngữ cảnh, mobile shell gọn; giữ analysis lazy; thêm mục lục dính, tooltip hover/focus và zoom/pan cửa sổ phiên đã tải. | Chỉ thêm benchmark khi có series chỉ số cùng phiên và contract gap rõ ràng. |
@@ -54,7 +54,7 @@ Tiêu chí: source/dist tái tạo được; service tests, build, page audit v�
 
 Trạng thái: backlog sau P1.
 
-- Tổng quan: lịch sử độ rộng và drill-down ngành.
+- Tổng quan: lịch sử A/D và volume breadth đã có; tiếp theo là drill-down ngành, lưu bộ lọc và benchmark khi có contract chỉ số.
 - Bảng giá: cấu hình/preset cột, sticky symbol, export trang hiện tại và full-scope EOD phía server đã có; live-smoke 624 mã chưa cho thấy cần streaming, chỉ mở rộng khi quy mô hoặc latency vượt budget.
 - Danh mục: lịch sử, export/import CSV nguyên tử, sửa/xóa có xác nhận và bộ lọc vị thế đang mở/đã đóng đã có; chỉ thêm phân trang ledger khi có bằng chứng về quy mô.
 - Chi tiết: đã có range, zoom/pan, điều hướng section và tooltip chart bằng bàn phím; benchmark chờ series chỉ số cùng phiên.

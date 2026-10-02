@@ -9,6 +9,22 @@ function normalizePoint(row) {
   const covered = numberOrZero(row.covered);
   const universe = numberOrZero(row.universe);
   const tradedValueObservations = numberOrZero(row.traded_value_observations);
+  const volumeAdvances = numberOrZero(row.volume_advances);
+  const volumeDeclines = numberOrZero(row.volume_declines);
+  const volumeUnchanged = numberOrZero(row.volume_unchanged);
+  const volumeObservations = numberOrZero(row.volume_observations);
+  const directionalVolume = volumeAdvances + volumeDeclines;
+  const totalVolume = directionalVolume + volumeUnchanged;
+  const volumeNet = volumeAdvances - volumeDeclines;
+  const volumeSignal = volumeObservations <= 0 || directionalVolume <= 0
+    ? 'unavailable'
+    : advances - declines > 0 && volumeNet < 0
+      ? 'negative_divergence'
+      : advances - declines < 0 && volumeNet > 0
+        ? 'positive_divergence'
+        : advances - declines === 0 || volumeNet === 0
+          ? 'neutral'
+          : 'confirmation';
   return {
     session_date: String(row.session_date),
     advances,
@@ -21,9 +37,18 @@ function normalizePoint(row) {
     spread: advances - declines,
     coverage_pct: universe > 0 ? Number((covered / universe * 100).toFixed(1)) : null,
     volume: {
-      advances: numberOrZero(row.volume_advances),
-      declines: numberOrZero(row.volume_declines),
-      unchanged: numberOrZero(row.volume_unchanged)
+      advances: volumeAdvances,
+      declines: volumeDeclines,
+      unchanged: volumeUnchanged,
+      observations: volumeObservations,
+      coverage_pct: classified > 0 ? Number((volumeObservations / classified * 100).toFixed(1)) : null,
+      directional_total: directionalVolume,
+      total: totalVolume,
+      net: volumeNet,
+      net_pct: directionalVolume > 0 ? Number((volumeNet / directionalVolume * 100).toFixed(1)) : null,
+      ad_ratio: volumeDeclines > 0 ? Number((volumeAdvances / volumeDeclines).toFixed(4)) : null,
+      advancing_pct: directionalVolume > 0 ? Number((volumeAdvances / directionalVolume * 100).toFixed(1)) : null,
+      signal: volumeSignal
     },
     traded_value: tradedValueObservations > 0 ? nullableNumber(row.traded_value) : null,
     traded_value_observations: tradedValueObservations
@@ -56,7 +81,7 @@ function buildMarketBreadthHistory(rows, { sessions, exchange = null } = {}) {
     points,
     continuity: { status, gaps },
     source: 'vnstock_eod',
-    methodology: 'Per-symbol EOD close versus the preceding stored market session; missing observations are excluded, never imputed.'
+    methodology: 'Per-symbol EOD close versus the preceding stored market session; volume breadth groups observed EOD volume by price direction. Missing observations are excluded, never imputed, and volume is not aggressor-side order flow.'
   };
 }
 

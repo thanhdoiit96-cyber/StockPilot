@@ -25,7 +25,10 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
       payload.data = Object.fromEntries(stocks.map((stock, index) => [stock.code, { price: 66300, change: changes[stock.code], volume: (index + 1) * 100, volume_type: 'session', observed_at: '2026-09-21T10:00:00+07:00', fetched_at: '2026-09-21T03:00:01Z', upstream: 'VCI', license_url: 'https://example.test/license' }]))
     } else if (path === '/api/stocks/breadth/history') {
       const sessions = Number(url.searchParams.get('sessions') || 5)
-      payload.data = { requested_sessions: sessions, returned_sessions: sessions, continuity: { status: breadthStatus, gaps: breadthStatus === 'gapped' ? [{ from: '2026-09-01', to: '2026-09-08', calendar_days: 7 }] : [] }, points: Array.from({ length: sessions }, (_, index) => ({ session_date: `2026-09-${String(index + 1).padStart(2, '0')}`, advances: 3, declines: 1, unchanged: 0, classified: 4, covered: 4, universe: 4, ad_ratio: 3, spread: index % 2 ? -1 : 2, coverage_pct: 100, volume: { advances: 300, declines: 100, unchanged: 0 }, traded_value: null })) }
+      payload.data = { requested_sessions: sessions, returned_sessions: sessions, continuity: { status: breadthStatus, gaps: breadthStatus === 'gapped' ? [{ from: '2026-09-01', to: '2026-09-08', calendar_days: 7 }] : [] }, points: Array.from({ length: sessions }, (_, index) => {
+        const latest = index === sessions - 1
+        return { session_date: `2026-09-${String(index + 1).padStart(2, '0')}`, advances: 3, declines: 1, unchanged: 0, classified: 4, covered: 4, universe: 4, ad_ratio: 3, spread: index % 2 ? -1 : 2, coverage_pct: 100, volume: { advances: latest ? 100 : 300, declines: latest ? 300 : 100, unchanged: 0, observations: 4, coverage_pct: 100, directional_total: 400, total: 400, net: latest ? -200 : 200, net_pct: latest ? -50 : 50, ad_ratio: latest ? 0.3333 : 3, advancing_pct: latest ? 25 : 75, signal: latest ? 'negative_divergence' : 'confirmation' }, traded_value: null }
+      }) }
     } else if (path === '/api/portfolio') payload.data = { positions }
     else if (path === '/api/watchlist') payload.data = watch
     else if (path === '/api/watchlist/FPT' && request.method() === 'DELETE') { watch = []; return route.fulfill({ status: 204 }) }
@@ -79,8 +82,14 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-history-chart')).toBeVisible()
   await expect(page.locator('.breadth-history-ranges button')).toHaveCount(3)
   await expect(page.locator('.breadth-history-point')).toHaveCount(5)
+  await expect(page.locator('.breadth-volume-history-bar')).toHaveCount(5)
+  await expect(page.locator('.breadth-history-summary')).toContainText('Volume A/D 0.33')
+  await expect(page.locator('.breadth-history-summary')).toContainText('Volume coverage 4/4')
+  await expect(page.locator('.breadth-history-summary')).toContainText('Phân kỳ giảm')
+  await expect(page.locator('.breadth-volume-history-caption')).toContainText('không phải khối lượng mua/bán chủ động')
   await page.locator('.breadth-history-ranges button').filter({ hasText: '1D' }).click()
   await expect(page.locator('.breadth-history-point')).toHaveCount(1)
+  await expect(page.locator('.breadth-volume-history-bar')).toHaveCount(1)
   await expect(page.locator('.breadth-history-caption')).toContainText('1 phiên liên tục')
   await expect(page.locator('.breadth-disclaimer')).toContainText('không tách khối lượng chủ động')
   await expect(page.locator('.chart-panel, .portfolio-panel')).toHaveCount(0)
@@ -128,6 +137,7 @@ test('breadth history does not connect a gapped session series', async ({ page }
   await setup(page, { board: false, breadthStatus: 'gapped' })
   await expect(page.locator('.breadth-history-state')).toContainText('Chưa đủ chuỗi phiên liên tục')
   await expect(page.locator('.breadth-history-chart')).toHaveCount(0)
+  await expect(page.locator('.breadth-volume-history-chart')).toHaveCount(0)
 })
 
 test('overview add opens a prefilled form, writes only on save and then pins the stock', async ({ page }) => {

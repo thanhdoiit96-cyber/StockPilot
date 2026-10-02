@@ -8,6 +8,7 @@
 | [src/App.jsx](src/App.jsx) | Dashboard, chọn cổ phiếu, tải API và điều phối các page |
 | [src/components/MarketBoardPage.jsx](src/components/MarketBoardPage.jsx) | Page Bảng giá: tải danh sách, render, phân trang, toolbar và vòng đời quote bằng React |
 | [src/components/MarketBreadth.jsx](src/components/MarketBreadth.jsx) | Breadth Tổng quan: scope sàn, snapshot và mở mã dẫn đầu |
+| [src/components/MarketBreadthHistory.jsx](src/components/MarketBreadthHistory.jsx) | Timeline A/D và volume breadth EOD; chỉ vẽ chuỗi liên tục, phân kỳ nội tại không giả benchmark |
 | [src/components/PortfolioAllocation.jsx](src/components/PortfolioAllocation.jsx) | Donut Danh mục có tooltip chuột/bàn phím và audit P/L theo quote |
 | [src/components/RecommendationSnapshotComparison.jsx](src/components/RecommendationSnapshotComparison.jsx) | So sánh hai snapshot Đề xuất đã lưu theo tiêu chí, membership, hạng và điểm |
 | [src/components/AdvisorWorkspace.jsx](src/components/AdvisorWorkspace.jsx) | Advisor rule-based với phạm vi mã/Danh mục/Thị trường và citation theo từng câu trả lời |
@@ -95,6 +96,8 @@ Toolbar có preset **Đầy đủ**, **Theo dõi**, **Phân tích** và **Giao d
 Phạm vi CSV có **Trang hiện tại** và **Toàn bộ kết quả (EOD)**. Trang hiện tại dùng đúng quote/dòng đang hiển thị; toàn bộ gọi `GET /api/stocks/export.csv` với filter/sort/pinned và cột đang bật, không nạp universe vào state. Server giới hạn 2.000 dòng, chống formula injection và không gọi realtime provider.
 
 Bảng giá là component React riêng và sở hữu tải danh sách, render, điều hướng/phân trang, loading/error/empty state, timeline, toolbar và vòng đời quote. `MarketBreadth`, `PortfolioAllocation` và lifecycle phân tích Chi tiết cũng thuộc React; `overview-table-actions.js`, `market-board-tools.js` và `sidebar-toggle-icon.js` đã được loại khỏi source/build. Toàn bộ source frontend không còn dùng `MutationObserver`.
+
+Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/5/20 phiên. Cột volume biểu diễn `(khối lượng mã tăng − khối lượng mã giảm) / tổng volume hai nhóm`; tín hiệu phân kỳ chỉ so sánh hướng số mã với hướng volume trong cùng universe/sàn. Chuỗi gapped/insufficient không được nối hoặc vẽ, phiên thiếu volume bị bỏ trống và nội dung luôn ghi rõ đây không phải dòng tiền mua/bán chủ động hay benchmark VNINDEX.
 
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 
