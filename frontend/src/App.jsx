@@ -1236,6 +1236,7 @@ function lv() {
       password: ""
     }),
     [authError, setAuthError] = D.useState(""),
+    [authSubmitting, setAuthSubmitting] = D.useState(false),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
@@ -1427,7 +1428,9 @@ function lv() {
   }, [ft, Qt, be, xn, Ht]);
   const Yh = async d => {
       d.preventDefault();
+      if (authSubmitting) return;
       setAuthError("");
+      setAuthSubmitting(true);
       try {
         const S = await je(`/api/auth/${Un}`, {
           method: "POST",
@@ -1442,6 +1445,8 @@ function lv() {
         }), setAuthError(""), on("");
       } catch (S) {
         setAuthError(S.message);
+      } finally {
+        setAuthSubmitting(false);
       }
     },
     Xh = async d => {
@@ -1669,6 +1674,7 @@ function lv() {
       }), O.jsxs("form", {
         onSubmit: Yh,
         className: "auth-form",
+        "aria-busy": authSubmitting,
         children: [O.jsxs("label", {
           children: [p("Email"), O.jsx("input", {
             "aria-label": p("Email đăng nhập"),
@@ -1679,11 +1685,13 @@ function lv() {
               ...bn,
               email: d.target.value
             }),
+            disabled: authSubmitting,
             required: true
           })]
         }), O.jsx(AuthPasswordField, {
           value: bn.password,
           mode: Un,
+          disabled: authSubmitting,
           onChange: d => Vt({
             ...bn,
             password: d
@@ -1691,14 +1699,21 @@ function lv() {
         }), O.jsx("button", {
           className: "primary-btn",
           type: "submit",
-          children: p(Un === "login" ? "Đăng nhập" : "Đăng ký")
+          disabled: authSubmitting,
+          children: p(authSubmitting ? Un === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : Un === "login" ? "Đăng nhập" : "Đăng ký")
         }), O.jsx("button", {
           className: "ghost-btn",
           type: "button",
+          disabled: authSubmitting,
           onClick: () => {
             ei(Un === "login" ? "register" : "login"), setAuthError(""), on("");
           },
           children: p(Un === "login" ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")
+        }), authSubmitting && O.jsx("p", {
+          className: "auth-submit-status",
+          role: "status",
+          "aria-live": "polite",
+          children: Un === "login" ? "Đang xác thực thông tin đăng nhập…" : "Đang tạo tài khoản an toàn…"
         }), O.jsx(AuthErrorMessage, {
           message: authError || dt,
           mode: Un

@@ -3247,3 +3247,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Tách lỗi submit auth khỏi status dùng chung của ứng dụng. Email/mật khẩu được giữ sau lỗi để người dùng sửa; đổi chế độ và logout dọn cả lỗi auth lẫn status cũ, tránh thông báo của page trước rò sang form. Không thay đổi mapping lỗi HTTP hoặc API contract.
 - Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-DYx65cdB.js`; targeted auth cùng page audit desktop/mobile **3/3** và toàn bộ Playwright **70/70** pass, gồm focus, nội dung theo ngữ cảnh, giữ input và dọn lỗi khi đổi chế độ.
 - Điểm tiếp tục: khôi phục mật khẩu vẫn bị chặn bởi backend token/expiry/delivery contract. Hạng mục frontend độc lập tiếp theo là rà loading/submission state của auth để chống gửi lặp và diễn đạt tiến trình rõ ràng.
+
+## Trạng thái submit và chống gửi lặp cho auth — 2026-10-02
+
+- Thêm `authSubmitting` và guard trong submit handler. Khi request đang chạy, form có `aria-busy=true`, live status **Đang xác thực… / Đang tạo tài khoản…**, nhãn nút đổi theo tiến trình và toàn bộ email, password, toggle hiện/ẩn, submit cùng action đổi mode bị khóa. `finally` luôn mở lại form khi request thất bại; thành công chuyển sang dashboard như cũ.
+- E2E giữ request login ở trạng thái pending để xác nhận control bị khóa và request count chỉ là một, sau đó trả 401 để kiểm tra `aria-busy=false`, alert nhận focus và input còn nguyên. Không thêm timeout phía client hoặc thay đổi API contract.
+- Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-ZGyQItRS.js`; targeted auth cùng page audit desktop/mobile **3/3** và toàn bộ Playwright **70/70** pass.
+- Điểm tiếp tục: khôi phục mật khẩu vẫn chờ backend contract. Hạng mục độc lập tiếp theo là chuẩn hóa session-expired/logout UX và xóa credential nhạy cảm khỏi state đúng thời điểm mà không làm mất thông báo nguyên nhân.
