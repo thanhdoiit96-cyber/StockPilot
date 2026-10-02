@@ -7,15 +7,21 @@ jest.mock('../services/recommendationPersistence', () => ({ generateRecommendati
 
 const cron = require('node-cron');
 const startVnstockEodJob = require('./vnstockEodJob');
-const { completedSessionDate, prioritizeMissingSymbols } = startVnstockEodJob;
+const { completedSessionDate, prioritizeMissingSymbols, findCurrentSessionTradedSymbols } = startVnstockEodJob;
 const { ingestVnstockEod } = require('../market-data/vnstockEodIngestion');
 const { eodCoverage } = require('../market-data/eodCoverage');
 const fs = require('node:fs/promises');
 
 describe('vnstock EOD scheduler', () => {
   const original = process.env.VNSTOCK_EOD_ENABLED;
+  const originalRetryLimit = process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT;
   beforeEach(() => { jest.useFakeTimers({ now: new Date('2026-09-27T10:00:00.000Z') }); });
-  afterEach(() => { jest.useRealTimers(); jest.clearAllMocks(); if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original; });
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+    if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original;
+    if (originalRetryLimit === undefined) delete process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT; else process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT = originalRetryLimit;
+  });
 
   test('rolls Sunday and configured holidays back to the latest completed weekday', () => {
     expect(completedSessionDate(new Date('2026-09-27T03:00:00.000Z'))).toBe('2026-09-25');
@@ -32,6 +38,21 @@ describe('vnstock EOD scheduler', () => {
     await expect(prioritizeMissingSymbols(sequelize, '2026-10-02', ['AAA', 'BBB', 'CCC'], 2, attempts))
       .resolves.toEqual(['BBB', 'CCC']);
     expect(sequelize.query.mock.calls[0][1].bind).toEqual([['AAA', 'BBB', 'CCC'], '2026-10-02']);
+  });
+
+  test('detects traded symbols only from a positive current-session price-board row', async () => {
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce([
+        { symbol: 'AAA', price: 12000, volume: 100, time: '2026-10-02T07:45:00Z' },
+        { symbol: 'BBB', price: 8000, volume: 0, time: '2026-10-02T06:00:00Z' }
+      ])
+      .mockResolvedValueOnce([
+        { symbol: 'CCC', price: 5000, volume: 20, time: '2026-10-01T07:45:00Z' }
+      ]);
+    await expect(findCurrentSessionTradedSymbols(['aaa', 'BBB', 'CCC'], '2026-10-02', { fetcher, batchSize: 2 }))
+      .resolves.toEqual({ symbols: ['AAA'], probed: 3, batches: 2, failed_batches: 0, errors: [] });
+    expect(fetcher).toHaveBeenNthCalledWith(1, { symbols: ['AAA', 'BBB'], source: 'VCI', mode: 'price-board' });
+    expect(fetcher).toHaveBeenNthCalledWith(2, { symbols: ['CCC'], source: 'VCI', mode: 'price-board' });
   });
 
   test('starts by default so daily EOD rows cannot be silently skipped', () => {
@@ -79,10 +100,48 @@ describe('vnstock EOD scheduler', () => {
       .mockResolvedValueOnce({ symbols: 2, covered: 1, missing_symbols: ['VPB'] })
       .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] })
       .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] });
-    const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() } });
+    const tradePriorityLoader = jest.fn().mockResolvedValue({ symbols: ['VPB'], probed: 1, batches: 1, failed_batches: 0, errors: [] });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() }, tradePriorityLoader });
     await task.retryGaps();
     expect(ingestVnstockEod).toHaveBeenCalledWith(expect.objectContaining({ symbols: ['VPB'], from: '2026-09-25', to: '2026-09-25' }));
+    expect(tradePriorityLoader).toHaveBeenCalledWith(['VPB'], '2026-09-25');
+    const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
+    expect(saved.trade_priority).toEqual(expect.objectContaining({ enabled: true, matched: 1 }));
+    expect(saved.selected_traded).toBe(1);
     expect(task.retryTask).toBeTruthy();
+  });
+
+  test('puts currently traded gaps before fair-order fallback without fabricating EOD rows', async () => {
+    process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT = '1';
+    ingestVnstockEod.mockResolvedValue({ received: 1 });
+    eodCoverage
+      .mockResolvedValueOnce({ symbols: 3, covered: 1, missing_symbols: ['AAA', 'VPC'] })
+      .mockResolvedValueOnce({ symbols: 1, covered: 1, missing_symbols: [] })
+      .mockResolvedValueOnce({ symbols: 3, covered: 2, missing_symbols: ['AAA'] });
+    const tradePriorityLoader = jest.fn().mockResolvedValue({ symbols: ['VPC'], probed: 2, batches: 1, failed_batches: 0, errors: [] });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() }, tradePriorityLoader });
+    const result = await task.retryGaps();
+    expect(ingestVnstockEod).toHaveBeenCalledTimes(1);
+    expect(ingestVnstockEod).toHaveBeenCalledWith(expect.objectContaining({ symbols: ['VPC'] }));
+    expect(result.selected_symbols).toEqual(['VPC']);
+    expect(result.selected_traded).toBe(1);
+  });
+
+  test('keeps the fair retry path available when price-board prioritization fails', async () => {
+    process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT = '1';
+    ingestVnstockEod.mockResolvedValue({ received: 0 });
+    eodCoverage
+      .mockResolvedValueOnce({ symbols: 2, covered: 0, missing_symbols: ['AAA', 'BBB'] })
+      .mockResolvedValueOnce({ symbols: 1, covered: 0, missing_symbols: ['AAA'] })
+      .mockResolvedValueOnce({ symbols: 2, covered: 0, missing_symbols: ['AAA', 'BBB'] });
+    const task = startVnstockEodJob({
+      logger: { info: jest.fn(), error: jest.fn() },
+      tradePriorityLoader: jest.fn().mockRejectedValue(new Error('price board unavailable'))
+    });
+    const result = await task.retryGaps();
+    expect(ingestVnstockEod).toHaveBeenCalledWith(expect.objectContaining({ symbols: ['AAA'] }));
+    expect(result.trade_priority).toEqual(expect.objectContaining({ enabled: true, matched: 0, error: 'price board unavailable' }));
+    expect(result.error).toBeUndefined();
   });
 
   test('prevents overlapping runs and records failures before releasing lock', async () => {

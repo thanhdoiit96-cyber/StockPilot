@@ -5,6 +5,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { ingestVnstockEod, defaultWindow } = require('../market-data/vnstockEodIngestion');
 const { eodCoverage } = require('../market-data/eodCoverage');
+const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstockBridgeFetcher');
 const models = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
@@ -17,6 +18,11 @@ const runtimeStatus = {
   last_error: null
 };
 const gapRetryAttempts = new Map();
+const tradePriorityFetcher = createVnstockIntradayFetcher({
+  retries: 0,
+  timeoutMs: Math.max(1000, Number(process.env.VNSTOCK_EOD_TRADE_PRIORITY_TIMEOUT_MS) || 10000),
+  backoffMs: 300
+});
 
 async function latestPersistedSession(sequelize) {
   if (!sequelize?.query) return null;
@@ -58,7 +64,52 @@ async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit, 
   }).slice(0, limit).map(row => row.code);
 }
 
-function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5' } = {}) {
+function vietnamSessionDate(value) {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp)
+    ? new Date(timestamp + 7 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    : null;
+}
+
+async function findCurrentSessionTradedSymbols(symbols, sessionDate, {
+  fetcher = tradePriorityFetcher,
+  batchSize = 200,
+  maxSymbols = 600
+} = {}) {
+  const wanted = [...new Set((symbols || []).map(symbol => String(symbol).trim().toUpperCase()).filter(Boolean))]
+    .slice(0, Math.max(1, Math.min(1000, Number(maxSymbols) || 600)));
+  const size = Math.max(1, Math.min(200, Number(batchSize) || 200));
+  const traded = new Set();
+  const errors = [];
+  let batches = 0;
+  for (let offset = 0; offset < wanted.length; offset += size) {
+    const batch = wanted.slice(offset, offset + size);
+    batches += 1;
+    try {
+      const rows = await fetcher({ symbols: batch, source: 'VCI', mode: 'price-board' });
+      for (const row of rows || []) {
+        const symbol = String(row.symbol || row.ticker || '').trim().toUpperCase();
+        if (!batch.includes(symbol)) continue;
+        if (!(Number(row.price) > 0) || !(Number(row.volume) > 0)) continue;
+        if (vietnamSessionDate(row.time) === sessionDate) traded.add(symbol);
+      }
+    } catch (error) {
+      errors.push({
+        symbols: batch,
+        error: String(error?.message || error).replace(/[\r\n\t]+/g, ' ').slice(0, 300)
+      });
+    }
+  }
+  return { symbols: [...traded], probed: wanted.length, batches, failed_batches: errors.length, errors };
+}
+
+function startVnstockEodJob({
+  cacheService,
+  logger = console,
+  schedule = process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5',
+  retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
+  tradePriorityLoader = findCurrentSessionTradedSymbols
+} = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
   // fall back to intraday-only charts. Set VNSTOCK_EOD_ENABLED=false to opt out.
   if (process.env.VNSTOCK_EOD_ENABLED === 'false') return null;
@@ -154,10 +205,36 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
     runtimeStatus.started_at = new Date().toISOString();
     runtimeStatus.last_error = null;
     const retryLimit = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT || 25));
-    const selectedSymbols = await prioritizeMissingSymbols(models.sequelize, sessionDate, coverage.missing_symbols, retryLimit);
-    for (const symbol of selectedSymbols) gapRetryAttempts.set(symbol, (gapRetryAttempts.get(symbol) || 0) + 1);
-    const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length, selected: selectedSymbols.length, retry_limit: retryLimit, selected_symbols: selectedSymbols };
+    const evidence = { checked_at: runtimeStatus.started_at, session_date: sessionDate, requested: coverage.missing_symbols.length, retry_limit: retryLimit };
     try {
+      const fairOrder = await prioritizeMissingSymbols(models.sequelize, sessionDate, coverage.missing_symbols, coverage.missing_symbols.length);
+      let traded = new Set();
+      if (process.env.VNSTOCK_EOD_TRADE_PRIORITY !== 'false') {
+        try {
+          const priority = await tradePriorityLoader(coverage.missing_symbols, sessionDate);
+          traded = new Set((priority?.symbols || []).map(symbol => String(symbol).toUpperCase()));
+          evidence.trade_priority = {
+            enabled: true,
+            probed: priority?.probed ?? coverage.missing_symbols.length,
+            batches: priority?.batches ?? null,
+            failed_batches: priority?.failed_batches ?? 0,
+            matched: traded.size,
+            errors: priority?.errors || []
+          };
+        } catch (error) {
+          evidence.trade_priority = { enabled: true, probed: 0, matched: 0, error: String(error?.message || error).slice(0, 300) };
+        }
+      } else {
+        evidence.trade_priority = { enabled: false, probed: 0, matched: 0 };
+      }
+      const selectedSymbols = fairOrder
+        .filter(symbol => traded.has(symbol))
+        .concat(fairOrder.filter(symbol => !traded.has(symbol)))
+        .slice(0, retryLimit);
+      for (const symbol of selectedSymbols) gapRetryAttempts.set(symbol, (gapRetryAttempts.get(symbol) || 0) + 1);
+      evidence.selected = selectedSymbols.length;
+      evidence.selected_traded = selectedSymbols.filter(symbol => traded.has(symbol)).length;
+      evidence.selected_symbols = selectedSymbols;
       const options = buildOptions(sessionDate);
       const passes = Math.max(1, Number(process.env.VNSTOCK_EOD_GAP_RETRY_PASSES || 1));
       evidence.retries = [];
@@ -201,5 +278,6 @@ function startVnstockEodJob({ cacheService, logger = console, schedule = process
 module.exports = startVnstockEodJob;
 module.exports.completedSessionDate = completedSessionDate;
 module.exports.prioritizeMissingSymbols = prioritizeMissingSymbols;
+module.exports.findCurrentSessionTradedSymbols = findCurrentSessionTradedSymbols;
 module.exports.getEodRetryStatus = () => ({ ...runtimeStatus });
 
