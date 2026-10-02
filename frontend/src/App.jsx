@@ -18,7 +18,7 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
-import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
+import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -1454,13 +1454,11 @@ function lv() {
       setAuthSubmitting(true);
       try {
         const S = await je(`/api/auth/${Un}`, {
-          method: "POST",
-          body: bn
-        });
-        Bt({
-          token: S.token,
-          user: S.user
-        }), Vt({
+            method: "POST",
+            body: bn
+          }),
+          $ = authFromResponse(S);
+        Bt($), Vt({
           email: "",
           password: ""
         }), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
