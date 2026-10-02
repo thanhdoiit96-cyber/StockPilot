@@ -13,13 +13,13 @@ async function main() {
 
   const [rows] = await models.sequelize.query(`
     WITH per_session AS (
-      SELECT s.id AS stock_id, s.code, s.listing_status,
+      SELECT s.id AS stock_id, s.code, s.exchange, s.listing_status, s.listing_checked_at,
         (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date,
         COUNT(p.id)::int AS records
       FROM stocks s
       LEFT JOIN stock_prices p ON p.stock_id = s.id AND p.observed_at IS NOT NULL
         AND p.provider = 'vnstock' AND p.interval = '1d'
-      GROUP BY s.id, s.code, s.listing_status, session_date
+      GROUP BY s.id, s.code, s.exchange, s.listing_status, s.listing_checked_at, session_date
     ), history AS (
       SELECT s.id AS stock_id, COUNT(p.id)::int AS null_observation_records
       FROM stocks s
@@ -27,7 +27,7 @@ async function main() {
         AND p.provider = 'vnstock' AND p.interval = '1d'
       GROUP BY s.id
     )
-    SELECT ps.code, ps.listing_status,
+    SELECT ps.code, ps.exchange, ps.listing_status, ps.listing_checked_at,
       COUNT(ps.session_date)::int AS sessions,
       MAX(ps.session_date)::text AS latest_session,
       COALESCE(BOOL_OR(ps.session_date = $1::date), false) AS has_target_session,
@@ -35,7 +35,7 @@ async function main() {
       h.null_observation_records
     FROM per_session ps
     JOIN history h ON h.stock_id = ps.stock_id
-    GROUP BY ps.stock_id, ps.code, ps.listing_status, h.null_observation_records
+    GROUP BY ps.stock_id, ps.code, ps.exchange, ps.listing_status, ps.listing_checked_at, h.null_observation_records
     ORDER BY ps.code
   `, { bind: [sessionDate] });
 
@@ -46,6 +46,11 @@ async function main() {
     target_session_coverage: rows.filter(row => row.has_target_session).length,
     missing_target_session: rows.filter(row => !row.has_target_session).map(row => ({ code: row.code, listing_status: row.listing_status, latest_session: row.latest_session })),
     empty_history: rows.filter(row => Number(row.sessions) === 0).map(row => row.code),
+    never_seen_listed: rows.filter(row => row.listing_status === 'listed' && Number(row.sessions) === 0).map(row => ({
+      code: row.code,
+      exchange: row.exchange,
+      listing_checked_at: row.listing_checked_at
+    })),
     duplicate_sessions: rows.filter(row => Number(row.duplicate_sessions) > 0).map(row => ({ code: row.code, count: Number(row.duplicate_sessions) })),
     null_observation_records: rows.filter(row => Number(row.null_observation_records) > 0).map(row => ({ code: row.code, count: Number(row.null_observation_records) })),
     rows
