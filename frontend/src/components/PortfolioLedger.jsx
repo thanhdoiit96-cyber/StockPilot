@@ -179,8 +179,11 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
     }}>
       <section className="ledger-dialog" role="dialog" aria-modal="true" aria-labelledby="ledger-dialog-title" tabIndex={-1} ref={dialogRef}>
         {mutation.kind === 'edit' ? <form onSubmit={confirmEdit}>
-          <h3 id="ledger-dialog-title">Xác nhận sửa giao dịch {mutation.entry.symbol}</h3>
-          <p className="muted-text">Toàn bộ timeline sẽ được kiểm tra lại trước khi lưu.</p>
+          <div className="ledger-dialog-header">
+            <div><span className="eyebrow accent">NHẬT KÝ GIAO DỊCH</span><h3 id="ledger-dialog-title">Sửa giao dịch {mutation.entry.symbol}</h3><p>Điều chỉnh thông tin đã ghi nhận trong danh mục.</p></div>
+            <span className="chip neutral ledger-dialog-symbol">{mutation.entry.symbol}</span>
+          </div>
+          <p className="ledger-dialog-note">Toàn bộ timeline sẽ được kiểm tra lại trước khi lưu để không tạo vị thế âm.</p>
           <div className="ledger-edit-grid">
             <label>Loại giao dịch<select name="side" value={mutation.form.side} disabled={mutation.status === 'saving' || mutation.entry.source === 'recommendation'} onChange={updateField}><option value="BUY">Mua</option><option value="SELL">Bán</option></select></label>
             <label>Số lượng<input name="quantity" type="number" min="0.000001" step="any" required disabled={mutation.status === 'saving'} value={mutation.form.quantity} onChange={updateField} /></label>
@@ -188,7 +191,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
             <label>Phí (VND)<input name="fees" type="number" min="0" step="any" required disabled={mutation.status === 'saving'} value={mutation.form.fees} onChange={updateField} /></label>
             <label className="ledger-edit-time">Thời điểm giao dịch<input name="traded_at" type="datetime-local" required disabled={mutation.status === 'saving'} value={mutation.form.traded_at} onChange={updateField} /></label>
           </div>
-          {mutation.entry.source === 'recommendation' ? <small>Giao dịch từ Đề xuất phải giữ loại Mua để bảo toàn nguồn đánh giá.</small> : null}
+          {mutation.entry.source === 'recommendation' ? <small className="ledger-dialog-help">Giao dịch từ Đề xuất phải giữ loại Mua để bảo toàn nguồn đánh giá.</small> : null}
           {mutation.error ? <p className="error-text" role="alert">{mutation.error}</p> : null}
           <div className="ledger-dialog-actions"><button className="ghost-btn" type="button" disabled={mutation.status === 'saving'} onClick={() => setMutation(null)}>Hủy</button><button className="primary-btn" type="submit" disabled={mutation.status === 'saving'}>{mutation.status === 'saving' ? 'Đang kiểm tra…' : 'Xác nhận sửa'}</button></div>
         </form> : <>

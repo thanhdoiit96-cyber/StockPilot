@@ -3344,3 +3344,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Thêm `RUN_COMMANDS.md` ở thư mục gốc với các lệnh PowerShell cho cài dependency, migrations/seed có điều kiện, Vnstock worker, backend, frontend production/development và các nhóm kiểm thử.
 - README và INDEX chỉ thêm liên kết điều hướng. `QUICK_START.md` tiếp tục là nguồn cấu hình/vận hành chuẩn; bảng lệnh mới không thay thế hướng dẫn quyền PostgreSQL, biến môi trường hoặc xử lý lỗi ở đó.
 - Đây là thay đổi tài liệu; đã đối chiếu tên script với `backend/package.json`, `frontend/package.json` và worker hiện hành, không chạy lại test ứng dụng.
+
+## Đồng bộ style form sửa Nhật ký giao dịch — 2026-10-02
+
+- Form sửa giao dịch trong `PortfolioLedger` nay dùng header có nhãn ngữ cảnh/mã cổ phiếu, note kiểm tra timeline, field grid và footer action tách rõ; không thay đổi payload hoặc lifecycle xác nhận mutation.
+- Input/select nhận cùng dark surface, border, chiều cao, typography và focus ring với form Ghi nhận giao dịch. Disabled state rõ; cảnh báo giao dịch từ Đề xuất dùng help style riêng. Mobile dùng một cột, modal neo đáy trong viewport và hai action chia đều.
+- Regression sửa giao dịch kiểm tra thêm màu nền control để ngăn quay lại form trắng. Kiểm chứng: frontend unit/service/encoding **33/33**, Danh mục + page audit desktop/mobile **15/15**, production safe-build/bundle integrity pass với artifact `index-zY4_gSAR.js`.
+- Điểm tiếp tục không đổi: coverage EOD toàn thị trường còn thiếu do provider reset; UI Nhật ký đã có style đồng bộ cho add/edit/import/delete và không cần refactor presentation thêm khi chưa có vấn đề usability mới.
