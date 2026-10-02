@@ -1017,14 +1017,26 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .ledger-row-actions { display: flex; gap: 6px; }
 .ledger-row-actions .danger { color: var(--danger); }
 .ledger-dialog-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: rgba(2, 6, 23, .78); backdrop-filter: blur(4px); }
-.ledger-dialog { width: min(560px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 22px; border: 1px solid rgba(148, 163, 184, .28); border-radius: 16px; outline: none; background: var(--surface); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
-.ledger-dialog h3 { margin: 0 0 8px; }
+.ledger-dialog { width: min(620px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: 0; border: 1px solid rgba(148, 163, 184, .28); border-radius: 16px; outline: none; background: var(--surface); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
+.ledger-dialog > form, .ledger-dialog > h3, .ledger-dialog > p, .ledger-dialog > .ledger-dialog-actions { margin-inline: 22px; }
+.ledger-dialog > form { margin: 0; }
+.ledger-dialog > h3 { margin-top: 22px; }
+.ledger-dialog h3 { margin: 0 0 6px; }
 .ledger-dialog p { line-height: 1.55; }
-.ledger-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 18px 0 10px; }
-.ledger-edit-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
-.ledger-edit-grid input, .ledger-edit-grid select { width: 100%; }
+.ledger-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 22px 17px; border-bottom: 1px solid rgba(148, 163, 184, .16); background: linear-gradient(135deg, rgba(20, 184, 166, .08), rgba(30, 41, 59, .18)); }
+.ledger-dialog-header .eyebrow { display: block; margin-bottom: 7px; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.ledger-dialog-header p { margin: 0; color: var(--muted); font-size: 12px; }
+.ledger-dialog-symbol { flex: 0 0 auto; margin-top: 2px; }
+.ledger-dialog-note { margin: 16px 22px 0; padding: 10px 12px; border: 1px solid rgba(94, 234, 212, .2); border-radius: 9px; color: var(--muted); background: rgba(20, 184, 166, .06); font-size: 11px; }
+.ledger-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 22px 10px; }
+.ledger-edit-grid label { display: grid; align-content: start; gap: 7px; color: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .01em; }
+.ledger-edit-grid input, .ledger-edit-grid select { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid #40516b; border-radius: 8px; color: #f8fafc; background: #17243a; font: inherit; font-weight: 500; color-scheme: dark; }
+.ledger-edit-grid input:focus, .ledger-edit-grid select:focus { border-color: var(--primary); outline: 2px solid rgba(94, 234, 212, .16); outline-offset: 1px; }
+.ledger-edit-grid input:disabled, .ledger-edit-grid select:disabled { cursor: not-allowed; opacity: .62; }
 .ledger-edit-time { grid-column: 1 / -1; }
-.ledger-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.ledger-dialog-help { display: block; margin: 4px 22px 0; color: var(--warning); line-height: 1.5; }
+.ledger-dialog form > .error-text { margin: 12px 22px 0; }
+.ledger-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding: 16px 22px 20px; border-top: 1px solid rgba(148, 163, 184, .16); background: rgba(15, 23, 42, .24); }
 .danger-btn { border: 1px solid rgba(248, 113, 113, .5); border-radius: 9px; padding: 9px 14px; color: #fff; background: rgba(185, 28, 28, .9); cursor: pointer; }
 .danger-btn:hover:not(:disabled) { background: rgb(220, 38, 38); }
 .danger-btn:disabled { cursor: not-allowed; opacity: .55; }
@@ -1033,7 +1045,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .ledger-side.sell { color: var(--danger); background: rgba(248, 113, 113, .08); }
 .portfolio-ledger-toggle { margin-top: 12px; }
 .portfolio-ledger-empty { margin: 16px 0 0; }
-@media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } .ledger-edit-grid { grid-template-columns: 1fr; } .ledger-edit-time { grid-column: auto; } }
+@media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } .ledger-dialog-backdrop { align-items: end; padding: 12px; } .ledger-dialog { max-height: calc(100vh - 24px); border-radius: 16px 16px 12px 12px; } .ledger-dialog-header { padding: 18px 16px 15px; } .ledger-dialog-note { margin-inline: 16px; } .ledger-edit-grid { grid-template-columns: 1fr; margin-inline: 16px; } .ledger-edit-time { grid-column: auto; } .ledger-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; padding-inline: 16px; } .ledger-dialog-actions button { width: 100%; } }
 .panel-header { gap: 14px; }
 .panel-header > div:first-child { min-width: 0; }
 .detail-symbol-search { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 14px 16px; }
