@@ -3282,3 +3282,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - 401 đi qua lifecycle thu hồi phiên hiện có. Lỗi mạng/5xx giữ dashboard chưa mount và hiển thị màn hình lỗi có **Thử xác minh lại** hoặc **Đăng nhập lại**; retry thành công mới cho tải Watchlist/Danh mục. Login/register vừa thành công được đánh dấu verified ngay, không tạo request `/auth/me` thừa.
 - Kiểm chứng: frontend unit/service/encoding **31/31**; production safe-build và bundle integrity pass với artifact `index-9kolQJXu.js`; targeted auth cùng page audit desktop/mobile **8/8** và toàn bộ Playwright **75/75** pass.
 - Điểm tiếp tục: đồng bộ logout/session-expired giữa nhiều tab bằng `storage` event để tab khác dọn state ngay, không chờ request 401 tiếp theo. Chuyển token sang cookie HttpOnly và password recovery vẫn cần contract backend.
+
+## Đồng bộ thu hồi phiên giữa nhiều tab — 2026-10-02
+
+- App lắng nghe `storage` event cho đúng khóa `market-auth`. Khi một tab đăng xuất hoặc thu hồi token sau 401, mọi tab cùng origin lập tức chạy chung `endSession`: xóa Watchlist/Danh mục, email/mật khẩu và auth state, unmount dashboard rồi về form đăng nhập mà không chờ request bảo vệ tiếp theo.
+- Tab nguồn giữ live confirmation **Bạn đã đăng xuất an toàn**; tab nhận hiển thị **Phiên đăng nhập đã kết thúc ở một tab khác**. Listener không phản ứng với khóa storage khác và được dọn khi component unmount.
+- Kiểm chứng: frontend unit/service/encoding **31/31**; production safe-build và bundle integrity pass với artifact `index-DLNeh67U.js`; targeted auth cùng page audit desktop/mobile **9/9** và toàn bộ Playwright **76/76** pass. E2E mở hai page trong cùng browser context, xác minh cả hai dashboard trước logout rồi kiểm tra tab thứ hai dọn private UI/storage ngay.
+- Điểm tiếp tục: xử lý thay thế phiên ở tab khác (đăng nhập tài khoản/token mới) bằng validation và `/api/auth/me` gate trước khi chuyển identity; payload storage không hợp lệ phải thu hồi thay vì được áp dụng. HttpOnly cookie/password recovery vẫn chờ backend contract.
