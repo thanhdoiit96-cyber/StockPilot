@@ -62,11 +62,13 @@ Role ứng dụng chỉ cần `CONNECT` trên database và `USAGE, CREATE` trên
 
 Hợp đồng và ingestion dữ liệu thị trường được mô tả tại [docs/MARKET_DATA_CONTRACT.md](../docs/MARKET_DATA_CONTRACT.md). Mã ở `src/market-data/` gồm fixture nội bộ và `VnstockEodAdapter`. Adapter Vnstock chỉ nhận `fetcher`/bridge do môi trường cung cấp; chưa tự gọi mạng và mặc định license là nghiên cứu cá nhân.
 
-Ingestion thật chạy bằng `npm run ingest:vnstock` (hoặc `node scripts/ingest-vnstock-eod.cjs`). Lệnh đọc các mã trong bảng `stocks` nếu không đặt `VNSTOCK_SYMBOLS`, dùng `VNSTOCK_FROM`/`VNSTOCK_TO` nếu có, ghi qua `MarketDataIngestionService` và xóa cache cổ phiếu sau khi dữ liệu thay đổi. Scheduler trong `app.js` bật mặc định để không bỏ sót phiên EOD; đặt `VNSTOCK_EOD_ENABLED=false` để tắt rõ ràng. Cron mặc định là `30 10 * * 1-5` theo `Asia/Ho_Chi_Minh`.
+Ingestion thật chạy bằng `npm run ingest:vnstock` (hoặc `node scripts/ingest-vnstock-eod.cjs`). Lệnh đọc các mã đang `listed` trong bảng `stocks` nếu không đặt `VNSTOCK_SYMBOLS`, dùng `VNSTOCK_FROM`/`VNSTOCK_TO` nếu có, ghi qua `MarketDataIngestionService` và xóa cache cổ phiếu sau khi dữ liệu thay đổi. Scheduler trong `app.js` bật mặc định để không bỏ sót phiên EOD; đặt `VNSTOCK_EOD_ENABLED=false` để tắt rõ ràng. Cron mặc định là `30 15 * * 1-5` theo `Asia/Ho_Chi_Minh`.
 
 Trạng thái lần chạy gần nhất có ở `GET /api/market-data/ingestion/latest`. Retry bridge dùng `VNSTOCK_RETRIES` (2), timeout `VNSTOCK_TIMEOUT_MS` (45000) và backoff `VNSTOCK_BACKOFF_MS` (500); mỗi provider/source/interval chỉ có một run active trong process.
 
 Nếu worker Vnstock trả HTTP lỗi cho EOD/intraday, bridge giữ lại tối đa 400 ký tự mô tả upstream trong log để hỗ trợ chẩn đoán; query parameter chứa `api_key`, `token` hoặc `key` được che trước khi ghi log.
+
+Python worker dùng một semaphore chung cho listing, EOD, intraday và price board. `VNSTOCK_WORKER_MAX_CONCURRENCY` mặc định là 1 và bị chặn trong khoảng 1–4; tăng giá trị chỉ khi đã đo upstream ổn định. HTTP server vẫn nhận request đồng thời nhưng provider calls được xếp hàng qua gate này. Client ngắt kết nối không tạo traceback BrokenPipe/ConnectionAborted trong log; health trả `max_concurrency` đang cấu hình.
 
 `npm run verify:quote-freshness` đo tuổi `observed_at` cho tối đa 30 mã (mặc định FPT/SSI/VCB/HPG/BSR) qua API ứng dụng và ghi JSON evidence. Chỉ áp ngưỡng stale khi đang trong phiên sáng/chiều theo giờ Việt Nam; ngoài giờ vẫn lưu tuổi quote nhưng không kết luận stale. Có thể đổi danh sách bằng `QUOTE_PROBE_SYMBOLS` và API bằng `QUOTE_API_URL`.
 

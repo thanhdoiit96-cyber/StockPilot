@@ -3391,3 +3391,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Backend bổ sung cờ `last_run_failed` từ evidence nhưng không đưa raw error lên HTML. Nếu phiên chưa có evidence, banner nói rõ thay vì chỉ lặp số mã thiếu.
 - Lượt E2E đầu thất bại vì Playwright preview dùng dist cũ sau khi safe-build trong sandbox bị `spawn EPERM`; safe-build đã phục hồi dist đúng thiết kế. Chạy build ngoài sandbox thành công với artifact `index-C7-jxeKt.js`, bundle integrity đạt; chạy lại targeted quality banner **1/1** đạt.
 - Backend đã restart để nạp `last_run_failed`; frontend preview cổng 4173 tiếp tục phục vụ dist mới. Điểm tiếp tục vẫn là runtime evidence của phiên giao dịch kế tiếp cho universe/fairness; UI đã sẵn sàng phản ánh kết quả đó.
+
+## Tuần tự hóa provider trong Vnstock worker — 2026-10-02
+
+- Node quote service đã dùng concurrency 1 nhưng Python `ThreadingHTTPServer` vẫn cho EOD, price board, listing và probe từ các caller khác chạm upstream đồng thời. Thêm semaphore dùng chung `VNSTOCK_WORKER_MAX_CONCURRENCY`, mặc định 1 và giới hạn 1–4, bao quanh mọi provider call; HTTP health không bị khóa và trả cấu hình hiện hành.
+- Gom việc gửi JSON vào một helper có `Content-Length`; client đóng socket sớm nay được bỏ qua cho `BrokenPipeError`, `ConnectionAbortedError`, `ConnectionResetError`, tránh traceback kép từng thấy trong log mà không che lỗi upstream trong payload.
+- Kiểm chứng syntax Python bằng `compile()` không tạo file; restart worker thành công. Smoke hai request đồng thời EOD FPT và price board HPG đều HTTP 200, lần lượt 2/1 rows, không lỗi; health trả `max_concurrency=1`. Đây là smoke read-only, chưa phải benchmark tải hoặc bằng chứng provider hết reset.
+- Điểm tiếp tục: giữ concurrency 1 qua phiên giao dịch kế tiếp và đối chiếu số `fetch failed`, thời lượng quote cùng coverage evidence; chỉ tăng khi có số đo chứng minh không làm upstream kém ổn định.

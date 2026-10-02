@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 os.environ.setdefault("VNSTOCK_TELEMETRY", "off")
@@ -11,13 +12,29 @@ for _proxy_key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "http
         os.environ.pop(_proxy_key, None)
 from vnstock import Listing
 from vnstock.api.quote import Quote
-from vnstock_price_board import price_board
+from vnstock_price_board import price_board as fetch_price_board
+
+
+def worker_concurrency():
+    try:
+        return min(4, max(1, int(os.environ.get("VNSTOCK_WORKER_MAX_CONCURRENCY", "1"))))
+    except ValueError:
+        return 1
+
+
+PROVIDER_GATE = threading.BoundedSemaphore(worker_concurrency())
+
+
+def price_board(request):
+    with PROVIDER_GATE:
+        return fetch_price_board(request)
 
 
 def listing(request):
     source = str(request.get("source") or "VCI").upper()
-    with contextlib.redirect_stdout(io.StringIO()):
-        frame = Listing(source=source, show_log=False).symbols_by_exchange()
+    with PROVIDER_GATE:
+        with contextlib.redirect_stdout(io.StringIO()):
+            frame = Listing(source=source, show_log=False).symbols_by_exchange()
     rows = []
     for row in frame.to_dict(orient="records"):
         symbol = str(row.get("symbol") or row.get("ticker") or "").strip().upper()
@@ -34,8 +51,9 @@ def eod(request):
         if not symbol:
             continue
         try:
-            with contextlib.redirect_stdout(io.StringIO()):
-                frame = Quote(source=source, symbol=symbol, show_log=False).history(start=request.get("from"), end=request.get("to"), interval="1D")
+            with PROVIDER_GATE:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    frame = Quote(source=source, symbol=symbol, show_log=False).history(start=request.get("from"), end=request.get("to"), interval="1D")
             for row in frame.to_dict(orient="records"):
                 rows.append({"symbol": symbol, "date": str(row.get("time"))[:10], "open": row.get("open"), "high": row.get("high"), "low": row.get("low"), "close": row.get("close"), "volume": row.get("volume")})
         except Exception as error:
@@ -61,10 +79,11 @@ def intraday(request):
         if not symbol:
             continue
         try:
-            with contextlib.redirect_stdout(io.StringIO()):
-                frame = Quote(source=source, symbol=symbol, show_log=False).intraday(
-                    page_size=int(request.get("page_size") or 100), page=1
-                )
+            with PROVIDER_GATE:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    frame = Quote(source=source, symbol=symbol, show_log=False).intraday(
+                        page_size=int(request.get("page_size") or 100), page=1
+                    )
             for row in frame.to_dict(orient="records"):
                 rows.append({
                     "symbol": symbol,
@@ -83,9 +102,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
-            self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(b'{"ok":true,"provider":"vnstock"}')
+            self.send_json(200, {"ok": True, "provider": "vnstock", "max_concurrency": worker_concurrency()})
         else:
             self.send_error(404)
+
+    def send_json(self, status, payload):
+        body = json.dumps(payload, ensure_ascii=False, default=str).encode()
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+            return
 
     def do_POST(self):
         try:
@@ -93,11 +123,9 @@ class Handler(BaseHTTPRequestHandler):
             payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
-            body = json.dumps(payload, ensure_ascii=False, default=str).encode()
-            self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+            self.send_json(200, payload)
         except Exception as error:
-            body = json.dumps({"rows": [], "errors": [{"error": str(error)}]}).encode()
-            self.send_response(500); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
+            self.send_json(500, {"rows": [], "errors": [{"error": str(error)}]})
 
 
 if __name__ == "__main__":

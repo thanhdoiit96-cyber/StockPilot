@@ -252,9 +252,12 @@ Sau khi sửa worker/API, khởi động lại cả hai tiến trình để nạ
 $env:HTTP_PROXY = ''
 $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
+$env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
 cd D:\MyProject\backend
 python scripts/vnstock_worker.py
 ~~~
+
+Giữ concurrency 1 mặc định vì worker phục vụ nhiều caller nhưng upstream VCI dễ reset khi có request đồng thời. Chỉ tăng tối đa 4 sau khi đã đo lỗi và latency trong phiên giao dịch.
 
 Backend cần `VNSTOCK_WORKER_URL=http://127.0.0.1:8787`. Chạy backend bằng `npm.cmd start` trong terminal riêng. Build và phục vụ UI từ thư mục frontend:
 
