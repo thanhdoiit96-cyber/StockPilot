@@ -18,13 +18,24 @@
     const lastRunAt = time(retry.last_run_at)
     const lastRunType = retry.last_run_mode === 'gap_retry' ? 'bù thiếu' : 'EOD chính'
     const lastRunStatus = retry.last_run_failed ? 'gặp lỗi' : retry.last_run_complete ? 'đã hoàn tất' : 'chưa hoàn tất'
+    const priority = retry.last_run_trade_priority
+    const finite = value => Number.isFinite(Number(value)) ? Number(value) : null
+    const priorityText = retry.last_run_mode !== 'gap_retry' || !priority ? ''
+      : priority.enabled === false
+        ? 'Ưu tiên theo giao dịch đang tắt; lượt bù thiếu dùng thứ tự công bằng.'
+        : priority.had_error
+          ? finite(priority.batches)
+            ? `Price board chưa đủ: ${finite(priority.failed_batches) || 0}/${finite(priority.batches)} lô lỗi; scheduler giữ kết quả hợp lệ và dùng fallback công bằng cho phần còn lại.`
+            : 'Price board không khả dụng; scheduler đã dùng thứ tự fallback công bằng.'
+          : `Price board: ${finite(priority.matched) || 0} gap có giao dịch/${finite(priority.probed) || 0} mã kiểm tra; ${finite(retry.last_run_selected_traded) || 0}/${finite(retry.last_run_selected) || 0} mã được ưu tiên trong lượt.`
     const operationalText = runtime.running
       ? `Đang chạy ${runtime.phase === 'gap_retry' ? 'bù thiếu' : 'EOD chính'} cho phiên ${runtime.session_date || data.session_date}.`
       : lastRunAt
         ? `Lượt ${lastRunType} gần nhất ${lastRunAt} · ${lastRunStatus}.${data.ready ? '' : ` Hiện còn ${data.missing} mã.`}`
         : data.ready ? '' : `${data.missing} mã còn thiếu; chưa có evidence job cho phiên này.`
     const retryText = operationalText ? `<small style="width:100%;color:#9ca3af">${operationalText}</small>` : ''
-    banner.innerHTML = `<strong style="color:${data.ready ? '#4ade80' : '#fbbf24'}">${data.ready ? 'Dữ liệu EOD đã đủ' : 'Dữ liệu EOD chưa đủ'}</strong><span style="color:#9ca3af">Phiên ${data.session_date}: ${data.covered}/${data.listed} mã có dữ liệu.</span>${retryText}`
+    const priorityDetail = priorityText ? `<small data-eod-trade-priority style="width:100%;color:#9ca3af">${priorityText}</small>` : ''
+    banner.innerHTML = `<strong style="color:${data.ready ? '#4ade80' : '#fbbf24'}">${data.ready ? 'Dữ liệu EOD đã đủ' : 'Dữ liệu EOD chưa đủ'}</strong><span style="color:#9ca3af">Phiên ${data.session_date}: ${data.covered}/${data.listed} mã có dữ liệu.</span>${retryText}${priorityDetail}`
   }
   let loading = false
   let attempted = false
