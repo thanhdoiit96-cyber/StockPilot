@@ -51,7 +51,7 @@ async function prioritizeMissingSymbols(sequelize, sessionDate, symbols, limit) 
   return rows.map(row => row.code);
 }
 
-function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 17-19 * * 1-5' } = {}) {
+function startVnstockEodJob({ cacheService, logger = console, schedule = process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5', retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5' } = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
   // fall back to intraday-only charts. Set VNSTOCK_EOD_ENABLED=false to opt out.
   if (process.env.VNSTOCK_EOD_ENABLED === 'false') return null;

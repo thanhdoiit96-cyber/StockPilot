@@ -34,7 +34,7 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | POST | /api/cache/clear | Xóa toàn bộ cache; cần khóa quản trị |
 | POST | /api/stocks/cache/clear | Xóa toàn bộ cache; cần khóa quản trị |
 
-GET dữ liệu cổ phiếu trả { success, data, source }; source là cache hoặc database. Không áp dụng định dạng này cho mọi endpoint. Cổ phiếu không tồn tại trả 404; lỗi query trả 500; body cập nhật không hợp lệ trả 400.
+GET dữ liệu cổ phiếu trả { success, data, source }; source là cache hoặc database. Không áp dụng định dạng này cho mọi endpoint. Khi quote intraday không có, danh sách tính `change` từ giá tham chiếu do provider lưu hoặc hai phiên EOD gần nhất; nếu thiếu giá gốc thì giữ `null` thay vì suy diễn. Cổ phiếu không tồn tại trả 404; lỗi query trả 500; body cập nhật không hợp lệ trả 400.
 
 `GET /api/stocks/export.csv` trả `text/csv; charset=utf-8` có BOM và chống formula injection. Query `columns=name,volume` chọn hai cột tùy chọn; Mã, Giá EOD và Nguồn dữ liệu luôn có. Response khai báo `X-Export-Count`, `X-Export-Limit=2000` và `X-Export-Truncated`; endpoint chỉ dùng giá EOD đã lưu, không gọi quote provider và không tải universe vào state frontend. Quyền tải/redistribute dữ liệu vẫn phải tuân theo license provider của môi trường triển khai.
 
@@ -130,7 +130,7 @@ Snapshot generation joins verified `ExternalFactor` rows by symbol (and global f
 
 The EOD scheduler audits persisted `vnstock` / `1d` rows for the target Vietnam session, then runs one additional ingestion pass for missing symbols for that exact date. Monday targets Friday; exchange holidays are not inferred and may remain unverified gaps. The existing daily cron is unchanged. Runs cannot overlap within the same server process; this is not a distributed lock.
 
-The scheduler runs at `30 16 * * 1-5` in `Asia/Ho_Chi_Minh` by default, after the regular session closes. It rolls Saturday/Sunday and dates listed in `VNSTOCK_HOLIDAYS` (comma-separated `YYYY-MM-DD` values) back to the latest completed weekday. Configure the holiday list for each calendar year so Tet, Hung Kings Commemoration, and observed national holidays do not trigger a false current-session ingest. A provider outage remains an explicit coverage gap and is not silently treated as a holiday.
+The scheduler runs at `30 15 * * 1-5` in `Asia/Ho_Chi_Minh` by default, 30 minutes after the regular session closes. Gap retries run every 15 minutes from 16:00 through 19:59 and fetch only missing symbols. It rolls Saturday/Sunday and dates listed in `VNSTOCK_HOLIDAYS` (comma-separated `YYYY-MM-DD` values) back to the latest completed weekday. Configure the holiday list for each calendar year so Tet, Hung Kings Commemoration, and observed national holidays do not trigger a false current-session ingest. A provider outage remains an explicit coverage gap and is not silently treated as a holiday.
 
 Sequential ingestion batches pause for `VNSTOCK_EOD_BATCH_DELAY_MS` (default 1000 ms). Exception retries use exponential backoff from `VNSTOCK_EOD_RETRY_DELAY_MS` (default 1500 ms), capped at 30 seconds. Partial-response fallback also waits before each symbol request. Scheduled evidence is written to `backend/evidence/eod-scheduled-<session>-<timestamp>.json`, including before/after coverage and missing symbols. Missing records are not proof of no trading. `audit:chart-history` now counts only Vnstock EOD, excluding intraday observations.
 

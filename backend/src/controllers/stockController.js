@@ -92,8 +92,8 @@ module.exports = function(cacheService) {
         provider: health,
         eod_retry: {
           mode: 'scheduled',
-          schedule: process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5',
-          gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 17-19 * * 1-5',
+          schedule: process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5',
+          gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
           configured_passes: retryPasses,
           last_run_at: lastEodRun?.checked_at || null,
           last_run_passes: Array.isArray(lastEodRun?.retries) ? lastEodRun.retries.length : 0,
@@ -167,6 +167,15 @@ module.exports = function(cacheService) {
   const normalizeStock = (stock, latestSessionDate = null) => {
     const priceRecord = stock.prices?.[0];
     const latestPrice = priceRecord?.close != null ? Number(priceRecord.close) : priceRecord?.price != null ? Number(priceRecord.price) : null;
+    const previousRecord = stock.prices?.[1];
+    const previousPrice = priceRecord?.reference_price != null
+      ? Number(priceRecord.reference_price)
+      : previousRecord?.close != null
+        ? Number(previousRecord.close)
+        : previousRecord?.price != null ? Number(previousRecord.price) : null;
+    const change = Number.isFinite(latestPrice) && Number.isFinite(previousPrice) && previousPrice > 0
+      ? Number((((latestPrice - previousPrice) / previousPrice) * 100).toFixed(4))
+      : null;
     const observedAt = priceRecord?.observed_at || priceRecord?.updated_at || null;
     const dataSessionDate = observedAt ? new Date(observedAt).toISOString().slice(0, 10) : null;
 
@@ -184,7 +193,7 @@ module.exports = function(cacheService) {
       price: latestPrice,
       price_updated_at: observedAt,
       price_observed_at: observedAt,
-      change: null,
+      change,
       volume: priceRecord?.volume != null ? Number(priceRecord.volume) : null,
       data_source: priceRecord?.provider || null,
       data_fetched_at: priceRecord?.fetched_at || null,
@@ -267,7 +276,7 @@ module.exports = function(cacheService) {
       if (exchange) filters.push({ exchange });
       if (coverage) filters.push(Stock.sequelize.literal(`(SELECT COUNT(*) FROM stock_prices AS coverage_prices WHERE coverage_prices.stock_id = "Stock"."id") ${coverage === 'ready' ? '>=' : '<'} 50`));
       const where = filters.length === 1 ? filters[0] : filters.length ? { [Op.and]: filters } : undefined;
-      const cacheKey = `v9:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${exchange}:${query.toLowerCase()}:${pinned.join(',')}`;
+      const cacheKey = `v10:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${exchange}:${query.toLowerCase()}:${pinned.join(',')}`;
       let cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success: true, data: cached.data, pagination: cached.pagination, source: 'cache' });
       const latestValue = field => Stock.sequelize.literal(`(SELECT COALESCE(sp.${field === 'price' ? 'close' : field}, sp.${field === 'price' ? 'price' : field}) FROM stock_prices AS sp WHERE sp.stock_id = "Stock"."id" AND sp.observed_at IS NOT NULL ORDER BY sp.observed_at DESC NULLS LAST, sp.id DESC LIMIT 1)`);
@@ -275,7 +284,7 @@ module.exports = function(cacheService) {
       const order = sort === 'price' || sort === 'volume' ? [[Stock.sequelize.literal(`CASE WHEN ${latestValue(sort).val} IS NULL THEN 1 ELSE 0 END`), 'ASC'], [orderColumn, direction]] : [[orderColumn, direction]];
       if (pinned.length) order.unshift([Stock.sequelize.literal(`CASE WHEN "Stock"."code" IN (${pinned.map(code => `'${code}'`).join(',')}) THEN 0 ELSE 1 END`), 'ASC']);
       if (sort !== 'code') order.push(['code', 'ASC']);
-      const queryOptions = { where, include: [{ association: 'prices', separate: true, where: { observed_at: { [Op.not]: null } }, limit: 1, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] }], order, limit: pageSize, offset: (page - 1) * pageSize, distinct: true };
+      const queryOptions = { where, include: [{ association: 'prices', separate: true, where: { observed_at: { [Op.not]: null } }, limit: 2, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] }], order, limit: pageSize, offset: (page - 1) * pageSize, distinct: true };
       let latestSessionDate = null;
       try {
         const [sessionRows] = await Stock.sequelize.query("SELECT MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)::text AS session_date FROM stock_prices WHERE provider='vnstock' AND interval='1d' AND observed_at IS NOT NULL");

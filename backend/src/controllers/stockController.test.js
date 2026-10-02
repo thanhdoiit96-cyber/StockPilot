@@ -55,8 +55,19 @@ describe('stock API', () => {
     const result = await request(app).get('/api/stocks');
     expect(result.body.data[0]).toMatchObject({ price: 50.25, change: null, volume: null, exchange: 'UPCOM', listing_status: 'listed' });
     const include = Stock.findAll.mock.calls[0][0].include[0];
-    expect(include).toMatchObject({ association: 'prices', separate: true, limit: 1, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] });
+    expect(include).toMatchObject({ association: 'prices', separate: true, limit: 2, order: [['observed_at', 'DESC NULLS LAST'], ['updated_at', 'DESC NULLS LAST'], ['id', 'DESC']] });
     expect(include.where.observed_at[Op.not]).toBe(null);
+  });
+  test('derives EOD change from the previous stored session when intraday is unavailable', async () => {
+    Stock.findAll.mockResolvedValue([{
+      id: '123', code: 'FPT', exchange: 'HSX', prices: [
+        { close: '62100', observed_at: '2026-10-02T00:00:00Z' },
+        { close: '62700', observed_at: '2026-10-01T00:00:00Z' }
+      ]
+    }]);
+    const result = await request(app).get('/api/stocks');
+    expect(result.status).toBe(200);
+    expect(result.body.data[0]).toMatchObject({ price: 62100, change: -0.9569, data_session_date: '2026-10-02' });
   });
   test('filters stock lists by supported exchange and includes it in pagination', async () => {
     Stock.findAll.mockResolvedValue([]);

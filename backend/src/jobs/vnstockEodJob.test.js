@@ -25,7 +25,8 @@ describe('vnstock EOD scheduler', () => {
   test('starts by default so daily EOD rows cannot be silently skipped', () => {
     delete process.env.VNSTOCK_EOD_ENABLED;
     expect(startVnstockEodJob({})).toBeTruthy();
-    expect(cron.schedule).toHaveBeenCalledWith('30 16 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
+    expect(cron.schedule).toHaveBeenCalledWith('30 15 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
+    expect(cron.schedule).toHaveBeenCalledWith('*/15 16-19 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
   });
 
   test('supports an explicit opt-out', () => {
