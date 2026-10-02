@@ -39,7 +39,7 @@ test('expired session clears stored credentials and explains why login is requir
   await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'expired-token', user: { email: 'investor@example.com', role: 'user' } })))
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
-    if (path === '/api/watchlist' || path === '/api/portfolio') {
+    if (path === '/api/auth/me' || path === '/api/watchlist' || path === '/api/portfolio') {
       return route.fulfill({ status: 401, json: { success: false, message: 'Invalid or expired token' } })
     }
     return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
@@ -79,4 +79,50 @@ test('invalid successful auth response stays on the form and is never persisted'
   await expect(email).toHaveValue('investor@example.com')
   await expect(password).toHaveValue('password123')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+})
+
+test('stored session is verified before the dashboard can render', async ({ page }) => {
+  let releaseVerification
+  await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'valid-token', user: { email: 'investor@example.com', role: 'user' } })))
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') {
+      await new Promise(resolve => { releaseVerification = resolve })
+      return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    }
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await expect(page.getByText('Đang xác minh phiên đăng nhập...')).toBeVisible()
+  await expect(page.locator('.dashboard-shell')).toHaveCount(0)
+  await expect.poll(() => typeof releaseVerification).toBe('function')
+  releaseVerification()
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  await expect(page.getByText('Đang xác minh phiên đăng nhập...')).toHaveCount(0)
+})
+
+test('session verification failure keeps private UI hidden and can retry', async ({ page }) => {
+  let attempts = 0
+  await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'valid-token', user: { email: 'investor@example.com', role: 'user' } })))
+  await page.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') {
+      attempts += 1
+      return attempts === 1
+        ? route.fulfill({ status: 503, json: { success: false, message: 'Dịch vụ xác thực tạm thời gián đoạn' } })
+        : route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    }
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Chưa thể xác minh đăng nhập' })).toBeVisible()
+  await expect(page.locator('.dashboard-shell')).toHaveCount(0)
+  await expect(page.getByRole('alert')).toContainText('Dịch vụ xác thực tạm thời gián đoạn')
+  await page.getByRole('button', { name: 'Thử xác minh lại' }).click()
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  expect(attempts).toBe(2)
 })
