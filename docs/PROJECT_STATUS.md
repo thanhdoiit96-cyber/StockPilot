@@ -3212,3 +3212,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Câu trả lời rule-based dùng đúng dữ liệu đã có trên client: insight và external factors của mã, các vị thế đã xác thực, hoặc universe/quote coverage hiện tại. Citation gắn vào từng phản hồi; URL chỉ trở thành link ngoài khi qua kiểm tra `http:`/`https:`, còn ledger nội bộ được ghi nhãn nguồn nhưng không tạo link giả. Không gọi generative model và không tuyên bố đây là khuyến nghị mua bán.
 - Unit test phát hiện `Number(null) === 0` từng làm quote rỗng bị tính là hợp lệ; coverage Advisor nay chỉ đếm giá hữu hạn lớn hơn 0. Kiểm chứng: frontend unit/service/encoding **25/25**, production safe-build và bundle integrity pass với artifact `index--aeN_v89.js`; page audit desktop/mobile **2/2** và toàn bộ Playwright **68/68** pass.
 - Điểm tiếp tục: quản lý nhiều hội thoại chỉ triển khai sau khi có API persistence và chính sách retention; ưu tiên kế tiếp vẫn là historical volume breadth/divergence hoặc chart benchmark khi contract dữ liệu tương ứng sẵn sàng.
+
+## Mục lục dính cho trang Chi tiết mã — 2026-10-02
+
+- Historical volume breadth/divergence và chart benchmark vẫn thiếu series benchmark/index cùng phiên và contract continuity/gap, nên không tạo dữ liệu so sánh suy diễn. Chọn phần độc lập còn lại của Chi tiết: thêm `DetailSectionNav` do React sở hữu cho **Tổng quan / Biểu đồ / Phân tích**.
+- Mỗi action cuộn mượt tới section, chuyển focus lập trình tới vùng đích và cập nhật `aria-current=location`; cả ba đích có `scroll-margin` để không bị thanh dính che. Trên mobile, action chia đều chiều rộng và nằm dưới navigation chính, không làm tràn document. Không thay đổi lifecycle tải chi tiết hoặc lazy analysis.
+- Kiểm chứng: frontend unit/service/encoding **25/25**; production safe-build và bundle integrity pass với artifact `index-C9uf6jbM.js`; regression loading/detail cùng page audit desktop/mobile **25/25** và toàn bộ Playwright **68/68** pass.
+- Điểm tiếp tục: nâng chart Chi tiết bằng tooltip/focus bàn phím trên các điểm dữ liệu; benchmark chỉ được mở khi backend có series chỉ số cùng lịch phiên và quy tắc gap rõ ràng.
