@@ -55,3 +55,11 @@ test('expired session clears stored credentials and explains why login is requir
   await expect(page.locator('.auth-page')).toBeVisible()
   await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
 })
+
+test('invalid stored auth is discarded before the dashboard renders', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'orphan-token', user: {} })))
+  await page.goto('/')
+  await expect(page.locator('.auth-page')).toBeVisible()
+  await expect(page.locator('.dashboard-shell')).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+})

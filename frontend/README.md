@@ -32,6 +32,8 @@ Bộ kiểm thử [api.test.mjs](src/services/api.test.mjs) dùng Node test runn
 
 Auth dùng một lifecycle thu hồi phiên chung: mọi API có token trả 401 đều xóa `market-auth` trước khi đưa người dùng về màn hình đăng nhập, dọn email/mật khẩu và dữ liệu cá nhân trong memory nhưng vẫn giữ thông báo nguyên nhân. Đăng xuất chủ động dùng cùng cleanup và có xác nhận accessible; reload không khôi phục credential cũ.
 
+Bootstrap chỉ khôi phục `market-auth` khi object có token và identity gồm email/role không rỗng. JSON lỗi hoặc schema thiếu bị xóa ngay trước render; dashboard không mount bằng credential mồ côi.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes
