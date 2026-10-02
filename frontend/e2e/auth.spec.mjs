@@ -34,3 +34,24 @@ test('authentication failure receives focus, keeps input and clears when mode ch
   await expect(alert).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Tạo tài khoản' })).toBeVisible()
 })
+
+test('expired session clears stored credentials and explains why login is required', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'expired-token', user: { email: 'investor@example.com', role: 'user' } })))
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/watchlist' || path === '/api/portfolio') {
+      return route.fulfill({ status: 401, json: { success: false, message: 'Invalid or expired token' } })
+    }
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await expect(page.locator('.auth-page')).toBeVisible()
+  await expect(page.getByRole('alert')).toContainText('Phiên đăng nhập đã hết hạn hoặc không hợp lệ')
+  await expect(page.getByRole('alert')).toContainText('Thông tin xác thực cũ đã được xóa an toàn')
+  await expect(page.getByLabel('Email đăng nhập')).toHaveValue('')
+  await expect(page.getByLabel('Mật khẩu đăng nhập')).toHaveValue('')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+  await page.reload()
+  await expect(page.locator('.auth-page')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
+})
