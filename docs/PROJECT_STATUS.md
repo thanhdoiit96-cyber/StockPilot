@@ -3219,3 +3219,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Mỗi action cuộn mượt tới section, chuyển focus lập trình tới vùng đích và cập nhật `aria-current=location`; cả ba đích có `scroll-margin` để không bị thanh dính che. Trên mobile, action chia đều chiều rộng và nằm dưới navigation chính, không làm tràn document. Không thay đổi lifecycle tải chi tiết hoặc lazy analysis.
 - Kiểm chứng: frontend unit/service/encoding **25/25**; production safe-build và bundle integrity pass với artifact `index-C9uf6jbM.js`; regression loading/detail cùng page audit desktop/mobile **25/25** và toàn bộ Playwright **68/68** pass.
 - Điểm tiếp tục: nâng chart Chi tiết bằng tooltip/focus bàn phím trên các điểm dữ liệu; benchmark chỉ được mở khi backend có series chỉ số cùng lịch phiên và quy tắc gap rõ ràng.
+
+## Tooltip biểu đồ Chi tiết cho chuột và bàn phím — 2026-10-02
+
+- `DetailPriceVolumeChart` nay có tooltip React thống nhất cho điểm giá và cột khối lượng, thay vì chỉ phụ thuộc `<title>` của trình duyệt. Tooltip hiển thị thời điểm, giá đóng cửa/intraday, OHLC, khối lượng và provider từ chính dòng dữ liệu đang chọn; không nội suy trường thiếu.
+- Focus vào điểm hiển thị cùng tooltip như hover và liên kết bằng `aria-describedby`. Arrow Left/Right chuyển tuần tự, có wrap trong nhóm điểm giá hoặc khối lượng; Escape đóng tooltip và bỏ focus. Trạng thái phân biệt mouse/focus để mouseleave không đóng tooltip của phần tử vẫn đang được bàn phím focus.
+- Kiểm chứng: frontend unit/service/encoding **25/25**; production safe-build và bundle integrity pass với artifact `index-C8hfEvg9.js`; regression loading/detail cùng audit desktop/mobile **25/25** và toàn bộ Playwright **68/68** pass.
+- Điểm tiếp tục: đánh giá zoom chart không phụ thuộc thư viện và giữ dữ liệu thật; benchmark vẫn chờ series chỉ số cùng lịch phiên và contract continuity/gap.
