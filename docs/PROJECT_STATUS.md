@@ -3398,3 +3398,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Gom việc gửi JSON vào một helper có `Content-Length`; client đóng socket sớm nay được bỏ qua cho `BrokenPipeError`, `ConnectionAbortedError`, `ConnectionResetError`, tránh traceback kép từng thấy trong log mà không che lỗi upstream trong payload.
 - Kiểm chứng syntax Python bằng `compile()` không tạo file; restart worker thành công. Smoke hai request đồng thời EOD FPT và price board HPG đều HTTP 200, lần lượt 2/1 rows, không lỗi; health trả `max_concurrency=1`. Đây là smoke read-only, chưa phải benchmark tải hoặc bằng chứng provider hết reset.
 - Điểm tiếp tục: giữ concurrency 1 qua phiên giao dịch kế tiếp và đối chiếu số `fetch failed`, thời lượng quote cùng coverage evidence; chỉ tăng khi có số đo chứng minh không làm upstream kém ổn định.
+
+## Khôi phục EOD/RAG cho bốn mã UPCOM có giao dịch — 2026-10-02
+
+- Sau khi worker chạy concurrency 1, backfill phiên 02/10 cho `SZG`, `UPS`, `VPC`, `VSG` đạt **4/4 ngay lần đầu**: received/inserted 4, không failure/reject. Coverage listed tăng từ 284 lên **288/551, 52,3%**, còn 263 mã; `never_seen` giảm 67 xuống 63.
+- Probe đúng phiên 01/10 trả rỗng cho cả bốn mã và dừng an toàn; không tạo giá tham chiếu giả. Ingest lịch sử giới hạn 01/09–02/10 sau đó nhận 8 rows, insert 4 và idempotent-skip 4, không lỗi/reject.
+- Live stock API xác nhận phiên 02/10, không stale: `SZG` 33.000/volume 500/change 0%; `UPS` 21.600/200/0%; `VPC` 2.200/100/-12%; `VSG` 1.000/2.200/change null. Ba mã đầu đã có RAG từ phiên hợp lệ trước đó; `VSG` giữ trung tính vì chỉ có một candle trong khoảng, không suy diễn từ giá tham chiếu price board.
+- Evidence backfill hiện ở `backend/evidence/eod-backfill-2026-10-02-2026-10-02T16-00-01-277Z.json` và lượt 01/10 lúc 16:01:08Z. Đây là mutation dữ liệu provider qua ingestion idempotent; không phải test mock. Điểm tiếp tục là ưu tiên missing symbol có giao dịch từ price board trong evidence phiên kế tiếp, nhưng không persist price-board snapshot thành EOD.
