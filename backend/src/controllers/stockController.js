@@ -13,6 +13,7 @@ const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const { serializeStockCsv } = require('../services/stockCsv');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
+const finiteEvidenceNumber = value => value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 
 module.exports = function(cacheService) {
   const { Stock, StockPrice, ExternalFactor } = require('../models');
@@ -72,6 +73,15 @@ module.exports = function(cacheService) {
       } catch (_) { /* evidence is optional operational metadata */ }
       const retryPasses = Math.max(0, Number(process.env.VNSTOCK_EOD_GAP_RETRIES || 2));
       const coveragePct = Number(summary.listed) ? Number((Number(summary.covered) / Number(summary.listed) * 100).toFixed(1)) : null;
+      const tradePriority = lastEodRun?.evidence?.trade_priority;
+      const normalizedTradePriority = tradePriority && typeof tradePriority === 'object' ? {
+        enabled: tradePriority.enabled !== false,
+        probed: finiteEvidenceNumber(tradePriority.probed),
+        batches: finiteEvidenceNumber(tradePriority.batches),
+        failed_batches: finiteEvidenceNumber(tradePriority.failed_batches) || 0,
+        matched: finiteEvidenceNumber(tradePriority.matched),
+        had_error: Boolean(tradePriority.error) || Number(tradePriority.failed_batches || 0) > 0
+      } : null;
       res.set('Cache-Control', 'no-store');
       return res.json({ success: true, data: {
         session_date: summary.session_date,
@@ -99,6 +109,10 @@ module.exports = function(cacheService) {
           last_run_universe: lastEodRun?.evidence?.after?.symbols ?? null,
           last_run_covered: lastEodRun?.evidence?.after?.covered ?? null,
           last_run_remaining: lastEodRun?.evidence?.after?.missing_symbols?.length ?? null,
+          last_run_requested: finiteEvidenceNumber(lastEodRun?.evidence?.requested),
+          last_run_selected: finiteEvidenceNumber(lastEodRun?.evidence?.selected),
+          last_run_selected_traded: finiteEvidenceNumber(lastEodRun?.evidence?.selected_traded),
+          last_run_trade_priority: normalizedTradePriority,
           last_run_complete: lastEodRun?.evidence?.complete ?? null,
           last_run_failed: Boolean(lastEodRun?.evidence?.error),
           runtime: getEodRetryStatus()

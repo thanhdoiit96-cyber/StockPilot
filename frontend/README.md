@@ -27,7 +27,7 @@ UI gọi health, thống kê cache, danh sách và chi tiết cổ phiếu. Lị
 
 Health, cache, danh sách và chi tiết tải độc lập. Lỗi HTTP/JSON có thông báo và nút thử lại; danh sách rỗng hợp lệ có trạng thái riêng. Khi đổi cổ phiếu, chi tiết cũ được ẩn ngay trong render và request cũ bị hủy. Lỗi chi tiết chỉ xuất hiện ở trang chi tiết; lỗi cache không làm mất danh sách.
 
-Banner chất lượng EOD hiển thị coverage hiện tại và trạng thái vận hành tách biệt: job đang chạy dùng `runtime`, còn trạng thái nhàn rỗi dùng evidence EOD chính/gap retry gần nhất cùng thời điểm Việt Nam và kết quả hoàn tất/lỗi/chưa hoàn tất. Khi chưa có evidence cho phiên, banner nói rõ thay vì ngầm hiểu scheduler chưa được cấu hình.
+Banner chất lượng EOD hiển thị coverage hiện tại và trạng thái vận hành tách biệt: job đang chạy dùng `runtime`, còn trạng thái nhàn rỗi dùng evidence EOD chính/gap retry gần nhất cùng thời điểm Việt Nam và kết quả hoàn tất/lỗi/chưa hoàn tất. Với gap retry mới, banner còn hiển thị số gap được price board xác nhận có giao dịch, phạm vi probe và tỷ lệ mã được ưu tiên; khi probe lỗi, banner nói rõ scheduler đã giữ phần hợp lệ và dùng fairness cho phần còn lại. Khi chưa có evidence cho phiên, banner nói rõ thay vì ngầm hiểu scheduler chưa được cấu hình.
 
 Bộ kiểm thử [api.test.mjs](src/services/api.test.mjs) dùng Node test runner. Kiểm tra HTTP lỗi, JSON sai, empty state, retry, hủy request/phản hồi đến sai thứ tự và lỗi tài nguyên phụ. [market-board-tools.test.mjs](src/runtime/market-board-tools.test.mjs) kiểm tra default cấu hình cột, CSV escaping/formula guard và loại cột hành động khỏi export.
 

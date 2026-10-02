@@ -1,8 +1,10 @@
 jest.mock('../models', () => ({ Stock: { findAll: jest.fn(), findByPk: jest.fn() }, StockPrice: { findOne: jest.fn() } }));
+jest.mock('../services/eodEvidence', () => ({ readLatestEodEvidence: jest.fn() }));
 const express = require('express');
 const request = require('supertest');
 const { Op } = require('sequelize');
 const { Stock, StockPrice } = require('../models');
+const { readLatestEodEvidence } = require('../services/eodEvidence');
 const createRouter = require('./stockController');
 
 describe('stock API', () => {
@@ -11,6 +13,7 @@ describe('stock API', () => {
   const originalKey = process.env.ADMIN_API_KEY;
   beforeEach(() => {
     jest.clearAllMocks();
+    readLatestEodEvidence.mockReturnValue(null);
     Stock.sequelize = { query: jest.fn().mockResolvedValue([[{ session_date: '2026-09-21' }, { session_date: '2026-09-18' }], {}]) };
     process.env.ADMIN_API_KEY = 'test-admin-key';
     cache = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), delete: jest.fn(), deleteByType: jest.fn(), clearAll: jest.fn() };
@@ -36,6 +39,29 @@ describe('stock API', () => {
       expect.objectContaining({ key: 'technology', label: expect.any(String) }),
       expect.objectContaining({ key: 'consumer_retail', label: expect.any(String) })
     ]));
+  });
+  test('exposes bounded trade-priority evidence without raw provider errors', async () => {
+    Stock.sequelize.query
+      .mockResolvedValueOnce([[{ session_date: '2026-10-02', listed: 551, covered: 354, missing: 197, missing_symbols: ['ABC'] }], {}])
+      .mockResolvedValueOnce([[{ never_seen: 10, previous_session: 20, stale_history: 167 }], {}]);
+    readLatestEodEvidence.mockReturnValue({
+      file: 'eod-retry-2026-10-02-test.json',
+      mode: 'gap_retry',
+      evidence: {
+        checked_at: '2026-10-02T16:12:22.541Z', requested: 215, selected: 25, selected_traded: 18,
+        trade_priority: { enabled: true, probed: 215, batches: 2, failed_batches: 1, matched: 18, errors: [{ error: 'secret upstream detail' }] },
+        after: { symbols: 551, covered: 354, missing_symbols: ['ABC'] }, retries: [{}], complete: false
+      }
+    });
+    const result = await request(app).get('/api/stocks/data-quality').query({ session: '2026-10-02' });
+    expect(result.status).toBe(200);
+    expect(result.body.data.eod_retry).toMatchObject({
+      last_run_requested: 215,
+      last_run_selected: 25,
+      last_run_selected_traded: 18,
+      last_run_trade_priority: { enabled: true, probed: 215, batches: 2, failed_batches: 1, matched: 18, had_error: true }
+    });
+    expect(JSON.stringify(result.body)).not.toContain('secret upstream detail');
   });
   test('disables administrative access without a configured key', async () => {
     delete process.env.ADMIN_API_KEY;
