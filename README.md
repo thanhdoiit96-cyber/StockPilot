@@ -7,6 +7,7 @@ Danh mục và biểu đồ tổng quan dùng dữ liệu minh họa; AI, nguồ
 ## Bắt đầu
 
 - **Chạy ứng dụng:** [QUICK_START.md](QUICK_START.md), gồm chạy thủ công, Docker Compose và xử lý lỗi.
+- **Bảng lệnh build/run:** [RUN_COMMANDS.md](RUN_COMMANDS.md), gồm các lệnh PowerShell để chạy worker, backend, frontend và kiểm thử.
 - **Tiếp tục phát triển:** đọc [AGENTS.md](AGENTS.md), [tiến độ và bàn giao](docs/PROJECT_STATUS.md), rồi [lộ trình](docs/ROADMAP.md).
 - **Tra cứu kỹ thuật:** [chỉ mục tài liệu](docs/INDEX.md), [backend](backend/README.md), [frontend](frontend/README.md).
 
@@ -16,6 +17,7 @@ Danh mục và biểu đồ tổng quan dùng dữ liệu minh họa; AI, nguồ
 | --- | --- |
 | README.md | Giới thiệu sản phẩm và điểm vào quy trình |
 | QUICK_START.md | Cài đặt, cấu hình, chạy và kiểm tra bản demo |
+| RUN_COMMANDS.md | Bảng lệnh PowerShell rút gọn; cấu hình chuẩn vẫn thuộc QUICK_START |
 | AGENTS.md | Quy tắc thực hiện công việc, kiểm chứng và cập nhật tài liệu |
 | docs/PROJECT_STATUS.md | Hiện trạng, kết quả kiểm tra, hạn chế và điểm tiếp tục |
 | docs/ROADMAP.md | Mốc phát triển, ưu tiên, phụ thuộc và tiêu chí nghiệm thu |
