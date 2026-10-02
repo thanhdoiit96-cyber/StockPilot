@@ -1,10 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { csvCell, normalizeMarketColumns, serializeMarketBoardCsv } from './market-board-tools-core.mjs'
+import { MARKET_COLUMN_PRESETS, csvCell, marketColumnPresetKey, normalizeMarketColumns, serializeMarketBoardCsv } from './market-board-tools-core.mjs'
 
 test('normalizes missing and invalid column preferences to visible defaults', () => {
   assert.deepEqual(normalizeMarketColumns(), { name: true, volume: true, analysis: true, actions: true })
   assert.deepEqual(normalizeMarketColumns({ name: false, volume: 'false' }), { name: false, volume: true, analysis: true, actions: true })
+})
+
+test('recognizes task presets while preserving unmatched custom columns', () => {
+  for (const preset of MARKET_COLUMN_PRESETS) assert.equal(marketColumnPresetKey(preset.columns), preset.key)
+  assert.equal(marketColumnPresetKey({ name: false, volume: false, analysis: true, actions: false }), 'custom')
 })
 
 test('escapes quotes and formula-like cells in CSV output', () => {

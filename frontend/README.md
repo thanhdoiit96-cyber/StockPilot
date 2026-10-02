@@ -87,6 +87,8 @@ Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hi
 
 Bảng giá giữ cột mã khi cuộn ngang. Người dùng có thể ẩn/hiện các cột Doanh nghiệp, Khối lượng, Phân tích và Thao tác; lựa chọn được lưu trong trình duyệt. Nút **Xuất CSV** chỉ xuất các dòng của trang/bộ lọc đang hiển thị và các cột dữ liệu đang bật, không xuất nút hành động hay tự tải thêm dữ liệu ngoài phạm vi đó.
 
+Toolbar có preset **Đầy đủ**, **Theo dõi**, **Phân tích** và **Giao dịch** để đổi nhanh nhóm cột mà không request lại list/quote. Checkbox thủ công tiếp tục tạo cấu hình **Tùy chỉnh** và persist qua reload; preset cũng dùng cùng preference key để tương thích dữ liệu cũ.
+
 Bảng giá là component React riêng và sở hữu tải danh sách, render, điều hướng/phân trang, loading/error/empty state, timeline, toolbar và vòng đời quote. `MarketBreadth`, `PortfolioAllocation` và lifecycle phân tích Chi tiết cũng thuộc React; `overview-table-actions.js`, `market-board-tools.js` và `sidebar-toggle-icon.js` đã được loại khỏi source/build. Toàn bộ source frontend không còn dùng `MutationObserver`.
 
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).

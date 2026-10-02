@@ -17,12 +17,16 @@ const buildStocks = count => Array.from({ length: count }, (_, index) => {
 async function boot(page, count = 4) {
   const stocks = buildStocks(count)
   let boardRefreshRequests = 0
+  let stockListRequests = 0
   await page.route('**/api/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
     const path = url.pathname
     let payload = { success: true, data: null }
-    if (path === '/api/stocks') payload = { success: true, data: stocks, pagination: { page: 1, pageSize: count, total: count, totalPages: 1 } }
+    if (path === '/api/stocks') {
+      stockListRequests += 1
+      payload = { success: true, data: stocks, pagination: { page: 1, pageSize: count, total: count, totalPages: 1 } }
+    }
     else if (path === '/api/stocks/quotes') {
       const isBoardRefresh = url.searchParams.has('board_refresh')
       if (isBoardRefresh) boardRefreshRequests += 1
@@ -59,11 +63,11 @@ async function boot(page, count = 4) {
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   await expect(page.locator('.table-panel tbody tr .symbol')).toHaveCount(count)
   await expect(page.locator('.market-breadth-header')).toContainText(`${count} mã`)
-  return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests }
+  return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests, stockListRequests: () => stockListRequests }
 }
 
 test('market board keeps the symbol visible, saves column preferences and exports the current scope', async ({ page }) => {
-  await boot(page)
+  const metrics = await boot(page)
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
   await expect(page.locator('.table-panel')).toBeVisible()
   await expect(page.locator('.market-board-export')).toHaveText('Xuất CSV (4)')
@@ -87,9 +91,26 @@ test('market board keeps the symbol visible, saves column preferences and export
   expect(content).not.toContain('FPT Corporation')
   expect(content).not.toContain('Phân tích chuyên sâu')
 
+  await expect(page.getByText('Tùy chỉnh', { exact: true })).toBeVisible()
+  const requestsBeforePresets = metrics.stockListRequests()
+  await page.getByRole('button', { name: 'Theo dõi', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Theo dõi', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.table-panel')).toHaveClass(/market-board-hide-analysis/)
+  await expect(page.locator('.table-panel')).toHaveClass(/market-board-hide-actions/)
+  await expect(page.locator('.table-panel')).not.toHaveClass(/market-board-hide-name/)
+  await page.getByRole('button', { name: 'Giao dịch', exact: true }).click()
+  await expect(page.locator('.table-panel')).toHaveClass(/market-board-hide-name/)
+  await expect(page.locator('.table-panel')).toHaveClass(/market-board-hide-analysis/)
+  await expect(page.locator('.table-panel')).not.toHaveClass(/market-board-hide-actions/)
+  await expect.poll(metrics.stockListRequests).toBe(requestsBeforePresets)
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Giao dịch', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
   await page.locator('.market-board-column-picker > summary').click()
   await page.getByRole('button', { name: 'Khôi phục mặc định' }).click()
   await expect(page.locator('.table-panel')).not.toHaveClass(/market-board-hide-name/)
+  await expect(page.getByRole('button', { name: 'Đầy đủ', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
 for (const count of [300, 500]) {

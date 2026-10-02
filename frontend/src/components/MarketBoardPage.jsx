@@ -4,7 +4,9 @@ import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
 import {
   MARKET_COLUMN_DEFINITIONS,
+  MARKET_COLUMN_PRESETS,
   MARKET_COLUMNS_KEY,
+  marketColumnPresetKey,
   normalizeMarketColumns,
   serializeMarketBoardCsv
 } from '../runtime/market-board-tools-core.mjs'
@@ -164,6 +166,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     URL.revokeObjectURL(link.href)
   }
   const columnClasses = MARKET_COLUMN_DEFINITIONS.filter(column => columns[column.key] === false).map(column => `market-board-hide-${column.key}`).join(' ')
+  const activePreset = marketColumnPresetKey(columns)
   const changePageSize = event => setPageSize(Number(event.target.value))
   const quoteProviders = [...new Set(Object.values(mergedQuotes).map(quote => quote?.upstream || quote?.provider).filter(Boolean))]
 
@@ -183,6 +186,11 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       </div>
     </div>
     <div className="market-board-toolbar">
+      <div className="market-board-presets" role="group" aria-label="Preset cột Bảng giá">
+        <span>Hiển thị</span>
+        {MARKET_COLUMN_PRESETS.map(preset => <button key={preset.key} type="button" className={`market-board-preset${activePreset === preset.key ? ' is-active' : ''}`} aria-pressed={activePreset === preset.key} onClick={() => setColumns(normalizeMarketColumns(preset.columns))}>{preset.label}</button>)}
+        {activePreset === 'custom' && <span className="market-board-custom-state" role="status">Tùy chỉnh</span>}
+      </div>
       <details className="market-board-column-picker">
         <summary>Tùy chỉnh cột</summary>
         <div className="market-board-column-menu">
