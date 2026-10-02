@@ -18,7 +18,7 @@ async function ingestVnstockEod({ Stock, StockPrice, MarketDataIngestionRun, seq
   if (!Stock || !StockPrice || !sequelize) throw new TypeError('Stock, StockPrice and sequelize are required');
   const listed = symbols?.length
     ? symbols.map(symbol => String(symbol).trim().toUpperCase()).filter(Boolean)
-    : (await Stock.findAll({ attributes: ['code'], order: [['code', 'ASC']] })).map(stock => stock.code);
+    : (await Stock.findAll({ attributes: ['code'], where: { listing_status: 'listed' }, order: [['code', 'ASC']] })).map(stock => stock.code);
   if (!listed.length) return { received: 0, inserted: 0, updated: 0, skipped: 0, rejected: 0, errors: [], window: defaultWindow(now) };
   const window = { from: from || defaultWindow(now).from, to: to || defaultWindow(now).to };
   const batchSize = Math.max(1, Number(process.env.VNSTOCK_EOD_BATCH_SIZE || 1));

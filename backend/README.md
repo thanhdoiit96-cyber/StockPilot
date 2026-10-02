@@ -138,6 +138,8 @@ Sequential ingestion batches pause for `VNSTOCK_EOD_BATCH_DELAY_MS` (default 100
 
 Gap retries are fair across the current process lifetime: symbols with fewer attempts are selected first, while previous-session volume only orders symbols with the same attempt count. This prevents a repeatedly empty high-volume group from starving later missing symbols. Restarting the backend resets attempt counters but does not alter persisted prices or evidence.
 
+Default EOD ingestion and coverage operate on rows whose `listing_status` is `listed`. Delisted or unknown rows remain in PostgreSQL for historical integrity but do not consume scheduled ingestion/retry capacity. An explicitly supplied symbol list remains explicit, which allows bounded diagnostics without silently rewriting operator intent.
+
 Restart the backend to load scheduler changes after any active ingestion completes. No schema migration is required.
 
 The stopped task exposes an awaitable `runOnce()` for controlled verification using the same scheduled callback. The verification command described in QUICK_START returns exit code 1 when target-session coverage remains incomplete, even if all provider calls return HTTP success. Evidence records missing symbols explicitly.
