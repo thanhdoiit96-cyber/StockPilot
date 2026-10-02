@@ -15,6 +15,7 @@ import DetailAnalysisStatus from "./components/DetailAnalysisStatus.jsx";
 import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
+import DetailSectionNav from "./components/DetailSectionNav.jsx";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -2521,31 +2522,38 @@ function lv() {
             children: p("Thử lại chi tiết")
           })]
         }) : Ee.data && O.jsxs(i.Fragment, {
-          children: [O.jsx(DetailHero, {
-            symbol: Ee.data.code,
-            name: Ee.data.name,
-            price: oe((Te == null ? void 0 : Te.price) ?? Ee.data.price),
-            quote: Te ? {
-              ...Te,
-              fetchedAt: He(Te.fetched_at)
-            } : null,
-            eodFetchedAt: He(Ee.data.data_fetched_at),
-            providerStatus: pi == null ? void 0 : pi.status,
-            quoteError: qh,
-            analysis: T,
-            onRequestAnalysis: () => {
-              du(true), hu(!!T.data);
-              try {
-                sessionStorage.setItem(`analysis-requested:${me.id}`, "1");
-              } catch {}
-              window.__stockpilotRequestAnalysis?.(), T.retry();
-            },
-            onAddToPortfolio: () => Ao({
+          children: [O.jsx(DetailSectionNav, {}), O.jsx("div", {
+            id: "detail-overview",
+            className: "detail-section-anchor",
+            tabIndex: -1,
+            children: O.jsx(DetailHero, {
               symbol: Ee.data.code,
-              price: (Te == null ? void 0 : Te.price) ?? Ee.data.price
+              name: Ee.data.name,
+              price: oe((Te == null ? void 0 : Te.price) ?? Ee.data.price),
+              quote: Te ? {
+                ...Te,
+                fetchedAt: He(Te.fetched_at)
+              } : null,
+              eodFetchedAt: He(Ee.data.data_fetched_at),
+              providerStatus: pi == null ? void 0 : pi.status,
+              quoteError: qh,
+              analysis: T,
+              onRequestAnalysis: () => {
+                du(true), hu(!!T.data);
+                try {
+                  sessionStorage.setItem(`analysis-requested:${me.id}`, "1");
+                } catch {}
+                window.__stockpilotRequestAnalysis?.(), T.retry();
+              },
+              onAddToPortfolio: () => Ao({
+                symbol: Ee.data.code,
+                price: (Te == null ? void 0 : Te.price) ?? Ee.data.price
+              })
             })
           }), O.jsxs("div", {
+            id: "detail-chart",
             className: "detail-content-grid",
+            tabIndex: -1,
             children: [O.jsxs("article", {
               className: "panel detail-chart-panel",
               children: [O.jsxs("div", {
@@ -2603,7 +2611,9 @@ function lv() {
               })]
             })]
           }), O.jsxs("section", {
+            id: "detail-analysis",
             className: "panel technical-panel",
+            tabIndex: -1,
             children: [O.jsx(DetailAnalysisStatus, {
               analysis: T,
               translate: p
