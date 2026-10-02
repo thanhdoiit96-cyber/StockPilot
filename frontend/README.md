@@ -34,6 +34,8 @@ Auth dùng một lifecycle thu hồi phiên chung: mọi API có token trả 401
 
 Bootstrap chỉ khôi phục `market-auth` khi object có token và identity gồm email/role không rỗng. JSON lỗi hoặc schema thiếu bị xóa ngay trước render; dashboard không mount bằng credential mồ côi.
 
+Response login/register phải qua cùng contract trước khi vào React state hoặc storage. Payload 2xx thiếu token/email/role được hiển thị như lỗi xác thực có focus và giữ input để thử lại; payload hợp lệ được chuẩn hóa khoảng trắng.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes

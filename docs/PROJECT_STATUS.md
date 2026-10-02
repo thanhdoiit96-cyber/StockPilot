@@ -3268,3 +3268,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Unit test bao phủ contract hợp lệ, không mutation phiên hợp lệ và năm dạng payload lỗi. E2E đặt object có token nhưng thiếu user identity trước bootstrap, xác nhận chỉ màn hình auth xuất hiện, dashboard không mount và storage đã sạch.
 - Kiểm chứng: frontend unit/service/encoding **30/30**; production safe-build và bundle integrity pass với artifact `index-Bk_n3E5w.js`; targeted auth cùng page audit desktop/mobile **5/5** và toàn bộ Playwright **72/72** pass.
 - Điểm tiếp tục: áp dụng cùng contract cho response đăng nhập/đăng ký trước khi persist để response 2xx sai schema không thể tạo phiên lỗi. Cookie/session hardening và password recovery vẫn phụ thuộc contract backend.
+
+## Xác thực response đăng nhập/đăng ký — 2026-10-02
+
+- `authFromResponse` nay áp cùng contract token/user cho payload 2xx của cả login và register trước khi gọi `setAuth`; token, email và role hợp lệ được trim trước khi lưu. Payload thiếu token, email hoặc role bị chuyển thành lỗi **Máy chủ trả về phiên đăng nhập không hợp lệ**, không ghi `localStorage` và không mount dashboard.
+- Lỗi contract giữ nguyên email/mật khẩu để người dùng thử lại, dùng chung `AuthErrorMessage` nên vẫn nhận focus và công bố qua alert. Unit test kiểm tra normalize payload hợp lệ cùng năm payload 2xx thiếu schema; E2E xác nhận response orphan token ở lại form, giữ input và storage rỗng.
+- Kiểm chứng: frontend unit/service/encoding **31/31**; production safe-build và bundle integrity pass với artifact `index-Dw-c0JEV.js`; targeted auth cùng page audit desktop/mobile **6/6** và toàn bộ Playwright **73/73** pass.
+- Điểm tiếp tục: xác minh stored session với `/api/auth/me` trước khi cho dashboard render để token đúng schema nhưng đã hết hạn/không hợp lệ không gây flash nội dung riêng tư. Cookie/session hardening và password recovery vẫn là phụ thuộc backend riêng.
