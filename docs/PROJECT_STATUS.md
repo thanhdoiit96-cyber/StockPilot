@@ -3233,3 +3233,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `getChartWindow` là helper thuần clamp size/offset rồi chỉ `slice` lịch sử đã tải. Vì vậy zoom/pan không nội suy, nối qua gap hoặc tạo phiên giả. Thay đổi cửa sổ dọn tooltip đang mở; layout action tự wrap trên mobile.
 - Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-BGTZI-N0.js`; regression loading/detail cùng audit desktop/mobile **26/26** và toàn bộ Playwright **69/69** pass, gồm zoom 5→3→5 và pan trên 8 phiên fixture.
 - Điểm tiếp tục: chart benchmark và historical divergence vẫn chờ series benchmark/index đồng bộ lịch phiên; nếu contract tiếp tục chưa sẵn sàng, chọn drill-down evidence Đề xuất chỉ khi snapshot có provenance nguồn thật.
+
+## Nâng khả dụng trường mật khẩu — 2026-10-02
+
+- Snapshot Đề xuất hiện chưa lưu provenance nguồn đủ chi tiết để mở drill-down evidence mà không suy diễn, nên chọn hạng mục auth độc lập. Tách `AuthPasswordField` dùng chung cho đăng nhập/đăng ký, có toggle **Hiện/Ẩn** giữ `aria-pressed`, input label ổn định và focus-visible rõ.
+- Chế độ đăng ký mô tả yêu cầu ít nhất 8 ký tự qua `aria-describedby` và dùng `autocomplete=new-password`; đăng nhập dùng `current-password`. Trường phát hiện Caps Lock từ sự kiện bàn phím, công bố cảnh báo bằng `role=status` và dọn cảnh báo khi blur. Không thay đổi API/auth contract hoặc tự áp thêm quy tắc mật khẩu khác backend.
+- Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-Cm2GAC-H.js`; page audit desktop/mobile **2/2** và toàn bộ Playwright **69/69** pass, gồm type/aria/autocomplete/requirement và không tràn viewport.
+- Điểm tiếp tục: luồng quên mật khẩu chỉ triển khai khi backend có token/expiry/delivery contract; lát cắt frontend độc lập kế tiếp là đưa lỗi auth vào focus có ngữ cảnh và giữ thông báo accessible.

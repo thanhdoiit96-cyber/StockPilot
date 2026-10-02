@@ -7,6 +7,7 @@ import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import RecommendationSnapshotComparison from "./components/RecommendationSnapshotComparison.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
+import AuthPasswordField from "./components/AuthPasswordField.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -1677,19 +1678,13 @@ function lv() {
             }),
             required: true
           })]
-        }), O.jsxs("label", {
-          children: [p("Mật khẩu"), O.jsx("input", {
-            "aria-label": p("Mật khẩu đăng nhập"),
-            type: "password",
-            placeholder: p("Tối thiểu 8 ký tự"),
-            value: bn.password,
-            onChange: d => Vt({
-              ...bn,
-              password: d.target.value
-            }),
-            required: true,
-            minLength: 8
-          })]
+        }), O.jsx(AuthPasswordField, {
+          value: bn.password,
+          mode: Un,
+          onChange: d => Vt({
+            ...bn,
+            password: d
+          })
         }), O.jsx("button", {
           className: "primary-btn",
           type: "submit",
