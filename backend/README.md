@@ -124,6 +124,8 @@ Snapshot generation joins verified `ExternalFactor` rows by symbol (and global f
 
 `npm run audit:chart-history` performs a read-only database audit for chart history. `CHART_AUDIT_DATE=YYYY-MM-DD` selects the session to check (defaults to `2026-09-21`). The report records per-symbol history coverage, exchange/listing metadata, empty histories, a structured `never_seen_listed` group, duplicate local trading dates, and legacy rows without an observation timestamp. It writes timestamped evidence under `backend/evidence/` and does not call the rate-limited public API or alter market data.
 
+`npm run probe:vnstock-history-gaps` performs a paced, read-only worker probe for a bounded symbol set. Set `VNSTOCK_PROBE_SYMBOLS`, with optional `VNSTOCK_PROBE_FROM`, `VNSTOCK_PROBE_TO`, and `VNSTOCK_PROBE_DELAY_MS` (default 750 ms). It compares current listing metadata, price-board trade/reference values, and the latest available EOD session, writes timestamped evidence, and never persists provider rows to PostgreSQL. The command is limited to 100 symbols and exits non-zero when any per-symbol request fails.
+
 `npm run probe:eodhd-session` checks date coverage from the configured EODHD account without writing price rows. Set `EODHD_FROM`, `EODHD_TO`, and `EODHD_PROBE_SYMBOLS` (maximum 30; requests are paced). It records returned session dates only, treats provider 404 as no coverage, and writes local evidence. This is a coverage probe, not permission to redistribute or ingest data; confirm the account's license terms before persisting EODHD prices.
 
 ## EOD session coverage and scheduled retry — 2026-09-25
@@ -133,6 +135,8 @@ The EOD scheduler audits persisted `vnstock` / `1d` rows for the target Vietnam 
 The scheduler runs at `30 15 * * 1-5` in `Asia/Ho_Chi_Minh` by default, 30 minutes after the regular session closes. Gap retries run every 15 minutes from 16:00 through 19:59 and fetch only missing symbols. It rolls Saturday/Sunday and dates listed in `VNSTOCK_HOLIDAYS` (comma-separated `YYYY-MM-DD` values) back to the latest completed weekday. Configure the holiday list for each calendar year so Tet, Hung Kings Commemoration, and observed national holidays do not trigger a false current-session ingest. A provider outage remains an explicit coverage gap and is not silently treated as a holiday.
 
 Sequential ingestion batches pause for `VNSTOCK_EOD_BATCH_DELAY_MS` (default 1000 ms). Exception retries use exponential backoff from `VNSTOCK_EOD_RETRY_DELAY_MS` (default 1500 ms), capped at 30 seconds. Partial-response fallback also waits before each symbol request. Scheduled evidence is written to `backend/evidence/eod-scheduled-<session>-<timestamp>.json`, including before/after coverage and missing symbols. Missing records are not proof of no trading. `audit:chart-history` now counts only Vnstock EOD, excluding intraday observations.
+
+Gap retries are fair across the current process lifetime: symbols with fewer attempts are selected first, while previous-session volume only orders symbols with the same attempt count. This prevents a repeatedly empty high-volume group from starving later missing symbols. Restarting the backend resets attempt counters but does not alter persisted prices or evidence.
 
 Restart the backend to load scheduler changes after any active ingestion completes. No schema migration is required.
 
