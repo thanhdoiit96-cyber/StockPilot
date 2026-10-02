@@ -58,7 +58,7 @@ Trạng thái: backlog sau P1.
 - Bảng giá: cấu hình cột, sticky symbol và export phạm vi hiện tại đã có; tiếp theo là preset cột theo tác vụ và server-side export nếu phạm vi vượt trang hiện tại.
 - Danh mục: lịch sử, export/import CSV nguyên tử, sửa/xóa có xác nhận và bộ lọc vị thế đang mở/đã đóng đã có; chỉ thêm phân trang ledger khi có bằng chứng về quy mô.
 - Chi tiết: chart tương tác, benchmark và điều hướng section.
-- Đề xuất: so sánh snapshot/evidence.
+- Đề xuất: đã có so sánh hai snapshot theo trọng số, mã thêm/giữ/bớt, hạng và điểm; tiếp theo là drill-down evidence theo từng mã khi backend lưu đủ provenance nguồn.
 - Advisor: context selector, citation và quản lý hội thoại.
 - Đăng nhập: khôi phục mật khẩu và hardening session/cookie trước public.
 

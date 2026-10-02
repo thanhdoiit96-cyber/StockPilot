@@ -5,6 +5,7 @@ import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
+import RecommendationSnapshotComparison from "./components/RecommendationSnapshotComparison.jsx";
 import PageLoadingOverlay from "./components/PageLoadingOverlay.jsx";
 import DetailSymbolSearch from "./components/DetailSymbolSearch.jsx";
 import DetailHero from "./components/DetailHero.jsx";
@@ -782,6 +783,8 @@ function Zm({
         className: "error-text",
         children: y
       })]
+    }), O.jsx(RecommendationSnapshotComparison, {
+      snapshots: E
     }), O.jsxs("div", {
       className: "recommendation-grid personalized-results",
       children: [O.jsxs("section", {
