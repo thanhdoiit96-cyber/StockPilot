@@ -186,7 +186,7 @@ async function start() {
     CacheCleanupJob(cacheService);
     logger.info('[Scheduler] Cache cleanup job initialized');
     if (startVnstockEodJob({ cacheService, logger })) {
-      logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 16 * * 1-5'})`);
+      logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
     }
     if (startRecommendationEvaluationJob({ logger })) {
       logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5'})`);
