@@ -61,6 +61,7 @@ Set-Location D:\MyProject\backend
 $env:HTTP_PROXY = ''
 $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
+$env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
 py scripts/vnstock_worker.py
 ```
 
