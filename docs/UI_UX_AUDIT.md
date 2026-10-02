@@ -12,7 +12,7 @@ Playwright kiểm tra page đích hiển thị, chỉ một mục điều hướ
 
 | Page | Hiện trạng và vấn đề chính | Đã thực hiện trong đợt này | Đề xuất tiếp theo |
 | --- | --- | --- | --- |
-| Đăng nhập | Form gọn, có trạng thái đăng nhập/đăng ký; chưa có luồng khôi phục mật khẩu và thông báo phiên hết hạn theo ngữ cảnh. | Bổ sung vào audit desktop/mobile và kiểm tra không tràn viewport. | Thêm hiện/ẩn mật khẩu, hướng dẫn mật khẩu, luồng quên mật khẩu khi backend có contract; đưa lỗi vào focus và `aria-live`. |
+| Đăng nhập | Form gọn, có trạng thái đăng nhập/đăng ký; chưa có luồng khôi phục mật khẩu. | Audit desktop/mobile; thêm hiện/ẩn mật khẩu, cảnh báo Caps Lock, yêu cầu tối thiểu và autocomplete đúng chế độ. | Thêm luồng quên mật khẩu khi backend có contract; đưa lỗi server vào focus và `aria-live` có ngữ cảnh. |
 | Tổng quan | Phân cấp hero → KPI → độ rộng hợp lý. Dòng phạm vi từng ghi `0/0` dù các nhóm tăng/giảm đã có dữ liệu. | Đồng bộ topbar; sửa dòng phạm vi từ coverage thực của bảng; giữ cảnh báo chất lượng dữ liệu gần đầu page. | Thêm xu hướng độ rộng nhiều snapshot, hiệu suất ngành và lưu bộ lọc; chỉ triển khai khi backend có contract nhất quán. |
 | Bảng giá | Bảng, timeline, filter và action đã rõ trên desktop. Mobile cần cuộn ngang nhưng trước đây kéo rộng cả document và không có chỉ dẫn. | Cô lập cuộn trong bảng, thêm hướng dẫn “Vuốt ngang”, giữ mã sticky; thêm cấu hình cột lưu cục bộ và xuất CSV đúng trang/bộ lọc hiện tại. Page React riêng hiện sở hữu render, navigation và quote lifecycle; observer cũ đã bị loại. | Đo lại bằng API/live data và lấy p50/p95 nhiều lượt trước khi quyết định pagination/windowing. |
 | Danh mục cá nhân | Có ghi giao dịch, vị thế, P/L, donut, watchlist và lịch sử ledger theo người dùng. Form từng rơi về nền sáng; coverage quote ghi `4/1` vì đếm quote toàn thị trường. | Đồng bộ dark theme; coverage chỉ đếm dòng vị thế có Intraday; refresh nền không khóa form; giữ tooltip donut cho chuột và bàn phím; thêm nhật ký, export/import CSV nguyên tử, sửa/xóa qua dialog xác nhận và revalidation toàn timeline, cùng bộ lọc vị thế đang mở/đã đóng. | Chỉ thêm phân trang ledger khi dữ liệu thực tế đủ lớn; giữ invariant timeline cho mọi mutation. |
@@ -60,7 +60,7 @@ Trạng thái: backlog sau P1.
 - Chi tiết: đã có range, zoom/pan, điều hướng section và tooltip chart bằng bàn phím; benchmark chờ series chỉ số cùng phiên.
 - Đề xuất: đã có so sánh hai snapshot theo trọng số, mã thêm/giữ/bớt, hạng và điểm; tiếp theo là drill-down evidence theo từng mã khi backend lưu đủ provenance nguồn.
 - Advisor: đã có context selector Mã/Danh mục/Thị trường và citation gắn với từng câu trả lời; tiếp theo là quản lý nhiều hội thoại khi có API lưu trữ và chính sách retention.
-- Đăng nhập: khôi phục mật khẩu và hardening session/cookie trước public.
+- Đăng nhập: đã có password control accessible; tiếp theo là khôi phục mật khẩu và hardening session/cookie trước public.
 
 Mỗi tính năng chỉ được đánh dấu hoàn thành khi có contract/backend tương ứng, empty/error/loading states, keyboard/mobile acceptance và bằng chứng kiểm thử.
 

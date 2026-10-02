@@ -937,6 +937,14 @@ th {
 .auth-form { display: grid; gap: 12px; margin-top: 18px; }
 .auth-form label { display: grid; gap: 6px; color: var(--muted); font-size: .9rem; }
 .auth-form input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid var(--border, #d8dee9); border-radius: 8px; background: #fff; color: inherit; }
+.auth-password-field { display: grid; gap: 6px; color: var(--muted); font-size: .9rem; }
+.auth-password-input { position: relative; }
+.auth-password-input input { padding-right: 68px; }
+.auth-password-toggle { position: absolute; top: 50%; right: 6px; min-width: 52px; padding: 5px 8px; border: 0; border-radius: 6px; background: rgba(94, 234, 212, .1); color: var(--primary); font-size: 11px; font-weight: 750; cursor: pointer; transform: translateY(-50%); }
+.auth-password-toggle:hover { background: rgba(94, 234, 212, .18); }
+.auth-password-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.auth-password-field > small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.auth-password-field .auth-caps-warning { color: #fbbf24; font-weight: 700; }
 .error-text { color: #b42318; }
 
 
