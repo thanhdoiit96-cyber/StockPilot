@@ -66,6 +66,19 @@ describe('stock API', () => {
     expect(Stock.findAll.mock.calls[0][0].where).toEqual(expect.objectContaining({ exchange: 'HSX' }));
     expect(cache.get.mock.calls[0][0]).toContain(':HSX:');
   });
+  test('exports bounded filtered EOD CSV without spreadsheet formulas', async () => {
+    Stock.sequelize.literal = value => ({ val: value });
+    Stock.findAll.mockResolvedValue([{ id: '1', code: 'FPT', name: '=Unsafe', exchange: 'HSX', prices: [{ close: '100000', volume: '1200', provider: 'vnstock', observed_at: '2026-10-01T00:00:00Z' }] }]);
+    const result = await request(app).get('/api/stocks/export.csv').query({ sector: 'technology', sort: 'code', direction: 'desc', columns: 'volume' });
+    expect(result.status).toBe(200);
+    expect(result.headers['content-type']).toMatch(/text\/csv/);
+    expect(result.headers['x-export-count']).toBe('1');
+    expect(result.headers['x-export-limit']).toBe('2000');
+    expect(result.text).toContain('"Mã","Giá EOD","Khối lượng","Nguồn dữ liệu"');
+    expect(result.text).toContain('"FPT","100000","1200","vnstock"');
+    expect(result.text).not.toContain('=Unsafe');
+    expect(Stock.findAll.mock.calls[0][0]).toMatchObject({ limit: 2001, order: [['code', 'DESC']] });
+  });
   test('returns bounded cached market breadth history without imputing unavailable fields', async () => {
     Stock.sequelize.query.mockResolvedValueOnce([[
       { session_date: '2026-09-29', advances: '2', declines: '1', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '100', volume_declines: '50', volume_unchanged: '0', traded_value: null, traded_value_observations: '0' },

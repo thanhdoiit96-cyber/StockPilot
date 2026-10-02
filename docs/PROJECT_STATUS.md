@@ -3303,3 +3303,23 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `marketColumnPresetKey` suy ra preset từ chính column map. Vì vậy checkbox thủ công không bị ghi đè và hiện nhãn **Tùy chỉnh** nếu không khớp preset; preset lẫn custom tiếp tục lưu bằng khóa `stockpilot-market-columns-v1` hiện có và khôi phục sau reload. CSV vẫn xuất đúng các data column đang bật.
 - Kiểm chứng: frontend unit/service/encoding **33/33**; production safe-build và bundle integrity pass với artifact `index-BSC26Jxn.js`; targeted Bảng giá cùng page audit desktop/mobile **5/5** và toàn bộ Playwright **77/77** pass. E2E xác nhận đổi preset không tăng request `/api/stocks`, persistence qua reload và reset về Đầy đủ.
 - Điểm tiếp tục: full-scope CSV ngoài trang hiện tại chỉ triển khai qua endpoint server có cùng filter/sort và giới hạn xuất rõ; trước tiên thiết kế contract read-only, chống CSV injection và không kéo toàn universe qua browser. Nếu chưa mở backend export, cải thiện độc lập tiếp theo là đồng bộ preference cột giữa các tab.
+
+## Full-scope CSV Bảng giá phía server — 2026-10-02
+
+- Thêm `GET /api/stocks/export.csv`, giữ cùng query `q/sector/exchange/coverage/sort/direction/pinned` của stock list và giới hạn cứng 2.000 dòng. Endpoint đọc latest EOD đã lưu, không gọi quote provider, không cache response và trả header `X-Export-Count`, `X-Export-Limit`, `X-Export-Truncated`. CSV UTF-8 BOM escape quote và prefix ô bắt đầu `= + - @` để giảm formula injection.
+- Toolbar Bảng giá có scope **Trang hiện tại** (giữ CSV client với quote đang hiển thị) và **Toàn bộ kết quả (EOD)**. Scope toàn bộ gọi endpoint trực tiếp, chỉ gửi các data column đang bật, dùng timeout 30 giây, khóa nút trong request và hiển thị lỗi retry được; dữ liệu toàn universe không đi vào React state hay quote lifecycle.
+- Kiểm chứng: backend targeted **16/16**, toàn bộ backend **31 suite / 134 test**; frontend unit/service/encoding **33/33**; production safe-build/bundle integrity pass với artifact `index-BOjY8LI2.js`; targeted Bảng giá/audit **5/5** và toàn bộ Playwright **77/77** pass.
+- Giới hạn: export dùng EOD, không giả là Intraday; tối đa 2.000 dòng và license provider vẫn áp dụng.
+
+## Live-smoke full-scope CSV Bảng giá — 2026-10-02
+
+- Khởi động backend tạm trên cổng 5099 với cấu hình/database phát triển hiện có, chỉ gọi các endpoint đọc rồi dừng tiến trình; không chạy migration, seed hoặc sửa dữ liệu.
+- Năm truy vấn export thực tế đều trả HTTP 200, `text/csv; charset=utf-8`, BOM, filename download và đủ header count/limit/truncated. Toàn universe trả 624 dòng trong 2.230 ms (cold); `q=FPT` trả 3 dòng/41 ms; HSX sort giá trả 196 dòng/195 ms; ngành công nghệ sort khối lượng trả 2 dòng/27 ms; coverage ready trả 124 dòng/153 ms.
+- Mọi mẫu đều dưới giới hạn 2.000 và `X-Export-Truncated=false`; chưa có bằng chứng cần streaming. Regression cùng phiên: backend **134/134**, targeted Bảng giá **3/3**, production safe-build/bundle integrity pass với artifact `index-9Vd3mCOo.js`.
+- Điểm tiếp tục: ưu tiên historical volume breadth/divergence hoặc chart benchmark khi có series benchmark/index cùng lịch phiên và contract gap. Chỉ xem lại streaming/export pagination khi dữ liệu thực tế vượt 2.000 dòng hoặc phép đo chứng minh response hiện tại vượt budget.
+
+## Rà soát và đóng worktree full-scope CSV — 2026-10-02
+
+- Rà toàn bộ file chưa commit xác nhận đây là một lát cắt duy nhất nối tiếp commit preset cột, không trộn thay đổi ngoài phạm vi và không có đoạn triển khai bị cắt dở. Contract frontend dùng đúng filter hiện có của Bảng giá; endpoint giữ thêm `exchange/coverage` để tương thích stock-list contract.
+- Chạy lại toàn bộ kiểm chứng: backend **31 suite / 134 test**, frontend unit/service/encoding **33/33**, full Playwright **77/77**, production safe-build và bundle integrity đều đạt. `git diff --check` không phát hiện whitespace error; cảnh báo LF→CRLF là cấu hình working copy hiện hữu.
+- Khởi động lại backend cổng 5000 và frontend production preview cổng 4173. Smoke tích hợp đạt: frontend HTML 200, backend health 200/success=true, CSV đi qua proxy frontend 200 với 3 mã FPT, `X-Export-Limit=2000`, `X-Export-Truncated=false`, content type và UTF-8 BOM đúng contract. Hai dịch vụ được giữ chạy để tiếp tục kiểm tra thủ công.

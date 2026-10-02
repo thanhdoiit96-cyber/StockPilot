@@ -86,6 +86,10 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const [pagination, setPagination] = useState({ page: 1, pageSize: 40, total: overviewTotal || overviewStocks.length, totalPages: Math.max(1, Math.ceil((overviewTotal || overviewStocks.length) / 40)) })
   const [listState, setListState] = useState({ loading: !overviewStocks.length, error: '' })
   const [columns, setColumns] = useState(loadColumns)
+  const [exportScope, setExportScope] = useState('page')
+  const [exportError, setExportError] = useState('')
+  const [exportNotice, setExportNotice] = useState('')
+  const [exporting, setExporting] = useState(false)
   const [sharedQuotes, setSharedQuotes] = useState(() => window.__stockpilotRecentQuotes || {})
 
   useEffect(() => {
@@ -155,15 +159,46 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const toggleSort = key => setSort(current => current.key === key
     ? { key, direction: current.direction === 'asc' ? 'desc' : 'asc' }
     : { key, direction: 'asc' })
-  const exportCsv = () => {
+  const downloadBlob = (blob, filename) => {
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+  const exportCsv = async () => {
+    setExportError('')
+    setExportNotice('')
+    if (exportScope === 'all') {
+      setExporting(true)
+      try {
+        const params = new URLSearchParams({ sort: sort.key, direction: sort.direction })
+        if (query.trim()) params.set('q', query.trim())
+        if (sector) params.set('sector', sector)
+        if (pinnedKey) params.set('pinned', pinnedKey)
+        params.set('columns', ['name', 'volume'].filter(key => columns[key] !== false).join(','))
+        const response = await fetch(`/api/stocks/export.csv?${params}`, { signal: AbortSignal.timeout(30000), headers: { Accept: 'text/csv' } })
+        if (!response.ok) throw new Error(`Không thể xuất toàn bộ kết quả. Vui lòng thử lại. (HTTP ${response.status})`)
+        const exportedCount = Number(response.headers.get('X-Export-Count'))
+        const exportLimit = Number(response.headers.get('X-Export-Limit'))
+        const truncated = response.headers.get('X-Export-Truncated') === 'true'
+        const blob = await response.blob()
+        const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^";]+)"?/i)?.[1] || `stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv`
+        downloadBlob(blob, filename)
+        setExportNotice(truncated
+          ? `Đã xuất ${Number.isFinite(exportedCount) ? exportedCount : exportLimit} mã EOD; kết quả vượt giới hạn ${exportLimit} dòng. Hãy thu hẹp bộ lọc để lấy phần còn lại.`
+          : `Đã xuất ${Number.isFinite(exportedCount) ? exportedCount : 'toàn bộ'} mã EOD.`)
+      } catch (error) {
+        setExportError(error.name === 'TimeoutError' ? 'Xuất CSV quá thời gian chờ. Vui lòng thu hẹp bộ lọc và thử lại.' : error.message)
+      } finally {
+        setExporting(false)
+      }
+      return
+    }
     const headers = ['Mã', 'Tên', 'Giá', 'Biến động', 'Khối lượng', 'Nguồn dữ liệu', 'Phân tích', 'Thao tác']
     const csvRows = rows.map(row => [row.symbol, row.stock.name || '', formatPrice(row.price), formatChange(row.change), formatVolume(row.volume), '', '', ''])
     const blob = new Blob([serializeMarketBoardCsv({ headers, rows: csvRows, columns })], { type: 'text/csv;charset=utf-8' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
+    downloadBlob(blob, `stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv`)
   }
   const columnClasses = MARKET_COLUMN_DEFINITIONS.filter(column => columns[column.key] === false).map(column => `market-board-hide-${column.key}`).join(' ')
   const activePreset = marketColumnPresetKey(columns)
@@ -198,8 +233,11 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <button type="button" className="ghost-btn small-btn" onClick={() => setColumns(normalizeMarketColumns())}>Khôi phục mặc định</button>
         </div>
       </details>
-      <button type="button" className="ghost-btn small-btn market-board-export" onClick={exportCsv}>Xuất CSV ({rows.length})</button>
+      <label className="market-board-export-scope"><span>Phạm vi xuất</span><select className="app-select" aria-label="Phạm vi xuất CSV" value={exportScope} onChange={event => setExportScope(event.target.value)}><option value="page">Trang hiện tại</option><option value="all">Toàn bộ kết quả (EOD)</option></select></label>
+      <button type="button" className="ghost-btn small-btn market-board-export" disabled={exporting} onClick={exportCsv}>{exporting ? 'Đang xuất…' : exportScope === 'all' ? 'Xuất toàn bộ CSV' : `Xuất CSV (${rows.length})`}</button>
     </div>
+    {exportError && <p className="error-text market-board-export-error" role="alert">{exportError}</p>}
+    {exportNotice && <p className="market-board-export-notice" role="status">{exportNotice}</p>}
     <p className="overview-data-status" role="status">{quoteState.error || (quoteState.loading ? 'Đang cập nhật Intraday…' : Object.keys(mergedQuotes).length ? 'Có dữ liệu intraday' : 'Đang dùng dữ liệu EOD')}</p>
     <p className="overview-source-summary"><span className="overview-source-label">Nguồn dữ liệu</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : 'EOD gần nhất'}</span><span className="overview-source-description">Ưu tiên giá Intraday khi có sẵn; nếu không, dùng giá đóng cửa EOD gần nhất.</span><button className="overview-source-help" type="button" aria-label="Giải thích Intraday, EOD và dữ liệu cũ" title="Intraday: quote của phiên hiện tại. EOD: giá đóng cửa phiên gần nhất. Dữ liệu cũ: chưa có dữ liệu cho phiên chuẩn mới nhất.">?</button></p>
     <MarketTimeline rows={rows} />
