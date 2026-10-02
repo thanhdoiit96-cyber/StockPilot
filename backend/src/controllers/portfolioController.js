@@ -3,7 +3,7 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { Portfolio, PortfolioTransaction, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
-const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioTransactions } = require('../services/portfolioAccounting');
+const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
 const router = express.Router();
 router.use(requireAuth);
@@ -59,7 +59,9 @@ router.get('/', async (req, res) => {
       });
     }
   }
-  let positions = summarizePortfolioTransactions(transactions, prices).map(position => {
+  const holdings = summarizePortfolioHoldings(transactions, prices);
+  const closedPositions = holdings.filter(position => position.status === 'closed');
+  let positions = holdings.filter(position => position.status === 'open').map(position => {
     const previous = previousPrices.get(position.stock_id) ?? null;
     const dayChange = previous != null && position.market_price != null ? position.market_price - previous : null;
     return { ...position, previous_market_price: previous, day_change: dayChange, day_change_pct: previous ? (dayChange / previous) * 100 : null };
@@ -95,6 +97,8 @@ router.get('/', async (req, res) => {
   res.json({ success: true, data: {
     portfolio,
     positions,
+    closed_positions: closedPositions,
+    position_counts: { open: positions.length, closed: closedPositions.length },
     transactions: transactions.map(tx => ({
       id: tx.id,
       stock_id: tx.stock_id,

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000}]
 const list={success:true,data:stocks,pagination:{page:1,pageSize:25,total:1,totalPages:1}}
-async function boot(page,initialPositions=[],initialTransactions=[]){
-  let watch=[];let positions=initialPositions;let transactions=initialTransactions;let transactionBody=null;const imports=[];const mutations=[]
+async function boot(page,initialPositions=[],initialTransactions=[],initialClosedPositions=[]){
+  let watch=[];let positions=initialPositions;let transactions=initialTransactions;let closedPositions=initialClosedPositions;let transactionBody=null;const imports=[];const mutations=[]
   await page.route('**/api/**',async route=>{
     const req=route.request();const path=new URL(req.url()).pathname;let payload
     if(path==='/api/stocks')payload=list
@@ -16,7 +16,7 @@ async function boot(page,initialPositions=[],initialTransactions=[]){
     else if(path==='/api/auth/me')payload={success:true,user:{id:'e2e',email:'e2e@example.com',role:'admin'}}
     else if(path==='/api/watchlist'&&req.method()==='GET')payload={success:true,data:watch}
     else if(path==='/api/watchlist'&&req.method()==='POST'){watch=[{stock_id:'a',Stock:{code:'FPT',name:'FPT Corp'}}];payload={success:true,data:watch}}
-    else if(path==='/api/portfolio'&&req.method()==='GET')payload={success:true,data:{positions,transactions}}
+    else if(path==='/api/portfolio'&&req.method()==='GET')payload={success:true,data:{positions,closed_positions:closedPositions,position_counts:{open:positions.length,closed:closedPositions.length},transactions}}
     else if(path==='/api/portfolio/transactions/import'){
       const body=JSON.parse(req.postData()||'{}');imports.push(body)
       if(!body.dry_run){const rows=body.rows||[];transactions=[...transactions,...rows.map((row,index)=>({id:`import-${index}`,stock_id:'a',symbol:row.symbol,name:'FPT Corp',side:row.side,quantity:Number(row.quantity),price:Number(row.price),fees:Number(row.fees||0),traded_at:row.traded_at,source:'manual'}))];positions=[{stock_id:'a',symbol:'FPT',quantity:10,market_price:120000,avg_cost:120000,unrealized_pnl:0}]}
@@ -36,6 +36,7 @@ async function boot(page,initialPositions=[],initialTransactions=[]){
 }
 test('records a historical transaction and refreshes positions',async({page})=>{const state=await boot(page);const fields=page.locator('.transaction-form input');await fields.nth(0).fill('FPT');await fields.nth(1).fill('10');await fields.nth(2).fill('120000');await page.locator('.transaction-form button[type=submit]').click();await expect.poll(()=>state.getTransaction()).toMatchObject({symbol:'FPT',quantity:'10',price:'120000'});const row=page.locator('.portfolio-table tbody tr');await expect(row).toContainText('FPT');await expect(row).toHaveClass(/portfolio-row-clickable/);await row.hover();await expect(row).toHaveCSS('cursor','pointer');await row.click();await expect(page.getByRole('button',{name:'Chi tiết mã',exact:true})).toHaveClass(/active/)})
 test('shows cost basis and realized versus unrealized P/L separately',async({page})=>{await boot(page);await expect(page.locator('.portfolio-table thead th')).toHaveCount(6);await expect(page.locator('.portfolio-table thead')).toContainText('Giá vốn');await expect(page.locator('.portfolio-table thead')).toContainText('Lãi/lỗ');})
+test('filters open and fully closed positions without mixing their metrics',async({page})=>{await boot(page,[{stock_id:'a',symbol:'FPT',quantity:10,market_price:120000,avg_cost:100000,unrealized_pnl:200000,realized_pnl:0}],[],[{stock_id:'b',symbol:'VCB',name:'Vietcombank',status:'closed',quantity:0,realized_pnl:150000,closed_at:'2026-09-30T03:00:00Z'}]);const positions=page.locator('.portfolio-positions');await expect(positions.getByRole('button',{name:'Đang mở 1'})).toHaveAttribute('aria-pressed','true');await expect(positions.getByRole('table',{name:'Vị thế đang mở'})).toContainText('FPT');await positions.getByRole('button',{name:'Đã đóng 1'}).click();await expect(positions.getByRole('button',{name:'Đã đóng 1'})).toHaveAttribute('aria-pressed','true');const closed=positions.getByRole('table',{name:'Vị thế đã đóng'});await expect(closed).toContainText('VCB');await expect(closed).toContainText('Đã đóng');await expect(closed).toContainText('150.000');await expect(closed).not.toContainText('Giá hiện tại')})
 test('adds a symbol to watchlist through the tracking form',async({page})=>{await boot(page);const input=page.locator('.watchlist-panel input');await input.fill('FPT');await page.locator('.watchlist-panel button.primary-btn').click();await expect(page.locator('.watchlist li')).toContainText('FPT')})
 
 test('renders the transaction ledger and exports all rows to CSV',async({page})=>{await boot(page,[],[{id:'tx-1',stock_id:'a',symbol:'FPT',name:'FPT Corp',side:'BUY',quantity:10,price:120000,fees:1500,traded_at:'2026-10-01T03:00:00Z',source:'manual'}]);const panel=page.locator('.portfolio-ledger-panel');await expect(panel).toBeVisible();await expect(panel.locator('tbody tr')).toHaveCount(1);await expect(panel.locator('tbody tr')).toContainText('FPT');await expect(panel.locator('tbody tr')).toContainText('120.000');const downloadPromise=page.waitForEvent('download');await panel.getByRole('button',{name:'Xuất CSV'}).click();const download=await downloadPromise;expect(download.suggestedFilename()).toMatch(/^stockpilot-ledger-\d{4}-\d{2}-\d{2}\.csv$/)})

@@ -925,6 +925,14 @@ th {
 .transaction-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
 .transaction-form input, .transaction-form select { min-width: 0; padding: 10px; border: 1px solid var(--border, #d8dee9); border-radius: 8px; background: #fff; }
 .portfolio-table { margin-top: 14px; }
+.portfolio-positions { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(148, 163, 184, .18); }
+.portfolio-positions-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.portfolio-positions-heading h3, .portfolio-positions-heading p { margin: 0; }
+.portfolio-positions-heading p { margin-top: 4px; }
+.portfolio-position-filters { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid rgba(148, 163, 184, .24); border-radius: 10px; background: rgba(15, 23, 42, .48); }
+.portfolio-position-filters button { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 7px; padding: 7px 10px; color: var(--muted); background: transparent; cursor: pointer; white-space: nowrap; }
+.portfolio-position-filters button span { min-width: 20px; padding: 2px 6px; border-radius: 99px; color: var(--text); background: rgba(148, 163, 184, .16); font-size: 11px; text-align: center; }
+.portfolio-position-filters button.active { color: #ccfbf1; background: rgba(13, 148, 136, .25); box-shadow: inset 0 0 0 1px rgba(94, 234, 212, .25); }
 .portfolio-row-clickable { cursor: pointer; transition: background-color .16s ease, box-shadow .16s ease; }
 .portfolio-row-clickable:hover, .portfolio-row-clickable:focus-within, .portfolio-row-clickable:focus { background: rgba(94, 234, 212, .10); box-shadow: inset 3px 0 0 var(--primary); outline: none; }
 .portfolio-row-clickable:hover .portfolio-detail-link, .portfolio-row-clickable:focus-within .portfolio-detail-link, .portfolio-row-clickable:focus .portfolio-detail-link { color: #99f6e4; }
@@ -948,6 +956,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .portfolio-panel h3, .allocation-panel h3 { font-size: 18px; }
 .portfolio-table table { min-width: 620px; }
 .portfolio-table td, .portfolio-table th { white-space: nowrap; }
+.portfolio-table td small { display: block; color: var(--muted); font-size: 10px; }
+@media (max-width: 700px) { .portfolio-positions-heading { flex-direction: column; } .portfolio-position-filters { width: 100%; } .portfolio-position-filters button { flex: 1; justify-content: center; } }
 .portfolio-ledger-panel { grid-column: 1 / -1; min-width: 0; }
 .portfolio-ledger-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .portfolio-ledger-heading h3 { margin: 0 0 5px; }
