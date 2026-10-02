@@ -3351,3 +3351,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Input/select nhận cùng dark surface, border, chiều cao, typography và focus ring với form Ghi nhận giao dịch. Disabled state rõ; cảnh báo giao dịch từ Đề xuất dùng help style riêng. Mobile dùng một cột, modal neo đáy trong viewport và hai action chia đều.
 - Regression sửa giao dịch kiểm tra thêm màu nền control để ngăn quay lại form trắng. Kiểm chứng: frontend unit/service/encoding **33/33**, Danh mục + page audit desktop/mobile **15/15**, production safe-build/bundle integrity pass với artifact `index-zY4_gSAR.js`.
 - Điểm tiếp tục không đổi: coverage EOD toàn thị trường còn thiếu do provider reset; UI Nhật ký đã có style đồng bộ cho add/edit/import/delete và không cần refactor presentation thêm khi chưa có vấn đề usability mới.
+
+## Theo dõi phục hồi coverage EOD — 2026-10-02
+
+- Các lượt gap retry tự động mỗi 15 phút tiếp tục tạo evidence lúc 17:31, 17:46, 18:01, 18:16 và 18:31 giờ địa phương; điều này xác nhận scheduler, backend và Vnstock worker đang phối hợp đúng sau khi được khôi phục.
+- Chạy thêm một lượt backfill có giới hạn cho 25 mã thiếu, batch size 1 và ngưỡng dừng 8 phản hồi rỗng liên tiếp. Lượt này ghi thêm 7 mã (`IMP`, `SBB`, `SBH`, `SBL`, `SBM`, `SC5`, `SCJ`) rồi dừng an toàn sau 20 mục tiêu; exit code 1 biểu thị scope chọn vẫn chưa đủ, không phải tiến trình bị crash.
+- Độ phủ phiên 02/10 đo lại đạt **274/551, 49,7%**, còn thiếu 277 mã. Provider đang `ready`, circuit đóng, lần retry gần nhất kết thúc không lỗi; mức tăng từ checkpoint 70 mã chủ yếu cho thấy các lượt retry nền đã tiếp tục thu thập khi upstream phục hồi.
+- Không tăng concurrency và không tạo dữ liệu thay thế. Job tự động tiếp tục retry đến 19:59; checkpoint kế tiếp cần đo lại coverage sau cửa sổ này, phân loại các mã còn thiếu và chỉ cân nhắc supervisor cho worker như một hạng mục vận hành riêng.
