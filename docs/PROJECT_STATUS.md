@@ -3254,3 +3254,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - E2E giữ request login ở trạng thái pending để xác nhận control bị khóa và request count chỉ là một, sau đó trả 401 để kiểm tra `aria-busy=false`, alert nhận focus và input còn nguyên. Không thêm timeout phía client hoặc thay đổi API contract.
 - Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-ZGyQItRS.js`; targeted auth cùng page audit desktop/mobile **3/3** và toàn bộ Playwright **70/70** pass.
 - Điểm tiếp tục: khôi phục mật khẩu vẫn chờ backend contract. Hạng mục độc lập tiếp theo là chuẩn hóa session-expired/logout UX và xóa credential nhạy cảm khỏi state đúng thời điểm mà không làm mất thông báo nguyên nhân.
+
+## Thu hồi phiên và phản hồi đăng xuất — 2026-10-02
+
+- Sửa lỗi vòng đời khiến `setAuth(null)` đưa UI về đăng nhập nhưng token `market-auth` cũ vẫn còn trong `localStorage`. `authSession.mjs` nay là điểm dùng chung để xóa credential trước khi phát sự kiện hết phiên; cả request trong `App.jsx` và `requestJson` của component đều kích hoạt luồng này khi API có token trả 401.
+- Khi phiên hết hạn, UI xóa token, email/mật khẩu, Watchlist và dữ liệu Danh mục khỏi React state ngay lập tức nhưng vẫn giữ thông báo nguyên nhân có focus/alert. Đăng xuất chủ động dùng cùng cleanup, hiển thị **Bạn đã đăng xuất an toàn** bằng live status và không gắn nhãn lỗi. Reload sau cả hai nhánh không phục hồi token cũ.
+- Kiểm chứng: frontend unit/service/encoding **27/27**; production safe-build và bundle integrity pass với artifact `index-C3IhE9j2.js`; targeted auth cùng page audit desktop/mobile **4/4** và toàn bộ Playwright **71/71** pass.
+- Điểm tiếp tục: hardening cookie/session phía server và khôi phục mật khẩu vẫn cần contract backend. Lát cắt frontend độc lập tiếp theo là kiểm tra/loại bỏ auth object lưu sai schema hoặc hỏng JSON ngay lúc bootstrap, trước khi render dashboard.

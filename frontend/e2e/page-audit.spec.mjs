@@ -97,6 +97,8 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     }
     await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
     await expect(page.locator('.auth-page')).toBeVisible()
+    await expect(page.getByRole('status')).toHaveText('Bạn đã đăng xuất an toàn.')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()
     const password = page.getByLabel('Mật khẩu đăng nhập')
     await expect(password).toHaveAttribute('type', 'password')
     await page.getByRole('button', { name: 'Hiện mật khẩu' }).click()

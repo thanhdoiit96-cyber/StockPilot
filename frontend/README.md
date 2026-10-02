@@ -30,6 +30,8 @@ Bộ kiểm thử [api.test.mjs](src/services/api.test.mjs) dùng Node test runn
 
 [e2e/loading.spec.mjs](e2e/loading.spec.mjs) dùng Playwright với Chrome headless để kiểm tra tương tác React: chuyển mã khi request còn chờ, lỗi mạng/404/500/JSON, empty state, retry chi tiết và lỗi health/cache độc lập. API được giả lập; kết quả PostgreSQL thật được kiểm tra riêng. [playwright.config.mjs](playwright.config.mjs) tự quản lý Vite ở cổng 4180 và báo cáo HTML. Lệnh chạy/điều kiện nằm trong [QUICK_START](../QUICK_START.md).
 
+Auth dùng một lifecycle thu hồi phiên chung: mọi API có token trả 401 đều xóa `market-auth` trước khi đưa người dùng về màn hình đăng nhập, dọn email/mật khẩu và dữ liệu cá nhân trong memory nhưng vẫn giữ thông báo nguyên nhân. Đăng xuất chủ động dùng cùng cleanup và có xác nhận accessible; reload không khôi phục credential cũ.
+
 Chưa có React Router, Redux hoặc thư viện chart riêng. Các công nghệ đó trong tài liệu thiết kế là đề xuất. npm start chạy Vite preview; Dockerfile hiện chạy dev server.
 
 ## Overview intraday quotes

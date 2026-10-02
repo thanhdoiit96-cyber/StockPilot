@@ -18,6 +18,7 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
+import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, clearStoredAuth, notifySessionExpired } from "./services/authSession.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -58,6 +59,7 @@ async function je(e, {
       f = (await u.clone().json()).message || "";
     } catch {}
     const k = u.status === 401 && /Invalid or expired token/i.test(f) ? "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại." : f || (u.status === 404 ? "Không tìm thấy dữ liệu được yêu cầu." : u.status === 429 ? "Có quá nhiều yêu cầu. Vui lòng chờ một chút rồi thử lại." : "Máy chủ không thể xử lý yêu cầu. Vui lòng thử lại.");
+    u.status === 401 && l && notifySessionExpired(k);
     throw new ur(`${k} (HTTP ${u.status})`, u.status);
   }
   if (u.status === 204) return {
@@ -1225,7 +1227,7 @@ function lv() {
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
   const [ue, Bt] = D.useState(() => {
       try {
-        return JSON.parse(localStorage.getItem("market-auth") || "null");
+        return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null");
       } catch {
         return null;
       }
@@ -1236,6 +1238,8 @@ function lv() {
       password: ""
     }),
     [authError, setAuthError] = D.useState(""),
+    [authCredentialCleared, setAuthCredentialCleared] = D.useState(false),
+    [authNotice, setAuthNotice] = D.useState(""),
     [authSubmitting, setAuthSubmitting] = D.useState(false),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
@@ -1282,6 +1286,27 @@ function lv() {
     }).filter(Boolean)), [pt]),
     Vn = D.useMemo(() => /* @__PURE__ */new Set([...gt, ...yt]), [gt, yt]),
     ll = [...Vn].sort().join(",");
+  const endSession = (message = "", notice = "") => {
+    clearStoredAuth();
+    $r.current = null;
+    Bn([]);
+    mt(null);
+    Vt({
+      email: "",
+      password: ""
+    });
+    setAuthSubmitting(false);
+    setAuthError(message);
+    setAuthCredentialCleared(Boolean(message));
+    setAuthNotice(notice);
+    on("");
+    Bt(null);
+  };
+  D.useEffect(() => {
+    const handleSessionExpired = d => endSession(d.detail?.message || "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.");
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
   D.useEffect(() => {
     En(1);
   }, [ll]);
@@ -1323,9 +1348,9 @@ function lv() {
     $r.current !== ue.token && (Bn([]), mt(null), $r.current = ue.token);
     let d = false;
     const S = new AbortController();
-    localStorage.setItem("market-auth", JSON.stringify(ue));
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(ue));
     const $ = A => {
-      d || (A.status === 401 ? (Bt(null), on(A.message)) : Dr("Không tải được danh mục. Vui lòng thử lại."));
+      d || A.status !== 401 && Dr("Không tải được danh mục. Vui lòng thử lại.");
     };
     return Fr(true), Dr(""), je("/api/watchlist", {
       token: ue.token,
@@ -1430,6 +1455,8 @@ function lv() {
       d.preventDefault();
       if (authSubmitting) return;
       setAuthError("");
+      setAuthCredentialCleared(false);
+      setAuthNotice("");
       setAuthSubmitting(true);
       try {
         const S = await je(`/api/auth/${Un}`, {
@@ -1442,7 +1469,7 @@ function lv() {
         }), Vt({
           email: "",
           password: ""
-        }), setAuthError(""), on("");
+        }), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
       } catch (S) {
         setAuthError(S.message);
       } finally {
@@ -1706,7 +1733,7 @@ function lv() {
           type: "button",
           disabled: authSubmitting,
           onClick: () => {
-            ei(Un === "login" ? "register" : "login"), setAuthError(""), on("");
+            ei(Un === "login" ? "register" : "login"), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
           },
           children: p(Un === "login" ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")
         }), authSubmitting && O.jsx("p", {
@@ -1716,7 +1743,13 @@ function lv() {
           children: Un === "login" ? "Đang xác thực thông tin đăng nhập…" : "Đang tạo tài khoản an toàn…"
         }), O.jsx(AuthErrorMessage, {
           message: authError || dt,
-          mode: Un
+          mode: Un,
+          credentialCleared: authCredentialCleared
+        }), authNotice && O.jsx("p", {
+          className: "auth-session-notice",
+          role: "status",
+          "aria-live": "polite",
+          children: authNotice
         })]
       })]
     })
@@ -1845,7 +1878,7 @@ function lv() {
           }), O.jsx("button", {
             className: "ghost-btn",
             onClick: () => {
-              setAuthError(""), on(""), Bt(null);
+              endSession("", "Bạn đã đăng xuất an toàn.");
             },
             children: p("Đăng xuất")
           })]
