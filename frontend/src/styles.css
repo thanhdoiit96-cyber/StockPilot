@@ -945,6 +945,11 @@ th {
 .auth-password-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .auth-password-field > small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 .auth-password-field .auth-caps-warning { color: #fbbf24; font-weight: 700; }
+.auth-error-message { display: grid; gap: 4px; padding: 11px 12px; border: 1px solid rgba(248, 113, 113, .34); border-radius: 9px; background: rgba(248, 113, 113, .09); }
+.auth-error-message:focus { outline: 2px solid #f87171; outline-offset: 2px; }
+.auth-error-message strong { color: #fecaca; font-size: 12px; }
+.auth-error-message span { color: #fecaca; font-size: 12px; line-height: 1.45; }
+.auth-error-message small { color: #fda4af; font-size: 10px; }
 .error-text { color: #b42318; }
 
 
