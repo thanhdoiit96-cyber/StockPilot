@@ -89,4 +89,15 @@ router.get('/me', requireAuth, async (req, res) => {
   return res.json({ success: true, user: publicUser(user) });
 });
 
+router.patch('/profile', requireAuth, async (req, res) => {
+  const displayName = req.body?.display_name == null ? null : String(req.body.display_name).trim();
+  if (displayName !== null && (!displayName || displayName.length > 120)) {
+    return res.status(400).json({ success: false, message: 'Tên hiển thị phải dài từ 1 đến 120 ký tự' });
+  }
+  const user = await User.findByPk(req.user.sub);
+  if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+  await user.update({ display_name: displayName });
+  return res.json({ success: true, user: publicUser(user) });
+});
+
 module.exports = router;
