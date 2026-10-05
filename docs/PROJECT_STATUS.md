@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
+
+- Thay profile-card bằng AccountPanel: nút nhận diện tài khoản có avatar/tên trong sidebar, mở hộp thoại hồ sơ riêng với bố cục hai cột desktop, một cột mobile. Có thể mở khi sidebar thu gọn.
+- Form tên hiển thị dùng PATCH hiện có; lưu/hoàn tác, khóa khi đang gửi, giữ bản nháp khi lỗi và cảnh báo bỏ thay đổi. Email chỉ đọc; trạng thái xác thực dựa trên email_verified_at, không có nút xác thực giả khi chưa có dịch vụ gửi email.
+- Đăng xuất có vùng riêng, báo lỗi nếu yêu cầu thất bại. Dialog hỗ trợ Escape, focus và bàn phím qua native dialog.
+- Kiểm chứng: build và bundle integrity đạt; scripts/verify-account-panel.mjs đạt trên Chrome với API mô phỏng (lưu, lỗi, hoàn tác, email chỉ đọc, Escape/focus, collapsed sidebar, mobile). Đã xem screenshot desktop/mobile. Đây chưa phải kiểm chứng lưu hồ sơ bằng session/backend thật.
+- Điểm tiếp tục: kiểm chứng PATCH hồ sơ và đăng xuất bằng session development thật; triển khai luồng xác thực email khi có email delivery và contract token/rate limit. Chưa bổ sung số điện thoại/ngày sinh khi chưa có nhu cầu và schema.
+
 Cập nhật: 2026-10-05.
 
 ## Yêu cầu làm việc đã ghi nhận

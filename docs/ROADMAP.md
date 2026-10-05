@@ -687,3 +687,7 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 - Ưu tiên kế tiếp: trace trên runner phù hợp, tối ưu theo số liệu, bổ sung metrics request/worker và hoàn thiện E2E auth lifecycle.
 
 - Đã triển khai baseline metrics in-process tại `/api/ops/metrics` (admin-only), gồm request/status/error/auth/CORS counters và latency trung bình; collector tập trung và metrics worker chi tiết vẫn là bước vận hành tiếp theo.
+## Cập nhật tài khoản — 2026-10-05
+
+- UI hồ sơ: đã có AccountPanel riêng, responsive desktop/mobile, truy cập từ sidebar thu gọn; tên hiển thị lưu qua API, email chỉ đọc và trạng thái xác thực theo dữ liệu. Browser smoke API mô phỏng đạt.
+- Tiếp theo: live smoke hồ sơ với session thật; xác thực email cần delivery, token hết hạn và rate limit trước khi mở action cho người dùng.

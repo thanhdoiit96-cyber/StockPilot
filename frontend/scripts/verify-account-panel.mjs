@@ -1,0 +1,55 @@
+import { chromium, expect } from '@playwright/test';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+try {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  let user = { id: 1, email: 'investor@example.com', role: 'user', display_name: 'Minh Anh', email_verified_at: null };
+  let failSave = false;
+  await page.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user } });
+    if (path === '/api/auth/profile') {
+      if (failSave) return route.fulfill({ status: 500, json: { success: false, message: 'Không thể lưu hồ sơ' } });
+      user = { ...user, ...route.request().postDataJSON() };
+      return route.fulfill({ json: { success: true, user } });
+    }
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' || path === '/api/watchlist' ? [] : { positions: [], transactions: [] } } });
+  });
+  await page.goto('http://127.0.0.1:4173');
+  const trigger = page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true });
+  await trigger.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Chưa xác thực', { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel('Email đăng nhập')).toHaveAttribute('readonly', '');
+  const save = dialog.getByRole('button', { name: 'Lưu thay đổi' });
+  await expect(save).toBeDisabled();
+  await dialog.getByLabel('Tên hiển thị').fill('An Nguyễn');
+  await save.click();
+  await expect(dialog.getByText('Đã lưu thông tin cá nhân.')).toBeVisible();
+  await expect(trigger).toContainText('An Nguyễn');
+  failSave = true;
+  await dialog.getByLabel('Tên hiển thị').fill('Bản nháp');
+  await save.click();
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  await expect(dialog.getByLabel('Tên hiển thị')).toHaveValue('Bản nháp');
+  await dialog.getByRole('button', { name: 'Hoàn tác' }).click();
+  await page.screenshot({ path: 'test-results/account-desktop.png' });
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await page.locator('.sidebar-toggle').click();
+  await trigger.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await trigger.click();
+  await expect(dialog).toBeVisible();
+  if (await dialog.evaluate(el => el.scrollWidth > el.clientWidth + 1)) throw new Error('Dialog overflow');
+  await page.screenshot({ path: 'test-results/account-mobile.png' });
+  await dialog.getByRole('button', { name: 'Đóng thông tin cá nhân' }).click();
+  await expect(dialog).not.toBeVisible();
+  if (errors.length) throw new Error(errors.join('\n'));
+  console.log('Account panel: save, error/retry draft, readonly email, Escape/focus, collapsed sidebar and mobile passed (mock API).');
+} finally { await browser.close(); }
