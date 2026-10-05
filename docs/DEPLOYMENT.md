@@ -2,6 +2,8 @@
 
 # Hướng Dẫn Deployment
 
+> Hiện trạng Compose demo: `postgres`, `worker`, `backend`, `frontend` đều có healthcheck và `restart: unless-stopped`; dependency chờ `service_healthy`. Worker dùng image Python riêng, concurrency 1, không publish cổng host. Hướng dẫn chạy chuẩn nằm trong [QUICK_START](../QUICK_START.md); các phần bên dưới có thể là thiết kế triển khai mở rộng.
+
 ## 1. Environment Setup
 
 ### Pre-requisites

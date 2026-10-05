@@ -165,7 +165,9 @@ docker compose exec backend npm run seed
 
 Mở http://localhost:5173. API ở http://localhost:5000/api/health.
 
-Compose có ba dịch vụ: postgres, backend, frontend. Database trong container tên stock_analyst, user stock_analyst_user; PostgreSQL không mở cổng ra máy host. Cấu hình này khác database thủ công và không cần chỉnh cho giống nhau.
+Compose có bốn dịch vụ: postgres, worker Vnstock, backend và frontend. Worker chỉ mở cổng 8787 trong mạng Compose, giữ concurrency 1 và backend gọi qua `http://worker:8787`; scheduler EOD vẫn chỉ bật khi cấu hình rõ `VNSTOCK_EOD_ENABLED=true`. Database trong container tên stock_analyst, user stock_analyst_user; PostgreSQL không mở cổng ra máy host. Cấu hình này khác database thủ công và không cần chỉnh cho giống nhau.
+
+Cả bốn dịch vụ có healthcheck và `restart: unless-stopped`; backend chờ PostgreSQL + worker healthy, frontend chờ backend healthy. `docker compose ps` phải hiển thị trạng thái healthy trước khi smoke UI/API. Đây là restart policy của Compose, không phải cam kết tự khởi động Docker Engine sau reboot.
 
 Dừng bằng docker compose stop; khởi động lại bằng docker compose up -d. Volume postgres_data giữ dữ liệu. Đổi DB_PASSWORD trong .env không tự đổi mật khẩu role trong volume đã tồn tại.
 
@@ -241,6 +243,7 @@ Giá seed có đơn vị VND. API chi tiết trả tối đa 20 giá mới nhấ
 | Cổng 5000/5173 bận | Xác định tiến trình đang dùng; nếu đổi cổng, cập nhật proxy/CORS tương ứng |
 | Không tìm thấy package | Chạy npm.cmd ci tại đúng thư mục dịch vụ |
 | Compose báo sai mật khẩu sau khi đổi .env | Kiểm tra role trong database hiện hữu; không xóa volume để xử lý mặc định |
+| Compose backend không healthy | Kiểm tra lần lượt `docker compose logs worker`, worker health, migrations và kết nối PostgreSQL; không tăng worker concurrency để che lỗi provider |
 
 Lệnh npm start của frontend chạy Vite preview cho bản build, chưa phải cấu hình triển khai production. Hướng dẫn trên dùng Vite dev server.
 
