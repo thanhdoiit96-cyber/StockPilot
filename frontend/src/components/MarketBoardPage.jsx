@@ -217,6 +217,11 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const quoteProviders = [...new Set(Object.values(mergedQuotes).map(quote => quote?.upstream || quote?.provider).filter(Boolean))]
   const hasFilters = Boolean(queryInput.trim() || sector)
   const clearFilters = () => { setQueryInput(''); setQuery(''); setSector(''); setPage(1) }
+  const openRowWithKeyboard = (event, stock) => {
+    if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
+    event.preventDefault()
+    onOpenDetail?.(stock)
+  }
 
   return <section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label="Bảng giá" data-react-market-board="true">
     <div className="panel-header">
@@ -266,7 +271,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <th aria-sort={sort.key === 'volume' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo khối lượng" onClick={() => toggleSort('volume')}>Khối lượng {sort.key === 'volume' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
           <th>Nguồn dữ liệu</th><th>Phân tích</th><th>Thao tác</th>
         </tr></thead>
-        <tbody>{rows.length ? rows.map(row => <tr className={row.pinned ? 'pinned-stock' : ''} key={row.stock.id} onClick={() => onOpenDetail?.(row.stock)}>
+        <tbody>{rows.length ? rows.map(row => <tr className={row.pinned ? 'pinned-stock' : ''} key={row.stock.id} tabIndex="0" onClick={() => onOpenDetail?.(row.stock)} onKeyDown={event => openRowWithKeyboard(event, row.stock)}>
           <td className="market-symbol-cell"><button className="symbol" type="button" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock) }}>{row.symbol}</button>{row.pinned && <span className="pin-labels" aria-label={`Nhãn cá nhân của ${row.symbol}`}>{row.inPortfolio && <small className="pin-badge portfolio">Danh mục</small>}{row.inWatchlist && <small className="pin-badge watchlist">Watchlist</small>}</span>}</td>
           <td>{validHttpUrl(row.stock.website_url)
             ? <a href={row.stock.website_url} target="_blank" rel="noreferrer" title={row.stock.website_url} onClick={event => event.stopPropagation()}>{row.stock.name || row.symbol}</a>
