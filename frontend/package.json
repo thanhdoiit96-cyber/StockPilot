@@ -13,6 +13,7 @@
     "check:source-parity": "node scripts/check-source-parity.mjs",
     "normalize:recovered-source": "node scripts/normalize-recovered-source.mjs",
     "check:bundle": "node scripts/check-bundle-integrity.mjs",
+    "check:prometheus": "node ../scripts/verify-prometheus-contract.mjs",
     "verify:live-analysis": "node scripts/verify-live-analysis.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
     "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
