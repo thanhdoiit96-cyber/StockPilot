@@ -3541,3 +3541,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Bổ sung logging anchor dùng `json-file` với `max-size=10m`, `max-file=3` cho cả bốn service; thêm `stop_grace_period` 30 giây cho PostgreSQL/backend và 15 giây cho worker/frontend. Điều này giới hạn disk growth và cho process hoàn tất response đang mở khi Compose stop/restart.
 - Đây là cấu hình vận hành local/demo, không tuyên bố retention/audit production. Docker CLI vẫn không có trong môi trường hiện tại nên chưa chạy config/build/up; runtime gate Compose còn mở như checkpoint trước.
+
+## Checklist hiệu năng, UX và auth — 2026-10-05
+
+- Đã kiểm tra live: UI preview `4173`, backend health `5000` và worker health `8787` đều HTTP/health đạt. Backend regression **39 suite / 165 test** và frontend regression **43/43**, safe-build/bundle integrity đều đạt.
+- Auth hardening: đã tạo session development tạm thời bằng cookie-first; register `201`, `/api/auth/me` `200`, refresh rotation + CSRF `200`, đủ ba cookie development. Chưa loại bỏ Bearer/localStorage vì compatibility window và browser trace chưa hoàn tất.
+- Market Board performance: authenticated trace đã nhận credential thật nhưng Chrome headless bị runner Windows trả `spawn EPERM`; chưa có số liệu browser p50/p95 để quyết định pagination/windowing.
+- UX/data quality: chưa mở rộng tối ưu request hoặc loading behavior trước khi có trace authenticated; các trạng thái hiện có tiếp tục được bảo vệ bởi regression hiện hành.
+- Vận hành: health hiện đạt; metrics request/worker, request ID và log collector tập trung chưa triển khai. Docker runtime gate vẫn chờ host có Docker CLI.
+- Điểm tiếp tục: chạy trace trên runner/browser không bị `EPERM`, sau đó dùng số liệu để chọn tối ưu Market Board; tiếp theo thêm metrics tối thiểu và E2E session-expiry/multi-tab trước khi đóng compatibility window.

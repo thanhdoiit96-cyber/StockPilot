@@ -680,3 +680,8 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 6. **P2 — Vận hành dịch vụ bền vững — cấu hình Compose hoàn thành, runtime gate còn mở 2026-10-05.** Compose đã có worker riêng, healthcheck/dependency/restart policy, log rotation 10 MB × 3 và graceful stop cho bốn service; concurrency 1, scheduler EOD không tự bật. Môi trường hiện tại thiếu Docker CLI nên còn phải chạy config/build/up và xác nhận health transition trên host đích. Log collector tập trung/supervisor ngoài Compose vẫn chưa triển khai; không coi process terminal hiện tại là daemon bền qua reboot.
 
 Điểm bắt đầu chủ động tiếp theo là mục 2: đọc evidence cron tự động của phiên giao dịch kế tiếp, không ép ingestion ngoài lịch. Nếu evidence mới chưa tồn tại, chuyển sang thiết kế contract mục 3 mà không mở rộng AI Advisor.
+## Checklist hiệu năng, UX và auth — 2026-10-05
+
+- Auth live smoke cookie-first đã đạt; giữ Bearer/localStorage compatibility cho tới khi có browser trace authenticated và kiểm thử session expiry/multi-tab.
+- Market Board trace còn mở do Chrome headless trong runner trả `spawn EPERM`; chưa chọn pagination/windowing khi thiếu p50/p95 browser thật.
+- Ưu tiên kế tiếp: trace trên runner phù hợp, tối ưu theo số liệu, bổ sung metrics request/worker và hoàn thiện E2E auth lifecycle.
