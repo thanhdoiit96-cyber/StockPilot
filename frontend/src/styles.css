@@ -139,6 +139,7 @@ button, input { font: inherit; }
 .profile-card h3 { margin: 0; font-size: 2rem; }
 .profile-card span { color: var(--muted); font-size: 0.8rem; }
 .profile-details-note { display: block; margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.profile-verification-status { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; }
 
 .main-panel { padding: 28px; }
 
