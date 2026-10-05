@@ -3560,3 +3560,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Worker Vnstock thêm `GET /metrics`, đếm request theo endpoint, lỗi, partial response và latency trung bình; không ghi symbol/payload/token vào metrics.
 - Backend `/api/ops/metrics` thu thập snapshot backend và poll worker nội bộ với timeout 1,5 giây; endpoint vẫn admin-only. Worker restart và smoke `/metrics` trả snapshot rỗng đúng khi chưa có request.
 - Kiểm chứng: Python compile, Node syntax và diff check đạt. Đây là baseline nội bộ; chưa thay thế Prometheus/OpenTelemetry/log collector production.
+## Personal details schema foundation — 2026-10-05
+
+- Thêm migration `021_add_user_profile_details` và field model `display_name`, `email_verified_at` dạng nullable, không làm mất dữ liệu user hiện tại.
+- `GET /api/auth/me` và các response auth hiện trả hai field này ở dạng read-only; giá trị `null` được giữ nguyên khi chưa có dữ liệu xác thực, không suy diễn trạng thái.
+- Kiểm chứng: auth controller **2/2**, Node syntax và diff check đạt; migration 021 đã áp dụng database development trong `0,009 giây`.
+- Giới hạn: chưa có PATCH profile, email challenge hoặc UI chỉnh sửa; các phần đó chờ contract verification và rate-limit/audit design.
