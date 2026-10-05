@@ -1389,6 +1389,9 @@ function lv() {
             title: ue.user.email,
             "aria-label": `Tài khoản ${ue.user.email}`,
             children: ue.user.email
+          }), O.jsx("span", {
+            className: "topbar-user-role",
+            children: ue.user.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
           }), O.jsx("button", {
             className: "ghost-btn",
             "aria-label": "Đăng xuất khỏi tài khoản",

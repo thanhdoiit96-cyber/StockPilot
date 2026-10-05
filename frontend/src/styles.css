@@ -175,6 +175,12 @@ button, input { font: inherit; }
   white-space: nowrap;
 }
 
+.topbar-user-role {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .primary-btn,
 .ghost-btn,
 .prompt-chip {
@@ -1367,7 +1373,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .user-summary small { color: var(--muted); font-size: 11px; margin-top: 2px; }
 .user-avatar { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #60a5fa); color: #04111d; font-weight: 800; }
 @media (max-width: 800px) { .user-summary { display: none; } .topbar-actions { flex-wrap: wrap; } }
-@media (max-width: 600px) { .topbar-user-email { max-width: 42vw; } .topbar-actions { gap: 8px; } .topbar-actions .ghost-btn { padding: 9px 10px; } }
+@media (max-width: 600px) { .topbar-user-email { max-width: 42vw; } .topbar-user-role { display: none; } .topbar-actions { gap: 8px; } .topbar-actions .ghost-btn { padding: 9px 10px; } }
 .recommendation-workbench { display: grid; gap: 20px; }
 .recommendation-command-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 22px 24px; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(120deg, rgba(20, 184, 166, .12), rgba(15, 23, 42, .72)); }
 .recommendation-command-header h2 { margin: 2px 0 7px; font-size: clamp(1.35rem, 2vw, 1.8rem); letter-spacing: -.02em; }
