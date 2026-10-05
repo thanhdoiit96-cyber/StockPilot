@@ -17,7 +17,7 @@
     "verify:live-analysis": "node scripts/verify-live-analysis.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
     "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
-    "verify:release": "npm run test -- --runInBand && npm run check:bundle"
+    "verify:release": "npm run test -- --runInBand && npm run check:bundle && npm run check:prometheus"
   },
   "dependencies": {
     "react": "^18.2.0",
