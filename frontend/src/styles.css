@@ -140,6 +140,11 @@ button, input { font: inherit; }
 .profile-card span { color: var(--muted); font-size: 0.8rem; }
 .profile-details-note { display: block; margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .profile-verification-status { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; }
+.profile-details-form { display: grid; gap: 8px; margin-top: 12px; }
+.profile-details-form label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
+.profile-details-form input { width: 100%; min-width: 0; padding: 8px 9px; border: 1px solid var(--border); border-radius: 8px; background: rgba(8, 17, 33, .65); color: var(--text); font-size: 12px; }
+.profile-details-form input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.profile-details-message { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
 
 .main-panel { padding: 28px; }
 

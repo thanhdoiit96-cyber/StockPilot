@@ -660,6 +660,9 @@ function lv() {
     [authNotice, setAuthNotice] = D.useState(""),
     [authSubmitting, setAuthSubmitting] = D.useState(false),
     [transactionSubmitting, setTransactionSubmitting] = D.useState(false),
+    [profileName, setProfileName] = D.useState(() => ue.user?.display_name || ""),
+    [profileSaving, setProfileSaving] = D.useState(false),
+    [profileMessage, setProfileMessage] = D.useState(""),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
@@ -726,6 +729,19 @@ function lv() {
     });
     on("");
     Bt(null);
+  };
+  D.useEffect(() => { setProfileName(ue.user?.display_name || ""); }, [ue.user?.display_name]);
+  const saveProfile = async event => {
+    event.preventDefault();
+    if (profileSaving) return;
+    setProfileSaving(true); setProfileMessage("");
+    try {
+      const response = await je("/api/auth/profile", { method: "PATCH", token: ue.token, body: { display_name: profileName.trim() || null } });
+      Bt(current => ({ ...current, user: response.user }));
+      setProfileName(response.user.display_name || "");
+      setProfileMessage("Đã lưu thông tin cá nhân.");
+    } catch (error) { setProfileMessage(error.message); }
+    finally { setProfileSaving(false); }
   };
   D.useEffect(() => {
     const handleSessionExpired = d => endSession(d.detail?.message || "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.");
@@ -1383,6 +1399,27 @@ function lv() {
         }), O.jsx("small", {
           className: "profile-details-note",
           children: p("Email là định danh đăng nhập; chỉnh sửa thông tin cá nhân sẽ được bổ sung khi backend có contract xác thực.")
+        }), O.jsxs("form", {
+          className: "profile-details-form",
+          onSubmit: saveProfile,
+          children: [O.jsx("label", {
+            children: [p("Tên hiển thị"), O.jsx("input", {
+              value: profileName,
+              maxLength: 120,
+              onChange: event => { setProfileName(event.target.value); setProfileMessage(""); },
+              placeholder: "Tên của bạn"
+            })]
+          }), O.jsx("button", {
+            className: "ghost-btn small-btn",
+            type: "submit",
+            disabled: profileSaving,
+            "aria-busy": profileSaving,
+            children: p(profileSaving ? "Đang lưu…" : "Lưu tên")
+          })]
+        }), profileMessage && O.jsx("p", {
+          className: "profile-details-message",
+          role: "status",
+          children: profileMessage
         }), O.jsx("span", {
           className: "profile-verification-status",
           role: "status",
