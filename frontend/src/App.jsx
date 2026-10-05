@@ -1389,7 +1389,7 @@ function lv() {
           children: p("Xác thực email: chưa có dữ liệu")
         }), O.jsx("p", {
           className: "eyebrow",
-          children: p("Danh mục")
+          children: p("Thông tin cá nhân")
         })]
       })]
     }), O.jsxs("main", {
