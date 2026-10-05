@@ -3566,3 +3566,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - `GET /api/auth/me` và các response auth hiện trả hai field này ở dạng read-only; giá trị `null` được giữ nguyên khi chưa có dữ liệu xác thực, không suy diễn trạng thái.
 - Kiểm chứng: auth controller **2/2**, Node syntax và diff check đạt; migration 021 đã áp dụng database development trong `0,009 giây`.
 - Giới hạn: chưa có PATCH profile, email challenge hoặc UI chỉnh sửa; các phần đó chờ contract verification và rate-limit/audit design.
+## Personal details display-name API — 2026-10-05
+
+- Thêm `PATCH /api/auth/profile`: chỉ cập nhật `display_name` 1–120 ký tự hoặc đặt `null`; ownership lấy từ `requireAuth`, cookie mutation bắt buộc CSRF. Email/role/email_verified_at không nhận từ payload.
+- Kiểm chứng auth controller **3/3**, Node syntax và diff check đạt. Chưa bật form UI; endpoint là nền tảng cho bước Personal details tiếp theo.

@@ -30,7 +30,7 @@ describe('cookie auth controller', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockSessionRow = null;
-    const user = { id: 'user-a', email: 'investor@example.com', role: 'user', password_hash: await bcrypt.hash('password123', 4) };
+    const user = { id: 'user-a', email: 'investor@example.com', role: 'user', password_hash: await bcrypt.hash('password123', 4), update: jest.fn(async function (next) { Object.assign(this, next); }) };
     mockUser.findOne.mockResolvedValue(user);
     mockUser.findByPk.mockResolvedValue(user);
   });
@@ -59,5 +59,14 @@ describe('cookie auth controller', () => {
     const refresh = await request(app).post('/api/auth/refresh').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', 'wrong');
     expect(refresh.status).toBe(403);
     expect(refresh.body.code).toBe('CSRF_INVALID');
+  });
+
+  test('updates display name with cookie auth and csrf without allowing email changes', async () => {
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const update = await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send({ display_name: 'Nhà đầu tư mẫu', email: 'attacker@example.com' });
+    expect(update.status).toBe(200);
+    expect(update.body.user).toMatchObject({ display_name: 'Nhà đầu tư mẫu', email: 'investor@example.com' });
+    expect(mockUser.findByPk.mock.results.at(-1).value).toBeDefined();
   });
 });
