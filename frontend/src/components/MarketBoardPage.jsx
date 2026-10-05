@@ -259,6 +259,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     <p className="table-scroll-hint" role="note">Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác.</p>
     <div className="table-wrap" aria-busy={listState.loading}>
       <table>
+        <caption className="sr-only">Bảng giá cổ phiếu, có thể sắp xếp theo mã hoặc khối lượng</caption>
         <thead><tr>
           <th><button className="table-sort-btn" type="button" title="Sắp xếp theo mã" onClick={() => toggleSort('symbol')}>Mã {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
           <th>Tên</th><th>Giá</th><th>Biến động</th>
@@ -282,7 +283,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     <div className="table-pagination">
       <span className="overview-pagination-count">Hiển thị {rows.length}/{pagination.total || rows.length} mã</span>
       <label className="page-size-control overview-page-size-control"><span>Số mã mỗi trang</span><select className="app-select" value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
-      <div className="pagination-actions"><button type="button" className="ghost-btn small-btn" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>Trước</button><span>Trang {pagination.page || page}/{pagination.totalPages || 1}</span><button type="button" className="ghost-btn small-btn" disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>Sau</button></div>
+      <div className="pagination-actions" role="navigation" aria-label="Phân trang Bảng giá"><button type="button" className="ghost-btn small-btn" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>Trước</button><span aria-live="polite">Trang {pagination.page || page}/{pagination.totalPages || 1}</span><button type="button" className="ghost-btn small-btn" aria-label="Trang sau" disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>Sau</button></div>
     </div>
     <PageLoadingOverlay active={active && (listState.loading || quoteState.loading)} id="market-board-loading-overlay" className="market-board-loading-overlay" label="Đang cập nhật dữ liệu Bảng giá mới nhất…" />
   </section>
