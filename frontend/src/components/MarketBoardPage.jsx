@@ -66,6 +66,7 @@ function MarketTimeline({ rows }) {
 
 export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio }) {
   const [query, setQuery] = useState('')
+  const [queryInput, setQueryInput] = useState('')
   const [sector, setSector] = useState('')
   const [sort, setSort] = useState({ key: 'volume', direction: 'desc' })
   const [page, setPage] = useState(1)
@@ -92,6 +93,10 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const watchlistSet = useMemo(() => new Set(watchlistSymbols.map(value => String(value).toUpperCase())), [watchlistSymbols])
   const pinned = useMemo(() => [...new Set([...portfolioSet, ...watchlistSet])].sort(), [portfolioSet, watchlistSet])
   const pinnedKey = pinned.join(',')
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(queryInput), 250)
+    return () => window.clearTimeout(timer)
+  }, [queryInput])
   useEffect(() => { setPage(1) }, [pinnedKey, query, sector, pageSize])
   useEffect(() => {
     if (!active) {
@@ -221,7 +226,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
             {SECTOR_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
           </select>
         </div>
-        <input className="table-search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={query} onChange={event => setQuery(event.target.value)} />
+        <input className="table-search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={queryInput} onChange={event => setQueryInput(event.target.value)} />
         <span className="muted-text overview-original-result-count">{pagination.total || rows.length} mã</span>
         <label className="page-size-control"><span>Số mã / trang</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       </div>
