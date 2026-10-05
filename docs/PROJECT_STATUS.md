@@ -3555,3 +3555,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Thêm metrics in-process bảo vệ bởi `requireAdmin` tại `GET /api/ops/metrics`: tổng request, lỗi, auth failure, CORS failure theo health path, latency trung bình và phân bố status. Middleware chỉ ghi nhận status/path/thời lượng, không lưu URL query, body, token hay thông tin người dùng.
 - Kiểm chứng targeted metrics/auth **4/4**, Node syntax check và diff check đạt. Đây là baseline local/process, chưa thay thế metrics collector tập trung hoặc retention production.
+## Worker metrics và collector nội bộ — 2026-10-05
+
+- Worker Vnstock thêm `GET /metrics`, đếm request theo endpoint, lỗi, partial response và latency trung bình; không ghi symbol/payload/token vào metrics.
+- Backend `/api/ops/metrics` thu thập snapshot backend và poll worker nội bộ với timeout 1,5 giây; endpoint vẫn admin-only. Worker restart và smoke `/metrics` trả snapshot rỗng đúng khi chưa có request.
+- Kiểm chứng: Python compile, Node syntax và diff check đạt. Đây là baseline nội bộ; chưa thay thế Prometheus/OpenTelemetry/log collector production.
