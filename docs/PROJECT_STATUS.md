@@ -3576,3 +3576,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - TÃ¡i cáº¥u trÃºc profile card sidebar theo hierarchy tÃ i khoáº£n: email/vai trÃ², tráº¡ng thÃ¡i xÃ¡c thá»±c, form tÃªn hiá»ƒn thá»‹ vÃ  Ä‘Äƒng xuáº¥t; khÃ´ng cÃ²n email/Ä‘Äƒng xuáº¥t nÃ y náº±m ngang hÃ ng vá»›i tiÃªu Ä‘á» dashboard.
 - Collapsed sidebar giá»¯ biá»ƒu tÆ°á»£ng tÃ i khoáº£n tá»‘i giáº£n; expanded sidebar cÃ³ card ná»n, avatar, spacing vÃ  focus state phÃ¹ há»£p UI production.
 - Kiá»ƒm chá»©ng: `npm.cmd run build` thÃ nh cÃ´ng, bundle integrity passed; Preview `4173` cáº§n reload Ä‘á»ƒ nháº­n bundle `index-nf7z_QeI.js`.
+
+## Responsive sidebar regression fix â€” 2026-10-05
+
+- Live UI checker phÃ¡t hiá»‡n compact/mobile sidebar Ä‘ang áº©n toggle (width 0) vÃ  mobile height CSS bá»‹ lÃ m trÃ²n xuá»‘ng dÆ°á»›i 32px. ÄÃ£ giá»¯ toggle trÃªn nav mobile vÃ  tÄƒng kÃ­ch thÆ°á»›c lÃªn 34px Ä‘á»ƒ Ä‘áº£m báº£o hit target.
+- Production build/bundle integrity passed; Preview `4173` Ä‘Ã£ restart vÃ  phÃ¡t bundle `index-BFyp0i1v.js`.
+- Regression script Ä‘Ã£ Ä‘i qua compact trÆ°á»›c khi bá»‹ chÆ°á»·n do `spawn EPERM` khi Chrome headless khÃ´ng khá»Ÿi Ä‘á»™ng trong runner; khÃ´ng suy diá»…n browser E2E mobile Ä‘Ã£ pass Ä‘áº§y Ä‘á»§.
