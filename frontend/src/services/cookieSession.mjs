@@ -1,0 +1,40 @@
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+let refreshPromise = null
+
+export function readCsrfCookie(cookieHeader = globalThis.document?.cookie || '') {
+  for (const part of String(cookieHeader).split(';')) {
+    const separator = part.indexOf('=')
+    if (separator < 1 || part.slice(0, separator).trim() !== 'sp_csrf') continue
+    try { return decodeURIComponent(part.slice(separator + 1).trim()) } catch { return '' }
+  }
+  return ''
+}
+
+async function refreshSession() {
+  if (refreshPromise) return refreshPromise
+  const csrf = readCsrfCookie()
+  if (!csrf) return false
+  refreshPromise = fetch('/api/auth/refresh', {
+    method: 'POST', credentials: 'same-origin',
+    headers: { Accept: 'application/json', 'X-CSRF-Token': csrf }
+  }).then(response => response.ok).catch(() => false).finally(() => { refreshPromise = null })
+  return refreshPromise
+}
+
+export async function sessionFetch(url, { token, retry = true, ...init } = {}) {
+  const method = String(init.method || 'GET').toUpperCase()
+  const headers = new Headers(init.headers || {})
+  headers.set('Accept', headers.get('Accept') || 'application/json')
+  if (typeof token === 'string' && token) headers.set('Authorization', `Bearer ${token}`)
+  if (url === '/api/auth/login' || url === '/api/auth/register') headers.set('X-Auth-Mode', 'cookie-v1')
+  const csrf = readCsrfCookie()
+  if (MUTATING_METHODS.has(method) && csrf) headers.set('X-CSRF-Token', csrf)
+  const response = await fetch(url, { ...init, method, headers, credentials: 'same-origin' })
+  const cookieMode = token === true || token == null
+  if (response.status === 401 && retry && cookieMode && !url.startsWith('/api/auth/')) {
+    if (await refreshSession()) return sessionFetch(url, { ...init, token: true, retry: false })
+  }
+  return response
+}
+
+export function resetRefreshForTests() { refreshPromise = null }

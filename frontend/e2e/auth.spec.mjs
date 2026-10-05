@@ -35,6 +35,37 @@ test('authentication failure receives focus, keeps input and clears when mode ch
   await expect(page.getByRole('heading', { name: 'Tạo tài khoản' })).toBeVisible()
 })
 
+test('cookie login keeps credentials out of storage and protected requests out of authorization headers', async ({ page }) => {
+  const requests = []
+  await page.addInitScript(() => localStorage.removeItem('market-auth'))
+  await page.route('**/api/**', route => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    requests.push({ path, headers: request.headers() })
+    if (path === '/api/auth/me') return route.fulfill({ status: 401, json: { success: false, message: 'Authentication required' } })
+    if (path === '/api/auth/login') return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    if (path === '/api/auth/logout') return route.fulfill({ status: 204, body: '' })
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await page.getByLabel('Email đăng nhập').fill('investor@example.com')
+  await page.getByLabel('Mật khẩu đăng nhập').fill('password123')
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click()
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  const login = requests.find(item => item.path === '/api/auth/login')
+  expect(login.headers['x-auth-mode']).toBe('cookie-v1')
+  const storedSignal = await page.evaluate(() => JSON.parse(localStorage.getItem('market-auth')))
+  expect(storedSignal).toMatchObject({ type: 'login' })
+  expect(storedSignal.token).toBeUndefined()
+  expect(storedSignal.user).toBeUndefined()
+  const privateRequest = requests.find(item => item.path === '/api/watchlist')
+  expect(privateRequest.headers.authorization).toBeUndefined()
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  await expect.poll(() => requests.some(item => item.path === '/api/auth/logout')).toBe(true)
+})
+
 test('expired session clears stored credentials and explains why login is required', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'expired-token', user: { email: 'investor@example.com', role: 'user' } })))
   await page.route('**/api/**', async route => {
