@@ -41,3 +41,7 @@
 .account-dialog button:disabled { opacity:.45; cursor:not-allowed; }
 @media(max-width:800px) { .sidebar .account-trigger { width:auto; margin:8px 0 0; padding:6px 10px; }.sidebar .account-trigger-copy { display:grid; }.sidebar .account-chevron { display:block; }.account-avatar { width:32px; height:32px; } }
 @media(max-width:560px) { .account-heading { padding:20px; }.account-body { grid-template-columns:1fr; padding:20px; gap:22px; }.account-summary { padding:16px; }.account-summary .account-summary-note { display:none; }.account-avatar-large { width:44px; height:44px; margin-bottom:12px; }.account-footer { padding:18px 20px; }.account-heading h2 { font-size:21px; } }
+.account-discard { margin:20px 30px 0; padding:16px; border:1px solid #8a7040; border-radius:12px; background:#302b22; }
+.account-discard p { color:#e2cfab; font-size:13px; line-height:1.6; }
+.account-discard > div { display:flex; flex-wrap:wrap; gap:10px; }
+.account-discard button { min-height:44px; }
