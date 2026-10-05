@@ -30,6 +30,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | [UI_UX_AUDIT](UI_UX_AUDIT.md) | Rà soát từng page, thay đổi đã thực hiện và kế hoạch UI/UX-hiệu năng |
 | [TECH_STACK](TECH_STACK.md) | Lựa chọn công nghệ dự kiến; dependencies thực tế ở package.json/lockfile |
 | [API_DESIGN](API_DESIGN.md) | Hợp đồng API mở rộng dự kiến; API hiện có ở Backend README |
+| [AUTH_SESSION_DESIGN](AUTH_SESSION_DESIGN.md) | Contract migration JWT Bearer/localStorage sang session cookie HttpOnly, refresh rotation và CSRF |
 | [DATABASE_SCHEMA](DATABASE_SCHEMA.md) | Schema mục tiêu; schema chạy thực tế do migrations quản lý |
 | [CACHING_STRATEGY](CACHING_STRATEGY.md) | Chiến lược và ví dụ cache; hành vi hiện có ở Backend README |
 | [DATA_FLOW](DATA_FLOW.md) | Luồng dữ liệu mục tiêu |

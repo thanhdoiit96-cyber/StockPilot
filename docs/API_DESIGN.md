@@ -23,10 +23,12 @@ https://api.stockanalyst.com/api    (Production)
 ```
 
 ## Authentication
-All endpoints (except `/auth/`) require JWT token in header:
+Runtime hiện tại yêu cầu JWT token trong header cho endpoint bảo vệ:
 ```
 Authorization: Bearer <jwt_token>
 ```
+
+Các ví dụ refresh/logout bên dưới là thiết kế cũ, chưa được triển khai. Contract hardening được chọn cho public deployment — cookie HttpOnly, session server-side, refresh rotation và CSRF — nằm tại [AUTH_SESSION_DESIGN](AUTH_SESSION_DESIGN.md). Không dùng ví dụ `refreshToken` trong JSON bên dưới làm contract triển khai.
 
 ---
 

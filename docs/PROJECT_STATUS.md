@@ -3489,3 +3489,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Lần migrate đầu cắt nhầm formatter/mapper liền sau khối Đề xuất làm UI không bootstrap; build không phát hiện lỗi runtime này. Đã phục hồi từ checkpoint, thu hẹp ranh giới chính xác từ `Oi` đến trước `xa`, rồi xác nhận bằng E2E. Không giữ lại bản build lỗi.
 - Kiểm chứng: frontend unit/encoding **39/39**, source parity **9 marker**, targeted Recommendation/Portfolio/page audit **16/16**, full Playwright **78/78**, production safe-build/bundle integrity đạt với `index-C3__AJMU.js`.
 - Điểm tiếp tục: đọc evidence cron EOD tự động của phiên giao dịch kế tiếp để xác nhận universe listed, trade priority, fairness và worker concurrency 1. Nếu chưa có evidence phiên mới, chuyển sang thiết kế contract HttpOnly/SameSite + CSRF; tiếp tục không mở rộng AI Advisor.
+
+## Contract hardening phiên xác thực — 2026-10-05
+
+- Gate EOD được kiểm tra lúc 09:57 Asia/Ho_Chi_Minh: evidence EOD mới nhất vẫn là phiên 02/10 nên chưa thể đánh giá cron phiên 05/10 trước lịch 15:30. Backend health HTTP 200; Vnstock worker health `ok`, provider `vnstock`, `max_concurrency=1`. Evidence quote freshness 09:35 đã tồn tại nhưng không thay thế evidence EOD.
+- Đã rà runtime auth: backend chỉ nhận Bearer JWT; login/register trả token trong JSON; frontend lưu `market-auth` trong localStorage. Chưa có refresh/revoke, cookie parser, server-side session hoặc CSRF middleware.
+- Thêm [AUTH_SESSION_DESIGN](AUTH_SESSION_DESIGN.md) làm contract mục tiêu: access/refresh HttpOnly cookie, refresh hash và rotation trong `auth_sessions`, CSRF double-submit ràng buộc session, logout/replay revoke, CORS allowlist, đồng bộ tab không chứa secret và migration dual-mode có thời hạn. Password recovery/OAuth/MFA nằm ngoài phạm vi.
+- Không đổi mã runtime hoặc database trong lát cắt thiết kế. Điểm triển khai kế tiếp là backend session foundation: migration 019, model/service, cookie helpers và dual-mode `requireAuth` có test; frontend chỉ chuyển sau khi refresh/logout/CSRF backend hoàn chỉnh. Gate EOD vẫn phải được đọc sau cron 15:30.
