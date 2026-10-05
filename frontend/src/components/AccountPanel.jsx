@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./AccountPanel.css";
+import PasswordChangeForm from "./PasswordChangeForm.jsx";
 
-export default function AccountPanel({ user, onSave, onLogout }) {
+export default function AccountPanel({ user, onSave, onLogout, onPasswordChange }) {
+  const [passwordDirty, setPasswordDirty] = useState(false);
   const dialog = useRef(null);
   const keepEditing = useRef(null);
   const [opened, setOpened] = useState(false);
@@ -13,7 +15,8 @@ export default function AccountPanel({ user, onSave, onLogout }) {
   const [message, setMessage] = useState("");
   const identity = user?.display_name || user?.email?.split("@")[0] || "Tài khoản";
   const initial = Array.from(identity.trim())[0]?.toUpperCase() || "U";
-  const dirty = name.trim() !== (user?.display_name || "");
+  const profileDirty = name.trim() !== (user?.display_name || "");
+  const dirty = profileDirty || passwordDirty;
   useEffect(() => {
     if (!opened || (!dirty && !busy)) return;
     const warn = event => { event.preventDefault(); event.returnValue = ""; };
@@ -28,6 +31,7 @@ export default function AccountPanel({ user, onSave, onLogout }) {
   const verification = verified ? "Đã xác thực" : user?.email_verified_at === null ? "Chưa xác thực" : "Chưa có thông tin";
   function open() {
     setName(user?.display_name || "");
+    setPasswordDirty(false);
     setError("");
     setMessage("");
     setPendingExit(null);
@@ -42,7 +46,7 @@ export default function AccountPanel({ user, onSave, onLogout }) {
   }
   async function save(event) {
     event.preventDefault();
-    if (busy || !dirty) return;
+    if (busy || !profileDirty) return;
     setBusy(true); setError(""); setMessage("");
     try {
       const updated = await onSave(name.trim() || null);
@@ -92,9 +96,10 @@ export default function AccountPanel({ user, onSave, onLogout }) {
           <input id="account-email" type="email" value={user?.email || ""} readOnly />
           <small>Email hiện chưa thể thay đổi tại đây.</small>
           <div className="account-feedback" aria-live="polite">{error ? <p role="alert" className="account-error">{error}</p> : message ? <p className="account-success">{message}</p> : null}</div>
-          <div className="account-form-actions"><button type="button" className="ghost-btn" disabled={busy || !dirty} onClick={() => { setName(user?.display_name || ""); setError(""); setMessage(""); }}>Hoàn tác</button><button type="submit" className="primary-btn" disabled={busy || !dirty}>{busy ? "Đang xử lý…" : "Lưu thay đổi"}</button></div>
+          <div className="account-form-actions"><button type="button" className="ghost-btn" disabled={busy || !profileDirty} onClick={() => { setName(user?.display_name || ""); setError(""); setMessage(""); }}>Hoàn tác</button><button type="submit" className="primary-btn" disabled={busy || !profileDirty}>{busy ? "Đang xử lý…" : "Lưu thay đổi"}</button></div>
         </form>
       </div>
+      {opened && onPasswordChange && <div className="account-password-section" inert={pendingExit ? "" : undefined}><PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty} /></div>}
       <footer className="account-footer" inert={pendingExit ? "" : undefined}><div><strong>Phiên đăng nhập</strong><p>Đăng xuất khỏi tài khoản trên trình duyệt này.</p></div><button type="button" className="ghost-btn account-signout" disabled={busy} onClick={() => logout()}>Đăng xuất</button></footer>
     </dialog>, document.body)}
   </>;

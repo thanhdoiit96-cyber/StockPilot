@@ -27,7 +27,7 @@ function sessionService({ AuthSession, sequelize = AuthSession?.sequelize, rando
   });
 
   return {
-    async create(userId, { hardTtlMs = 7 * DAY_MS, idleTtlMs = DAY_MS } = {}) {
+    async create(userId, { hardTtlMs = 7 * DAY_MS, idleTtlMs = DAY_MS, transaction } = {}) {
       if (!userId) throw new Error('userId is required');
       const createdAt = now();
       const refreshToken = newToken(randomBytes);
@@ -43,7 +43,7 @@ function sessionService({ AuthSession, sequelize = AuthSession?.sequelize, rando
         last_used_at: createdAt,
         created_at: createdAt,
         updated_at: createdAt
-      });
+      }, { transaction });
       return { session, refreshToken, csrfToken };
     },
 

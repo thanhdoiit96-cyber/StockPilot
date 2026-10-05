@@ -18,7 +18,7 @@ describe('authSessionService', () => {
       csrf_token_hash: hashToken(result.csrfToken),
       expires_at: new Date(instant.getTime() + 7 * DAY_MS),
       idle_expires_at: new Date(instant.getTime() + DAY_MS)
-    }));
+    }), { transaction: undefined });
     expect(JSON.stringify(AuthSession.create.mock.calls[0][0])).not.toContain(result.refreshToken);
     expect(JSON.stringify(AuthSession.create.mock.calls[0][0])).not.toContain(result.csrfToken);
   });

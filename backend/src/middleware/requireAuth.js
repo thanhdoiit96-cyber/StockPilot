@@ -1,11 +1,11 @@
 'use strict';
 const jwt = require('jsonwebtoken');
-const { AuthSession } = require('../models');
+const { AuthSession, User } = require('../models');
 const { cookieNames, parseCookies } = require('../auth/cookies');
 const { sessionService } = require('../services/authSessionService');
 const { validateCsrfRequest } = require('./requireCsrf');
 
-function createRequireAuth({ authSessions, verify = jwt.verify } = {}) {
+function createRequireAuth({ authSessions, users = User, verify = jwt.verify } = {}) {
   return async function requireAuth(req, res, next) {
   const cookies = parseCookies(req.get('cookie') || '');
   const cookieToken = cookies[cookieNames().access] || '';
@@ -16,6 +16,12 @@ function createRequireAuth({ authSessions, verify = jwt.verify } = {}) {
   try {
     req.user = verify(token, process.env.JWT_SECRET || 'development-only-change-me');
     req.authMode = cookieToken ? 'cookie' : 'bearer';
+    if (!cookieToken) {
+      const user = await users.findByPk(req.user.sub);
+      if (!user || (user.password_version || 0) !== (req.user.pv || 0)) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+      }
+    }
     if (cookieToken) {
       const sessionStore = authSessions || sessionService({ AuthSession });
       const session = req.user.sid ? await sessionStore.findActive(req.user.sid, req.user.sub) : null;

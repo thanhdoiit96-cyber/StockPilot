@@ -2,6 +2,15 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Đổi mật khẩu — 2026-10-05
+
+- AccountPanel có mật khẩu hiện tại/mới/xác nhận, ẩn-hiện, lỗi theo kết quả API, bảo vệ bản nháp và kết thúc phiên sau khi đổi. Cần lưu hoặc hoàn tác tên trước khi đổi mật khẩu.
+- POST /api/auth/password yêu cầu auth/CSRF, ít nhất 12 ký tự và tối đa 72 byte cho mật khẩu mới, khác mật khẩu hiện tại; 5 yêu cầu/15 phút/user (in-process, chưa shared store).
+- Migration 022 thêm password_version, đã áp dụng development. Transaction khóa user, cập nhật hash/version và revoke toàn bộ cookie session; Bearer đối chiếu version database (token cũ thiếu pv tương đương 0). Login khóa cùng user để tránh tạo session từ mật khẩu cũ trong lúc đổi.
+- Kiểm chứng: full backend 40 suite/177 test đạt trước khi thêm test policy; targeted auth 14/14 đạt sau đó. Frontend 45/45, build/bundle integrity và browser profile smoke đạt.
+- Live Chrome/API/database thật: thiếu CSRF bị từ chối, mismatch và sai mật khẩu hiện tại có thông báo, đổi thành công về đăng nhập, cookie/Bearer cũ 401, mật khẩu cũ bị từ chối và mật khẩu mới đăng nhập được. Tạo một account smoke riêng; không persist credential.
+- Điểm tiếp tục: xác thực email cần email delivery; trước multi-instance cần shared rate-limit store. Chưa kiểm chứng transaction race bằng thử tải đồng thời.
+
 ### Validation hồ sơ — 2026-10-05
 
 - PATCH hồ sơ từ chối trường thiếu/sai kiểu thay vì xóa tên hoặc ép object/number thành string. Chỉ null tường minh xóa tên. Giao diện có bộ đếm và cảnh báo khi để trống.

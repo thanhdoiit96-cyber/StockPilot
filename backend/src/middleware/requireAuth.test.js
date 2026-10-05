@@ -6,7 +6,7 @@ describe('requireAuth', () => {
   beforeEach(() => { process.env.JWT_SECRET = secret; });
 
   const authSessions = { findActive: jest.fn() };
-  const requireAuth = createRequireAuth({ authSessions });
+  const requireAuth = createRequireAuth({ authSessions, users: { findByPk: async () => ({ password_version: 0 }) } });
 
   beforeEach(() => { authSessions.findActive.mockReset(); });
 

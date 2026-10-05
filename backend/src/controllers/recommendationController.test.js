@@ -1,4 +1,5 @@
 jest.mock('../models', () => ({
+  User: { findByPk: jest.fn(async () => ({ password_version: 0 })) },
   RecommendationRun: { findOne: jest.fn() },
   Stock: { findAll: jest.fn() },
   StockPrice: { findAll: jest.fn() },

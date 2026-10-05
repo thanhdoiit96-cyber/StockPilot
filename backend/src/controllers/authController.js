@@ -2,6 +2,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { User, AuthSession, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { cookieNames, parseCookies, setSessionCookies, clearSessionCookies } = require('../auth/cookies');
@@ -10,7 +11,7 @@ const { AuthSessionError, sameHash, sessionService } = require('../services/auth
 const router = express.Router();
 const sessions = sessionService({ AuthSession, sequelize });
 const publicUser = user => ({ id: user.id, email: user.email, role: user.role, display_name: user.display_name || null, email_verified_at: user.email_verified_at || null });
-const issue = user => jwt.sign({ sub: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.JWT_EXPIRES_IN || process.env.JWT_EXPIRATION || '2h' });
+const issue = user => jwt.sign({ sub: user.id, email: user.email, role: user.role, pv: user.password_version || 0 }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.JWT_EXPIRES_IN || process.env.JWT_EXPIRATION || '2h' });
 const issueAccess = (user, sid) => jwt.sign({ sub: user.id, sid, email: user.email, role: user.role }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.AUTH_ACCESS_EXPIRES_IN || '15m' });
 const wantsCookieSession = req => req.get('x-auth-mode') === 'cookie-v1';
 const sessionTokens = req => {
@@ -44,12 +45,24 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
-  const user = await User.findOne({ where: { email } });
-  if (!user || !(await bcrypt.compare(String(req.body?.password || ''), user.password_hash))) return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
-  if (wantsCookieSession(req)) return cookieResponse(res, user);
-  return res.json({ success: true, user: publicUser(user), token: issue(user) });
+  const password = String(req.body?.password || '');
+  try {
+    const authenticate = async transaction => {
+      const user = await User.findOne({ where: { email }, ...(transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {}) });
+      if (!user || !await bcrypt.compare(password, user.password_hash)) return null;
+      const created = wantsCookieSession(req) ? await sessions.create(user.id, { transaction }) : null;
+      return { user, created, token: created ? null : issue(user) };
+    };
+    const result = sequelize?.transaction ? await sequelize.transaction(authenticate) : await authenticate(null);
+    if (!result) return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
+    if (result.created) {
+      setSessionCookies(res, { accessToken: issueAccess(result.user, result.created.session.id), refreshToken: result.created.refreshToken, csrfToken: result.created.csrfToken });
+      return res.json({ success: true, user: publicUser(result.user) });
+    }
+    return res.json({ success: true, user: publicUser(result.user), token: result.token });
+  } catch (error) { next(error); }
 });
 
 router.post('/refresh', async (req, res) => {
@@ -102,6 +115,31 @@ router.patch('/profile', requireAuth, async (req, res) => {
   if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
   await user.update({ display_name: displayName });
   return res.json({ success: true, user: publicUser(user) });
+});
+
+const passwordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false,
+  keyGenerator: req => String(req.user.sub),
+  message: { success: false, message: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau 15 phút.' }
+});
+router.post('/password', requireAuth, passwordLimiter, async (req, res, next) => {
+  const { current_password: current, new_password: password } = req.body || {};
+  if (typeof current !== 'string' || !current ||
+      typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password) > 72 || password === current) {
+    return res.status(400).json({ success: false, message: 'Mật khẩu mới cần ít nhất 12 ký tự, tối đa 72 byte và khác mật khẩu hiện tại.' });
+  }
+  try {
+    const changed = await sequelize.transaction(async transaction => {
+      const user = await User.findByPk(req.user.sub, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!user || !await bcrypt.compare(current, user.password_hash)) return false;
+      await user.update({ password_hash: await bcrypt.hash(password, 12), password_version: (user.password_version || 0) + 1, updated_at: new Date() }, { transaction });
+      await AuthSession.update({ revoked_at: new Date(), revoke_reason: 'password_changed' }, { where: { user_id: user.id, revoked_at: null }, transaction });
+      return true;
+    });
+    if (!changed) return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không đúng.' });
+    clearSessionCookies(res);
+    return res.json({ success: true });
+  } catch (error) { return next(error); }
 });
 
 module.exports = router;

@@ -1,0 +1,38 @@
+import { chromium, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+try {
+  const origin = 'http://127.0.0.1:4173';
+  const first = await browser.newContext();
+  const second = await browser.newContext();
+  const legacy = await browser.newContext();
+  const email = 'password-smoke-' + randomUUID() + '@example.invalid';
+  const password = randomUUID(), nextPassword = randomUUID();
+  const registered = await first.request.post(origin + '/api/auth/register', { headers: { 'X-Auth-Mode': 'cookie-v1' }, data: { email, password } });
+  if (registered.status() !== 201) throw new Error('Registration failed: ' + registered.status());
+  await second.request.post(origin + '/api/auth/login', { headers: { 'X-Auth-Mode': 'cookie-v1' }, data: { email, password } });
+  const bearerLogin = await legacy.request.post(origin + '/api/auth/login', { data: { email, password } });
+  const { token } = await bearerLogin.json();
+  const noCsrf = await first.request.post(origin + '/api/auth/password', { data: { current_password: password, new_password: nextPassword } });
+  if (noCsrf.status() !== 403) throw new Error('Missing CSRF accepted');
+  const page = await first.newPage();
+  await page.goto(origin);
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click();
+  await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill('wrong-password');
+  await page.getByLabel('Mật khẩu mới', { exact: true }).fill(nextPassword);
+  await page.getByLabel('Xác nhận mật khẩu mới', { exact: true }).fill('mismatch');
+  await page.getByRole('button', { name: 'Đổi mật khẩu và đăng nhập lại' }).click();
+  await expect(page.getByText('Mật khẩu xác nhận chưa khớp.')).toBeVisible();
+  await page.getByLabel('Xác nhận mật khẩu mới', { exact: true }).fill(nextPassword);
+  await page.getByRole('button', { name: 'Đổi mật khẩu và đăng nhập lại' }).click();
+  await expect(page.getByText('Mật khẩu hiện tại không đúng.')).toBeVisible();
+  await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill(password);
+  await first.clearCookies({ name: 'sp_access_dev' });
+  await page.getByRole('button', { name: 'Đổi mật khẩu và đăng nhập lại' }).click();
+  await expect(page.locator('.auth-form')).toBeVisible();
+  if ((await second.request.get(origin + '/api/auth/me')).status() !== 401) throw new Error('Old cookie session accepted');
+  if ((await legacy.request.get(origin + '/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })).status() !== 401) throw new Error('Old bearer accepted');
+  if ((await legacy.request.post(origin + '/api/auth/login', { data: { email, password } })).status() !== 401) throw new Error('Old password accepted');
+  if ((await legacy.request.post(origin + '/api/auth/login', { data: { email, password: nextPassword } })).status() !== 200) throw new Error('New password rejected');
+  console.log('Live password smoke passed: CSRF, mismatch, wrong current password, change, old cookie/Bearer revoked, old login rejected, new login accepted. One development test account retained; credentials not persisted.');
+} finally { await browser.close(); }
