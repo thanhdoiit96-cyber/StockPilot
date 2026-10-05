@@ -42,6 +42,8 @@ Stock list/detail include nullable `exchange`, `listing_status` (`listed`, `deli
 
 Khóa quản trị dùng Authorization: Bearer <ADMIN_API_KEY>. Auth/JWT, watchlist, portfolio, recommendations và analysis có các router riêng; API cổ phiếu không đại diện cho toàn bộ API ứng dụng.
 
+Auth runtime vẫn phát và chấp nhận Bearer JWT cho frontend hiện tại. Foundation cookie-session đã có migration `019_create_auth_sessions`, model/service hash refresh + CSRF token, cookie helpers và `requireAuth` dual-mode. Cookie access chỉ được chấp nhận khi JWT có `sid` trỏ tới session đúng user, chưa revoke và còn cả hard/idle expiry; cookie lỗi không fallback sang Bearer. Login/register/refresh/logout chưa chuyển sang cookie ở checkpoint này, nên không xem foundation là rollout hoàn chỉnh. Contract rollout nằm trong [AUTH_SESSION_DESIGN](../docs/AUTH_SESSION_DESIGN.md).
+
 ## Cache
 
 - set(key, value, ttlMinutes = 5, cacheType = 'general') dùng TTL theo **phút**.

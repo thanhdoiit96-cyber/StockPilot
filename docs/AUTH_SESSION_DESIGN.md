@@ -1,6 +1,6 @@
 # Thiết kế hardening phiên xác thực
 
-> Trạng thái: thiết kế mục tiêu, chưa phải contract runtime. Hiện trạng vẫn là JWT Bearer trả trong JSON và lưu ở `localStorage`; xem [Backend README](../backend/README.md), [Frontend README](../frontend/README.md) và [PROJECT_STATUS](PROJECT_STATUS.md).
+> Trạng thái: contract mục tiêu; backend foundation đã triển khai qua migration 019, model/service, cookie helpers và `requireAuth` dual-mode. Login/register/refresh/logout và frontend vẫn dùng JWT Bearer/localStorage cho đến các lát cắt tiếp theo; xem [Backend README](../backend/README.md), [Frontend README](../frontend/README.md) và [PROJECT_STATUS](PROJECT_STATUS.md).
 
 ## Mục tiêu và phạm vi
 

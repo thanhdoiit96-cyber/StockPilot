@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = models => {
     if (models.WatchlistItem) User.hasMany(models.WatchlistItem, { foreignKey: 'user_id', as: 'watchlistItems' });
     if (models.Portfolio) User.hasMany(models.Portfolio, { foreignKey: 'user_id', as: 'portfolios' });
+    if (models.AuthSession) User.hasMany(models.AuthSession, { foreignKey: 'user_id', as: 'authSessions' });
   };
   return User;
 };
