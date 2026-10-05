@@ -1384,6 +1384,8 @@ function lv() {
           })]
         }), O.jsxs("div", {
           className: "topbar-actions",
+          role: "group",
+          "aria-label": "Thông tin và thao tác tài khoản",
           children: [O.jsx("span", {
             className: "topbar-user-email",
             title: ue.user.email,
