@@ -12,7 +12,7 @@ http.createServer(async (req, res) => {
       for await (const chunk of req) chunks.push(chunk);
       const body = chunks.length ? Buffer.concat(chunks) : undefined;
       const headers = {};
-      for (const name of ['authorization', 'content-type', 'accept']) {
+      for (const name of ['authorization', 'cookie', 'content-type', 'accept', 'x-auth-mode', 'x-csrf-token']) {
         if (req.headers[name]) headers[name] = req.headers[name];
       }
       const method = req.method || 'GET';
@@ -22,9 +22,12 @@ http.createServer(async (req, res) => {
         body: method === 'GET' || method === 'HEAD' ? undefined : body,
         duplex: method === 'GET' || method === 'HEAD' ? undefined : 'half'
       });
-      res.writeHead(upstream.status, {
+      const responseHeaders = {
         'content-type': upstream.headers.get('content-type') || 'application/json'
-      });
+      };
+      const setCookies = typeof upstream.headers.getSetCookie === 'function' ? upstream.headers.getSetCookie() : [];
+      if (setCookies.length) responseHeaders['set-cookie'] = setCookies;
+      res.writeHead(upstream.status, responseHeaders);
       res.end(Buffer.from(await upstream.arrayBuffer()));
       return;
     }
