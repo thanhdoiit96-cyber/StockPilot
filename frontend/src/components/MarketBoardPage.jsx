@@ -256,9 +256,9 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     <p className="overview-source-summary"><span className="overview-source-label">Nguồn dữ liệu</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : 'EOD gần nhất'}</span><span className="overview-source-description">Ưu tiên giá Intraday khi có sẵn; nếu không, dùng giá đóng cửa EOD gần nhất.</span><button className="overview-source-help" type="button" aria-label="Giải thích Intraday, EOD và dữ liệu cũ" title="Intraday: quote của phiên hiện tại. EOD: giá đóng cửa phiên gần nhất. Dữ liệu cũ: chưa có dữ liệu cho phiên chuẩn mới nhất.">?</button></p>
     <MarketTimeline rows={rows} />
     {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>Thử lại danh sách</button></p>}
-    <p className="table-scroll-hint" role="note">Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác.</p>
+    <p id="market-board-scroll-hint" className="table-scroll-hint" role="note">Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác; cột Mã được giữ cố định.</p>
     <div className="table-wrap" aria-busy={listState.loading}>
-      <table>
+      <table aria-describedby="market-board-scroll-hint">
         <caption className="sr-only">Bảng giá cổ phiếu, có thể sắp xếp theo mã hoặc khối lượng</caption>
         <thead><tr>
           <th aria-sort={sort.key === 'symbol' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo mã" onClick={() => toggleSort('symbol')}>Mã {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
