@@ -138,6 +138,7 @@ button, input { font: inherit; }
 
 .profile-card h3 { margin: 0; font-size: 2rem; }
 .profile-card span { color: var(--muted); font-size: 0.8rem; }
+.profile-details-note { display: block; margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 
 .main-panel { padding: 28px; }
 
@@ -159,6 +160,8 @@ button, input { font: inherit; }
   align-items: center;
   gap: 12px;
 }
+.topbar-actions-empty { display: none; }
+.profile-logout-btn { width: 100%; margin-top: 12px; }
 
 .topbar-user-email {
   display: inline-flex;
