@@ -3550,3 +3550,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - UX/data quality: chưa mở rộng tối ưu request hoặc loading behavior trước khi có trace authenticated; các trạng thái hiện có tiếp tục được bảo vệ bởi regression hiện hành.
 - Vận hành: health hiện đạt; metrics request/worker, request ID và log collector tập trung chưa triển khai. Docker runtime gate vẫn chờ host có Docker CLI.
 - Điểm tiếp tục: chạy trace trên runner/browser không bị `EPERM`, sau đó dùng số liệu để chọn tối ưu Market Board; tiếp theo thêm metrics tối thiểu và E2E session-expiry/multi-tab trước khi đóng compatibility window.
+
+## Request metrics vận hành — 2026-10-05
+
+- Thêm metrics in-process bảo vệ bởi `requireAdmin` tại `GET /api/ops/metrics`: tổng request, lỗi, auth failure, CORS failure theo health path, latency trung bình và phân bố status. Middleware chỉ ghi nhận status/path/thời lượng, không lưu URL query, body, token hay thông tin người dùng.
+- Kiểm chứng targeted metrics/auth **4/4**, Node syntax check và diff check đạt. Đây là baseline local/process, chưa thay thế metrics collector tập trung hoặc retention production.

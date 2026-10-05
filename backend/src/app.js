@@ -24,9 +24,12 @@ const portfolioController = require('./controllers/portfolioController');
 const recommendationController = require('./controllers/recommendationController');
 const advisorController = require('./controllers/advisorController');
 const requireAdmin = require('./middleware/requireAdmin');
+const requestMetrics = require('./middleware/requestMetrics');
+const { createRequestMetrics } = require('./services/requestMetrics');
 
 // Initialize Express app
 const app = express();
+const metrics = createRequestMetrics();
 
 // Logger configuration
 const logger = winston.createLogger({
@@ -45,6 +48,7 @@ const logger = winston.createLogger({
 // Middleware
 app.use(helmet());
 app.use(cors(buildCorsOptions()));
+app.use(requestMetrics(metrics));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -96,6 +100,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.get('/api/ops/metrics', requireAdmin, (req, res) => res.json({ success: true, data: metrics.snapshot() }));
 
 // AI gate status is read-only operational evidence; it never enables generative AI by itself.
 app.get('/api/ai-gate', (req, res) => {
