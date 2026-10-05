@@ -113,6 +113,40 @@ app.get('/api/ops/metrics', requireAdmin, async (req, res) => {
   return res.json({ success: true, data: { backend: metrics.snapshot(), worker } });
 });
 
+app.get('/api/ops/metrics/prometheus', requireAdmin, async (req, res) => {
+  const workerUrl = process.env.VNSTOCK_WORKER_URL || 'http://127.0.0.1:8787';
+  let worker = { available: false };
+  try {
+    const response = await fetch(`${workerUrl}/metrics`, { signal: AbortSignal.timeout(1500) });
+    if (response.ok) worker = { available: true, ...(await response.json()) };
+  } catch (_) {}
+  const backend = metrics.snapshot();
+  const lines = [
+    '# HELP stockpilot_backend_requests_total Backend requests observed.',
+    '# TYPE stockpilot_backend_requests_total counter',
+    `stockpilot_backend_requests_total ${backend.requests}`,
+    '# HELP stockpilot_backend_errors_total Backend responses with status >= 400.',
+    '# TYPE stockpilot_backend_errors_total counter',
+    `stockpilot_backend_errors_total ${backend.errors}`,
+    '# HELP stockpilot_backend_auth_failures_total Backend 401/403 responses.',
+    '# TYPE stockpilot_backend_auth_failures_total counter',
+    `stockpilot_backend_auth_failures_total ${backend.auth_failures}`,
+    '# HELP stockpilot_backend_average_latency_ms Average backend response latency.',
+    '# TYPE stockpilot_backend_average_latency_ms gauge',
+    `stockpilot_backend_average_latency_ms ${backend.average_latency_ms}`,
+    '# HELP stockpilot_worker_requests_total Worker requests observed.',
+    '# TYPE stockpilot_worker_requests_total counter',
+    `stockpilot_worker_requests_total ${worker.requests || 0}`,
+    '# HELP stockpilot_worker_errors_total Worker errors observed.',
+    '# TYPE stockpilot_worker_errors_total counter',
+    `stockpilot_worker_errors_total ${worker.errors || 0}`,
+    '# HELP stockpilot_worker_partial_total Worker partial responses observed.',
+    '# TYPE stockpilot_worker_partial_total counter',
+    `stockpilot_worker_partial_total ${worker.partial || 0}`
+  ];
+  return res.type('text/plain').send(`${lines.join('\n')}\n`);
+});
+
 // AI gate status is read-only operational evidence; it never enables generative AI by itself.
 app.get('/api/ai-gate', (req, res) => {
   try {
