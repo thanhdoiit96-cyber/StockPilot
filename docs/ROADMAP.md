@@ -685,3 +685,5 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 - Auth live smoke cookie-first đã đạt; giữ Bearer/localStorage compatibility cho tới khi có browser trace authenticated và kiểm thử session expiry/multi-tab.
 - Market Board trace còn mở do Chrome headless trong runner trả `spawn EPERM`; chưa chọn pagination/windowing khi thiếu p50/p95 browser thật.
 - Ưu tiên kế tiếp: trace trên runner phù hợp, tối ưu theo số liệu, bổ sung metrics request/worker và hoàn thiện E2E auth lifecycle.
+
+- Đã triển khai baseline metrics in-process tại `/api/ops/metrics` (admin-only), gồm request/status/error/auth/CORS counters và latency trung bình; collector tập trung và metrics worker chi tiết vẫn là bước vận hành tiếp theo.
