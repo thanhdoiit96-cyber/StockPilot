@@ -689,6 +689,8 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 - Đã triển khai baseline metrics in-process tại `/api/ops/metrics` (admin-only), gồm request/status/error/auth/CORS counters và latency trung bình; collector tập trung và metrics worker chi tiết vẫn là bước vận hành tiếp theo.
 ## Cập nhật tài khoản — 2026-10-05
 
+- Đổi mật khẩu đã triển khai UI/API/migration và live smoke development: kiểm tra mật khẩu hiện tại, policy mới, giới hạn thử, thu hồi cookie sessions và Bearer cũ. Shared rate-limit store còn là gate cho multi-instance.
+
 - UI hồ sơ: đã có AccountPanel riêng, responsive desktop/mobile, truy cập từ sidebar thu gọn; tên hiển thị lưu qua API, email chỉ đọc và trạng thái xác thực theo dữ liệu. Browser smoke API mô phỏng đạt.
 - Tiếp theo: live smoke hồ sơ với session thật; xác thực email cần delivery, token hết hạn và rate limit trước khi mở action cho người dùng.
 - Live smoke hồ sơ đã đạt với backend development: lưu sau access-cookie expiry, reload persistence và logout; frontend 45/45. Mốc tiếp theo là xác thực email với delivery/token/rate limit.

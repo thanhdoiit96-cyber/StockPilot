@@ -46,3 +46,8 @@
 .account-discard > div { display:flex; flex-wrap:wrap; gap:10px; }
 .account-discard button { min-height:44px; }
 .account-form .account-reset-hint { margin-top:8px; color:#e2cfab; }
+.account-password-section { padding:24px 30px; border-top:1px solid #29384c; }
+.account-password-form { gap:12px; }
+.account-password-form h3 { margin:0; }
+.account-password-form > p { color:#94a3b8; font-size:13px; line-height:1.6; margin:0; }
+.account-password-form button { align-self:flex-start; min-height:44px; }

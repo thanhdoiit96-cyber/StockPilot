@@ -1369,6 +1369,11 @@ function lv() {
           Bt(current => current ? { ...current, user: response.user } : current);
           return response.user;
         },
+        onPasswordChange: async body => {
+          await je("/api/auth/password", { method: "POST", token: ue?.token, body });
+          broadcastAuthEvent("logout");
+          endSession("", "Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.");
+        },
         onLogout: async () => {
           await je("/api/auth/logout", { method: "POST", token: ue?.token });
           broadcastAuthEvent("logout");

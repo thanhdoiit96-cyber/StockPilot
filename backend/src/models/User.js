@@ -3,6 +3,7 @@ module.exports = (sequelize, DataTypes) => {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
   email: { type: DataTypes.STRING(255), allowNull: false, unique: true, validate: { isEmail: true } },
   password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  password_version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
   role: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'user' },
   display_name: { type: DataTypes.STRING(120), allowNull: true },
   email_verified_at: { type: DataTypes.DATE, allowNull: true },

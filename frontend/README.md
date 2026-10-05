@@ -6,6 +6,8 @@ Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất 
 
 | Tệp | Vai trò |
 | --- | --- |
+| [src/components/PasswordChangeForm.jsx](src/components/PasswordChangeForm.jsx) | Đổi mật khẩu trong dialog tài khoản, xác nhận/ẩn-hiện và thông báo lỗi; thành công kết thúc phiên và yêu cầu đăng nhập lại |
+| [scripts/verify-live-password.mjs](scripts/verify-live-password.mjs) | Live smoke qua Preview 4173, tạo account test riêng và giữ lại; kiểm tra đổi mật khẩu, từ chối cookie/Bearer/mật khẩu cũ và đăng nhập mới; không lưu credential |
 | [scripts/verify-live-profile.mjs](scripts/verify-live-profile.mjs) | Live smoke qua Preview 4173: tạo một tài khoản development riêng (giữ lại), kiểm tra lưu sau access-cookie expiry, reload và logout; không lưu credential |
 | [src/components/AccountPanel.jsx](src/components/AccountPanel.jsx) | Sidebar account entry và dialog hồ sơ; PATCH tên hiển thị, email chỉ đọc, trạng thái xác thực và đăng xuất. Smoke với API mô phỏng: node scripts/verify-account-panel.mjs trên Preview 4173 |
 | [src/main.jsx](src/main.jsx) | Khởi tạo React |

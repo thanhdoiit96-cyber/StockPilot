@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 let mockSessionRow;
 const mockUser = { findOne: jest.fn(), findByPk: jest.fn(), create: jest.fn() };
 const mockAuthSession = {
+  update: jest.fn(async () => [1]),
   create: jest.fn(async values => {
     mockSessionRow = { id: 'session-a', ...values, revoked_at: null, update: jest.fn(async function (next) { Object.assign(this, next); }) };
     return mockSessionRow;
@@ -12,7 +13,7 @@ const mockAuthSession = {
   findOne: jest.fn(async () => mockSessionRow),
   findByPk: jest.fn(async () => mockSessionRow)
 };
-jest.mock('../models', () => ({ User: mockUser, AuthSession: mockAuthSession, sequelize: null }));
+jest.mock('../models', () => ({ User: mockUser, AuthSession: mockAuthSession, sequelize: { transaction: async callback => callback({ LOCK: { UPDATE: 'UPDATE' } }) } }));
 const router = require('./authController');
 
 const app = express();
@@ -27,6 +28,39 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('rejects short, oversized, reused and non-string new passwords without writes', async () => {
+    const user = await mockUser.findByPk('user-a');
+    user.id = 'validation-user';
+    const login = await request(app).post('/api/auth/login').send({ email: 'investor@example.com', password: 'password123' });
+    for (const password of ['short', 'á'.repeat(40), 'password123', {}]) {
+      const response = await request(app).post('/api/auth/password').set('Authorization', 'Bearer ' + login.body.token).send({ current_password: 'password123', new_password: password });
+      expect(response.status).toBe(400);
+    }
+    expect(user.update).not.toHaveBeenCalled();
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+  });
+  test('changes password, rejects wrong password, revokes sessions and old bearer', async () => {
+    const login = await request(app).post('/api/auth/login').send({ email: 'investor@example.com', password: 'password123' });
+    const token = login.body.token;
+    const wrong = await request(app).post('/api/auth/password').set('Authorization', 'Bearer ' + token).send({ current_password: 'wrong', new_password: 'new-long-password' });
+    expect(wrong.status).toBe(400);
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+    const changed = await request(app).post('/api/auth/password').set('Authorization', 'Bearer ' + token).send({ current_password: 'password123', new_password: 'new-long-password' });
+    expect(changed.status).toBe(200);
+    const user = await mockUser.findByPk('user-a');
+    expect(await bcrypt.compare('new-long-password', user.password_hash)).toBe(true);
+    expect(user.password_version).toBe(1);
+    expect(mockAuthSession.update).toHaveBeenCalledWith(expect.objectContaining({ revoke_reason: 'password_changed' }), expect.objectContaining({ where: { user_id: 'user-a', revoked_at: null }, transaction: expect.any(Object) }));
+    expect((await request(app).get('/api/auth/me').set('Authorization', 'Bearer ' + token)).status).toBe(401);
+  });
+
+  test('limits repeated password attempts for the same account', async () => {
+    const login = await request(app).post('/api/auth/login').send({ email: 'investor@example.com', password: 'password123' });
+    let response;
+    for (let i = 0; i < 6; i++) response = await request(app).post('/api/auth/password').set('Authorization', 'Bearer ' + login.body.token).send({ current_password: 'wrong', new_password: 'new-long-password' });
+    expect(response.status).toBe(429);
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+  });
   test.each([{}, { display_name: 42 }, { display_name: false }, { display_name: {} }, { display_name: [] }, { display_name: '   ' }, { display_name: 'a'.repeat(121) }])('rejects invalid profile payload without mutating saved name: %j', async payload => {
     const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
     const cookies = cookieMap(login);
