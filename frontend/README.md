@@ -2,6 +2,8 @@
 
 Ứng dụng React 18/Vite, viết bằng JavaScript và CSS. Cách chạy và build nằm ở [QUICK_START](../QUICK_START.md); kết quả kiểm tra và công việc tiếp theo nằm ở [PROJECT_STATUS](../docs/PROJECT_STATUS.md).
 
+Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất và cảnh báo trình duyệt khi tải lại trong lúc chưa lưu. Bản nháp chỉ ở bộ nhớ; không được phục hồi sau khi xác nhận rời trang. Escape hủy xác nhận và trả focus về trường tên.
+
 | Tệp | Vai trò |
 | --- | --- |
 | [scripts/verify-live-profile.mjs](scripts/verify-live-profile.mjs) | Live smoke qua Preview 4173: tạo một tài khoản development riêng (giữ lại), kiểm tra lưu sau access-cookie expiry, reload và logout; không lưu credential |

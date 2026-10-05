@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Bảo vệ bản nháp hồ sơ
+
+- Thay window.confirm bằng xác nhận ngay trong dialog khi đóng hoặc đăng xuất: tiếp tục chỉnh sửa hoặc bỏ thay đổi; ưu tiên focus vào thao tác giữ bản nháp.
+- Cảnh báo beforeunload khi dialog mở và có thay đổi hoặc đang lưu; không lưu bản nháp cá nhân vào localStorage.
+- Build/bundle integrity đạt; browser smoke API mô phỏng kiểm tra giữ/bỏ bản nháp, hủy đăng xuất, lưu/lỗi, desktop/mobile.
+- Xác thực email chưa triển khai: backend mới có biến SMTP mẫu, thiếu adapter gửi. Đã ghi đề xuất token/hash/expiry/replay/rate limit trong AUTH_SESSION_DESIGN; cần cấu hình delivery để kiểm chứng gửi thật.
+
 ### Kiểm chứng hồ sơ với session thật
 
 - Sửa sessionFetch để PATCH /api/auth/profile được refresh cookie một lần khi access hết hạn; retry dùng CSRF sau rotation và giữ body. Refresh thất bại trả 401, không lặp mutation.

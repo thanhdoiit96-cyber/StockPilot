@@ -6,6 +6,15 @@ Production guard đã được triển khai: JWT secret yếu/mặc định và 
 
 ## Mục tiêu và phạm vi
 
+### Đề xuất tiếp theo: xác thực email (chưa triển khai)
+
+- SMTP chỉ có biến mẫu trong .env.example; chưa có adapter gửi thư trong backend. Cần chọn dịch vụ và xác nhận sender trước khi bật gửi thật.
+- POST yêu cầu xác thực phải requireAuth/CSRF; gửi tới email trên tài khoản, không nhận địa chỉ tùy ý từ client. Giới hạn gửi lại theo user và IP, cooldown 60 giây và quota theo giờ.
+- Token ngẫu nhiên 32 byte, lưu hash cùng user/email, thời hạn 30 phút và thời điểm consumed trong bảng có migration. Gửi lại vô hiệu token cũ; xác nhận một lần bằng transaction và row lock.
+- Link frontend chứa token trong fragment, xóa khỏi URL sau khi đọc; không ghi token vào log/storage. GET link không thay đổi dữ liệu: người dùng bấm xác nhận để POST token. Không tự đăng nhập bằng link.
+- email_verified_at chỉ cập nhật sau kiểm tra token/email/expiry. UI có gửi, cooldown, đã gửi, thất bại và xác nhận; khi delivery chưa cấu hình thì không hiển thị nút gửi giả.
+- Nghiệm thu cần test expiry/replay/race/rate limit/delivery failure và live mailbox được cho phép. Đây là thiết kế, chưa phải API/schema hiện hữu.
+
 Loại access token khỏi JavaScript/browser storage trước public deployment, hỗ trợ hết hạn và thu hồi phiên có kiểm soát, giữ hành vi logout/401/nhiều tab hiện có, và chặn CSRF cho request thay đổi dữ liệu. Thiết kế này không bao gồm quên mật khẩu, OAuth, MFA hoặc delivery provider.
 
 Ứng dụng browser production nên đi cùng origin qua reverse proxy (`/api`), tránh phụ thuộc third-party cookie. Cross-origin development chỉ được phép với origin allowlist cụ thể và credential; không kết hợp `Access-Control-Allow-Credentials: true` với wildcard.
