@@ -5,6 +5,18 @@ import { readCsrfCookie, resetRefreshForTests, sessionFetch } from './cookieSess
 const originalFetch = globalThis.fetch
 const originalDocument = globalThis.document
 
+test('session pagination refreshes once and preserves the cursor on retry', async () => {
+  globalThis.document = { cookie: 'sp_csrf=csrf' }
+  const calls = []
+  globalThis.fetch = async url => {
+    calls.push(url)
+    return new Response('{}', { status: calls.length === 1 ? 401 : 200 })
+  }
+  const url = '/api/auth/sessions?cursor=opaque-cursor'
+  assert.equal((await sessionFetch(url, { token: true })).status, 200)
+  assert.deepEqual(calls, [url, '/api/auth/refresh', url])
+})
+
 test('profile save refreshes expired access once and retries with rotated csrf and original body', async () => {
   globalThis.document = { cookie: 'sp_csrf=old' }
   const calls = []

@@ -11,12 +11,17 @@ try {
   let failSessions = true;
   let sessionLabel = null;
   let failLabel = true;
+  let failMore = true;
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user } });
     if (path === '/api/auth/sessions') {
       if (failSessions) { failSessions = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể tải phiên đăng nhập.' } }); }
-      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true, label: sessionLabel }, ...(!revoked ? [{ id: 'other', current: false }, ...(!singleRevoked ? [{ id: 'target', current: false }] : [])] : [])], can_revoke_others: true, has_more: false } } });
+      if (new URL(route.request().url()).searchParams.has('cursor')) {
+        if (failMore) { failMore = false; return route.fulfill({ status: 500, json: { success: false, message: 'Tải thêm thất bại' } }); }
+        return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true, label: sessionLabel }, { id: 'older', current: false, label: 'Phiên cũ hơn' }], can_revoke_others: true, has_more: false, next_cursor: null } } });
+      }
+      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true, label: sessionLabel }, ...(!revoked ? [{ id: 'other', current: false }, ...(!singleRevoked ? [{ id: 'target', current: false }] : [])] : [])], can_revoke_others: true, has_more: !revoked, next_cursor: !revoked ? 'next-page' : null } } });
     }
     if (path === '/api/auth/sessions/label') {
       if (failLabel) { failLabel = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể lưu tên phiên.' } }); }
@@ -55,6 +60,14 @@ try {
   await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Không thể tải phiên đăng nhập.');
   await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
   await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Xem thêm phiên', exact: true }).click();
+  await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Tải thêm thất bại');
+  await expect(dialog.locator('.account-session-list li')).toHaveCount(3);
+  await dialog.getByRole('button', { name: 'Xem thêm phiên', exact: true }).click();
+  await expect(dialog.getByText('Phiên cũ hơn', { exact: true })).toBeVisible();
+  await expect(dialog.locator('.account-session-list li')).toHaveCount(4);
+  await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toHaveCount(1);
+  await expect(dialog.getByRole('button', { name: 'Xem thêm phiên', exact: true })).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Đặt tên phiên', exact: true }).first().click();
   await expect(dialog.getByLabel('Tên phiên do bạn đặt')).toBeFocused();
   await dialog.getByLabel('Tên phiên do bạn đặt').fill('Laptop cá nhân');
@@ -70,7 +83,7 @@ try {
   await expect(dialog.getByText('Laptop cá nhân', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
   await expect(dialog.getByText('Laptop cá nhân', { exact: true })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Đổi tên phiên', exact: true }).click();
+  await dialog.locator('.account-session-list li').first().getByRole('button', { name: 'Đổi tên phiên', exact: true }).click();
   await dialog.getByLabel('Tên phiên do bạn đặt').fill('');
   await dialog.getByRole('button', { name: 'Lưu tên phiên', exact: true }).click();
   await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();

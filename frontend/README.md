@@ -10,6 +10,8 @@ Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay 
 
 Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận diện phiên trước khi thu hồi; không phải thông tin thiết bị được hệ thống xác minh. Form hỗ trợ lưu/hủy/xóa nhãn và cảnh báo bản nháp.
 
+“Xem thêm phiên” tải từng trang 50 phiên khác theo thời điểm đăng nhập, gộp theo id để không lặp phiên hiện tại. Lỗi tải thêm giữ nguyên danh sách và cho thử lại; “Làm mới phiên” quay về trang đầu mới nhất. Thu hồi toàn bộ phiên khác áp dụng cả những phiên chưa tải.
+
 | Tệp | Vai trò |
 | --- | --- |
 | [src/components/AccountSessions.jsx](src/components/AccountSessions.jsx) | Danh sách phiên trong Bảo mật, tải khi tab active, trạng thái lỗi/thử lại, xác nhận thu hồi phiên khác và giữ phiên hiện tại |

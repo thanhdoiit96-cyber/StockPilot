@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { Op } = require('sequelize');
+const { readCursor, writeCursor } = require('../services/sessionPagination');
 const { User, AuthSession, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { cookieNames, parseCookies, setSessionCookies, clearSessionCookies } = require('../auth/cookies');
@@ -149,18 +150,25 @@ const sessionView = (row, currentId) => ({
   expires_at: new Date(Math.min(new Date(row.expires_at).getTime(), new Date(row.idle_expires_at).getTime()))
 });
 router.get('/sessions', requireAuth, async (req, res, next) => {
+  let cursor;
+  try { cursor = readCursor(req.query.cursor); }
+  catch { return res.status(400).json({ success: false, message: 'Vị trí danh sách không hợp lệ. Vui lòng làm mới.' }); }
   try {
     const current = req.authSession;
     const now = new Date();
     const rows = await AuthSession.findAll({
       attributes: ['id', 'label', 'created_at', 'last_used_at', 'expires_at', 'idle_expires_at'],
       where: { user_id: req.user.sub, revoked_at: null, expires_at: { [Op.gt]: now }, idle_expires_at: { [Op.gt]: now },
+        ...(cursor ? { [Op.or]: [
+          { created_at: { [Op.lt]: cursor.created_at } },
+          { created_at: cursor.created_at, id: { [Op.gt]: cursor.id } }
+        ] } : {}),
         ...(current ? { id: { [Op.ne]: current.id } } : {}) },
-      order: [['last_used_at', 'DESC'], ['id', 'ASC']], limit: 51
+      order: [['created_at', 'DESC'], ['id', 'ASC']], limit: 51
     });
     return res.json({ success: true, data: {
       sessions: [...(current ? [sessionView(current, current.id)] : []), ...rows.slice(0, 50).map(row => sessionView(row, current?.id))],
-      has_more: rows.length > 50, can_revoke_others: Boolean(current)
+      has_more: rows.length > 50, next_cursor: rows.length > 50 ? writeCursor(rows[49]) : null, can_revoke_others: Boolean(current)
     } });
   } catch (error) { next(error); }
 });

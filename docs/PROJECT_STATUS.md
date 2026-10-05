@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Tải thêm phiên đăng nhập — 2026-10-05
+
+- Bổ sung nút Xem thêm phiên, số phiên đang hiển thị; giữ danh sách khi tải lỗi, thử lại và gộp theo id tránh lặp phiên hiện tại. Làm mới quay về trang đầu.
+- API phân trang 50 phiên khác bằng cursor created_at/id, thứ tự ổn định khi refresh; kiểm tra cursor và giữ bộ lọc ownership/expiry/revoked. Cookie refresh hỗ trợ URL có query và giữ cursor khi retry.
+- Kiểm chứng: auth controller 19/19; browser smoke API mô phỏng đạt tải lỗi/thử lại/gộp và regression hồ sơ/bảo mật/mobile. Live development smoke đạt cursor với ba phiên cùng tài khoản, cách ly tài khoản, lưu nhãn và thu hồi; biên 50 được kiểm tra bằng mock, chưa thử 51 phiên thật. Hai account test riêng được giữ, không lưu credential.
+- Build/bundle integrity đạt; backend đã restart, Preview 4173 dùng index-DQi0rrkh.js. Điểm tiếp tục: rà soát trải nghiệm tìm kiếm/lọc Danh mục theo dõi; xác thực email vẫn chờ dịch vụ delivery, không mở nút gửi giả.
+
 ### Tên phiên do người dùng đặt — 2026-10-05
 
 - Migration 023 thêm auth_sessions.label nullable (80 ký tự), đã áp dụng development. PATCH /api/auth/sessions/label yêu cầu cookie/CSRF, UUID, nhãn string/null, kiểm tra ownership và cả hai thời hạn. Không thu thập metadata thiết bị.

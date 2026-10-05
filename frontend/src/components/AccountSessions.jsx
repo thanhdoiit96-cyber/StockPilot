@@ -19,13 +19,18 @@ export default function AccountSessions({ active, onLoad, onRevoke, onRename, on
   const heading = useRef(null);
   const loader = useRef(onLoad);
   loader.current = onLoad;
-  async function load() {
+  async function load(append = false) {
     const request = ++version.current;
     setLoading(true); setError("");
     try {
-      const response = await loader.current();
+      const response = await loader.current(append ? data?.next_cursor : undefined);
       if (!Array.isArray(response?.data?.sessions)) throw new Error("Không thể đọc danh sách phiên đăng nhập.");
-      if (version.current === request) setData(response.data);
+      if (version.current === request) setData(current => {
+        if (!append || !current) return response.data;
+        const merged = new Map(current.sessions.map(session => [session.id, session]));
+        response.data.sessions.forEach(session => merged.set(session.id, session));
+        return { ...response.data, sessions: [...merged.values()] };
+      });
     } catch (reason) { if (version.current === request) setError(reason.message || "Không thể tải phiên đăng nhập."); }
     finally { if (version.current === request) setLoading(false); }
   }
@@ -87,7 +92,8 @@ export default function AccountSessions({ active, onLoad, onRevoke, onRename, on
           : <button type="button" className="ghost-btn account-session-revoke" disabled={locked} aria-label={"Đăng xuất phiên khác " + (index + (data.sessions[0]?.current ? 0 : 1))} onClick={() => { setConfirm(session.id); setNotice(""); setError(""); }}>Đăng xuất phiên này</button>)}
       </li>)}</ul>
       {!data.sessions.length && <p>Không có phiên được quản lý nào còn hiệu lực.</p>}
-      {data.has_more && <p>Đang hiển thị 50 phiên khác gần nhất. Nút “Đăng xuất các phiên khác” áp dụng cho toàn bộ phiên khác.</p>}
+      <p role="status">Đang hiển thị {data.sessions.length} phiên. Các phiên khác được xếp theo thời điểm đăng nhập mới nhất.</p>
+      {data.has_more && <button type="button" className="ghost-btn" disabled={locked || Boolean(editing) || !data.next_cursor} onClick={() => { setConfirm(false); load(true); }}>Xem thêm phiên</button>}
       {!data.can_revoke_others && <p>Vui lòng đăng nhập lại để quản lý các phiên khác.</p>}
       {confirm === "all" ? <div className="account-session-confirm"><p>Các phiên khác sẽ cần đăng nhập lại. Tiếp tục?</p><button type="button" className="ghost-btn" disabled={locked} onClick={() => setConfirm(false)}>Hủy đăng xuất phiên</button><button type="button" className="primary-btn" disabled={locked} onClick={() => revoke()}>Xác nhận đăng xuất phiên khác</button></div>
         : <button type="button" className="ghost-btn" disabled={locked || Boolean(editing) || !data.can_revoke_others || (!otherCount && !data.has_more)} onClick={() => { setConfirm("all"); setNotice(""); }}>Đăng xuất các phiên khác</button>}
