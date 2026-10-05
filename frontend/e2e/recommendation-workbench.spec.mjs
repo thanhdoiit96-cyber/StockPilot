@@ -27,7 +27,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     }
     else if (path === '/api/recommendations/personalized' && request.method() === 'POST') {
       submitted = request.postDataJSON()
-      data = { recommendations: [{ stock_id: 'FPT', symbol: 'FPT', rank: 1, score: 83.2, entry_price: 121000, horizon_days: 20, rationale: { score_parts: { trend: 100, momentum: 80, rsi: 70, stability: 65, liquidity: 90 }, weights: submitted.criteria, indicators: { rsi14: 55 }, observations: 90, factors: ['Điểm được tính lại theo tiêu chí đã chọn'] } }], eligible_count: 131, model: 'personalized_rule_v1', generated_at: '2026-09-22T03:00:00.000Z', criteria: submitted.criteria, learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) } }
+      data = { recommendations: [{ stock_id: 'FPT', symbol: 'FPT', rank: 1, score: 83.2, entry_price: 121000, horizon_days: 20, rationale: { model: 'personalized_rule_v1', score_parts: { trend: 100, momentum: 80, rsi: 70, stability: 65, liquidity: 90 }, weights: submitted.criteria, calibration: { trend: 1.1 }, indicators: { rsi14: 55, momentum10: 3.2 }, trend: 'above_sma20', volatility_pct: 1.25, average_volume: 2500000, observations: 90, reference_plan: { price_source: 'intraday', observed_at: '2026-09-22T02:45:00.000Z' }, evidence: { sources: [{ type: 'news', source: 'Verified Wire', title: 'FPT update', source_url: 'https://example.com/fpt', published_at: '2026-09-21T02:00:00.000Z' }, { source: 'Unsafe', source_url: 'javascript:alert(1)', published_at: '2026-09-21T02:00:00.000Z' }] }, factors: ['Điểm được tính lại theo tiêu chí đã chọn'] } }], eligible_count: 131, model: 'personalized_rule_v1', generated_at: '2026-09-22T03:00:00.000Z', criteria: submitted.criteria, learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) } }
     } else if (path === '/api/portfolio/transactions' && request.method() === 'POST') {
       savedTransaction = request.postDataJSON()
       data = { id: 'transaction-1' }
@@ -48,9 +48,25 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()
   await expect(page.locator('.personalized-list')).toContainText('FPT')
+  const criteriaToggle = page.getByRole('button', { name: 'Mở tiêu chí' })
+  await expect(criteriaToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('#recommendation-criteria-form')).toBeHidden()
+  await page.getByText('Xem bằng chứng chấm điểm').click()
+  const evidence = page.locator('.recommendation-evidence')
+  await expect(evidence).toContainText('personalized_rule_v1')
+  await expect(evidence).toContainText('Intraday')
+  await expect(evidence).toContainText('90')
+  await expect(evidence).toContainText('Xu hướng giá')
+  await expect(evidence).toContainText('1,1×')
+  await expect(evidence).toContainText('Nguồn ngoài hệ thống đã xác minh')
+  await expect(evidence.getByRole('link', { name: 'FPT update' })).toHaveAttribute('href', 'https://example.com/fpt')
+  await expect(evidence).not.toContainText('Unsafe')
+  await expect(evidence).toContainText('không được cộng điểm')
   await expect(page.locator('.learning-status')).toContainText('Đang thu thập dữ liệu đánh giá')
   await expect(page.locator('.learning-definition')).toContainText('Lịch sử chung và kết quả từng mã là hai thước đo riêng')
   await expect(page.getByRole('heading', { name: 'Lịch sử các đợt đề xuất chung' })).toBeVisible()
+  await criteriaToggle.click()
+  await expect(page.getByRole('button', { name: 'Thu gọn tiêu chí' })).toHaveAttribute('aria-expanded', 'true')
   const savedPicker = page.locator('#saved-proposal-select')
   await expect(savedPicker.locator('option')).toHaveCount(4)
   await savedPicker.selectOption({ index: 1 })

@@ -23,12 +23,20 @@ function buildEvidenceProfile({ analysis = {}, externalFactors = [], sentiment =
   const verifiedFactors = externalFactors.filter(item => item && item.status === 'verified' && item.source && item.published_at);
   const positiveNews = news.filter(item => item.status === 'verified' && item.sentiment === 'positive');
   const negativeNews = news.filter(item => item.status === 'verified' && item.sentiment === 'negative');
+  const sources = [...verifiedFactors, ...news].filter(item => {
+    if (!item || item.status !== 'verified' || !item.source || !item.published_at || Number.isNaN(Date.parse(item.published_at))) return false;
+    try { return ['http:', 'https:'].includes(new URL(item.source_url).protocol); } catch (_) { return false; }
+  }).filter((item, index, rows) => rows.findIndex(candidate => candidate.source_url === item.source_url) === index).slice(0, 10).map(item => ({
+    type: item.type || 'external', source: item.source, title: item.title || item.summary || item.source,
+    source_url: item.source_url, published_at: new Date(item.published_at).toISOString()
+  }));
   return {
     objective: { status: analysis.observations >= 50 ? 'available' : 'insufficient', observations: analysis.observations || 0, technical_score: scoreAnalysis(analysis) },
     macro: { status: verifiedFactors.length ? 'available' : 'unavailable', verified_count: verifiedFactors.length },
     sentiment: { status: sentiment?.status === 'verified' ? 'available' : 'unavailable', score: sentiment?.status === 'verified' ? Number(sentiment.score) : null },
     news: { status: positiveNews.length || negativeNews.length ? 'available' : 'unavailable', positive_count: positiveNews.length, negative_count: negativeNews.length },
     subjective: { status: userContext ? 'provided' : 'unavailable', fields: userContext ? Object.keys(userContext).filter(key => ['risk_tolerance', 'holding_period_days', 'max_allocation_pct'].includes(key)) : [] },
+    sources,
     policy: { unverified_news_excluded: true, unavailable_factors_do_not_receive_points: true, no_trade_execution: true }
   };
 }

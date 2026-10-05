@@ -1,5 +1,5 @@
 ﻿import { test, expect } from '@playwright/test'
-const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000},{id:'b',code:'VCB',name:'Vietcombank',price:90000,industry:'banking_finance',volume:2000}]
+const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',exchange:'HSX',listing_status:'listed',volume:1000},{id:'b',code:'VCB',name:'Vietcombank',price:90000,industry:'banking_finance',exchange:'HSX',listing_status:'listed',volume:2000}]
 const list=(data=stocks)=>({success:true,data,pagination:{page:1,pageSize:25,total:data.length,totalPages:2}})
 async function boot(page, options = {}) {
   await page.route('**/api/**', async route => {
@@ -69,11 +69,16 @@ test('sidebar marks only the current page as active', async ({ page }) => {
   await expect(page.locator('.market-board-nav-item')).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.nav-item.active')).toHaveCount(1)
 })
-test('market breadth exchange scope updates the chart context', async ({ page }) => {
+test('market breadth exchange and sector scopes update snapshot and history context', async ({ page }) => {
   await boot(page)
+  const historyScopes = []
   await page.route('**/api/stocks**', async route => {
     const url = new URL(route.request().url())
-    if (url.searchParams.get('exchange') !== 'HSX') return route.fallback()
+    if (url.pathname === '/api/stocks/breadth/history') {
+      historyScopes.push({ exchange: url.searchParams.get('exchange'), sector: url.searchParams.get('sector') })
+      return route.fulfill({ json: { success: true, data: { requested_sessions: 5, returned_sessions: 5, exchange: url.searchParams.get('exchange'), sector: url.searchParams.get('sector'), continuity: { status: 'continuous', gaps: [] }, points: [1, 2, 3, 4, 5].map(day => ({ session_date: `2026-09-0${day}`, advances: 1, declines: 0, unchanged: 0, classified: 1, covered: 1, universe: 1, ad_ratio: null, spread: 1, coverage_pct: 100, volume: { observations: 1, net_pct: 100, signal: 'confirmation' } })) } } })
+    }
+    if (url.pathname !== '/api/stocks' || url.searchParams.get('exchange') !== 'HSX') return route.fallback()
     await route.fulfill({ json: { ...list([stocks[0]]), pagination: { page: 1, pageSize: 25, total: 1, totalPages: 1 } } })
   })
   await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
@@ -81,7 +86,21 @@ test('market breadth exchange scope updates the chart context', async ({ page })
   await expect(exchange).toBeVisible()
   await exchange.selectOption('HSX')
   await expect(page.locator('.market-breadth-header')).toContainText('1 mã thuộc HSX')
+  const sector = page.getByRole('combobox', { name: /Ngành cho độ rộng/ })
+  await sector.selectOption('technology')
+  await expect(page.locator('.market-breadth-header')).toContainText('1 mã · HSX · Công nghệ')
   await expect(page.locator('.breadth-disclaimer')).toContainText('HSX')
+  await expect(page.locator('.breadth-disclaimer')).toContainText('Công nghệ')
+  await expect.poll(() => historyScopes.at(-1)).toEqual({ exchange: 'HSX', sector: 'technology' })
+  await page.reload()
+  await expect(page.getByRole('combobox', { name: /Sàn cho độ rộng/ })).toHaveValue('HSX')
+  await expect(page.getByRole('combobox', { name: /Ngành cho độ rộng/ })).toHaveValue('technology')
+
+  await page.evaluate(() => window.dispatchEvent(new StorageEvent('storage', { key: 'stockpilot-market-breadth-scope-v1', newValue: '{malformed' })))
+  await expect(page.getByRole('combobox', { name: /Sàn cho độ rộng/ })).toHaveValue('HSX')
+  await page.evaluate(() => window.dispatchEvent(new StorageEvent('storage', { key: 'stockpilot-market-breadth-scope-v1', newValue: null })))
+  await expect(page.getByRole('combobox', { name: /Sàn cho độ rộng/ })).toHaveValue('')
+  await expect(page.getByRole('combobox', { name: /Ngành cho độ rộng/ })).toHaveValue('')
 })
 test('market breadth leader symbols open stock detail', async ({ page }) => {
   await boot(page)

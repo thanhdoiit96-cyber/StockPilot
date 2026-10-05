@@ -46,12 +46,17 @@ test('carries verified external context into recommendation snapshots without sc
     stocks: [{ id: 'a', code: 'AAA', name: 'A' }],
     priceRowsByStock: new Map([['a', rows()]]),
     externalFactorsByStock: new Map([['AAA', [
-      { type: 'macro', status: 'verified', source: 'World Bank', published_at: '2026-01-01' },
-      { type: 'news', status: 'verified', source: 'Wire', published_at: '2026-01-02', impact: 'positive' },
-      { type: 'news', status: 'unverified', source: 'Blog', published_at: '2026-01-03', impact: 'negative' }
+      { type: 'macro', status: 'verified', source: 'World Bank', source_url: 'https://worldbank.example/report', title: 'Macro report', published_at: '2026-01-01' },
+      { type: 'news', status: 'verified', source: 'Wire', source_url: 'https://wire.example/fpt', title: 'FPT update', published_at: '2026-01-02', impact: 'positive' },
+      { type: 'news', status: 'unverified', source: 'Blog', source_url: 'https://blog.example/fpt', published_at: '2026-01-03', impact: 'negative' },
+      { type: 'news', status: 'verified', source: 'Unsafe', source_url: 'javascript:alert(1)', published_at: '2026-01-04', impact: 'neutral' }
     ]]])
   });
   expect(selected[0].rationale.evidence).toMatchObject({ macro: { status: 'available', verified_count: 1 }, news: { status: 'available', positive_count: 1, negative_count: 0 }, sentiment: { status: 'unavailable' } });
+  expect(selected[0].rationale.evidence.sources).toEqual([
+    expect.objectContaining({ type: 'macro', source: 'World Bank', source_url: 'https://worldbank.example/report' }),
+    expect.objectContaining({ type: 'news', source: 'Wire', source_url: 'https://wire.example/fpt' })
+  ]);
   expect(selected[0].score).toBe(baseline[0].score);
 });
 

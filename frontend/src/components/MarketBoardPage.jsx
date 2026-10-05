@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import PageLoadingOverlay from './PageLoadingOverlay.jsx'
 import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
+import { SECTOR_OPTIONS } from '../constants/sectorOptions.mjs'
 import {
   MARKET_COLUMN_DEFINITIONS,
   MARKET_COLUMN_PRESETS,
@@ -12,18 +13,6 @@ import {
 } from '../runtime/market-board-tools-core.mjs'
 
 const PAGE_SIZES = [25, 40, 50, 100]
-const SECTORS = [
-  ['', 'Nhóm ngành'],
-  ['technology', 'Công nghệ'],
-  ['banking_finance', 'Ngành ngân hàng và tài chính'],
-  ['securities', 'Chứng khoán'],
-  ['real_estate', 'Bất động sản'],
-  ['energy_resources', 'Tài nguyên & năng lượng'],
-  ['manufacturing', 'Sản xuất công nghiệp'],
-  ['consumer_retail', 'Tiêu dùng & bán lẻ'],
-  ['construction_infrastructure', 'Xây dựng & hạ tầng'],
-  ['other', 'Khác / chưa phân loại']
-]
 const SESSION_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
 
 const formatPrice = value => Number.isFinite(Number(value))
@@ -229,7 +218,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         <div className="table-tabs">
           <button className="tab-btn active" type="button">Tất cả</button>
           <select className="sector-select" aria-label="Nhóm ngành" value={sector} onChange={event => setSector(event.target.value)}>
-            {SECTORS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+            {SECTOR_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
           </select>
         </div>
         <input className="table-search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={query} onChange={event => setQuery(event.target.value)} />

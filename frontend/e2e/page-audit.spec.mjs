@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test'
 
 const stocks = [
-  { id: 'fpt', code: 'FPT', name: 'FPT Corporation', price: 128000, industry: 'technology', exchange: 'HSX', volume: 3250000 },
-  { id: 'vcb', code: 'VCB', name: 'Vietcombank', price: 91500, industry: 'banking_finance', exchange: 'HSX', volume: 2100000 },
-  { id: 'hpg', code: 'HPG', name: 'Hoa Phat Group', price: 28600, industry: 'manufacturing', exchange: 'HSX', volume: 14800000 },
-  { id: 'ssi', code: 'SSI', name: 'SSI Securities', price: 34800, industry: 'banking_finance', exchange: 'HSX', volume: 8700000 }
+  { id: 'fpt', code: 'FPT', name: 'FPT Corporation', price: 128000, industry: 'technology', exchange: 'HSX', listing_status: 'listed', volume: 3250000 },
+  { id: 'vcb', code: 'VCB', name: 'Vietcombank', price: 91500, industry: 'banking_finance', exchange: 'HSX', listing_status: 'listed', volume: 2100000 },
+  { id: 'hpg', code: 'HPG', name: 'Hoa Phat Group', price: 28600, industry: 'manufacturing', exchange: 'HSX', listing_status: 'listed', volume: 14800000 },
+  { id: 'ssi', code: 'SSI', name: 'SSI Securities', price: 34800, industry: 'banking_finance', exchange: 'HSX', listing_status: 'listed', volume: 8700000 }
 ]
 
 const recommendations = stocks.slice(0, 3).map((stock, index) => ({
@@ -25,6 +25,7 @@ const recommendations = stocks.slice(0, 3).map((stock, index) => ({
 }))
 
 async function boot(page) {
+  const advisorConversations = []
   await page.route('**/api/**', async route => {
     const request = route.request()
     const path = new URL(request.url()).pathname
@@ -43,6 +44,10 @@ async function boot(page) {
     else if (path === '/api/recommendations/history') payload.data = []
     else if (path === '/api/recommendations/readiness') payload.data = { coverage: [] }
     else if (path === '/api/recommendations/saved') payload.data = []
+    else if (path === '/api/advisor/conversations' && request.method() === 'GET') payload.data = advisorConversations
+    else if (path === '/api/advisor/conversations' && request.method() === 'POST') { const body = request.postDataJSON(); const saved = { id: 'advisor-1', ...body, created_at: '2026-10-05T00:00:00Z', updated_at: '2026-10-05T00:00:00Z' }; advisorConversations.splice(0, 1, saved); payload.data = saved }
+    else if (path === '/api/advisor/conversations/advisor-1' && request.method() === 'PUT') { const body = request.postDataJSON(); const saved = { id: 'advisor-1', ...body, created_at: '2026-10-05T00:00:00Z', updated_at: '2026-10-05T00:01:00Z' }; advisorConversations.splice(0, 1, saved); payload.data = saved }
+    else if (path === '/api/advisor/conversations/advisor-1' && request.method() === 'DELETE') return route.fulfill({ status: 204, body: '' })
     else if (path === '/api/auth/me') payload = { success: true, user: { id: 'audit', email: 'audit@example.com', role: 'user' } }
     else if (path === '/api/watchlist') payload.data = [{ stock_id: 'vcb', Stock: { code: 'VCB', name: 'Vietcombank' } }]
     else if (path === '/api/portfolio') payload.data = { positions: [{ stock_id: 'fpt', symbol: 'FPT', quantity: 100, market_price: 126000, previous_market_price: 125000, avg_cost: 112000, unrealized_pnl: 1400000, realized_pnl: 250000 }] }
@@ -50,6 +55,7 @@ async function boot(page) {
   })
   await page.goto('/')
   await expect(page.locator('.dashboard-shell')).toBeVisible()
+  return { advisorConversations }
 }
 
 const pages = [
@@ -64,7 +70,7 @@ const pages = [
 for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
   test(`all investor pages remain usable on ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport)
-    await boot(page)
+    const auditState = await boot(page)
     for (const [label, surface, heading] of pages) {
       await page.getByRole('button', { name: label, exact: true }).click()
       await expect(page.locator(surface)).toBeVisible()
@@ -85,10 +91,13 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
         await expect(send).toBeDisabled()
         await context.selectOption('portfolio')
         await page.getByRole('button', { name: 'Tóm tắt trạng thái danh mục' }).click()
+        await expect(page.locator('#advisor-conversation-select')).toHaveValue('advisor-1')
+        expect(auditState.advisorConversations).toHaveLength(1)
         await expect(page.locator('.chat-shell')).toContainText('Ngữ cảnh: Danh mục')
         await expect(page.getByRole('list', { name: 'Nguồn tham chiếu' })).toContainText('ledger đã xác thực')
         await context.selectOption('market')
         await page.getByRole('button', { name: 'Tóm tắt độ phủ dữ liệu' }).click()
+        await expect.poll(() => auditState.advisorConversations[0]?.messages?.length).toBe(5)
         await expect(page.locator('.chat-shell')).toContainText('Ngữ cảnh: Thị trường')
         await input.fill('Phân tích FPT')
         await expect(send).toBeEnabled()

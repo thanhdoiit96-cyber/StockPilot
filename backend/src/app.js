@@ -20,6 +20,7 @@ const authController = require('./controllers/authController');
 const watchlistController = require('./controllers/watchlistController');
 const portfolioController = require('./controllers/portfolioController');
 const recommendationController = require('./controllers/recommendationController');
+const advisorController = require('./controllers/advisorController');
 const requireAdmin = require('./middleware/requireAdmin');
 
 // Initialize Express app
@@ -168,6 +169,7 @@ async function start() {
     app.use('/api/watchlist', watchlistController);
     app.use('/api/portfolio', portfolioController);
     app.use('/api/recommendations', recommendationController);
+    app.use('/api/advisor/conversations', advisorController);
     logger.info('[Routes] /api/stocks mounted');
 
     // Start server
