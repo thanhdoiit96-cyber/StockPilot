@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { filterPositions } from '../services/positionSearch.mjs'
 
 const number = value => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(Number(value || 0))
 const money = value => value == null ? '-' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 2 }).format(Number(value || 0))
@@ -32,8 +33,10 @@ function ClosedPositionRow({ position, onOpenDetail }) {
 
 export default function PortfolioPositions({ positions = [], closedPositions = [], loading = false, error = '', onOpenDetail }) {
   const [filter, setFilter] = useState('open')
+  const [query, setQuery] = useState('')
   const closed = filter === 'closed'
-  const rows = closed ? closedPositions : positions
+  const sourceRows = closed ? closedPositions : positions
+  const rows = filterPositions(sourceRows, query)
   return <section className="portfolio-positions" aria-labelledby="portfolio-positions-title">
     <div className="portfolio-positions-heading">
       <div><h3 id="portfolio-positions-title">Vị thế danh mục</h3><p className="muted-text">Phân tách mã đang nắm giữ và mã đã bán hết theo ledger.</p></div>
@@ -42,9 +45,17 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
         <button type="button" className={closed ? 'active' : ''} aria-pressed={closed} onClick={() => setFilter('closed')}>Đã đóng <span>{closedPositions.length}</span></button>
       </div>
     </div>
+    <div className="position-search-toolbar">
+      <label htmlFor="position-search">Tìm vị thế theo mã hoặc tên doanh nghiệp
+        <input id="position-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Ví dụ: FPT, Hòa Phát" />
+      </label>
+      {query && <button type="button" className="ghost-btn" onClick={() => { setQuery(''); document.getElementById('position-search')?.focus() }}>Xóa tìm kiếm</button>}
+      {!loading && !error && <span role="status">{rows.length}/{sourceRows.length} vị thế {closed ? 'đã đóng' : 'đang mở'}</span>}
+    </div>
+    {!loading && !error && query.trim() && !rows.length ? <p role="status">Không có vị thế phù hợp. Thử mã hoặc tên khác, hoặc xóa tìm kiếm.</p> : null}
     <div className="table-wrap portfolio-table">
       <table aria-label={closed ? 'Vị thế đã đóng' : 'Vị thế đang mở'}>
-        {closed ? <><thead><tr><th>Mã</th><th>Trạng thái</th><th>Đóng gần nhất</th><th>Lãi/lỗ đã thực hiện</th></tr></thead><tbody>{rows.map(position => <ClosedPositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} />)}{!loading && !error && !rows.length ? <tr><td colSpan="4">Chưa có vị thế đã đóng</td></tr> : null}</tbody></> : <><thead><tr><th>Mã</th><th>Số lượng</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Lãi/lỗ chưa thực hiện</th><th>Lãi/lỗ đã thực hiện</th></tr></thead><tbody>{rows.map(position => <PositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} />)}{!loading && !error && !rows.length ? <tr><td colSpan="6">Chưa có vị thế đang mở</td></tr> : null}</tbody></>}
+        {closed ? <><thead><tr><th>Mã</th><th>Trạng thái</th><th>Đóng gần nhất</th><th>Lãi/lỗ đã thực hiện</th></tr></thead><tbody>{rows.map(position => <ClosedPositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="4">Chưa có vị thế đã đóng</td></tr> : null}</tbody></> : <><thead><tr><th>Mã</th><th>Số lượng</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Lãi/lỗ chưa thực hiện</th><th>Lãi/lỗ đã thực hiện</th></tr></thead><tbody>{rows.map(position => <PositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="6">Chưa có vị thế đang mở</td></tr> : null}</tbody></>}
       </table>
     </div>
   </section>

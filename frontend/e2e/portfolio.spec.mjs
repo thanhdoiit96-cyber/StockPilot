@@ -1,6 +1,30 @@
 import { test, expect } from '@playwright/test'
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000}]
 const list={success:true,data:stocks,pagination:{page:1,pageSize:25,total:1,totalPages:1}}
+test('searches positions without accents and keeps query across status filters', async ({ page }) => {
+  await boot(page, [
+    { stock_id: 'a', symbol: 'FPT', name: 'Công nghệ FPT', quantity: 10, avg_cost: 100000, market_price: 120000 },
+    { stock_id: 'b', symbol: 'HPG', name: 'Hòa Phát', quantity: 5, avg_cost: 20000, market_price: 25000 }
+  ], [], [{ stock_id: 'c', symbol: 'HPG', name: 'Hòa Phát', realized_pnl: 1000 }])
+  const region = page.locator('.portfolio-positions')
+  const search = region.getByRole('searchbox')
+  await expect(region.locator('tbody tr')).toHaveCount(2)
+  await search.fill('hoa phat')
+  await expect(region.locator('tbody tr')).toHaveCount(1)
+  await expect(region.locator('tbody')).toContainText('HPG')
+  await region.getByRole('button', { name: /Đã đóng/ }).click()
+  await expect(search).toHaveValue('hoa phat')
+  await expect(region.locator('tbody tr')).toHaveCount(1)
+  await search.fill('missing')
+  await expect(region.getByText(/Không có vị thế phù hợp/)).toBeVisible()
+  await expect(region.getByText('Chưa có vị thế đã đóng', { exact: true })).toHaveCount(0)
+  await region.getByRole('button', { name: 'Xóa tìm kiếm' }).click()
+  await expect(search).toBeFocused()
+  await expect(region.locator('tbody tr')).toHaveCount(1)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(search).toBeVisible()
+  expect(await region.locator('.position-search-toolbar').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
 async function boot(page,initialPositions=[],initialTransactions=[],initialClosedPositions=[]){
   let watch=[];let positions=initialPositions;let transactions=initialTransactions;let closedPositions=initialClosedPositions;let transactionBody=null;const imports=[];const mutations=[]
   await page.route('**/api/**',async route=>{

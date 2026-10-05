@@ -6,6 +6,8 @@ Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất 
 
 Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và Home/End chuyển tab; bản nháp được giữ khi chuyển tab, mật khẩu nháp bị xóa khi đóng. Cần lưu/hoàn tác tên trước khi đổi mật khẩu.
 
+Bảng Vị thế danh mục hỗ trợ tìm theo mã/tên doanh nghiệp không phân biệt dấu tiếng Việt, kết hợp nhóm Đang mở/Đã đóng và giữ từ khóa khi chuyển nhóm. Tìm kiếm chỉ lọc bảng, không thay đổi tổng giá trị hoặc phân bổ danh mục; từ khóa không lưu vào storage.
+
 Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay trên thẻ; giữ phiên hiện tại và các phiên chưa chọn. API từ chối phiên không còn khả dụng thì hiển thị lỗi và cho làm mới.
 
 Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận diện phiên trước khi thu hồi; không phải thông tin thiết bị được hệ thống xác minh. Form hỗ trợ lưu/hủy/xóa nhãn và cảnh báo bản nháp.

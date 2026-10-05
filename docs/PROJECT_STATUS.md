@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-05 — Tìm kiếm vị thế danh mục
+
+- Thêm tìm kiếm mã/tên doanh nghiệp, không phân biệt hoa thường và dấu tiếng Việt; kết hợp với nhóm Đang mở/Đã đóng, giữ từ khóa khi chuyển nhóm. Hiển thị số kết quả, thông báo không khớp và nút xóa trả focus về ô tìm kiếm.
+- Chỉ lọc bảng vị thế; không thay đổi allocation, tổng giá trị, ledger hoặc dữ liệu backend. Không lưu từ khóa cá nhân vào storage.
+- Kiểm chứng: frontend 48/48 test; Playwright targeted đạt với API mô phỏng (tìm tên không dấu, chuyển nhóm, không có kết quả, xóa/focus, toolbar mobile 390px). Build/bundle integrity đạt, bundle index-C7rxn_nW.js. Chưa kiểm chứng luồng này với tài khoản/database thật.
+- Điểm tiếp tục: cải thiện Watchlist với tìm kiếm và thao tác mở/xóa tách biệt cho bàn phím; không mở rộng AI Advisor. Email verification vẫn chờ delivery.
+
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
 ### Tải thêm phiên đăng nhập — 2026-10-05
