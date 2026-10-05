@@ -169,6 +169,10 @@ The stopped task exposes an awaitable `runOnce()` for controlled verification us
 For gap-retry artifacts, `eod_retry` also exposes bounded operational counters: `last_run_requested`, `last_run_selected`, `last_run_selected_traded`, and `last_run_trade_priority` (`enabled`, probed/batch/failure/match counts, and `had_error`). Raw provider errors and the selected-symbol list are deliberately not returned by this public endpoint; use the local evidence artifact for diagnosis.
 ## Cập nhật tên hiển thị
 
+Quản lý phiên: GET /api/auth/sessions trả data.sessions với id/current/created_at/last_used_at/expires_at (hạn sớm hơn giữa idle/hard expiry), has_more và can_revoke_others. Chỉ lấy session của user đang xác thực, còn hiệu lực và chưa revoke; tối đa 50 phiên khác cộng phiên hiện tại. Không trả token/hash.
+
+POST /api/auth/sessions/revoke-others yêu cầu cookie session và CSRF; revoke toàn bộ session chưa revoke của cùng user trừ phiên hiện tại, trả revoked_count. Legacy Bearer nhận 409 khi gọi mutation; các token Bearer khác không bị ảnh hưởng bởi thao tác này, dùng đổi mật khẩu để vô hiệu toàn bộ credential cũ.
+
 Đổi mật khẩu: POST /api/auth/password nhận current_password/new_password, requireAuth và CSRF khi dùng cookie. Mật khẩu mới tối thiểu 12 ký tự, tối đa 72 byte và khác mật khẩu cũ; giới hạn 5 request/15 phút/user trong bộ nhớ process. Migration 022 bắt buộc trước khi chạy mã mới. Hash/version và thu hồi sessions được commit cùng transaction; Bearer kiểm tra password_version mỗi request. Các token legacy thiếu pv chỉ hợp lệ ở version 0. Production nhiều instance cần shared rate-limit store.
 
 `PATCH /api/auth/profile` yêu cầu đăng nhập và CSRF cho cookie auth. Payload phải có `display_name`: chuỗi sau trim dài 1–120 ký tự hoặc `null` để xóa. Thiếu trường, số, boolean, object, array và chuỗi trống trả 400 mà không sửa hồ sơ. Chỉ tên hiển thị được cập nhật; email, role và trạng thái xác thực không nhận từ payload.

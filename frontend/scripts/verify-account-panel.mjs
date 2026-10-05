@@ -6,9 +6,16 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   let user = { id: 1, email: 'investor@example.com', role: 'user', display_name: 'Minh Anh', email_verified_at: null };
   let failSave = false;
+  let revoked = false;
+  let failSessions = true;
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user } });
+    if (path === '/api/auth/sessions') {
+      if (failSessions) { failSessions = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể tải phiên đăng nhập.' } }); }
+      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true }, ...(!revoked ? [{ id: 'other', current: false }] : [])], can_revoke_others: true, has_more: false } } });
+    }
+    if (path === '/api/auth/sessions/revoke-others') { revoked = true; return route.fulfill({ json: { success: true, data: { revoked_count: 1 } } }); }
     if (path === '/api/auth/profile') {
       if (failSave) return route.fulfill({ status: 500, json: { success: false, message: 'Không thể lưu hồ sơ' } });
       user = { ...user, ...route.request().postDataJSON() };
@@ -31,6 +38,16 @@ try {
   await page.keyboard.press('ArrowRight');
   await expect(securityTab).toBeFocused();
   await expect(securityTab).toHaveAttribute('aria-selected', 'true');
+  await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Không thể tải phiên đăng nhập.');
+  await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
+  await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Đăng xuất các phiên khác', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Hủy đăng xuất phiên', exact: true }).click();
+  if (revoked) throw new Error('Cancel revoked sessions');
+  await dialog.getByRole('button', { name: 'Đăng xuất các phiên khác', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Xác nhận đăng xuất phiên khác' }).click();
+  await expect(dialog.getByText('Đã đăng xuất các phiên khác. Phiên hiện tại vẫn được giữ.')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Đăng xuất các phiên khác', exact: true })).toBeDisabled();
   await expect(dialog.getByLabel('Tên hiển thị')).not.toBeVisible();
   await dialog.getByLabel('Mật khẩu hiện tại', { exact: true }).fill('draft-only-test');
   await securityTab.press('Home');
