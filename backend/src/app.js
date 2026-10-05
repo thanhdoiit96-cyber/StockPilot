@@ -47,8 +47,8 @@ const logger = winston.createLogger({
 
 // Middleware
 app.use(helmet());
-app.use(cors(buildCorsOptions()));
 app.use(requestMetrics(metrics));
+app.use(cors(buildCorsOptions()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
