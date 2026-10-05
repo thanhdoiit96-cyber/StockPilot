@@ -1371,6 +1371,18 @@ function lv() {
         }), O.jsx("span", {
           className: "role-badge",
           children: ue.user.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
+        }), O.jsx("button", {
+          className: "ghost-btn profile-logout-btn",
+          type: "button",
+          "aria-label": "Đăng xuất khỏi tài khoản",
+          onClick: async () => {
+            try { await je("/api/auth/logout", { method: "POST", token: ue.token }); } catch {}
+            broadcastAuthEvent("logout"), endSession("", "Bạn đã đăng xuất an toàn.");
+          },
+          children: p("Đăng xuất")
+        }), O.jsx("small", {
+          className: "profile-details-note",
+          children: p("Email là định danh đăng nhập; chỉnh sửa thông tin cá nhân sẽ được bổ sung khi backend có contract xác thực.")
         }), O.jsx("p", {
           className: "eyebrow",
           children: p("Danh mục")
@@ -1388,7 +1400,7 @@ function lv() {
             children: currentPageTitle[1]
           })]
         }), O.jsxs("div", {
-          className: "topbar-actions",
+          className: "topbar-actions topbar-actions-empty",
           role: "group",
           "aria-label": "Thông tin và thao tác tài khoản",
           children: [O.jsx("span", {
