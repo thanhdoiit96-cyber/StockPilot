@@ -1269,8 +1269,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
     background: rgba(9, 14, 24, .96);
   }
   .sidebar .brand-block,
-  .sidebar .profile-card,
-  .sidebar .sidebar-toggle { display: none !important; }
+  .sidebar .profile-card { display: none !important; }
   .nav {
     width: 100%;
     min-width: 0;
@@ -1622,7 +1621,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .nav-item { display: flex; align-items: center; gap: 9px; }
 .nav-item .nav-icon { display: inline-grid; flex: 0 0 16px; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (min-width: 801px) { .sidebar { overflow: visible !important; } }
-@media (max-width: 800px) { .sidebar-toggle { right: 0 !important; } }
+@media (max-width: 800px) { .sidebar-toggle { right: 0 !important; width: 34px !important; height: 34px !important; } }
 .table-panel[hidden] { display: none !important; }
 .market-board-nav-item .nav-icon { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .table-panel[data-react-market-board] th:nth-child(2), .table-panel[data-react-market-board] td:nth-child(2) { width: 23%; }
