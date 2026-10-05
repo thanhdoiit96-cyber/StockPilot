@@ -1378,15 +1378,16 @@ function lv() {
         }, d))
       }), O.jsxs("div", {
         className: "profile-card",
+        "aria-label": "Thông tin cá nhân và phiên đăng nhập",
         children: [O.jsx("p", {
           className: "eyebrow",
           children: p("Tài khoản")
         }), O.jsx("strong", {
           className: "profile-email",
-          children: ue.user.email
+          children: ue.user?.email || ""
         }), O.jsx("span", {
           className: "role-badge",
-          children: ue.user.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
+          children: ue.user?.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
         }), O.jsx("button", {
           className: "ghost-btn profile-logout-btn",
           type: "button",
@@ -1446,12 +1447,12 @@ function lv() {
           "aria-label": "Thông tin và thao tác tài khoản",
           children: [O.jsx("span", {
             className: "topbar-user-email",
-            title: ue.user.email,
-            "aria-label": `Tài khoản ${ue.user.email}`,
-            children: ue.user.email
+            title: ue.user?.email || "",
+            "aria-label": `Tài khoản ${ue.user?.email || ""}`,
+            children: ue.user?.email || ""
           }), O.jsx("span", {
             className: "topbar-user-role",
-            children: ue.user.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
+            children: ue.user?.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
           }), O.jsx("button", {
             className: "ghost-btn",
             "aria-label": "Đăng xuất khỏi tài khoản",

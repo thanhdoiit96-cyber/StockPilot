@@ -47,10 +47,15 @@ button, input { font: inherit; }
   padding-inline: 0;
 }
 
-.dashboard-shell.sidebar-collapsed .brand-block > div:last-child,
+.dashboard-shell.sidebar-collapsed .brand-block > div:last-child { display: none; }
 .dashboard-shell.sidebar-collapsed .profile-card {
-  display: none;
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  padding: 10px 4px;
 }
+.dashboard-shell.sidebar-collapsed .profile-card > * { display: none; }
+.dashboard-shell.sidebar-collapsed .profile-card::before { content: '👤'; font-size: 18px; line-height: 1; }
 
 .dashboard-shell.sidebar-collapsed .nav-item {
   justify-content: center;
