@@ -215,6 +215,8 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const activePreset = marketColumnPresetKey(columns)
   const changePageSize = event => setPageSize(Number(event.target.value))
   const quoteProviders = [...new Set(Object.values(mergedQuotes).map(quote => quote?.upstream || quote?.provider).filter(Boolean))]
+  const hasFilters = Boolean(queryInput.trim() || sector)
+  const clearFilters = () => { setQueryInput(''); setQuery(''); setSector(''); setPage(1) }
 
   return <section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label="Bảng giá" data-react-market-board="true">
     <div className="panel-header">
@@ -228,6 +230,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         </div>
         <input className="table-search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={queryInput} onChange={event => setQueryInput(event.target.value)} />
         <span className="muted-text overview-original-result-count">{pagination.total || rows.length} mã</span>
+        {hasFilters && <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button>}
         <label className="page-size-control"><span>Số mã / trang</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       </div>
     </div>
