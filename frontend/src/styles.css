@@ -1057,6 +1057,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .market-breadth-header { align-items: flex-start; }
 .market-breadth-header h3 { margin: 0 0 5px; }
 .market-breadth-header p { margin: 0; font-size: 12px; }
+.breadth-scope-controls { display: flex; gap: 8px; margin-left: auto; }.breadth-scope-controls .select-control { min-width: 145px; }
 .breadth-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 15px; }
 .breadth-count { display: grid; gap: 5px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: rgba(148, 163, 184, .035); }
 .breadth-count > span { color: var(--muted); font-size: 12px; }
@@ -1481,8 +1482,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .saved-proposal-select option { color: var(--text); background: #111b2d; }
 .select-control { display: grid; gap: 5px; min-width: 150px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
 .select-control .app-select { width: 100%; min-height: 40px; }
-.breadth-exchange-control { margin-left: auto; }
-@media (max-width: 700px) { .breadth-exchange-control { width: 100%; margin-left: 0; } .market-breadth-header .chip { order: 2; } }
+.breadth-exchange-control { margin-left: 0; }
+@media (max-width: 700px) { .breadth-scope-controls { width: 100%; margin-left: 0; flex-direction: column; }.breadth-scope-controls .select-control { width: 100%; } .market-breadth-header .chip { order: 2; } }
 .table-search { width: min(320px, 100%); }
 .saved-proposal-select { min-width: 190px; }
 .detail-symbol-search input { width: 100%; }
@@ -1642,3 +1643,24 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .snapshot-change.is-removed { color: #fca5a5; background: rgba(248, 113, 113, .14); }
 .snapshot-change.is-retained { color: #cbd5e1; background: rgba(148, 163, 184, .14); }
 @media (max-width: 700px) { .snapshot-comparison-controls { grid-template-columns: 1fr; } }
+.recommendation-evidence { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.recommendation-evidence summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+.recommendation-evidence-body { margin-top: 12px; display: grid; gap: 12px; }
+.recommendation-provenance, .recommendation-indicator-evidence { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.recommendation-provenance div, .recommendation-indicator-evidence span { padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,.035); }
+.recommendation-provenance dt, .recommendation-indicator-evidence span { color: var(--muted); font-size: 12px; }
+.recommendation-provenance dd { margin: 3px 0 0; overflow-wrap: anywhere; font-weight: 700; }
+.recommendation-indicator-evidence b { display: block; margin-top: 3px; color: var(--text); }
+.recommendation-factor-table table { min-width: 500px; }
+.recommendation-evidence-note { margin: 0; font-size: 12px; }
+.recommendation-citations { display: grid; gap: 8px; }
+.recommendation-citations ul { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
+.recommendation-citations li { padding-left: 3px; }
+.recommendation-citations a { color: var(--primary); font-weight: 700; overflow-wrap: anywhere; }
+.recommendation-citations small { display: block; margin-top: 3px; color: var(--muted); }
+.criteria-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 700px) { .recommendation-provenance, .recommendation-indicator-evidence { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .criteria-heading-actions { width: 100%; justify-content: space-between; } }
+.advisor-conversation-toolbar { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto auto; align-items: center; gap: 8px; margin: 14px 0; }
+.advisor-conversation-toolbar small { grid-column: 2 / -1; color: var(--muted); }
+@media (max-width: 700px) { .advisor-conversation-toolbar { grid-template-columns: 1fr 1fr; } .advisor-conversation-toolbar label, .advisor-conversation-toolbar select, .advisor-conversation-toolbar small { grid-column: 1 / -1; } }

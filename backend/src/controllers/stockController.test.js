@@ -103,6 +103,18 @@ describe('stock API', () => {
     expect(Stock.findAll.mock.calls[0][0].where).toEqual(expect.objectContaining({ exchange: 'HSX' }));
     expect(cache.get.mock.calls[0][0]).toContain(':HSX:');
   });
+  test('keeps the other-sector universe consistent by excluding code and industry classifications', async () => {
+    Stock.findAll.mockResolvedValue([]);
+    await request(app).get('/api/stocks').query({ sector: 'other', listing_status: 'listed' });
+    const condition = Stock.findAll.mock.calls[0][0].where;
+    const sectorFilter = condition[Op.and][0];
+    expect(sectorFilter[Op.and][0].code[Op.notIn]).toEqual(expect.arrayContaining(['FPT', 'VCB']));
+    expect(sectorFilter[Op.and][1][Op.or][2][Op.not][Op.or]).toEqual(expect.arrayContaining([
+      { industry: { [Op.iLike]: '%công nghệ%' } },
+      { industry: { [Op.iLike]: '%ngân hàng%' } }
+    ]));
+    expect(condition[Op.and][1]).toEqual({ listing_status: 'listed' });
+  });
   test('exports bounded filtered EOD CSV without spreadsheet formulas', async () => {
     Stock.sequelize.literal = value => ({ val: value });
     Stock.findAll.mockResolvedValue([{ id: '1', code: 'FPT', name: '=Unsafe', exchange: 'HSX', prices: [{ close: '100000', volume: '1200', provider: 'vnstock', observed_at: '2026-10-01T00:00:00Z' }] }]);
@@ -121,28 +133,31 @@ describe('stock API', () => {
       { session_date: '2026-09-29', advances: '2', declines: '1', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '100', volume_declines: '50', volume_unchanged: '0', volume_observations: '3', traded_value: null, traded_value_observations: '0' },
       { session_date: '2026-09-30', advances: '1', declines: '2', unchanged: '0', classified: '3', covered: '3', universe: '4', volume_advances: '80', volume_declines: '120', volume_unchanged: '0', volume_observations: '3', traded_value: null, traded_value_observations: '0' }
     ], {}]);
-    const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 2, exchange: 'hsx' });
+    const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 2, exchange: 'hsx', sector: 'technology' });
     expect(result.status).toBe(200);
-    expect(result.body.data).toMatchObject({ exchange: 'HSX', requested_sessions: 2, returned_sessions: 2, continuity: { status: 'continuous' } });
+    expect(result.body.data).toMatchObject({ exchange: 'HSX', sector: 'technology', sector_label: 'Công nghệ', requested_sessions: 2, returned_sessions: 2, continuity: { status: 'continuous' } });
     expect(result.body.data.points[0]).toMatchObject({ ad_ratio: 2, coverage_pct: 75, traded_value: null });
     expect(result.body.data.points[1].volume).toMatchObject({ net: -40, net_pct: -20, signal: 'confirmation' });
-    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN LATERAL'), { bind: ['HSX', 2, 2] });
-    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('COUNT(volume)'), { bind: ['HSX', 2, 2] });
-    expect(cache.set).toHaveBeenCalledWith('v3:market-breadth-history:HSX:2', { data: result.body.data }, 5, 'market_breadth');
+    const bind = Stock.sequelize.query.mock.calls[0][1].bind;
+    expect(bind.slice(0, 4)).toEqual(['HSX', 'technology', expect.arrayContaining(['FPT']), expect.arrayContaining(['%công nghệ%'])]);
+    expect(bind.slice(-2)).toEqual([2, 2]);
+    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN LATERAL'), expect.any(Object));
+    expect(Stock.sequelize.query).toHaveBeenCalledWith(expect.stringContaining('COUNT(volume)'), expect.any(Object));
+    expect(cache.set).toHaveBeenCalledWith('v4:market-breadth-history:HSX:technology:2', { data: result.body.data }, 5, 'market_breadth');
   });
   test('bounds breadth history sessions and serves cached results', async () => {
     cache.get.mockResolvedValueOnce({ data: { requested_sessions: 60, points: [] } });
     const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 999, exchange: 'invalid' });
     expect(result.status).toBe(200);
     expect(result.body.source).toBe('cache');
-    expect(cache.get).toHaveBeenCalledWith('v3:market-breadth-history:ALL:60');
+    expect(cache.get).toHaveBeenCalledWith('v4:market-breadth-history:ALL:ALL:60');
     expect(Stock.sequelize.query).not.toHaveBeenCalled();
   });
   test('falls back to 20 breadth sessions when the query is not numeric', async () => {
     cache.get.mockResolvedValueOnce({ data: { requested_sessions: 20, points: [] } });
     const result = await request(app).get('/api/stocks/breadth/history').query({ sessions: 'not-a-number' });
     expect(result.status).toBe(200);
-    expect(cache.get).toHaveBeenCalledWith('v3:market-breadth-history:ALL:20');
+    expect(cache.get).toHaveBeenCalledWith('v4:market-breadth-history:ALL:ALL:20');
   });
   test('limits detail history by market observation time, not import/update time', async () => {
     Stock.findByPk.mockResolvedValue({

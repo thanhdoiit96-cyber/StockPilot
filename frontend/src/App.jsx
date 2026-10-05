@@ -6,6 +6,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import RecommendationSnapshotComparison from "./components/RecommendationSnapshotComparison.jsx";
+import RecommendationEvidence from "./components/RecommendationEvidence.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
 import AuthErrorMessage from "./components/AuthErrorMessage.jsx";
@@ -502,6 +503,7 @@ function Zm({
     [c, f] = D.useState(null),
     [k, j] = D.useState(false),
     [y, C] = D.useState(""),
+    [criteriaCollapsed, setCriteriaCollapsed] = D.useState(false),
     [E, M] = D.useState(() => {
       try {
         return JSON.parse(localStorage.getItem("stockpilot.recommendation.saved") || "[]");
@@ -559,7 +561,7 @@ function Zm({
         },
         token: t
       });
-      f(B.data);
+      f(B.data), setCriteriaCollapsed(true);
       try {
         const K = await je("/api/recommendations/saved", {
           method: "POST",
@@ -643,13 +645,25 @@ function Zm({
             className: "muted-text",
             children: "Tăng trọng số để tiêu chí ảnh hưởng nhiều hơn đến điểm tổng. Mỗi tiêu chí được chuẩn hóa khi tính."
           })]
-        }), O.jsxs("span", {
-          className: "criteria-total",
-          children: ["Tổng trọng số ", O.jsx("strong", {
-            children: h
+        }), O.jsxs("div", {
+          className: "criteria-heading-actions",
+          children: [O.jsxs("span", {
+            className: "criteria-total",
+            children: ["Tổng trọng số ", O.jsx("strong", {
+              children: h
+            })]
+          }), O.jsx("button", {
+            type: "button",
+            className: "ghost-btn small-btn",
+            "aria-expanded": !criteriaCollapsed,
+            "aria-controls": "recommendation-criteria-form",
+            onClick: () => setCriteriaCollapsed(g => !g),
+            children: criteriaCollapsed ? "Mở tiêu chí" : "Thu gọn tiêu chí"
           })]
         })]
       }), O.jsxs("form", {
+        id: "recommendation-criteria-form",
+        hidden: criteriaCollapsed,
         onSubmit: w,
         children: [O.jsx("div", {
           className: "criteria-grid",
@@ -929,6 +943,9 @@ function Zm({
                     })]
                   })]
                 })
+              }), O.jsx(RecommendationEvidence, {
+                item: g,
+                criteria: ya
               })]
             }, g.id || g.stock_id || g.symbol);
           })
@@ -2794,6 +2811,7 @@ function lv() {
           })]
         })]
       }), re === "advisor" && O.jsx(AdvisorWorkspace, {
+        token: ue.token,
         aiEnabled: (Xr = au.data) == null ? void 0 : Xr.enabled,
         selectedStock: me,
         analysis: T.data,

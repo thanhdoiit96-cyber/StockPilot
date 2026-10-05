@@ -61,7 +61,7 @@ function gapDays(previous, current) {
   return Number.isFinite(start) && Number.isFinite(end) ? Math.round((end - start) / 86400000) : null;
 }
 
-function buildMarketBreadthHistory(rows, { sessions, exchange = null } = {}) {
+function buildMarketBreadthHistory(rows, { sessions, exchange = null, sector = null, sectorLabel = null } = {}) {
   const parsedSessions = Number(sessions);
   const requestedSessions = Number.isFinite(parsedSessions) ? Math.min(60, Math.max(1, parsedSessions)) : 20;
   const points = (rows || []).map(normalizePoint).sort((left, right) => left.session_date.localeCompare(right.session_date));
@@ -76,6 +76,8 @@ function buildMarketBreadthHistory(rows, { sessions, exchange = null } = {}) {
     : gaps.length ? 'gapped' : 'continuous';
   return {
     exchange,
+    sector,
+    sector_label: sectorLabel,
     requested_sessions: requestedSessions,
     returned_sessions: points.length,
     points,

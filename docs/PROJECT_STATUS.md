@@ -1,6 +1,6 @@
 # Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-10-02.
+Cập nhật: 2026-10-05.
 
 ## Yêu cầu làm việc đã ghi nhận
 
@@ -3428,3 +3428,49 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiểm chứng targeted backend **19/19**, toàn backend **33 suite / 145 test**, frontend unit/encoding **33/33**, production build/bundle integrity đạt với `index-5nF5W4Ca.js`, targeted continuous/gapped E2E **2/2**. Lượt Playwright đầu bị sandbox `spawn EPERM`; chạy lại ngoài sandbox phát hiện một kỳ vọng test thiếu khoảng trắng, sửa rồi đạt.
 - Live smoke phát hiện query cũ dùng `LAG` trong chính range request nên metric 02/10 thay đổi giữa 1D và 5D (299 so với 340 classified). Sửa bằng lateral lookup observation EOD gần nhất trước từng phiên và bump cache v3; kết quả 1D/5D/20D nay bất biến ở **351 classified, A−D −108, net volume −66,6%, coverage volume 351/351**. Cold 1D 482 ms; hai request warm 5D/20D là 80/119 ms trên database phát triển.
 - Backend đã restart. Live 5 phiên toàn thị trường trả continuity `continuous`, 331–351 volume observations/phiên; 29/09 là `negative_divergence` đo được (A−D +5 nhưng net volume −0,7%), bốn phiên còn lại `confirmation`. Điểm tiếp tục: drill-down breadth theo ngành hoặc benchmark khi có series chỉ số cùng session contract; không suy diễn VNINDEX từ stock universe.
+
+## Drill-down độ rộng theo ngành — 2026-10-03
+
+- `GET /api/stocks/breadth/history` nhận đồng thời `exchange` và `sector`, dựng universe từ mã `listed` trước khi chọn phiên. Taxonomy dùng chung với stock list: mã trong catalog có quyền ưu tiên, chỉ fallback theo `industry` cho mã chưa được phân loại; nhóm `other` loại cả mã và industry đã biết. Cache được tách theo sàn/ngành/range. Stock list/export dùng cùng điều kiện và list bổ sung query `listing_status` để snapshot có thể đối chiếu đúng universe history.
+- Tổng quan có hai selector Sàn/Ngành dùng chung cho snapshot, Top tăng/giảm/khối lượng và timeline 1D/5D/20D. Nhãn phạm vi xuất hiện trong header, nhóm dẫn dắt, history và disclaimer; danh mục ngành được tách thành constant dùng chung với Bảng giá. Snapshot nhận cả contract raw `listing_status` và model UI `listingStatus`, đồng thời loại mã delisted khỏi phép tính.
+- Live smoke sau restart: `other` khớp **454** mã giữa stock list và history; `technology` khớp **2**; HSX + Công nghệ có **1** mã và 5 phiên `continuous`. Chín scope ngành đều trả đủ 5 phiên liên tục, volume coverage 100%; universe lần lượt 22/12/16/10/13/10/2/12/454 cho Ngân hàng/Chứng khoán/BĐS/Năng lượng/Sản xuất/Tiêu dùng/Công nghệ/Xây dựng/Khác.
+- Kiểm chứng: backend targeted **20/20**, toàn backend **33 suite / 146 test**; frontend unit/encoding **33/33**; production safe-build/bundle integrity đạt với `index-DBecJQjs.js`; targeted sector scope **1/1** và bốn regression fixture/listing-status **4/4**. Full Playwright được chạy lại trên đúng bundle trước khi commit.
+- Giới hạn và điểm tiếp tục: bộ lọc sàn/ngành chưa persist qua reload hoặc đồng bộ nhiều tab. Benchmark VNINDEX vẫn chờ series chỉ số cùng lịch phiên và continuity contract; không suy diễn benchmark từ stock breadth.
+
+## Persist và đồng bộ scope Market Breadth — 2026-10-05
+
+- Thêm contract `stockpilot-market-breadth-scope-v1` cho exchange/sector. Giá trị hợp lệ được khôi phục trước render, thay đổi selector được lưu qua reload và `storage` event đồng bộ các tab cùng origin. Payload JSON/schema/giá trị không hợp lệ bị bỏ qua, xóa khóa đưa scope về Tất cả sàn/Tất cả ngành.
+- Bổ sung unit test normalize/read/parse và regression trình duyệt cho persist sau reload, bỏ qua event hỏng và reset khi preference bị xóa. Cập nhật README frontend và audit để bỏ hạng mục lưu bộ lọc khỏi backlog.
+- Kiểm chứng: backend **33 suite / 146 test**, frontend unit/encoding **36/36**, targeted E2E **1/1**, full Playwright **78/78**, production safe-build/bundle integrity đạt với `index-Cghy_6pi.js`. Các proxy `ECONNREFUSED` trong đầu full E2E thuộc fixture auth cố ý không mock một số API phụ; toàn bộ kịch bản vẫn đạt.
+- Điểm tiếp tục: Market Breadth chỉ còn benchmark khi có series chỉ số cùng phiên và continuity contract; không suy diễn VNINDEX từ stock universe. Có thể chuyển sang hạng mục P2 độc lập tiếp theo nếu contract này chưa tồn tại.
+
+## Drill-down bằng chứng Đề xuất — 2026-10-05
+
+- Chọn nhánh P2 độc lập vì benchmark VNINDEX vẫn thiếu series chỉ số cùng phiên. Mỗi mã Đề xuất nay có phần mở rộng trình bày model, nguồn và thời điểm giá tham chiếu, số phiên đầu vào, trend/RSI/momentum/volatility/volume cùng bảng điểm tiêu chí, trọng số và hệ số hiệu chỉnh.
+- Thêm projector thuần chỉ nhận số hữu hạn và provenance hợp lệ. Snapshot scheduled cũ có thể lấy số phiên từ `evidence.objective`; trường không tồn tại hiển thị trạng thái thiếu, không được suy diễn. UI ghi rõ provenance kỹ thuật không phải citation bên ngoài hoặc bằng chứng nhân quả.
+- Regression đầu tiên phát hiện production vẫn render Recommendation Workbench trong source phục hồi `App.jsx`, không dùng component boundary cùng tên. Đã nối component `RecommendationEvidence` vào runtime thật để tránh build xanh nhưng UI không đổi.
+- Kiểm chứng: frontend unit/encoding **38/38**; targeted Recommendation Workbench **1/1**; audit toàn page desktop/mobile **2/2**; production safe-build/bundle integrity đạt với `index-BQdSaRKz.js`. Lượt unit/build đầu trong sandbox bị `spawn EPERM`, chạy lại ngoài sandbox và đạt; targeted E2E đầu phát hiện boundary chưa nối runtime, sửa xong chạy lại đạt.
+- Điểm tiếp tục: chỉ bổ sung citation tin tức/vĩ mô khi backend lưu URL, nguồn, thời điểm và trạng thái xác minh trong snapshot. Benchmark Market Breadth vẫn chờ index-series contract; quản lý nhiều hội thoại Advisor vẫn chờ persistence/retention API.
+
+## Thu gọn tiêu chí Đề xuất sau khi có kết quả — 2026-10-05
+
+- Hoàn thành hạng mục mật độ nội dung còn lại trong UI audit: sau response tạo đề xuất thành công, form tiêu chí tự ẩn để ưu tiên kết quả và evidence. Nút **Mở tiêu chí/Thu gọn tiêu chí** luôn hiện, công bố `aria-expanded` và liên kết form bằng `aria-controls`.
+- Việc thu gọn chỉ thay presentation; state trọng số, kết quả và snapshot không bị reset. Người dùng mở lại form để chỉnh hoặc load/xóa snapshot như trước. Desktop giữ action cạnh tổng trọng số, mobile dàn action đủ chiều rộng.
+- Kiểm chứng: frontend unit/encoding **38/38**; targeted Recommendation Workbench cùng audit desktop/mobile **3/3**; production safe-build/bundle integrity đạt với `index-DwSgw7TH.js`.
+- Điểm tiếp tục không đổi theo phụ thuộc: citation ngoài hệ thống cho Đề xuất cần provenance backend; benchmark cần index series; nhiều hội thoại Advisor cần API persistence và retention policy.
+
+## Citation nguồn ngoài hệ thống cho Đề xuất — 2026-10-05
+
+- Pipeline snapshot `short_term_rule_v2` nay lưu tối đa 10 citation unique từ external factors đã `verified`, có source, publication time hợp lệ và `source_url` HTTP(S). Mỗi citation giữ type/source/title/time/URL; URL thiếu, `javascript:` và row chưa xác minh bị loại. Nội dung citation không tham gia điểm kỹ thuật.
+- Frontend projector revalidate contract và protocol trước khi render. Link mở tab mới với `noopener noreferrer`; nguồn/thời điểm/loại nằm cạnh tiêu đề. Drill-down nói rõ citation chỉ để tham khảo, không được cộng điểm và không chứng minh quan hệ nhân quả.
+- Snapshot cũ không bị sửa hoặc backfill; citation chỉ xuất hiện ở snapshot mới được tạo sau thay đổi khi database thực sự có external factor đủ điều kiện. Không chạy tạo snapshot thật trong phiên này để tránh ghi dữ liệu nghiệp vụ ngoài lịch vận hành.
+- Kiểm chứng: backend targeted recommendation **10/10**, toàn backend **33 suite / 146 test**; frontend unit/encoding **39/39**; targeted Recommendation Workbench và audit desktop/mobile **3/3**; production safe-build/bundle integrity đạt với `index-DUoSv2F8.js`. Backend đã restart, health HTTP 200.
+- Điểm tiếp tục: đo coverage citation trên snapshot lịch kế tiếp trước khi mở rộng provider. Các nhánh feature còn lại vẫn bị chặn đúng contract: benchmark cần index series; nhiều hội thoại Advisor cần persistence/retention API.
+
+## Persistence nhiều hội thoại AI Advisor — 2026-10-05
+
+- Thêm migration `018_create_advisor_conversations`, model và API JWT `GET/POST /api/advisor/conversations`, `PUT/DELETE /api/advisor/conversations/:id`. Ownership luôn lấy từ token; test xác nhận user khác không list/xóa được row. Payload giới hạn title 120 ký tự, context `symbol|portfolio|market`, 100 message, text 4.000 ký tự, 20 citation/message và URL HTTP(S).
+- Retention khi tạo mới giữ 20 hội thoại cập nhật gần nhất của chính user. UI tải hội thoại mới nhất, cho tạo/chọn/xóa, persist sau mỗi lượt rule-based và khóa prompt/input trong lúc lưu để tránh hai POST chồng lấp. Lỗi persistence có alert nhưng không xóa message đang hiển thị.
+- Migration 018 đã áp dụng lên database development thành công trong 0,182 giây; không sửa/xóa bảng hoặc dữ liệu cũ. Backend đã restart. Không tạo hội thoại smoke trên tài khoản thật.
+- Kiểm chứng: backend targeted Advisor **3/3**, toàn backend **34 suite / 149 test**; frontend unit/encoding **39/39**; page audit desktop/mobile **2/2** có create rồi update cùng conversation; production safe-build/bundle integrity đạt với `index-DsQDmD2E.js`.
+- Điểm tiếp tục: đo quy mô và hành vi retention khi có dữ liệu người dùng thực; generative AI vẫn khóa theo AI gate. Feature lớn còn bị chặn là benchmark vì chưa có index-series contract.

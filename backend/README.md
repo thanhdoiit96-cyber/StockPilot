@@ -23,9 +23,9 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | Method | Đường dẫn | Hành vi |
 | --- | --- | --- |
 | GET | /api/health | success, message, timestamp; không kiểm tra lại database theo request |
-| GET | /api/stocks | Danh sách cổ phiếu, sàn/trạng thái niêm yết, giá gần nhất, cache 5 phút |
+| GET | /api/stocks | Danh sách cổ phiếu, lọc sàn/ngành/trạng thái niêm yết, giá gần nhất, cache 5 phút |
 | GET | /api/stocks/export.csv | CSV EOD read-only theo cùng q/sector/exchange/coverage/sort/direction/pinned, tối đa 2.000 dòng, không cache |
-| GET | /api/stocks/breadth/history | Chuỗi A/D và volume breadth EOD theo 1–60 session, tùy chọn sàn, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |
+| GET | /api/stocks/breadth/history | Chuỗi A/D và volume breadth EOD theo 1–60 session, tùy chọn sàn/ngành, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |
 | GET | /api/stocks/:id | Chi tiết, sàn/trạng thái niêm yết và tối đa 20 giá, mới nhất trước; cache 5 phút |
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |
@@ -92,11 +92,11 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Current quote endpoints
 
-- `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count.
+- `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.
 - Stock list/detail responses carry `exchange`, `listing_status`, and `listing_checked_at` after migrations 013–014; the UI keeps delisted rows visible and shows the last metadata check on hover.
 - `GET /api/stocks/quotes?symbols=FPT,VCB`: up to 200 symbols through the shared VCI intraday service. At most three one-symbol worker requests run concurrently; overlapping page requests share per-symbol work. Responses return available quotes within an 8-second wait budget while bounded pending work can populate the cache.
 - `GET /api/stocks/data-quality?session=YYYY-MM-DD`: no-store quality gate for listed-symbol EOD coverage. It returns the selected/latest session, covered and missing counts, the missing symbol list, a `ready` flag, and live quote-provider health. Consumers must use this status before treating the EOD snapshot as complete.
-- `GET /api/stocks/breadth/history?sessions=20&exchange=HSX`: cached EOD breadth history for 1–60 latest stored sessions. Each point contains advancing/declining/unchanged counts, A/D ratio, spread, coverage and volume grouped by the same price direction. Volume breadth includes observation count, total/directional/net volume, net percentage, volume A/D ratio, advancing-volume share and a measured `confirmation|positive_divergence|negative_divergence|neutral|unavailable` signal. Divergence compares symbol-count breadth with directional-volume breadth; it is not an index/benchmark comparison and not aggressor-side order flow. `traded_value` remains `null` unless the provider supplied observations. Consumers must inspect `continuity.status`; do not draw a connected timeline unless it is `continuous`.
+- `GET /api/stocks/breadth/history?sessions=20&exchange=HSX&sector=technology`: cached EOD breadth history for 1–60 latest stored sessions. `exchange` và `sector` là tùy chọn; sector dùng cùng taxonomy với stock list, ưu tiên mã được phân loại tường minh rồi mới fallback theo industry. Universe chỉ gồm `listing_status=listed`; response lặp lại `exchange`, `sector` và `sector_label`. Each point contains advancing/declining/unchanged counts, A/D ratio, spread, coverage and volume grouped by the same price direction. Volume breadth includes observation count, total/directional/net volume, net percentage, volume A/D ratio, advancing-volume share and a measured `confirmation|positive_divergence|negative_divergence|neutral|unavailable` signal. Divergence compares symbol-count breadth with directional-volume breadth; it is not an index/benchmark comparison and not aggressor-side order flow. `traded_value` remains `null` unless the provider supplied observations. Consumers must inspect `continuity.status`; do not draw a connected timeline unless it is `continuous`.
 
 ## Personal portfolio and recommendation tracking
 
@@ -120,7 +120,13 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 Recommendation snapshots use `short_term_rule_v2` metadata. `rationale.evidence` separates objective technical history, verified macro factors, verified positive/negative news, independently verified sentiment, user supplied subjective constraints and policy gates. Only technical evidence contributes to the current score; unavailable or unverified groups are retained as evidence state and excluded from scoring. The latest snapshot and forward evaluation are presented in the frontend's dedicated Recommendations tab.
 
-Snapshot generation joins verified `ExternalFactor` rows by symbol (and global factors with no symbol), requiring source and publication time. Unverified news remains excluded; no sentiment score is inferred from headlines or database presence.
+Snapshot generation joins verified `ExternalFactor` rows by symbol (and global factors with no symbol), requiring source and publication time. Snapshot evidence carries at most 10 unique citations only when `source_url` uses HTTP(S); each citation retains type, source, title and publication time. Unsafe/missing URLs and unverified rows are excluded. External citations remain context only and do not contribute to the technical score; no sentiment score is inferred from headlines or database presence.
+
+## Advisor conversations
+
+- `GET/POST /api/advisor/conversations` and `PUT/DELETE /api/advisor/conversations/:id` require JWT and scope every row by `user_id` from the token.
+- A conversation stores a title, context `symbol|portfolio|market`, and at most 100 normalized user/AI messages. Citations accept only HTTP(S) URLs; clients cannot supply another user id.
+- Retention keeps the 20 most recently updated conversations per user. Migration `018_create_advisor_conversations` creates the table and user/update-time index.
 
 `npm run backfill:vnstock-session` backfills one Vietnam session date through the idempotent EOD ingestion path. Set `VNSTOCK_BACKFILL_DATE=YYYY-MM-DD`; optionally set `VNSTOCK_BACKFILL_SYMBOLS=FPT,SSI` to retry a specific existing-symbol subset. It writes timestamped evidence under `backend/evidence/`, checks missing coverage within the selected scope, retries transient exceptions, and continues after a symbol exhausts retries. A provider response with zero records is reported as missing coverage, not treated as proof the security did not trade.
 

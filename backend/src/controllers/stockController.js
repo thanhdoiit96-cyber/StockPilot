@@ -5,7 +5,7 @@ const Joi = require('joi');
 const { analyzePrices, buildCombinedInsight, buildExternalFactorSummary, buildEvaluationFactors, buildHorizonAdvice, buildExpertGuidance } = require('../services/technicalAnalysis');
 const { evaluateInsightQuality } = require('../services/analysisQuality');
 const { buildRiskPlan } = require('../services/riskPlan');
-const { sectorFromIndustry, industryCondition } = require('../services/sectorClassifier');
+const { SECTOR_INDUSTRY_LIKE, sectorFromIndustry, industryCondition } = require('../services/sectorClassifier');
 const { SECTOR_CODES, SECTOR_LABELS, CLASSIFIED_CODES, sectorForCode } = require('../services/sectorCatalog');
 const path = require('node:path');
 const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
@@ -13,6 +13,21 @@ const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const { serializeStockCsv } = require('../services/stockCsv');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
+const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
+const sectorCondition = sector => {
+  if (!sector) return null;
+  if (sector === 'other') {
+    const knownIndustry = { [Op.or]: ALL_SECTOR_INDUSTRY_PATTERNS.map(pattern => ({ industry: { [Op.iLike]: pattern } })) };
+    return { [Op.and]: [
+      { code: { [Op.notIn]: CLASSIFIED_CODES } },
+      { [Op.or]: [{ industry: { [Op.is]: null } }, { industry: '' }, { [Op.not]: knownIndustry }] }
+    ] };
+  }
+  return { [Op.or]: [
+    { code: { [Op.in]: SECTOR_CODES[sector] } },
+    { [Op.and]: [{ code: { [Op.notIn]: CLASSIFIED_CODES } }, industryCondition(Op, sector)] }
+  ] };
+};
 const finiteEvidenceNumber = value => value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 
 module.exports = function(cacheService) {
@@ -130,25 +145,36 @@ module.exports = function(cacheService) {
       const sessions = Number.isFinite(parsedSessions) ? Math.min(60, Math.max(1, parsedSessions)) : 20;
       const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
       const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : null;
-      const cacheKey = `v3:market-breadth-history:${exchange || 'ALL'}:${sessions}`;
+      const requestedSector = String(req.query.sector || '').trim();
+      const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : null;
+      const sectorCodes = sector && sector !== 'other' ? SECTOR_CODES[sector] : [];
+      const sectorPatterns = sector && sector !== 'other' ? SECTOR_INDUSTRY_LIKE[sector] : [];
+      const cacheKey = `v4:market-breadth-history:${exchange || 'ALL'}:${sector || 'ALL'}:${sessions}`;
       const cached = await cacheService.get(cacheKey);
       if (cached?.data) return res.json({ success: true, data: cached.data, source: 'cache' });
       const [rows] = await Stock.sequelize.query(`
-        WITH selected_sessions AS (
+        WITH scoped_stocks AS (
+          SELECT s.id, s.code, s.exchange
+          FROM stocks s
+          WHERE s.listing_status = 'listed' AND ($1::text IS NULL OR s.exchange = $1)
+            AND (
+              $2::text IS NULL
+              OR ($2 = 'other' AND NOT (s.code = ANY($5::text[]) OR COALESCE(s.industry, '') ILIKE ANY($6::text[])))
+              OR ($2 <> 'other' AND (s.code = ANY($3::text[]) OR (NOT (s.code = ANY($5::text[])) AND COALESCE(s.industry, '') ILIKE ANY($4::text[]))))
+            )
+        ), selected_sessions AS (
           SELECT DISTINCT (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date
-          FROM stock_prices p JOIN stocks s ON s.id = p.stock_id
+          FROM stock_prices p JOIN scoped_stocks s ON s.id = p.stock_id
           WHERE p.provider = 'vnstock' AND p.interval = '1d' AND p.observed_at IS NOT NULL
-            AND s.listing_status = 'listed' AND ($1::text IS NULL OR s.exchange = $1)
-          ORDER BY session_date DESC LIMIT $2
+          ORDER BY session_date DESC LIMIT $7
         ), ranked AS (
           SELECT p.stock_id, s.exchange,
             (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date,
             COALESCE(p.close, p.price)::numeric AS close,
             p.volume::numeric AS volume, p.traded_value::numeric AS traded_value,
             ROW_NUMBER() OVER (PARTITION BY p.stock_id, (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date ORDER BY p.observed_at DESC, p.id DESC) AS row_number
-          FROM stock_prices p JOIN stocks s ON s.id = p.stock_id
+          FROM stock_prices p JOIN scoped_stocks s ON s.id = p.stock_id
           WHERE p.provider = 'vnstock' AND p.interval = '1d' AND p.observed_at IS NOT NULL
-            AND s.listing_status = 'listed' AND ($1::text IS NULL OR s.exchange = $1)
             AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date IN (SELECT session_date FROM selected_sessions)
         ), daily AS (
           SELECT stock_id, session_date, close, volume, traded_value FROM ranked WHERE row_number = 1 AND close IS NOT NULL
@@ -176,12 +202,12 @@ module.exports = function(cacheService) {
             COUNT(volume) FILTER (WHERE previous_close IS NOT NULL)::int AS volume_observations,
             SUM(traded_value) AS traded_value,
             COUNT(traded_value)::int AS traded_value_observations,
-            (SELECT COUNT(*)::int FROM stocks universe WHERE universe.listing_status = 'listed' AND ($1::text IS NULL OR universe.exchange = $1)) AS universe
+            (SELECT COUNT(*)::int FROM scoped_stocks) AS universe
           FROM compared GROUP BY session_date
         )
-        SELECT * FROM (SELECT * FROM aggregated ORDER BY session_date DESC LIMIT $3) latest ORDER BY session_date ASC
-      `, { bind: [exchange, sessions, sessions] });
-      const data = buildMarketBreadthHistory(rows, { sessions, exchange });
+        SELECT * FROM (SELECT * FROM aggregated ORDER BY session_date DESC LIMIT $8) latest ORDER BY session_date ASC
+      `, { bind: [exchange, sector, sectorCodes, sectorPatterns, CLASSIFIED_CODES, ALL_SECTOR_INDUSTRY_PATTERNS, sessions, sessions] });
+      const data = buildMarketBreadthHistory(rows, { sessions, exchange, sector, sectorLabel: sector ? SECTOR_LABELS[sector] || 'Khác / chưa phân loại' : null });
       await cacheService.set(cacheKey, { data }, 5, 'market_breadth');
       return res.json({ success: true, data, source: 'database' });
     } catch (error) {
@@ -239,15 +265,17 @@ module.exports = function(cacheService) {
       const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : '';
       const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
       const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : '';
+      const requestedListingStatus = String(req.query.listing_status || '').trim().toLowerCase();
+      const listingStatus = ['listed', 'delisted', 'unknown'].includes(requestedListingStatus) ? requestedListingStatus : '';
       const requestedSort = String(req.query.sort || 'name');
       const sort = ['code', 'name', 'price', 'volume'].includes(requestedSort) ? requestedSort : 'name';
       const direction = String(req.query.direction || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
       const pinned = [...new Set(String(req.query.pinned || '').toUpperCase().split(',').map(code => code.trim()).filter(code => /^[A-Z0-9]{1,10}$/.test(code)))].sort().slice(0, 200);
       const filters = [];
       if (query) filters.push({ [Op.or]: [{ code: { [Op.iLike]: `%${query}%` } }, { name: { [Op.iLike]: `%${query}%` } }] });
-      if (sector === 'other') filters.push({ code: { [Op.notIn]: CLASSIFIED_CODES } });
-      else if (sector) filters.push({ [Op.or]: [{ code: { [Op.in]: SECTOR_CODES[sector] } }, industryCondition(Op, sector)] });
+      if (sector) filters.push(sectorCondition(sector));
       if (exchange) filters.push({ exchange });
+      if (listingStatus) filters.push({ listing_status: listingStatus });
       if (coverage) filters.push(Stock.sequelize.literal(`(SELECT COUNT(*) FROM stock_prices AS coverage_prices WHERE coverage_prices.stock_id = "Stock"."id") ${coverage === 'ready' ? '>=' : '<'} 50`));
       const where = filters.length === 1 ? filters[0] : filters.length ? { [Op.and]: filters } : undefined;
       const latestValue = field => Stock.sequelize.literal(`(SELECT COALESCE(sp.${field === 'price' ? 'close' : field}, sp.${field === 'price' ? 'price' : field}) FROM stock_prices AS sp WHERE sp.stock_id = "Stock"."id" AND sp.observed_at IS NOT NULL ORDER BY sp.observed_at DESC NULLS LAST, sp.id DESC LIMIT 1)`);
@@ -290,6 +318,8 @@ module.exports = function(cacheService) {
       const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : '';
       const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
       const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : '';
+      const requestedListingStatus = String(req.query.listing_status || '').trim().toLowerCase();
+      const listingStatus = ['listed', 'delisted', 'unknown'].includes(requestedListingStatus) ? requestedListingStatus : '';
       const requestedSort = String(req.query.sort || 'name');
       const sort = ['code', 'name', 'price', 'volume'].includes(requestedSort) ? requestedSort : 'name';
       const direction = String(req.query.direction || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
@@ -297,12 +327,12 @@ module.exports = function(cacheService) {
       const pinned = [...new Set(String(req.query.pinned || '').toUpperCase().split(',').map(code => code.trim()).filter(code => /^[A-Z0-9]{1,10}$/.test(code)))].sort().slice(0, 200);
       const filters = [];
       if (query) filters.push({ [Op.or]: [{ code: { [Op.iLike]: `%${query}%` } }, { name: { [Op.iLike]: `%${query}%` } }] });
-      if (sector === 'other') filters.push({ code: { [Op.notIn]: CLASSIFIED_CODES } });
-      else if (sector) filters.push({ [Op.or]: [{ code: { [Op.in]: SECTOR_CODES[sector] } }, industryCondition(Op, sector)] });
+      if (sector) filters.push(sectorCondition(sector));
       if (exchange) filters.push({ exchange });
+      if (listingStatus) filters.push({ listing_status: listingStatus });
       if (coverage) filters.push(Stock.sequelize.literal(`(SELECT COUNT(*) FROM stock_prices AS coverage_prices WHERE coverage_prices.stock_id = "Stock"."id") ${coverage === 'ready' ? '>=' : '<'} 50`));
       const where = filters.length === 1 ? filters[0] : filters.length ? { [Op.and]: filters } : undefined;
-      const cacheKey = `v10:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${exchange}:${query.toLowerCase()}:${pinned.join(',')}`;
+      const cacheKey = `v11:stocks:${page}:${pageSize}:${sort}:${direction}:${coverage}:${sector}:${exchange}:${listingStatus}:${query.toLowerCase()}:${pinned.join(',')}`;
       let cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success: true, data: cached.data, pagination: cached.pagination, source: 'cache' });
       const latestValue = field => Stock.sequelize.literal(`(SELECT COALESCE(sp.${field === 'price' ? 'close' : field}, sp.${field === 'price' ? 'price' : field}) FROM stock_prices AS sp WHERE sp.stock_id = "Stock"."id" AND sp.observed_at IS NOT NULL ORDER BY sp.observed_at DESC NULLS LAST, sp.id DESC LIMIT 1)`);
@@ -321,7 +351,7 @@ module.exports = function(cacheService) {
         : { rows: await Stock.findAll(queryOptions), count: 0 };
 
       const payload = result.rows.map(stock => normalizeStock(stock, latestSessionDate));
-      const pagination = { page, pageSize, total: result.count, totalPages: Math.max(1, Math.ceil(result.count / pageSize)), query, coverage, sector, exchange, sort, direction: direction.toLowerCase() };
+      const pagination = { page, pageSize, total: result.count, totalPages: Math.max(1, Math.ceil(result.count / pageSize)), query, coverage, sector, exchange, listing_status: listingStatus, sort, direction: direction.toLowerCase() };
       await cacheService.set(cacheKey, { data: payload, pagination }, 5, 'stock');
 
       res.json({ success: true, data: payload, pagination, source: 'database' });

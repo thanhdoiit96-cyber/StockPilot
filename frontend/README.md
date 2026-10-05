@@ -7,8 +7,9 @@
 | [src/main.jsx](src/main.jsx) | Khởi tạo React |
 | [src/App.jsx](src/App.jsx) | Dashboard, chọn cổ phiếu, tải API và điều phối các page |
 | [src/components/MarketBoardPage.jsx](src/components/MarketBoardPage.jsx) | Page Bảng giá: tải danh sách, render, phân trang, toolbar và vòng đời quote bằng React |
-| [src/components/MarketBreadth.jsx](src/components/MarketBreadth.jsx) | Breadth Tổng quan: scope sàn, snapshot và mở mã dẫn đầu |
-| [src/components/MarketBreadthHistory.jsx](src/components/MarketBreadthHistory.jsx) | Timeline A/D và volume breadth EOD; chỉ vẽ chuỗi liên tục, phân kỳ nội tại không giả benchmark |
+| [src/components/MarketBreadth.jsx](src/components/MarketBreadth.jsx) | Breadth Tổng quan: scope sàn/ngành dùng chung cho snapshot, Top list và mở mã dẫn đầu |
+| [src/components/MarketBreadthHistory.jsx](src/components/MarketBreadthHistory.jsx) | Timeline A/D và volume breadth EOD theo scope sàn/ngành; chỉ vẽ chuỗi liên tục, phân kỳ nội tại không giả benchmark |
+| [src/components/RecommendationEvidence.jsx](src/components/RecommendationEvidence.jsx) | Drill-down provenance từng mã Đề xuất: model, nguồn/thời điểm giá, số phiên, chỉ báo, phép chấm điểm và citation HTTP(S) đã xác minh; nguồn ngoài hệ thống không được cộng điểm |
 | [src/components/PortfolioAllocation.jsx](src/components/PortfolioAllocation.jsx) | Donut Danh mục có tooltip chuột/bàn phím và audit P/L theo quote |
 | [src/components/RecommendationSnapshotComparison.jsx](src/components/RecommendationSnapshotComparison.jsx) | So sánh hai snapshot Đề xuất đã lưu theo tiêu chí, membership, hạng và điểm |
 | [src/components/AdvisorWorkspace.jsx](src/components/AdvisorWorkspace.jsx) | Advisor rule-based với phạm vi mã/Danh mục/Thị trường và citation theo từng câu trả lời |
@@ -75,7 +76,9 @@ Tiêu đề **Danh sách cổ phiếu** nằm riêng phía trên. Bộ lọc **N
 Nút sidebar dùng chevron trái khi thanh đang mở và chevron phải khi đã thu gọn. Tooltip/`aria-label` lần lượt là **Thu gọn thanh điều hướng** và **Mở rộng thanh điều hướng**.
 Nút có vùng bấm 32×32 px, nằm hoàn toàn bên trong mép sidebar ở cả hai trạng thái và có focus ring khi thao tác bằng bàn phím.
 
-Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy), lịch sử đánh giá ngoài mẫu và đối chiếu hai snapshot đã lưu mà không chạy lại mô hình. Model hiện chỉ tính technical evidence đã kiểm chứng; nhóm chưa có nguồn hiển thị `unavailable` và không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
+Tab **Đề xuất** tách snapshot ngắn hạn khỏi Tổng quan. Tab này hiển thị candidate/rationale, evidence groups (objective, macro, news, sentiment, subjective, policy), lịch sử đánh giá ngoài mẫu và đối chiếu hai snapshot đã lưu mà không chạy lại mô hình. Drill-down chỉ tạo link cho citation HTTP(S) đã được backend giữ từ `ExternalFactor.status=verified`, kèm nguồn và thời điểm; URL hỏng/không an toàn bị loại lần nữa ở frontend. Model hiện chỉ tính technical evidence đã kiểm chứng; citation ngoài hệ thống và nhóm chưa có nguồn không nhận điểm. Hit rate/forward return chỉ được tính sau đủ 20 phiên.
+
+Tab **AI Advisor** giữ câu trả lời rule-based và citation theo ngữ cảnh Mã/Danh mục/Thị trường. Hội thoại được lưu bằng API theo JWT, có thể tạo/chọn/xóa, giới hạn 20 hội thoại và 100 tin nhắn mỗi hội thoại. UI khóa gửi trong lúc persist để một lượt không tạo nhiều conversation do request chồng lấp; lỗi đồng bộ không làm mất nội dung đang hiển thị trong phiên.
 
 ## Build và kiểm tra bản phát hành
 
@@ -97,7 +100,7 @@ Phạm vi CSV có **Trang hiện tại** và **Toàn bộ kết quả (EOD)**. T
 
 Bảng giá là component React riêng và sở hữu tải danh sách, render, điều hướng/phân trang, loading/error/empty state, timeline, toolbar và vòng đời quote. `MarketBreadth`, `PortfolioAllocation` và lifecycle phân tích Chi tiết cũng thuộc React; `overview-table-actions.js`, `market-board-tools.js` và `sidebar-toggle-icon.js` đã được loại khỏi source/build. Toàn bộ source frontend không còn dùng `MutationObserver`.
 
-Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/5/20 phiên. Cột volume biểu diễn `(khối lượng mã tăng − khối lượng mã giảm) / tổng volume hai nhóm`; tín hiệu phân kỳ chỉ so sánh hướng số mã với hướng volume trong cùng universe/sàn. Chuỗi gapped/insufficient không được nối hoặc vẽ, phiên thiếu volume bị bỏ trống và nội dung luôn ghi rõ đây không phải dòng tiền mua/bán chủ động hay benchmark VNINDEX.
+Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/5/20 phiên. Bộ chọn sàn và ngành áp dụng đồng thời cho snapshot, nhóm dẫn dắt và timeline; lựa chọn được lưu qua reload và đồng bộ giữa các tab cùng origin bằng một contract có kiểm tra giá trị. Dữ liệu storage sai bị bỏ qua, còn xóa preference phục hồi phạm vi mặc định. Danh mục ngành dùng chung với Bảng giá. Snapshot phạm vi chỉ dùng mã đang niêm yết. Cột volume biểu diễn `(khối lượng mã tăng − khối lượng mã giảm) / tổng volume hai nhóm`; tín hiệu phân kỳ chỉ so sánh hướng số mã với hướng volume trong cùng universe/sàn/ngành. Chuỗi gapped/insufficient không được nối hoặc vẽ, phiên thiếu volume bị bỏ trống và nội dung luôn ghi rõ đây không phải dòng tiền mua/bán chủ động hay benchmark VNINDEX.
 
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 

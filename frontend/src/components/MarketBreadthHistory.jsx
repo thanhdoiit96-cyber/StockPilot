@@ -44,7 +44,7 @@ function plotVolume(points) {
   })
 }
 
-export default function MarketBreadthHistory({ exchange = '' }) {
+export default function MarketBreadthHistory({ exchange = '', sector = '', sectorLabel = null }) {
   const [range, setRange] = useState(5)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', data: null, error: null })
@@ -54,6 +54,7 @@ export default function MarketBreadthHistory({ exchange = '' }) {
     setState({ status: 'loading', data: null, error: null })
     const params = new URLSearchParams({ sessions: String(range) })
     if (exchange) params.set('exchange', exchange)
+    if (sector) params.set('sector', sector)
     requestJson(`/api/stocks/breadth/history?${params}`, { signal: controller.signal })
       .then(payload => {
         if (controller.signal.aborted) return
@@ -65,7 +66,7 @@ export default function MarketBreadthHistory({ exchange = '' }) {
         if (!controller.signal.aborted) setState({ status: 'error', data: null, error: error.message })
       })
     return () => controller.abort()
-  }, [range, exchange, attempt])
+  }, [range, exchange, sector, attempt])
 
   const plotted = useMemo(() => plot(state.data?.points || []), [state.data])
   const volumeBars = useMemo(() => plotVolume(plotted), [plotted])
@@ -76,7 +77,7 @@ export default function MarketBreadthHistory({ exchange = '' }) {
 
   return <section className="breadth-history" aria-labelledby="breadth-history-heading">
     <div className="breadth-history-header">
-      <div><strong id="breadth-history-heading">Lịch sử A/D</strong><small>{exchange || 'Toàn thị trường'} · EOD theo phiên</small></div>
+      <div><strong id="breadth-history-heading">Lịch sử A/D</strong><small>{exchange || 'Tất cả sàn'} · {sectorLabel || 'Tất cả ngành'} · EOD theo phiên</small></div>
       <div className="breadth-history-ranges" aria-label="Khoảng lịch sử độ rộng">
         {RANGES.map(value => <button type="button" key={value} aria-pressed={range === value} className={range === value ? 'active' : ''} onClick={() => setRange(value)}>{value}D</button>)}
       </div>
