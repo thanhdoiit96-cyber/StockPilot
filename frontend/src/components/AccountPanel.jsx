@@ -86,7 +86,8 @@ export default function AccountPanel({ user, onSave, onLogout }) {
           <h3>Hồ sơ của bạn</h3>
           <label htmlFor="account-display-name">Tên hiển thị <span>(không bắt buộc)</span></label>
           <input id="account-display-name" name="display_name" autoComplete="nickname" maxLength={120} value={name} disabled={busy} placeholder="Nhập tên bạn muốn sử dụng" onChange={event => { setName(event.target.value); setMessage(""); setError(""); }} aria-describedby="account-name-hint" />
-          <small id="account-name-hint">Tối đa 120 ký tự. Để trống để dùng tên từ email.</small>
+          <small id="account-name-hint">{name.length}/120 ký tự. Để trống để dùng tên từ email.</small>
+          {dirty && !name.trim() && <small className="account-reset-hint">Khi lưu, tên hiển thị hiện tại sẽ được xóa. Email đăng nhập vẫn giữ nguyên.</small>}
           <div className="account-email-heading"><label htmlFor="account-email">Email đăng nhập</label><span className={verified ? "account-verified" : "account-unverified"}>{verification}</span></div>
           <input id="account-email" type="email" value={user?.email || ""} readOnly />
           <small>Email hiện chưa thể thay đổi tại đây.</small>

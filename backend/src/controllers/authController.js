@@ -90,7 +90,11 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 router.patch('/profile', requireAuth, async (req, res) => {
-  const displayName = req.body?.display_name == null ? null : String(req.body.display_name).trim();
+  if (!req.body || !Object.prototype.hasOwnProperty.call(req.body, 'display_name') ||
+      (req.body.display_name !== null && typeof req.body.display_name !== 'string')) {
+    return res.status(400).json({ success: false, message: 'Tên hiển thị phải là văn bản; dùng null để xóa tên.' });
+  }
+  const displayName = req.body.display_name === null ? null : req.body.display_name.trim();
   if (displayName !== null && (!displayName || displayName.length > 120)) {
     return res.status(400).json({ success: false, message: 'Tên hiển thị phải dài từ 1 đến 120 ký tự' });
   }
