@@ -3536,3 +3536,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - PostgreSQL, worker, backend và frontend đều có healthcheck, `restart: unless-stopped` và init process. Backend chờ database + worker healthy; frontend chờ backend healthy. Scheduler EOD không được bật mặc định, nên thêm worker không tự tạo mutation dữ liệu.
 - Kiểm chứng khả dụng trong môi trường hiện tại: Python AST parse worker/price-board đạt; marker cấu hình bắt buộc trong Compose đạt. Docker CLI không được cài trong môi trường này nên **chưa chạy** `docker compose config`, build image hoặc health transition thật; không ghi nhận Compose runtime đã nghiệm thu.
 - Điểm tiếp tục: trên host có Docker, chạy `docker compose config`, `docker compose up --build -d`, xác nhận 4 service healthy và smoke `/api/health` + worker health nội mạng. Song song, sau 15:30 đọc evidence cron EOD tự động trước khi làm việc khác với ingestion.
+
+## Compose log rotation và graceful stop — 2026-10-05
+
+- Bổ sung logging anchor dùng `json-file` với `max-size=10m`, `max-file=3` cho cả bốn service; thêm `stop_grace_period` 30 giây cho PostgreSQL/backend và 15 giây cho worker/frontend. Điều này giới hạn disk growth và cho process hoàn tất response đang mở khi Compose stop/restart.
+- Đây là cấu hình vận hành local/demo, không tuyên bố retention/audit production. Docker CLI vẫn không có trong môi trường hiện tại nên chưa chạy config/build/up; runtime gate Compose còn mở như checkpoint trước.
