@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Đăng xuất từng phiên — 2026-10-05
+
+- Mỗi phiên khác có nút đăng xuất và xác nhận ngay trên thẻ; hủy không gửi mutation. Khi thành công làm mới danh sách và trả focus về tiêu đề.
+- POST /api/auth/sessions/revoke nhận session_id UUID, yêu cầu cookie/CSRF, lọc ownership và loại trừ current ở SQL. Current kể cả UUID viết hoa trả 409; sai định dạng 400; phiên không thuộc user/đã revoke/không tồn tại cùng trả 404.
+- Kiểm chứng: auth controller 17/17; build/bundle integrity và browser smoke API mô phỏng đạt. Live development smoke qua UI với ba session cùng user và một user khác đạt: chỉ target bị revoke, current/unselected/unrelated còn dùng được; tiếp tục revoke-all đạt và refresh revoked bị từ chối. Hai tài khoản test riêng được giữ, không persist credential.
+- Backend đã restart; Preview 4173 dùng index-B290HM7G.js. Bước tiếp tục: hoàn thiện khả năng nhận diện phiên bằng nhãn người dùng hoặc metadata đã thống nhất; email verification vẫn chờ delivery.
+
 ### Quản lý phiên đăng nhập — 2026-10-05
 
 - Bảo mật có danh sách phiên hiện tại/khác, ngày đăng nhập, lần gia hạn và hạn hiệu lực; không suy diễn thiết bị/IP khi chưa lưu metadata. Tải khi mở tab, có làm mới/lỗi/thử lại và xác nhận đăng xuất các phiên khác.

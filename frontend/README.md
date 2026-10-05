@@ -6,6 +6,8 @@ Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất 
 
 Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và Home/End chuyển tab; bản nháp được giữ khi chuyển tab, mật khẩu nháp bị xóa khi đóng. Cần lưu/hoàn tác tên trước khi đổi mật khẩu.
 
+Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay trên thẻ; giữ phiên hiện tại và các phiên chưa chọn. API từ chối phiên không còn khả dụng thì hiển thị lỗi và cho làm mới.
+
 | Tệp | Vai trò |
 | --- | --- |
 | [src/components/AccountSessions.jsx](src/components/AccountSessions.jsx) | Danh sách phiên trong Bảo mật, tải khi tab active, trạng thái lỗi/thử lại, xác nhận thu hồi phiên khác và giữ phiên hiện tại |

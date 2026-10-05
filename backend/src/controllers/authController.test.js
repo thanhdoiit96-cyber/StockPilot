@@ -29,6 +29,25 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('single-session revoke requires csrf, excludes current session and enforces ownership', async () => {
+    const { Op } = require('sequelize');
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const send = id => request(app).post('/api/auth/sessions/revoke').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send({ session_id: id });
+    const target = 'c785cda2-65cc-4a88-b71c-61907c8109f6';
+    expect((await request(app).post('/api/auth/sessions/revoke').set('Cookie', cookieHeader(cookies)).send({ session_id: target })).status).toBe(403);
+    expect((await send('session-a')).status).toBe(409);
+    expect((await send('not-a-uuid')).status).toBe(400);
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+    expect((await send(target)).status).toBe(200);
+    const where = mockAuthSession.update.mock.calls.at(-1)[1].where;
+    expect(where.user_id).toBe('user-a');
+    expect(where.id[Op.eq]).toBe(target);
+    expect(where.id[Op.ne]).toBe('session-a');
+    expect(where.revoked_at).toBeNull();
+    mockAuthSession.update.mockResolvedValueOnce([0]);
+    expect((await send(target)).status).toBe(404);
+  });
   test('lists only owned active sessions and never exposes session credential hashes', async () => {
     const { Op } = require('sequelize');
     const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });

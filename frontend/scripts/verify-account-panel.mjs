@@ -7,13 +7,19 @@ try {
   let user = { id: 1, email: 'investor@example.com', role: 'user', display_name: 'Minh Anh', email_verified_at: null };
   let failSave = false;
   let revoked = false;
+  let singleRevoked = false;
   let failSessions = true;
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user } });
     if (path === '/api/auth/sessions') {
       if (failSessions) { failSessions = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể tải phiên đăng nhập.' } }); }
-      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true }, ...(!revoked ? [{ id: 'other', current: false }] : [])], can_revoke_others: true, has_more: false } } });
+      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true }, ...(!revoked ? [{ id: 'other', current: false }, ...(!singleRevoked ? [{ id: 'target', current: false }] : [])] : [])], can_revoke_others: true, has_more: false } } });
+    }
+    if (path === '/api/auth/sessions/revoke') {
+      if (route.request().postDataJSON().session_id !== 'target') throw new Error('Wrong session targeted');
+      singleRevoked = true;
+      return route.fulfill({ json: { success: true } });
     }
     if (path === '/api/auth/sessions/revoke-others') { revoked = true; return route.fulfill({ json: { success: true, data: { revoked_count: 1 } } }); }
     if (path === '/api/auth/profile') {
@@ -41,6 +47,14 @@ try {
   await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Không thể tải phiên đăng nhập.');
   await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
   await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Đăng xuất phiên khác 2', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Giữ phiên này', exact: true }).click();
+  if (singleRevoked) throw new Error('Cancellation revoked session');
+  await dialog.getByRole('button', { name: 'Đăng xuất phiên khác 2', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Xác nhận đăng xuất phiên này', exact: true }).click();
+  await expect(dialog.getByText('Đã đăng xuất phiên đã chọn. Các phiên khác vẫn được giữ.')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Đăng xuất phiên khác 2', exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Đăng xuất phiên khác 1', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Đăng xuất các phiên khác', exact: true }).click();
   await dialog.getByRole('button', { name: 'Hủy đăng xuất phiên', exact: true }).click();
   if (revoked) throw new Error('Cancel revoked sessions');

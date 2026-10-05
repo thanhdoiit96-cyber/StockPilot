@@ -73,3 +73,5 @@
 .account-session-list dt { color:#94a3b8; }.account-session-list dd { margin:0; }
 .account-session-confirm { padding:12px; border:1px solid #8a7040; border-radius:10px; }
 .account-session-confirm button { margin:4px; min-height:44px; }
+.account-session-revoke { margin-top:12px; min-height:44px; }
+.account-session-list .account-session-confirm { margin-top:12px; }
