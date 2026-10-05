@@ -1,0 +1,35 @@
+groups:
+  - name: stockpilot-operations
+    rules:
+      - alert: StockPilotAuthFailuresHigh
+        expr: increase(stockpilot_backend_auth_failures_total[10m]) >= 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Auth failures are elevated
+          description: Backend recorded at least 10 HTTP 401/403 responses in 10 minutes.
+      - alert: StockPilotCorsFailuresHigh
+        expr: increase(stockpilot_backend_cors_failures_total[10m]) >= 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CORS failures are elevated
+          description: Backend recorded at least 5 rejected CORS requests in 10 minutes.
+      - alert: StockPilotWorkerErrorsHigh
+        expr: increase(stockpilot_worker_errors_total[10m]) >= 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Vnstock worker errors are elevated
+          description: Worker recorded at least 3 failed requests in 10 minutes.
+      - alert: StockPilotWorkerPartialsHigh
+        expr: increase(stockpilot_worker_partial_total[10m]) >= 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Vnstock worker partial responses are elevated
+          description: Worker returned at least 5 partial responses in 10 minutes.
