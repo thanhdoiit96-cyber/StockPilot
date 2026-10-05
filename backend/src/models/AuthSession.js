@@ -3,6 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
     user_id: { type: DataTypes.UUID, allowNull: false },
     refresh_token_hash: { type: DataTypes.STRING(64), allowNull: false, unique: true },
+    previous_refresh_token_hash: { type: DataTypes.STRING(64), allowNull: true },
     csrf_token_hash: { type: DataTypes.STRING(64), allowNull: false },
     expires_at: { type: DataTypes.DATE, allowNull: false },
     idle_expires_at: { type: DataTypes.DATE, allowNull: false },

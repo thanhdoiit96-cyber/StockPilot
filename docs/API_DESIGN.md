@@ -28,7 +28,9 @@ Runtime hiện tại yêu cầu JWT token trong header cho endpoint bảo vệ:
 Authorization: Bearer <jwt_token>
 ```
 
-Các ví dụ refresh/logout bên dưới là thiết kế cũ, chưa được triển khai. Contract hardening được chọn cho public deployment — cookie HttpOnly, session server-side, refresh rotation và CSRF — nằm tại [AUTH_SESSION_DESIGN](AUTH_SESSION_DESIGN.md). Không dùng ví dụ `refreshToken` trong JSON bên dưới làm contract triển khai.
+Các ví dụ refresh/logout với token trong JSON bên dưới là thiết kế cũ và không phải contract triển khai. Contract hardening được chọn cho public deployment — cookie HttpOnly, session server-side, refresh rotation và CSRF — nằm tại [AUTH_SESSION_DESIGN](AUTH_SESSION_DESIGN.md). Không dùng ví dụ `refreshToken` trong JSON bên dưới làm contract runtime.
+
+Cập nhật 2026-10-05: backend đã có cookie mode opt-in bằng `X-Auth-Mode: cookie-v1`, `POST /api/auth/refresh` và `POST /api/auth/logout`; refresh token không xuất hiện trong JSON. Frontend/Bearer mặc định chưa chuyển. Chi tiết runtime nằm trong Backend README và contract đầy đủ nằm trong tài liệu auth session.
 
 ---
 

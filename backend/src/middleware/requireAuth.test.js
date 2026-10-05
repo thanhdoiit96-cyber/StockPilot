@@ -63,4 +63,20 @@ describe('requireAuth', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
+
+  test('enforces csrf only for unsafe cookie-authenticated requests', async () => {
+    const token = jwt.sign({ sub: 'user-a', sid: 'session-a' }, secret, { expiresIn: '15m' });
+    const session = { id: 'session-a' };
+    authSessions.findActive.mockResolvedValue(session);
+    authSessions.validateCsrf = jest.fn().mockReturnValue(true);
+    const req = { method: 'POST', get: name => name === 'cookie' ? `sp_access_dev=${token}; sp_csrf=csrf` : name === 'x-csrf-token' ? 'csrf' : undefined };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    const next = jest.fn();
+    await requireAuth(req, res, next);
+    expect(next).toHaveBeenCalled();
+
+    const invalid = { ...req, get: name => name === 'cookie' ? `sp_access_dev=${token}; sp_csrf=csrf` : name === 'x-csrf-token' ? 'wrong' : undefined };
+    await requireAuth(invalid, res, jest.fn());
+    expect(res.status).toHaveBeenLastCalledWith(403);
+  });
 });
