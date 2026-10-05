@@ -9,7 +9,7 @@ const { AuthSessionError, sameHash, sessionService } = require('../services/auth
 
 const router = express.Router();
 const sessions = sessionService({ AuthSession, sequelize });
-const publicUser = user => ({ id: user.id, email: user.email, role: user.role });
+const publicUser = user => ({ id: user.id, email: user.email, role: user.role, display_name: user.display_name || null, email_verified_at: user.email_verified_at || null });
 const issue = user => jwt.sign({ sub: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.JWT_EXPIRES_IN || process.env.JWT_EXPIRATION || '2h' });
 const issueAccess = (user, sid) => jwt.sign({ sub: user.id, sid, email: user.email, role: user.role }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.AUTH_ACCESS_EXPIRES_IN || '15m' });
 const wantsCookieSession = req => req.get('x-auth-mode') === 'cookie-v1';

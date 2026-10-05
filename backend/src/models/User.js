@@ -4,6 +4,8 @@ module.exports = (sequelize, DataTypes) => {
   email: { type: DataTypes.STRING(255), allowNull: false, unique: true, validate: { isEmail: true } },
   password_hash: { type: DataTypes.STRING(255), allowNull: false },
   role: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'user' },
+  display_name: { type: DataTypes.STRING(120), allowNull: true },
+  email_verified_at: { type: DataTypes.DATE, allowNull: true },
   created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, { tableName: 'users', underscored: true, timestamps: false });
