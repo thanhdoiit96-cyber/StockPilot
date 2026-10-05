@@ -261,9 +261,9 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       <table>
         <caption className="sr-only">Bảng giá cổ phiếu, có thể sắp xếp theo mã hoặc khối lượng</caption>
         <thead><tr>
-          <th><button className="table-sort-btn" type="button" title="Sắp xếp theo mã" onClick={() => toggleSort('symbol')}>Mã {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
+          <th aria-sort={sort.key === 'symbol' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo mã" onClick={() => toggleSort('symbol')}>Mã {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
           <th>Tên</th><th>Giá</th><th>Biến động</th>
-          <th><button className="table-sort-btn" type="button" title="Sắp xếp theo khối lượng" onClick={() => toggleSort('volume')}>Khối lượng {sort.key === 'volume' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
+          <th aria-sort={sort.key === 'volume' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo khối lượng" onClick={() => toggleSort('volume')}>Khối lượng {sort.key === 'volume' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
           <th>Nguồn dữ liệu</th><th>Phân tích</th><th>Thao tác</th>
         </tr></thead>
         <tbody>{rows.length ? rows.map(row => <tr className={row.pinned ? 'pinned-stock' : ''} key={row.stock.id} onClick={() => onOpenDetail?.(row.stock)}>
