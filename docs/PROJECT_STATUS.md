@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Điều hướng Hồ sơ / Bảo mật
+
+- Tách dialog thành tab Hồ sơ và Bảo mật, hỗ trợ ArrowLeft/Right/Home/End, roving tabindex và quan hệ tab/tabpanel. Giữ form mounted khi chuyển tab, xóa mật khẩu nháp khi đóng dialog.
+- Có dấu nhắc bản nháp và nút quay lại Hồ sơ nếu chưa lưu tên; lỗi đăng xuất hiển thị ở cả hai mục. Escape được xử lý ở keydown để nhấn liên tiếp không bypass xác nhận bản nháp.
+- Kiểm chứng: build/bundle integrity đạt; browser smoke API mô phỏng đạt giữ/xóa bản nháp, bàn phím, focus, cảnh báo khi tên chưa lưu, desktop/collapsed/mobile. Đã xem ảnh Bảo mật 390px. Preview 4173 phục vụ index-B1GchZvQ.js.
+- Điểm tiếp tục: kiểm tra quản lý phiên đăng nhập (liệt kê/thu hồi phiên) hoặc email verification khi có delivery; không ghi nhận gửi email đã triển khai.
+
 ### Đổi mật khẩu — 2026-10-05
 
 - AccountPanel có mật khẩu hiện tại/mới/xác nhận, ẩn-hiện, lỗi theo kết quả API, bảo vệ bản nháp và kết thúc phiên sau khi đổi. Cần lưu hoặc hoàn tác tên trước khi đổi mật khẩu.
