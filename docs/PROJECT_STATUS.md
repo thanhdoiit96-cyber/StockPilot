@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Kiểm chứng hồ sơ với session thật
+
+- Sửa sessionFetch để PATCH /api/auth/profile được refresh cookie một lần khi access hết hạn; retry dùng CSRF sau rotation và giữ body. Refresh thất bại trả 401, không lặp mutation.
+- Frontend 45/45 test đạt; build và bundle integrity đạt. Preview 4173 phục vụ index-yR4I6eM5.js.
+- scripts/verify-live-profile.mjs đã chạy Chrome với backend/database development thật qua proxy 4173: đăng ký cookie-first, bỏ access cookie, lưu tên, reload vẫn giữ tên, logout và /me trả 401. Một tài khoản smoke riêng được giữ lại; không lưu/in credential.
+- Tiếp tục: thiết kế xác thực email khi có dịch vụ gửi thư; các trường hồ sơ khác cần chốt nhu cầu và schema trước khi mở form.
+
 - Thay profile-card bằng AccountPanel: nút nhận diện tài khoản có avatar/tên trong sidebar, mở hộp thoại hồ sơ riêng với bố cục hai cột desktop, một cột mobile. Có thể mở khi sidebar thu gọn.
 - Form tên hiển thị dùng PATCH hiện có; lưu/hoàn tác, khóa khi đang gửi, giữ bản nháp khi lỗi và cảnh báo bỏ thay đổi. Email chỉ đọc; trạng thái xác thực dựa trên email_verified_at, không có nút xác thực giả khi chưa có dịch vụ gửi email.
 - Đăng xuất có vùng riêng, báo lỗi nếu yêu cầu thất bại. Dialog hỗ trợ Escape, focus và bàn phím qua native dialog.

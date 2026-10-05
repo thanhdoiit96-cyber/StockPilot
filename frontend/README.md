@@ -4,6 +4,7 @@
 
 | Tệp | Vai trò |
 | --- | --- |
+| [scripts/verify-live-profile.mjs](scripts/verify-live-profile.mjs) | Live smoke qua Preview 4173: tạo một tài khoản development riêng (giữ lại), kiểm tra lưu sau access-cookie expiry, reload và logout; không lưu credential |
 | [src/components/AccountPanel.jsx](src/components/AccountPanel.jsx) | Sidebar account entry và dialog hồ sơ; PATCH tên hiển thị, email chỉ đọc, trạng thái xác thực và đăng xuất. Smoke với API mô phỏng: node scripts/verify-account-panel.mjs trên Preview 4173 |
 | [src/main.jsx](src/main.jsx) | Khởi tạo React |
 | [src/App.jsx](src/App.jsx) | Dashboard, chọn cổ phiếu, tải API và điều phối các page |

@@ -4,6 +4,34 @@ import { readCsrfCookie, resetRefreshForTests, sessionFetch } from './cookieSess
 
 const originalFetch = globalThis.fetch
 const originalDocument = globalThis.document
+
+test('profile save refreshes expired access once and retries with rotated csrf and original body', async () => {
+  globalThis.document = { cookie: 'sp_csrf=old' }
+  const calls = []
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url, init })
+    if (url === '/api/auth/refresh') {
+      globalThis.document.cookie = 'sp_csrf=rotated'
+      return new Response('{}', { status: 200 })
+    }
+    return new Response('{}', { status: calls.length === 1 ? 401 : 200 })
+  }
+  const body = JSON.stringify({ display_name: 'An' })
+  const result = await sessionFetch('/api/auth/profile', { token: true, method: 'PATCH', body })
+  assert.equal(result.status, 200)
+  assert.deepEqual(calls.map(call => call.url), ['/api/auth/profile', '/api/auth/refresh', '/api/auth/profile'])
+  assert.equal(calls[2].init.body, body)
+  assert.equal(calls[2].init.headers.get('X-CSRF-Token'), 'rotated')
+})
+
+test('profile refresh failure returns unauthorized without retrying the mutation', async () => {
+  globalThis.document = { cookie: 'sp_csrf=old' }
+  const calls = []
+  globalThis.fetch = async url => { calls.push(url); return new Response('{}', { status: 401 }) }
+  const result = await sessionFetch('/api/auth/profile', { token: true, method: 'PATCH', body: '{}' })
+  assert.equal(result.status, 401)
+  assert.deepEqual(calls, ['/api/auth/profile', '/api/auth/refresh'])
+})
 afterEach(() => { globalThis.fetch = originalFetch; globalThis.document = originalDocument; resetRefreshForTests() })
 
 test('reads the csrf cookie and sends cookie auth without an authorization header', async () => {
