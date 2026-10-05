@@ -1,3 +1,4 @@
+import AccountPanel from "./components/AccountPanel.jsx";
 import * as D from "react";
 import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
@@ -660,9 +661,6 @@ function lv() {
     [authNotice, setAuthNotice] = D.useState(""),
     [authSubmitting, setAuthSubmitting] = D.useState(false),
     [transactionSubmitting, setTransactionSubmitting] = D.useState(false),
-    [profileName, setProfileName] = D.useState(() => ue?.user?.display_name || ""),
-    [profileSaving, setProfileSaving] = D.useState(false),
-    [profileMessage, setProfileMessage] = D.useState(""),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
@@ -729,19 +727,6 @@ function lv() {
     });
     on("");
     Bt(null);
-  };
-  D.useEffect(() => { setProfileName(ue?.user?.display_name || ""); }, [ue?.user?.display_name]);
-  const saveProfile = async event => {
-    event.preventDefault();
-    if (profileSaving) return;
-    setProfileSaving(true); setProfileMessage("");
-    try {
-      const response = await je("/api/auth/profile", { method: "PATCH", token: ue.token, body: { display_name: profileName.trim() || null } });
-      Bt(current => ({ ...current, user: response.user }));
-      setProfileName(response.user.display_name || "");
-      setProfileMessage("Đã lưu thông tin cá nhân.");
-    } catch (error) { setProfileMessage(error.message); }
-    finally { setProfileSaving(false); }
   };
   D.useEffect(() => {
     const handleSessionExpired = d => endSession(d.detail?.message || "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.");
@@ -1376,62 +1361,19 @@ function lv() {
             children: p(S)
           })]
         }, d))
-      }), O.jsxs("div", {
-        className: "profile-card",
-        "aria-label": "Thông tin cá nhân và phiên đăng nhập",
-        children: [O.jsx("p", {
-          className: "eyebrow",
-          children: p("Tài khoản")
-        }), O.jsx("strong", {
-          className: "profile-email",
-          children: ue.user?.email || ""
-        }), O.jsx("span", {
-          className: "role-badge",
-          children: ue.user?.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
-        }), O.jsx("button", {
-          className: "ghost-btn profile-logout-btn",
-          type: "button",
-          "aria-label": "Đăng xuất khỏi tài khoản",
-          onClick: async () => {
-            try { await je("/api/auth/logout", { method: "POST", token: ue.token }); } catch {}
-            broadcastAuthEvent("logout"), endSession("", "Bạn đã đăng xuất an toàn.");
-          },
-          children: p("Đăng xuất")
-        }), O.jsx("small", {
-          className: "profile-details-note",
-          children: p("Email là định danh đăng nhập; chỉnh sửa thông tin cá nhân sẽ được bổ sung khi backend có contract xác thực.")
-        }), O.jsxs("form", {
-          className: "profile-details-form",
-          onSubmit: saveProfile,
-          children: [O.jsx("label", {
-            children: [p("Tên hiển thị"), O.jsx("input", {
-              value: profileName,
-              maxLength: 120,
-              name: "display_name",
-              autoComplete: "nickname",
-              "aria-label": "Tên hiển thị",
-              onChange: event => { setProfileName(event.target.value); setProfileMessage(""); },
-              placeholder: "Tên của bạn"
-            })]
-          }), O.jsx("button", {
-            className: "ghost-btn small-btn",
-            type: "submit",
-            disabled: profileSaving,
-            "aria-busy": profileSaving,
-            children: p(profileSaving ? "Đang lưu…" : "Lưu tên")
-          })]
-        }), profileMessage && O.jsx("p", {
-          className: "profile-details-message",
-          role: "status",
-          children: profileMessage
-        }), O.jsx("span", {
-          className: "profile-verification-status",
-          role: "status",
-          children: p("Xác thực email: chưa có dữ liệu")
-        }), O.jsx("p", {
-          className: "eyebrow",
-          children: p("Thông tin cá nhân")
-        })]
+      }), O.jsx(AccountPanel, {
+        user: ue?.user,
+        onSave: async displayName => {
+          const response = await je("/api/auth/profile", { method: "PATCH", token: ue?.token, body: { display_name: displayName } });
+          if (!response.user || typeof response.user.email !== "string") throw new Error("Không thể lưu thông tin. Vui lòng thử lại.");
+          Bt(current => current ? { ...current, user: response.user } : current);
+          return response.user;
+        },
+        onLogout: async () => {
+          await je("/api/auth/logout", { method: "POST", token: ue?.token });
+          broadcastAuthEvent("logout");
+          endSession("", "Bạn đã đăng xuất an toàn.");
+        }
       })]
     }), O.jsxs("main", {
       className: "main-panel",
