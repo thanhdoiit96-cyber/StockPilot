@@ -3520,3 +3520,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Đồng bộ tab ưu tiên `BroadcastChannel('stockpilot-auth')`; fallback storage chỉ chứa `type/at/nonce`, không chứa token hay user. Bearer/localStorage schema cũ vẫn được đọc trong compatibility window để không phá session/test hiện hữu, nhưng login mới không tạo credential storage.
 - Kiểm chứng: frontend unit/encoding **43/43**, auth E2E **9/9**, full Playwright **79/79**, source parity **9 marker**, production safe-build/bundle integrity đạt với `index-8WxKgKn-.js`. Regression cookie xác nhận header opt-in, storage không có token/user, protected request không có Authorization và logout gọi backend.
 - Giới hạn và điểm tiếp tục: chưa có live smoke bằng tài khoản development thật để tránh tạo/đụng dữ liệu người dùng. Sau một compatibility window có bằng chứng cookie ổn định, đổi backend cookie mode thành mặc định và xóa parser/Bearer browser cũ. Gate EOD phiên 05/10 vẫn chờ cron 15:30.
+
+## Production auth/CORS guard — 2026-10-05
+
+- Gate EOD được kiểm tra lại lúc 10:40 Asia/Ho_Chi_Minh; chưa có artifact phiên 05/10 vì vẫn trước cron 15:30. Không ép ingestion ngoài lịch.
+- Backend production nay fail-fast nếu JWT secret là giá trị mẫu/ngắn dưới 32 ký tự hoặc CORS origin rỗng, wildcard, có path, không phải HTTP(S) exact origin hay không dùng HTTPS. Parser chuẩn hóa/deduplicate danh sách origin.
+- Khi có allowlist, CORS bật credential, cho exact origin và request server-side không có Origin, trả 403 cho origin ngoài danh sách. Development không có allowlist giữ wildcard nhưng `credentials=false`, tránh tổ hợp wildcard + cookie credential.
+- Kiểm chứng: targeted config/auth **10/10**, toàn backend **39 suite / 165 test**. Backend đã restart; live CORS cho origin development đã cấu hình `http://localhost:3000` trả HTTP 200 với `Access-Control-Allow-Credentials: true`, origin ngoài allowlist trả 403. Health không Origin vẫn HTTP 200.
+- Điểm tiếp tục: đọc evidence EOD sau cron 15:30. Auth giữ compatibility window; chưa đổi backend cookie mặc định hoặc xóa Bearer browser chỉ dựa vào test.

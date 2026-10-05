@@ -2,6 +2,8 @@
 
 > Trạng thái: cookie mode đã triển khai end-to-end cho browser: backend opt-in qua header versioned và frontend cookie-first, refresh mutex, CSRF và multi-tab signal không secret. Bearer/localStorage parser chỉ còn compatibility window cho client/session cũ; xem [Backend README](../backend/README.md), [Frontend README](../frontend/README.md) và [PROJECT_STATUS](PROJECT_STATUS.md).
 
+Production guard đã được triển khai: JWT secret yếu/mặc định và CORS origin rỗng, wildcard, không exact hoặc không HTTPS làm startup thất bại. Credential CORS chỉ bật khi có allowlist cụ thể.
+
 ## Mục tiêu và phạm vi
 
 Loại access token khỏi JavaScript/browser storage trước public deployment, hỗ trợ hết hạn và thu hồi phiên có kiểm soát, giữ hành vi logout/401/nhiều tab hiện có, và chặn CSRF cho request thay đổi dữ liệu. Thiết kế này không bao gồm quên mật khẩu, OAuth, MFA hoặc delivery provider.
