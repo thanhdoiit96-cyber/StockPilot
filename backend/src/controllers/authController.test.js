@@ -29,6 +29,34 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('pages sessions with an immutable creation cursor and rejects malformed cursors', async () => {
+    const { Op } = require('sequelize');
+    const { readCursor } = require('../services/sessionPagination');
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const rows = Array.from({ length: 51 }, (_, i) => ({
+      id: '00000000-0000-4000-8000-' + String(i + 1).padStart(12, '0'),
+      created_at: new Date('2026-10-05T00:00:00Z'), last_used_at: new Date(),
+      expires_at: new Date(Date.now() + 20000), idle_expires_at: new Date(Date.now() + 10000)
+    }));
+    mockAuthSession.findAll.mockResolvedValueOnce(rows);
+    const first = await request(app).get('/api/auth/sessions').set('Cookie', cookieHeader(cookies));
+    expect(first.body.data.sessions).toHaveLength(51);
+    expect(first.body.data.has_more).toBe(true);
+    expect(readCursor(first.body.data.next_cursor).id).toBe(rows[49].id);
+    mockAuthSession.findAll.mockResolvedValueOnce([rows[50]]);
+    const second = await request(app).get('/api/auth/sessions').query({ cursor: first.body.data.next_cursor }).set('Cookie', cookieHeader(cookies));
+    expect(second.body.data.sessions).toHaveLength(2);
+    expect(second.body.data.has_more).toBe(false);
+    expect(second.body.data.next_cursor).toBeNull();
+    const query = mockAuthSession.findAll.mock.calls.at(-1)[0];
+    expect(query.where.user_id).toBe('user-a');
+    expect(query.where[Op.or][1].id[Op.gt]).toBe(rows[49].id);
+    expect(query.order).toEqual([['created_at', 'DESC'], ['id', 'ASC']]);
+    for (const cursor of ['invalid', '', 'x'.repeat(513), Buffer.from('{"id":"bad","created_at":"tomorrow"}').toString('base64url')]) {
+      expect((await request(app).get('/api/auth/sessions').query({ cursor }).set('Cookie', cookieHeader(cookies))).status).toBe(400);
+    }
+  });
   test('session label validates input, enforces ownership/expiry/csrf and supports clearing', async () => {
     const { Op } = require('sequelize');
     const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });

@@ -173,7 +173,7 @@ Tên phiên: migration 023 thêm auth_sessions.label nullable. PATCH /api/auth/s
 
 POST /api/auth/sessions/revoke nhận session_id UUID và thu hồi đúng một phiên thuộc user hiện tại. Yêu cầu cookie session và CSRF; không cho thu hồi current qua endpoint này (409, dùng logout). UUID sai trả 400; không có phiên sở hữu còn chưa revoke trả 404, không phân biệt phiên của user khác. Không sửa Bearer token.
 
-Quản lý phiên: GET /api/auth/sessions trả data.sessions với id/current/created_at/last_used_at/expires_at (hạn sớm hơn giữa idle/hard expiry), has_more và can_revoke_others. Chỉ lấy session của user đang xác thực, còn hiệu lực và chưa revoke; tối đa 50 phiên khác cộng phiên hiện tại. Không trả token/hash.
+Quản lý phiên: GET /api/auth/sessions trả data.sessions với id/current/created_at/last_used_at/expires_at (hạn sớm hơn giữa idle/hard expiry), has_more, next_cursor và can_revoke_others. Chỉ lấy session của user đang xác thực, còn hiệu lực và chưa revoke; mỗi trang tối đa 50 phiên khác cộng phiên hiện tại. Truyền next_cursor vào query cursor để lấy tiếp; cursor sai trả 400. Thứ tự created_at giảm dần rồi id tăng dần không bị thay đổi khi gia hạn phiên. Phiên hiện tại được trả trên mỗi trang; client gộp theo id. Không trả token/hash.
 
 POST /api/auth/sessions/revoke-others yêu cầu cookie session và CSRF; revoke toàn bộ session chưa revoke của cùng user trừ phiên hiện tại, trả revoked_count. Legacy Bearer nhận 409 khi gọi mutation; các token Bearer khác không bị ảnh hưởng bởi thao tác này, dùng đổi mật khẩu để vô hiệu toàn bộ credential cũ.
 

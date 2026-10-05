@@ -21,6 +21,11 @@ try {
   const listing = await current.request.get(origin + '/api/auth/sessions');
   const payload = await listing.json();
   if (listing.status() !== 200 || payload.data.sessions.length !== 3 || payload.data.sessions.filter(row => row.current).length !== 1) throw new Error('Session list mismatch');
+  const boundary = payload.data.sessions[1];
+  const cursor = Buffer.from(JSON.stringify({ id: boundary.id, created_at: boundary.created_at })).toString('base64url');
+  const olderResponse = await current.request.get(origin + '/api/auth/sessions?cursor=' + cursor);
+  const older = await olderResponse.json();
+  if (olderResponse.status() !== 200 || older.data.sessions.length !== 2 || older.data.sessions[1].id !== payload.data.sessions[2].id) throw new Error('Live cursor boundary mismatch');
   const target = (await (await other.request.get(origin + '/api/auth/sessions')).json()).data.sessions.find(row => row.current).id;
   const foreign = (await (await unrelated.request.get(origin + '/api/auth/sessions')).json()).data.sessions.find(row => row.current).id;
   const csrf = decodeURIComponent((await current.cookies()).find(cookie => cookie.name === 'sp_csrf').value);
