@@ -3526,7 +3526,7 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Gate EOD được kiểm tra lại lúc 10:40 Asia/Ho_Chi_Minh; chưa có artifact phiên 05/10 vì vẫn trước cron 15:30. Không ép ingestion ngoài lịch.
 - Backend production nay fail-fast nếu JWT secret là giá trị mẫu/ngắn dưới 32 ký tự hoặc CORS origin rỗng, wildcard, có path, không phải HTTP(S) exact origin hay không dùng HTTPS. Parser chuẩn hóa/deduplicate danh sách origin.
 - Khi có allowlist, CORS bật credential, cho exact origin và request server-side không có Origin, trả 403 cho origin ngoài danh sách. Development không có allowlist giữ wildcard nhưng `credentials=false`, tránh tổ hợp wildcard + cookie credential.
-- Kiểm chứng: targeted config/auth **10/10**, toàn backend **39 suite / 165 test**. Backend đã restart; live CORS cho origin development đã cấu hình `http://localhost:3000` trả HTTP 200 với `Access-Control-Allow-Credentials: true`, origin ngoài allowlist trả 403. Health không Origin vẫn HTTP 200.
+- Kiểm chứng: targeted config/auth **10/10**, toàn backend **39 suite / 165 test**. Backend đã restart; live CORS cho preview UI `http://localhost:4173` trả HTTP 200 với `Access-Control-Allow-Credentials: true`, origin ngoài allowlist trả 403. Health không Origin vẫn HTTP 200.
 - Điểm tiếp tục: đọc evidence EOD sau cron 15:30. Auth giữ compatibility window; chưa đổi backend cookie mặc định hoặc xóa Bearer browser chỉ dựa vào test.
 
 ## Compose health/restart và Vnstock worker — 2026-10-05
