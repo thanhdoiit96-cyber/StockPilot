@@ -1385,9 +1385,14 @@ function lv() {
         }), O.jsxs("div", {
           className: "topbar-actions",
           children: [O.jsx("span", {
+            className: "topbar-user-email",
+            title: ue.user.email,
+            "aria-label": `Tài khoản ${ue.user.email}`,
             children: ue.user.email
           }), O.jsx("button", {
             className: "ghost-btn",
+            "aria-label": "Đăng xuất khỏi tài khoản",
+            title: "Đăng xuất khỏi tài khoản",
             onClick: async () => {
               try {
                 await je("/api/auth/logout", { method: "POST", token: ue.token });
