@@ -101,7 +101,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/ops/metrics', requireAdmin, (req, res) => res.json({ success: true, data: metrics.snapshot() }));
+app.get('/api/ops/metrics', requireAdmin, async (req, res) => {
+  const workerUrl = process.env.VNSTOCK_WORKER_URL || 'http://127.0.0.1:8787';
+  let worker = { available: false };
+  try {
+    const response = await fetch(`${workerUrl}/metrics`, { signal: AbortSignal.timeout(1500) });
+    if (response.ok) worker = { available: true, ...(await response.json()) };
+  } catch (_) {
+    worker = { available: false };
+  }
+  return res.json({ success: true, data: { backend: metrics.snapshot(), worker } });
+});
 
 // AI gate status is read-only operational evidence; it never enables generative AI by itself.
 app.get('/api/ai-gate', (req, res) => {

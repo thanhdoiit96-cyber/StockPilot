@@ -4,6 +4,7 @@ import io
 import json
 import os
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 os.environ.setdefault("VNSTOCK_TELEMETRY", "off")
@@ -23,6 +24,25 @@ def worker_concurrency():
 
 
 PROVIDER_GATE = threading.BoundedSemaphore(worker_concurrency())
+METRICS_LOCK = threading.Lock()
+METRICS = {"requests": 0, "errors": 0, "partial": 0, "latency_ms": 0, "by_path": {}}
+
+
+def record_metric(path, duration_ms, error=False, partial=False):
+    with METRICS_LOCK:
+        METRICS["requests"] += 1
+        METRICS["errors"] += int(error)
+        METRICS["partial"] += int(partial)
+        METRICS["latency_ms"] += max(0, int(duration_ms))
+        METRICS["by_path"][path] = METRICS["by_path"].get(path, 0) + 1
+
+
+def metrics_snapshot():
+    with METRICS_LOCK:
+        result = dict(METRICS)
+        result["by_path"] = dict(METRICS["by_path"])
+        result["average_latency_ms"] = round(result["latency_ms"] / result["requests"]) if result["requests"] else 0
+        return result
 
 
 def price_board(request):
@@ -103,6 +123,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             self.send_json(200, {"ok": True, "provider": "vnstock", "max_concurrency": worker_concurrency()})
+        elif self.path == "/metrics":
+            self.send_json(200, metrics_snapshot())
         else:
             self.send_error(404)
 
@@ -118,14 +140,21 @@ class Handler(BaseHTTPRequestHandler):
             return
 
     def do_POST(self):
+        started = time.monotonic()
+        is_error = False
+        is_partial = False
         try:
             length = int(self.headers.get("Content-Length", "0")); request = json.loads(self.rfile.read(length) or b"{}")
             payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
+            is_partial = bool(payload.get("errors"))
             self.send_json(200, payload)
         except Exception as error:
+            is_error = True
             self.send_json(500, {"rows": [], "errors": [{"error": str(error)}]})
+        finally:
+            record_metric(self.path, (time.monotonic() - started) * 1000, is_error, is_partial)
 
 
 if __name__ == "__main__":
