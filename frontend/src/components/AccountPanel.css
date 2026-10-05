@@ -45,3 +45,4 @@
 .account-discard p { color:#e2cfab; font-size:13px; line-height:1.6; }
 .account-discard > div { display:flex; flex-wrap:wrap; gap:10px; }
 .account-discard button { min-height:44px; }
+.account-form .account-reset-hint { margin-top:8px; color:#e2cfab; }

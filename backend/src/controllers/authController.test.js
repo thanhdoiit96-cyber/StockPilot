@@ -27,6 +27,29 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test.each([{}, { display_name: 42 }, { display_name: false }, { display_name: {} }, { display_name: [] }, { display_name: '   ' }, { display_name: 'a'.repeat(121) }])('rejects invalid profile payload without mutating saved name: %j', async payload => {
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const user = await mockUser.findByPk('user-a');
+    user.display_name = 'Tên đã lưu';
+    const response = await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send(payload);
+    expect(response.status).toBe(400);
+    expect(user.update).not.toHaveBeenCalled();
+    expect(user.display_name).toBe('Tên đã lưu');
+  });
+
+  test('only explicit null clears a saved name and missing csrf rejects mutation', async () => {
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const user = await mockUser.findByPk('user-a');
+    user.display_name = 'Tên đã lưu';
+    const rejected = await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).send({ display_name: null });
+    expect(rejected.status).toBe(403);
+    expect(user.update).not.toHaveBeenCalled();
+    const cleared = await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send({ display_name: null });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.user.display_name).toBeNull();
+  });
   beforeEach(async () => {
     jest.clearAllMocks();
     mockSessionRow = null;

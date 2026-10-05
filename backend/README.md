@@ -167,3 +167,6 @@ The stopped task exposes an awaitable `runOnce()` for controlled verification us
 `GET /api/stocks/data-quality` reads the newest valid evidence across both `eod-scheduled-*` and `eod-retry-*` artifacts for the requested session. The `eod_retry` block identifies the artifact, run mode, timestamp, recorded universe/coverage/remaining counts, completion state, and current in-process runtime. Corrupt or partially written evidence is ignored so an operational artifact cannot make the quality endpoint unavailable.
 
 For gap-retry artifacts, `eod_retry` also exposes bounded operational counters: `last_run_requested`, `last_run_selected`, `last_run_selected_traded`, and `last_run_trade_priority` (`enabled`, probed/batch/failure/match counts, and `had_error`). Raw provider errors and the selected-symbol list are deliberately not returned by this public endpoint; use the local evidence artifact for diagnosis.
+## Cập nhật tên hiển thị
+
+`PATCH /api/auth/profile` yêu cầu đăng nhập và CSRF cho cookie auth. Payload phải có `display_name`: chuỗi sau trim dài 1–120 ký tự hoặc `null` để xóa. Thiếu trường, số, boolean, object, array và chuỗi trống trả 400 mà không sửa hồ sơ. Chỉ tên hiển thị được cập nhật; email, role và trạng thái xác thực không nhận từ payload.

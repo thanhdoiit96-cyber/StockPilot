@@ -24,6 +24,14 @@ try {
   await expect(trigger).toContainText('Kiểm thử hồ sơ');
   await trigger.click();
   await expect(page.getByLabel('Tên hiển thị')).toHaveValue('Kiểm thử hồ sơ');
+  const cookies = await context.cookies();
+  const csrf = cookies.find(cookie => cookie.name === 'sp_csrf')?.value;
+  const invalid = await context.request.patch(origin + '/api/auth/profile', {
+    headers: { 'X-CSRF-Token': decodeURIComponent(csrf || '') }, data: {}
+  });
+  if (invalid.status() !== 400) throw new Error('Empty PATCH must not clear profile');
+  const persisted = await context.request.get(origin + '/api/auth/me');
+  if ((await persisted.json()).user.display_name !== 'Kiểm thử hồ sơ') throw new Error('Invalid PATCH changed profile');
   await page.getByRole('dialog').getByRole('button', { name: 'Đăng xuất', exact: true }).click();
   await expect(page.locator('.auth-form')).toBeVisible();
   const me = await context.request.get(origin + '/api/auth/me');

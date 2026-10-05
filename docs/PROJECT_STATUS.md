@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Validation hồ sơ — 2026-10-05
+
+- PATCH hồ sơ từ chối trường thiếu/sai kiểu thay vì xóa tên hoặc ép object/number thành string. Chỉ null tường minh xóa tên. Giao diện có bộ đếm và cảnh báo khi để trống.
+- 11/11 kiểm thử auth controller đạt; build/bundle integrity và browser smoke hồ sơ đạt. Backend development đã restart.
+- Live smoke qua 4173 đạt: cookie refresh, lưu/reload, PATCH rỗng trả 400 và giữ tên, logout. Tạo thêm một tài khoản smoke riêng; không xóa database hay lưu credential.
+- Tiếp tục: dịch vụ gửi email vẫn chưa cấu hình; dùng thiết kế AUTH_SESSION_DESIGN trước khi mở luồng xác thực email thật.
+
 ### Bảo vệ bản nháp hồ sơ
 
 - Thay window.confirm bằng xác nhận ngay trong dialog khi đóng hoặc đăng xuất: tiếp tục chỉnh sửa hoặc bỏ thay đổi; ưu tiên focus vào thao tác giữ bản nháp.
