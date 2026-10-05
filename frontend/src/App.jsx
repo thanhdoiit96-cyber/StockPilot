@@ -659,6 +659,7 @@ function lv() {
     [authCredentialCleared, setAuthCredentialCleared] = D.useState(false),
     [authNotice, setAuthNotice] = D.useState(""),
     [authSubmitting, setAuthSubmitting] = D.useState(false),
+    [transactionSubmitting, setTransactionSubmitting] = D.useState(false),
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
@@ -1009,6 +1010,8 @@ function lv() {
     },
     Zh = async d => {
       d.preventDefault();
+      if (transactionSubmitting) return;
+      setTransactionSubmitting(true);
       try {
         const S = await je("/api/portfolio/transactions", {
             method: "POST",
@@ -1043,6 +1046,8 @@ function lv() {
         mt($.data), on(p("Ghi nhận giao dịch"));
       } catch (S) {
         on(S.message);
+      } finally {
+        setTransactionSubmitting(false);
       }
     },
     importPortfolioTransactions = async (rows, dryRun) => {
@@ -1893,7 +1898,9 @@ function lv() {
               }), O.jsx("button", {
                 className: "primary-btn",
                 type: "submit",
-                children: p("Lưu giao dịch")
+                disabled: transactionSubmitting,
+                "aria-busy": transactionSubmitting,
+                children: p(transactionSubmitting ? "Đang lưu…" : "Lưu giao dịch")
               })]
             }), dt && O.jsx("p", {
               role: "status",
