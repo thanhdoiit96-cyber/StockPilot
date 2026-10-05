@@ -1375,7 +1375,9 @@ function lv() {
           endSession("", "Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.");
         },
         onLoadSessions: () => je("/api/auth/sessions", { token: ue?.token }),
-        onRevokeSessions: () => je("/api/auth/sessions/revoke-others", { method: "POST", token: ue?.token }),
+        onRevokeSessions: sessionId => sessionId
+          ? je("/api/auth/sessions/revoke", { method: "POST", token: ue?.token, body: { session_id: sessionId } })
+          : je("/api/auth/sessions/revoke-others", { method: "POST", token: ue?.token }),
         onLogout: async () => {
           await je("/api/auth/logout", { method: "POST", token: ue?.token });
           broadcastAuthEvent("logout");

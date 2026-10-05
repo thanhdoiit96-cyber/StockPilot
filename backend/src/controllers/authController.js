@@ -174,4 +174,20 @@ router.post('/sessions/revoke-others', requireAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.post('/sessions/revoke', requireAuth, async (req, res, next) => {
+  if (!req.authSession) return res.status(409).json({ success: false, message: 'Vui lòng đăng nhập lại để quản lý các phiên khác.' });
+  const id = req.body?.session_id;
+  if (typeof id === 'string' && id.toLowerCase() === req.authSession.id.toLowerCase()) return res.status(409).json({ success: false, message: 'Dùng nút Đăng xuất để kết thúc phiên hiện tại.' });
+  if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return res.status(400).json({ success: false, message: 'Phiên đăng nhập không hợp lệ.' });
+  }
+  try {
+    const [count] = await AuthSession.update({ revoked_at: new Date(), revoke_reason: 'user_revoked_session' }, {
+      where: { user_id: req.user.sub, id: { [Op.eq]: id, [Op.ne]: req.authSession.id }, revoked_at: null }
+    });
+    if (!count) return res.status(404).json({ success: false, message: 'Phiên không còn khả dụng. Vui lòng làm mới danh sách.' });
+    return res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;

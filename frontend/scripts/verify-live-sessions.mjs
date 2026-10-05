@@ -5,6 +5,7 @@ const origin = 'http://127.0.0.1:4173';
 try {
   const current = await browser.newContext();
   const other = await browser.newContext();
+  const preserved = await browser.newContext();
   const unrelated = await browser.newContext();
   const email = 'sessions-smoke-' + randomUUID() + '@example.invalid';
   const password = randomUUID();
@@ -16,20 +17,35 @@ try {
   await register(unrelated, 'sessions-isolation-' + randomUUID() + '@example.invalid');
   const login = await other.request.post(origin + '/api/auth/login', { headers: { 'X-Auth-Mode': 'cookie-v1' }, data: { email, password } });
   if (login.status() !== 200) throw new Error('Second login failed');
+  await preserved.request.post(origin + '/api/auth/login', { headers: { 'X-Auth-Mode': 'cookie-v1' }, data: { email, password } });
   const listing = await current.request.get(origin + '/api/auth/sessions');
   const payload = await listing.json();
-  if (listing.status() !== 200 || payload.data.sessions.length !== 2 || payload.data.sessions.filter(row => row.current).length !== 1) throw new Error('Session list mismatch');
+  if (listing.status() !== 200 || payload.data.sessions.length !== 3 || payload.data.sessions.filter(row => row.current).length !== 1) throw new Error('Session list mismatch');
+  const target = (await (await other.request.get(origin + '/api/auth/sessions')).json()).data.sessions.find(row => row.current).id;
+  const foreign = (await (await unrelated.request.get(origin + '/api/auth/sessions')).json()).data.sessions.find(row => row.current).id;
+  const csrf = decodeURIComponent((await current.cookies()).find(cookie => cookie.name === 'sp_csrf').value);
+  const revokeOne = id => current.request.post(origin + '/api/auth/sessions/revoke', { headers: { 'X-CSRF-Token': csrf }, data: { session_id: id } });
+  if ((await revokeOne(foreign)).status() !== 404) throw new Error('Foreign session not protected');
+  if ((await revokeOne(payload.data.sessions.find(row => row.current).id.toUpperCase())).status() !== 409) throw new Error('Current session not protected');
   if (/token_hash|password_hash|csrf_token/.test(JSON.stringify(payload))) throw new Error('Credential disclosure');
   const page = await current.newPage();
   await page.goto(origin);
   await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click();
   await page.getByRole('tab', { name: 'Bảo mật', exact: true }).click();
   await expect(page.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  const targetIndex = payload.data.sessions.findIndex(row => row.id === target);
+  await page.locator('.account-session-list li').nth(targetIndex).getByRole('button', { name: /Đăng xuất phiên khác/ }).click();
+  await page.getByRole('button', { name: 'Xác nhận đăng xuất phiên này' }).click();
+  await expect(page.getByText('Đã đăng xuất phiên đã chọn. Các phiên khác vẫn được giữ.')).toBeVisible();
+  if ((await other.request.get(origin + '/api/auth/me')).status() !== 401) throw new Error('Selected session still active');
+  if ((await preserved.request.get(origin + '/api/auth/me')).status() !== 200) throw new Error('Unselected session revoked');
+  if ((await revokeOne(target)).status() !== 404) throw new Error('Stale session not handled');
   await page.getByRole('button', { name: 'Đăng xuất các phiên khác', exact: true }).click();
   await page.getByRole('button', { name: 'Xác nhận đăng xuất phiên khác' }).click();
   await expect(page.getByText('Đã đăng xuất các phiên khác. Phiên hiện tại vẫn được giữ.')).toBeVisible();
   if ((await current.request.get(origin + '/api/auth/me')).status() !== 200) throw new Error('Current session revoked');
   if ((await other.request.get(origin + '/api/auth/me')).status() !== 401) throw new Error('Other session still active');
+  if ((await preserved.request.get(origin + '/api/auth/me')).status() !== 401) throw new Error('Revoke-all missed remaining session');
   if ((await unrelated.request.get(origin + '/api/auth/me')).status() !== 200) throw new Error('Unrelated account affected');
   const otherCsrf = (await other.cookies()).find(cookie => cookie.name === 'sp_csrf')?.value;
   if ((await other.request.post(origin + '/api/auth/refresh', { headers: { 'X-CSRF-Token': decodeURIComponent(otherCsrf || '') } })).status() !== 401) throw new Error('Revoked session refreshed');
@@ -37,5 +53,5 @@ try {
     const csrf = (await context.cookies()).find(cookie => cookie.name === 'sp_csrf')?.value;
     await context.request.post(origin + '/api/auth/logout', { headers: { 'X-CSRF-Token': decodeURIComponent(csrf || '') } });
   }
-  console.log('Live sessions passed: two owned sessions listed, UI revokes other session, current/unrelated sessions preserved, revoked refresh rejected. Two development accounts retained; credentials not persisted.');
+  console.log('Live sessions passed: targeted revoke preserves unselected/current/unrelated sessions; foreign/current/stale targets rejected; revoke-all and refresh rejection passed. Two development accounts retained; credentials not persisted.');
 } finally { await browser.close(); }
