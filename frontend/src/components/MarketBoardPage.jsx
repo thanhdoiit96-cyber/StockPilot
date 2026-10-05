@@ -276,7 +276,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <td className="data-time"><span>{observedLabel(row.quote)}</span></td>
           <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label="Mở phân tích chuyên sâu" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>Phân tích chuyên sâu</button></td>
           <td><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={`Thêm ${row.symbol} vào danh mục`} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>Thêm</button></td>
-        </tr>) : listState.error ? null : <tr><td colSpan="8">{listState.loading ? 'Đang tải danh sách…' : 'Chưa có cổ phiếu trong dữ liệu'}</td></tr>}</tbody>
+        </tr>) : listState.error ? null : <tr><td colSpan="8"><div className="empty-state market-board-empty-state" role="status"><strong>{listState.loading ? 'Đang tải danh sách…' : hasFilters ? 'Không tìm thấy mã phù hợp' : 'Chưa có cổ phiếu trong dữ liệu'}</strong>{hasFilters && !listState.loading && <><span>Thử xóa bộ lọc hoặc tìm theo mã khác.</span><button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button></>}</div></td></tr>}</tbody>
       </table>
     </div>
     <div className="table-pagination">
