@@ -1,6 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const { assertSecureAuthConfig, buildCorsOptions } = require('./config/authRuntime');
+assertSecureAuthConfig();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -42,15 +44,7 @@ const logger = winston.createLogger({
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(value => value.trim()) : '*',
-  exposedHeaders: [
-    'Content-Disposition',
-    'X-Export-Count',
-    'X-Export-Limit',
-    'X-Export-Truncated',
-  ],
-}));
+app.use(cors(buildCorsOptions()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
