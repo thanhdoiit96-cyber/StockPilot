@@ -1,0 +1,9 @@
+FROM python:3.12-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 VNSTOCK_TELEMETRY=off
+COPY requirements-vnstock.txt ./
+RUN pip install --no-cache-dir -r requirements-vnstock.txt
+COPY scripts/vnstock_worker.py scripts/vnstock_price_board.py ./scripts/
+ENV PYTHONPATH=/app/scripts VNSTOCK_WORKER_HOST=0.0.0.0 VNSTOCK_WORKER_PORT=8787 VNSTOCK_WORKER_MAX_CONCURRENCY=1
+EXPOSE 8787
+CMD ["python", "scripts/vnstock_worker.py"]

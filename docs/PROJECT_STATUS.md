@@ -3528,3 +3528,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Khi có allowlist, CORS bật credential, cho exact origin và request server-side không có Origin, trả 403 cho origin ngoài danh sách. Development không có allowlist giữ wildcard nhưng `credentials=false`, tránh tổ hợp wildcard + cookie credential.
 - Kiểm chứng: targeted config/auth **10/10**, toàn backend **39 suite / 165 test**. Backend đã restart; live CORS cho origin development đã cấu hình `http://localhost:3000` trả HTTP 200 với `Access-Control-Allow-Credentials: true`, origin ngoài allowlist trả 403. Health không Origin vẫn HTTP 200.
 - Điểm tiếp tục: đọc evidence EOD sau cron 15:30. Auth giữ compatibility window; chưa đổi backend cookie mặc định hoặc xóa Bearer browser chỉ dựa vào test.
+
+## Compose health/restart và Vnstock worker — 2026-10-05
+
+- Gate EOD được kiểm tra lúc 13:34 Asia/Ho_Chi_Minh, vẫn trước cron 15:30 nên chưa có artifact phiên 05/10; không chạy ingestion thủ công.
+- Compose nay có service `worker` build từ `backend/Dockerfile.worker`, cài requirements Vnstock cố định, bind nội bộ cổng 8787 và giữ concurrency 1. Cổng worker không publish ra host; backend dùng DNS Compose `http://worker:8787`.
+- PostgreSQL, worker, backend và frontend đều có healthcheck, `restart: unless-stopped` và init process. Backend chờ database + worker healthy; frontend chờ backend healthy. Scheduler EOD không được bật mặc định, nên thêm worker không tự tạo mutation dữ liệu.
+- Kiểm chứng khả dụng trong môi trường hiện tại: Python AST parse worker/price-board đạt; marker cấu hình bắt buộc trong Compose đạt. Docker CLI không được cài trong môi trường này nên **chưa chạy** `docker compose config`, build image hoặc health transition thật; không ghi nhận Compose runtime đã nghiệm thu.
+- Điểm tiếp tục: trên host có Docker, chạy `docker compose config`, `docker compose up --build -d`, xác nhận 4 service healthy và smoke `/api/health` + worker health nội mạng. Song song, sau 15:30 đọc evidence cron EOD tự động trước khi làm việc khác với ingestion.

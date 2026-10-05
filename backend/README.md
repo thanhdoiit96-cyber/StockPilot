@@ -74,6 +74,8 @@ Nếu worker Vnstock trả HTTP lỗi cho EOD/intraday, bridge giữ lại tối
 
 Python worker dùng một semaphore chung cho listing, EOD, intraday và price board. `VNSTOCK_WORKER_MAX_CONCURRENCY` mặc định là 1 và bị chặn trong khoảng 1–4; tăng giá trị chỉ khi đã đo upstream ổn định. HTTP server vẫn nhận request đồng thời nhưng provider calls được xếp hàng qua gate này. Client ngắt kết nối không tạo traceback BrokenPipe/ConnectionAborted trong log; health trả `max_concurrency` đang cấu hình.
 
+Compose build worker từ `Dockerfile.worker`, bind nội bộ `0.0.0.0:8787`, không publish cổng host và truyền `VNSTOCK_WORKER_URL=http://worker:8787` cho backend. Worker/backend/frontend/PostgreSQL có healthcheck và restart policy; EOD scheduler không tự bật chỉ vì worker tồn tại.
+
 `npm run verify:quote-freshness` đo tuổi `observed_at` cho tối đa 30 mã (mặc định FPT/SSI/VCB/HPG/BSR) qua API ứng dụng và ghi JSON evidence. Chỉ áp ngưỡng stale khi đang trong phiên sáng/chiều theo giờ Việt Nam; ngoài giờ vẫn lưu tuổi quote nhưng không kết luận stale. Có thể đổi danh sách bằng `QUOTE_PROBE_SYMBOLS` và API bằng `QUOTE_API_URL`.
 
 Backend tự chạy probe giới hạn 5 mã lúc 09:35 và 13:35 các ngày trong tuần theo `Asia/Ho_Chi_Minh`. Đổi lịch bằng `QUOTE_FRESHNESS_CRON`, múi giờ bằng `QUOTE_FRESHNESS_TIMEZONE`; đặt `QUOTE_FRESHNESS_ENABLED=false` để tắt. Job bỏ qua lượt chồng lấn. Nếu không quote nào mang ngày phiên Việt Nam hiện tại, kết quả được ghi là chưa đủ căn cứ (có thể ngày nghỉ hoặc nguồn cũ) và không gắn nhãn stale.
