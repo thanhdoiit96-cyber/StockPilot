@@ -2,6 +2,13 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Tên phiên do người dùng đặt — 2026-10-05
+
+- Migration 023 thêm auth_sessions.label nullable (80 ký tự), đã áp dụng development. PATCH /api/auth/sessions/label yêu cầu cookie/CSRF, UUID, nhãn string/null, kiểm tra ownership và cả hai thời hạn. Không thu thập metadata thiết bị.
+- UI có đặt/đổi tên, lưu/hủy, xóa về mặc định; tên xuất hiện trên thẻ và xác nhận thu hồi. Giữ nội dung khi lỗi, bảo vệ bản nháp khi đóng và chặn đổi mật khẩu khi tên phiên chưa lưu.
+- Kiểm chứng: auth controller 18/18; build/bundle integrity; browser mock smoke đạt lỗi/thử lại/xóa tên/bản nháp/focus và regression desktop/mobile. Live smoke đã lưu tên qua UI, reload vẫn còn và từ chối đổi tên phiên tài khoản khác, sau đó kiểm chứng thu hồi phiên như trước. Hai tài khoản test riêng được giữ; không persist credential.
+- Backend đã restart, Preview 4173 phục vụ index-BCxpAzFJ.js. Điểm tiếp tục: cải thiện khả năng truy cập các phiên cũ khi danh sách vượt 50; email verification vẫn chờ delivery.
+
 ### Đăng xuất từng phiên — 2026-10-05
 
 - Mỗi phiên khác có nút đăng xuất và xác nhận ngay trên thẻ; hủy không gửi mutation. Khi thành công làm mới danh sách và trả focus về tiêu đề.

@@ -8,6 +8,8 @@ Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và H
 
 Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay trên thẻ; giữ phiên hiện tại và các phiên chưa chọn. API từ chối phiên không còn khả dụng thì hiển thị lỗi và cho làm mới.
 
+Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận diện phiên trước khi thu hồi; không phải thông tin thiết bị được hệ thống xác minh. Form hỗ trợ lưu/hủy/xóa nhãn và cảnh báo bản nháp.
+
 | Tệp | Vai trò |
 | --- | --- |
 | [src/components/AccountSessions.jsx](src/components/AccountSessions.jsx) | Danh sách phiên trong Bảo mật, tải khi tab active, trạng thái lỗi/thử lại, xác nhận thu hồi phiên khác và giữ phiên hiện tại |

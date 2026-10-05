@@ -9,12 +9,20 @@ try {
   let revoked = false;
   let singleRevoked = false;
   let failSessions = true;
+  let sessionLabel = null;
+  let failLabel = true;
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user } });
     if (path === '/api/auth/sessions') {
       if (failSessions) { failSessions = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể tải phiên đăng nhập.' } }); }
-      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true }, ...(!revoked ? [{ id: 'other', current: false }, ...(!singleRevoked ? [{ id: 'target', current: false }] : [])] : [])], can_revoke_others: true, has_more: false } } });
+      return route.fulfill({ json: { success: true, data: { sessions: [{ id: 'current', current: true, label: sessionLabel }, ...(!revoked ? [{ id: 'other', current: false }, ...(!singleRevoked ? [{ id: 'target', current: false }] : [])] : [])], can_revoke_others: true, has_more: false } } });
+    }
+    if (path === '/api/auth/sessions/label') {
+      if (failLabel) { failLabel = false; return route.fulfill({ status: 500, json: { success: false, message: 'Không thể lưu tên phiên.' } }); }
+      const body = route.request().postDataJSON();
+      sessionLabel = body.label;
+      return route.fulfill({ json: { success: true, data: { id: body.session_id, label: sessionLabel } } });
     }
     if (path === '/api/auth/sessions/revoke') {
       if (route.request().postDataJSON().session_id !== 'target') throw new Error('Wrong session targeted');
@@ -46,6 +54,25 @@ try {
   await expect(securityTab).toHaveAttribute('aria-selected', 'true');
   await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Không thể tải phiên đăng nhập.');
   await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
+  await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Đặt tên phiên', exact: true }).first().click();
+  await expect(dialog.getByLabel('Tên phiên do bạn đặt')).toBeFocused();
+  await dialog.getByLabel('Tên phiên do bạn đặt').fill('Laptop cá nhân');
+  await page.keyboard.press('Escape');
+  await expect(dialog.getByText('Bạn có thay đổi chưa lưu')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Tiếp tục chỉnh sửa', exact: true }).click();
+  await expect(dialog.getByLabel('Tên phiên do bạn đặt')).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Đổi mật khẩu và đăng nhập lại' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Lưu tên phiên', exact: true }).click();
+  await expect(dialog.locator('.account-sessions').getByRole('alert')).toContainText('Không thể lưu tên phiên.');
+  await expect(dialog.getByLabel('Tên phiên do bạn đặt')).toHaveValue('Laptop cá nhân');
+  await dialog.getByRole('button', { name: 'Lưu tên phiên', exact: true }).click();
+  await expect(dialog.getByText('Laptop cá nhân', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Làm mới phiên' }).click();
+  await expect(dialog.getByText('Laptop cá nhân', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Đổi tên phiên', exact: true }).click();
+  await dialog.getByLabel('Tên phiên do bạn đặt').fill('');
+  await dialog.getByRole('button', { name: 'Lưu tên phiên', exact: true }).click();
   await expect(dialog.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Đăng xuất phiên khác 2', exact: true }).click();
   await dialog.getByRole('button', { name: 'Giữ phiên này', exact: true }).click();

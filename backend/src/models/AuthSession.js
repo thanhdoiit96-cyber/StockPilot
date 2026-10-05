@@ -2,6 +2,7 @@ module.exports = (sequelize, DataTypes) => {
   const AuthSession = sequelize.define('AuthSession', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
     user_id: { type: DataTypes.UUID, allowNull: false },
+    label: { type: DataTypes.STRING(80), allowNull: true },
     refresh_token_hash: { type: DataTypes.STRING(64), allowNull: false, unique: true },
     previous_refresh_token_hash: { type: DataTypes.STRING(64), allowNull: true },
     csrf_token_hash: { type: DataTypes.STRING(64), allowNull: false },

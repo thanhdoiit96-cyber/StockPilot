@@ -169,6 +169,8 @@ The stopped task exposes an awaitable `runOnce()` for controlled verification us
 For gap-retry artifacts, `eod_retry` also exposes bounded operational counters: `last_run_requested`, `last_run_selected`, `last_run_selected_traded`, and `last_run_trade_priority` (`enabled`, probed/batch/failure/match counts, and `had_error`). Raw provider errors and the selected-symbol list are deliberately not returned by this public endpoint; use the local evidence artifact for diagnosis.
 ## Cập nhật tên hiển thị
 
+Tên phiên: migration 023 thêm auth_sessions.label nullable. PATCH /api/auth/sessions/label nhận session_id UUID và label string/null, tối đa 80 ký tự sau trim, từ chối ký tự điều khiển; chuỗi trắng/null xóa nhãn. Yêu cầu cookie auth/CSRF, chỉ sửa phiên thuộc user còn hiệu lực, chưa revoke. Không có phiên hợp lệ trả 404. GET sessions trả thêm label, không đổi dữ liệu credential.
+
 POST /api/auth/sessions/revoke nhận session_id UUID và thu hồi đúng một phiên thuộc user hiện tại. Yêu cầu cookie session và CSRF; không cho thu hồi current qua endpoint này (409, dùng logout). UUID sai trả 400; không có phiên sở hữu còn chưa revoke trả 404, không phân biệt phiên của user khác. Không sửa Bearer token.
 
 Quản lý phiên: GET /api/auth/sessions trả data.sessions với id/current/created_at/last_used_at/expires_at (hạn sớm hơn giữa idle/hard expiry), has_more và can_revoke_others. Chỉ lấy session của user đang xác thực, còn hiệu lực và chưa revoke; tối đa 50 phiên khác cộng phiên hiện tại. Không trả token/hash.
