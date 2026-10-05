@@ -559,3 +559,14 @@ docker-compose -f docker-compose.prod.yml up -d
 
 *Hướng dẫn deployment có thể được điều chỉnh dựa trên cơ sở hạ tầng cụ thể*
 
+## Prometheus scrape và cảnh báo vận hành
+
+Repository cung cấp mẫu cấu hình tại `ops/prometheus/`. Prometheus scrape backend qua `/api/ops/metrics/prometheus` bằng bearer token đọc từ secret file; không đặt token trực tiếp trong `prometheus.yml`.
+
+- Mount `ops/prometheus/prometheus.yml` và `alerts.yml` vào Prometheus.
+- Cấp secret metrics tại `/run/secrets/metrics_api_key` với giá trị khớp `ADMIN_API_KEY` của backend.
+- Khai báo Alertmanager tại `alertmanager:9093` hoặc thay bằng địa chỉ collector production.
+- Các rule cảnh báo auth/CORS, worker error và partial dùng `increase(...[10m])`; điều chỉnh ngưỡng theo traffic thật trước khi bật paging.
+- OpenTelemetry Collector có thể scrape cùng endpoint Prometheus và chuyển tiếp sang backend metrics hiện có; không expose endpoint này public.
+
+Đây là cấu hình triển khai mẫu, chưa tuyên bố Prometheus/Alertmanager đã chạy trong workspace hiện tại.
