@@ -1407,6 +1407,9 @@ function lv() {
             children: [p("Tên hiển thị"), O.jsx("input", {
               value: profileName,
               maxLength: 120,
+              name: "display_name",
+              autoComplete: "nickname",
+              "aria-label": "Tên hiển thị",
               onChange: event => { setProfileName(event.target.value); setProfileMessage(""); },
               placeholder: "Tên của bạn"
             })]

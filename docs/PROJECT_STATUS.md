@@ -3582,3 +3582,8 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Live UI checker phÃ¡t hiá»‡n compact/mobile sidebar Ä‘ang áº©n toggle (width 0) vÃ  mobile height CSS bá»‹ lÃ m trÃ²n xuá»‘ng dÆ°á»›i 32px. ÄÃ£ giá»¯ toggle trÃªn nav mobile vÃ  tÄƒng kÃ­ch thÆ°á»›c lÃªn 34px Ä‘á»ƒ Ä‘áº£m báº£o hit target.
 - Production build/bundle integrity passed; Preview `4173` Ä‘Ã£ restart vÃ  phÃ¡t bundle `index-BFyp0i1v.js`.
 - Regression script Ä‘Ã£ Ä‘i qua compact trÆ°á»›c khi bá»‹ chÆ°á»·n do `spawn EPERM` khi Chrome headless khÃ´ng khá»Ÿi Ä‘á»™ng trong runner; khÃ´ng suy diá»…n browser E2E mobile Ä‘Ã£ pass Ä‘áº§y Ä‘á»§.
+
+## Profile form accessibility polish â€” 2026-10-05
+
+- TrÆ°á»ng TÃªn hiá»ƒn thá»‹ Ä‘Ã£ cÃ³ `name=display_name`, `autocomplete=nickname` vÃ  `aria-label`, giÃºp trÃ¬nh duyá»‡t/ password manager nháº­n diá»‡n Ä‘Ãºng vÃ  tá»± Ä‘iá»n khÃ´ng nháº§m email.
+- Kiá»ƒm chá»©ng: production build vÃ  bundle integrity passed; Preview `4173` Ä‘ang phá»¥c vá»¥ bundle `index-D5cqd3NN.js`.
