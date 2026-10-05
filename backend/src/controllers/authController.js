@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+const { Op } = require('sequelize');
 const { User, AuthSession, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { cookieNames, parseCookies, setSessionCookies, clearSessionCookies } = require('../auth/cookies');
@@ -140,6 +141,37 @@ router.post('/password', requireAuth, passwordLimiter, async (req, res, next) =>
     clearSessionCookies(res);
     return res.json({ success: true });
   } catch (error) { return next(error); }
+});
+
+const sessionView = (row, currentId) => ({
+  id: row.id, current: row.id === currentId,
+  created_at: row.created_at, last_used_at: row.last_used_at,
+  expires_at: new Date(Math.min(new Date(row.expires_at).getTime(), new Date(row.idle_expires_at).getTime()))
+});
+router.get('/sessions', requireAuth, async (req, res, next) => {
+  try {
+    const current = req.authSession;
+    const now = new Date();
+    const rows = await AuthSession.findAll({
+      attributes: ['id', 'created_at', 'last_used_at', 'expires_at', 'idle_expires_at'],
+      where: { user_id: req.user.sub, revoked_at: null, expires_at: { [Op.gt]: now }, idle_expires_at: { [Op.gt]: now },
+        ...(current ? { id: { [Op.ne]: current.id } } : {}) },
+      order: [['last_used_at', 'DESC'], ['id', 'ASC']], limit: 51
+    });
+    return res.json({ success: true, data: {
+      sessions: [...(current ? [sessionView(current, current.id)] : []), ...rows.slice(0, 50).map(row => sessionView(row, current?.id))],
+      has_more: rows.length > 50, can_revoke_others: Boolean(current)
+    } });
+  } catch (error) { next(error); }
+});
+router.post('/sessions/revoke-others', requireAuth, async (req, res, next) => {
+  if (!req.authSession) return res.status(409).json({ success: false, message: 'Vui lòng đăng nhập lại để quản lý các phiên khác.' });
+  try {
+    const [count] = await AuthSession.update({ revoked_at: new Date(), revoke_reason: 'user_revoked_others' }, {
+      where: { user_id: req.user.sub, id: { [Op.ne]: req.authSession.id }, revoked_at: null }
+    });
+    return res.json({ success: true, data: { revoked_count: count } });
+  } catch (error) { next(error); }
 });
 
 module.exports = router;

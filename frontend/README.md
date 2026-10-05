@@ -8,6 +8,8 @@ Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và H
 
 | Tệp | Vai trò |
 | --- | --- |
+| [src/components/AccountSessions.jsx](src/components/AccountSessions.jsx) | Danh sách phiên trong Bảo mật, tải khi tab active, trạng thái lỗi/thử lại, xác nhận thu hồi phiên khác và giữ phiên hiện tại |
+| [scripts/verify-live-sessions.mjs](scripts/verify-live-sessions.mjs) | Live browser/API/database smoke qua 4173, tạo và giữ hai account development, kiểm chứng cách ly tài khoản và thu hồi refresh |
 | [src/components/PasswordChangeForm.jsx](src/components/PasswordChangeForm.jsx) | Đổi mật khẩu trong dialog tài khoản, xác nhận/ẩn-hiện và thông báo lỗi; thành công kết thúc phiên và yêu cầu đăng nhập lại |
 | [scripts/verify-live-password.mjs](scripts/verify-live-password.mjs) | Live smoke qua Preview 4173, tạo account test riêng và giữ lại; kiểm tra đổi mật khẩu, từ chối cookie/Bearer/mật khẩu cũ và đăng nhập mới; không lưu credential |
 | [scripts/verify-live-profile.mjs](scripts/verify-live-profile.mjs) | Live smoke qua Preview 4173: tạo một tài khoản development riêng (giữ lại), kiểm tra lưu sau access-cookie expiry, reload và logout; không lưu credential |

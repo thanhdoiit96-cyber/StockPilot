@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 let mockSessionRow;
 const mockUser = { findOne: jest.fn(), findByPk: jest.fn(), create: jest.fn() };
 const mockAuthSession = {
+  findAll: jest.fn(async () => []),
   update: jest.fn(async () => [1]),
   create: jest.fn(async values => {
     mockSessionRow = { id: 'session-a', ...values, revoked_at: null, update: jest.fn(async function (next) { Object.assign(this, next); }) };
@@ -28,6 +29,40 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('lists only owned active sessions and never exposes session credential hashes', async () => {
+    const { Op } = require('sequelize');
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    mockAuthSession.findAll.mockResolvedValueOnce([{ id: 'other', created_at: new Date(), last_used_at: new Date(), expires_at: new Date(Date.now() + 20000), idle_expires_at: new Date(Date.now() + 10000), refresh_token_hash: 'secret', csrf_token_hash: 'secret' }]);
+    const response = await request(app).get('/api/auth/sessions').set('Cookie', cookieHeader(cookies));
+    expect(response.status).toBe(200);
+    expect(response.body.data.sessions[0]).toMatchObject({ id: 'session-a', current: true });
+    expect(response.body.data.sessions[1]).toMatchObject({ id: 'other', current: false });
+    expect(JSON.stringify(response.body)).not.toMatch(/secret|token_hash/);
+    const options = mockAuthSession.findAll.mock.calls.at(-1)[0];
+    expect(options.where.user_id).toBe('user-a');
+    expect(options.where.id[Op.ne]).toBe('session-a');
+    expect(options.where.expires_at[Op.gt]).toBeInstanceOf(Date);
+    expect(options.where.idle_expires_at[Op.gt]).toBeInstanceOf(Date);
+    expect(options.where.revoked_at).toBeNull();
+    expect(options.limit).toBe(51);
+  });
+
+  test('revokes only other owned sessions, requires csrf and rejects legacy callers', async () => {
+    const { Op } = require('sequelize');
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    expect((await request(app).post('/api/auth/sessions/revoke-others').set('Cookie', cookieHeader(cookies))).status).toBe(403);
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+    const response = await request(app).post('/api/auth/sessions/revoke-others').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf);
+    expect(response.status).toBe(200);
+    const options = mockAuthSession.update.mock.calls.at(-1)[1];
+    expect(options.where).toMatchObject({ user_id: 'user-a', revoked_at: null });
+    expect(options.where.id[Op.ne]).toBe('session-a');
+    const legacy = await request(app).post('/api/auth/login').send({ email: 'investor@example.com', password: 'password123' });
+    expect((await request(app).post('/api/auth/sessions/revoke-others').set('Authorization', 'Bearer ' + legacy.body.token)).status).toBe(409);
+    expect((await request(app).get('/api/auth/sessions')).status).toBe(401);
+  });
   test('rejects short, oversized, reused and non-string new passwords without writes', async () => {
     const user = await mockUser.findByPk('user-a');
     user.id = 'validation-user';

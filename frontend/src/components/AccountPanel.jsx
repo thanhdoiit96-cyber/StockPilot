@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./AccountPanel.css";
 import PasswordChangeForm from "./PasswordChangeForm.jsx";
+import AccountSessions from "./AccountSessions.jsx";
 
-export default function AccountPanel({ user, onSave, onLogout, onPasswordChange }) {
+export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions }) {
   const [passwordDirty, setPasswordDirty] = useState(false);
   const [tab, setTab] = useState("profile");
   const dialog = useRef(null);
@@ -118,6 +119,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange 
       {opened && onPasswordChange && <div id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" className="account-password-section" hidden={tab !== "security"} inert={pendingExit ? "" : undefined}>
         {profileDirty && <div className="account-profile-reminder" role="status">Bạn có thay đổi hồ sơ chưa lưu. <button type="button" className="ghost-btn" onClick={() => selectTab("profile")}>Quay lại Hồ sơ</button></div>}
         <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty} />
+        {onLoadSessions && <AccountSessions active={tab === "security"} onLoad={onLoadSessions} onRevoke={onRevokeSessions} disabled={busy} />}
       </div>}
       <footer className="account-footer" inert={pendingExit ? "" : undefined}><div><strong>Phiên đăng nhập</strong><p>Đăng xuất khỏi tài khoản trên trình duyệt này.</p></div><button type="button" className="ghost-btn account-signout" disabled={busy} onClick={() => logout()}>Đăng xuất</button></footer>
     </dialog>, document.body)}

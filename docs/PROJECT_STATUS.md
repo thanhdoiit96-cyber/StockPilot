@@ -2,6 +2,14 @@
 
 ## 2026-10-05 — Thiết kế lại tài khoản và hồ sơ
 
+### Quản lý phiên đăng nhập — 2026-10-05
+
+- Bảo mật có danh sách phiên hiện tại/khác, ngày đăng nhập, lần gia hạn và hạn hiệu lực; không suy diễn thiết bị/IP khi chưa lưu metadata. Tải khi mở tab, có làm mới/lỗi/thử lại và xác nhận đăng xuất các phiên khác.
+- GET /api/auth/sessions lọc theo user, revoked_at và cả hai hạn hết phiên; chỉ chiếu id/timestamps/current, tối đa 50 phiên khác + phiên hiện tại, has_more rõ ràng.
+- POST /api/auth/sessions/revoke-others yêu cầu cookie session/CSRF và loại trừ phiên hiện tại; không thu hồi legacy Bearer (đổi mật khẩu mới vô hiệu toàn bộ). Session legacy cần đăng nhập lại để thao tác.
+- Kiểm chứng: auth controller 16/16, build/bundle integrity, browser smoke API mô phỏng desktop/mobile đạt. Live Chrome/database thật qua 4173 đạt list hai session, thu hồi qua UI, giữ current/tài khoản khác và từ chối refresh của session đã thu hồi. Hai tài khoản test riêng được giữ; không persist credential.
+- Backend đã restart; Preview 4173 phục vụ index-Cz2kmpkE.js. Điểm tiếp tục: email verification khi có delivery; bổ sung metadata thiết bị chỉ khi có yêu cầu và chính sách lưu dữ liệu.
+
 ### Điều hướng Hồ sơ / Bảo mật
 
 - Tách dialog thành tab Hồ sơ và Bảo mật, hỗ trợ ArrowLeft/Right/Home/End, roving tabindex và quan hệ tab/tabpanel. Giữ form mounted khi chuyển tab, xóa mật khẩu nháp khi đóng dialog.
