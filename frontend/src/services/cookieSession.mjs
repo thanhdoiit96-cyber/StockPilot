@@ -31,7 +31,8 @@ export async function sessionFetch(url, { token, retry = true, ...init } = {}) {
   if (MUTATING_METHODS.has(method) && csrf) headers.set('X-CSRF-Token', csrf)
   const response = await fetch(url, { ...init, method, headers, credentials: 'same-origin' })
   const cookieMode = token === true || token == null
-  if (response.status === 401 && retry && cookieMode && !url.startsWith('/api/auth/')) {
+  const canRefresh = !url.startsWith('/api/auth/') || url === '/api/auth/profile'
+  if (response.status === 401 && retry && cookieMode && canRefresh) {
     if (await refreshSession()) return sessionFetch(url, { ...init, token: true, retry: false })
   }
   return response

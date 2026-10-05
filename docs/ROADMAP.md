@@ -691,3 +691,4 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 
 - UI hồ sơ: đã có AccountPanel riêng, responsive desktop/mobile, truy cập từ sidebar thu gọn; tên hiển thị lưu qua API, email chỉ đọc và trạng thái xác thực theo dữ liệu. Browser smoke API mô phỏng đạt.
 - Tiếp theo: live smoke hồ sơ với session thật; xác thực email cần delivery, token hết hạn và rate limit trước khi mở action cho người dùng.
+- Live smoke hồ sơ đã đạt với backend development: lưu sau access-cookie expiry, reload persistence và logout; frontend 45/45. Mốc tiếp theo là xác thực email với delivery/token/rate limit.
