@@ -169,6 +169,8 @@ Compose có bốn dịch vụ: postgres, worker Vnstock, backend và frontend. W
 
 Cả bốn dịch vụ có healthcheck và `restart: unless-stopped`; backend chờ PostgreSQL + worker healthy, frontend chờ backend healthy. `docker compose ps` phải hiển thị trạng thái healthy trước khi smoke UI/API. Đây là restart policy của Compose, không phải cam kết tự khởi động Docker Engine sau reboot.
 
+Compose giới hạn log `json-file` mỗi service ở 10 MB × 3 file và đặt `stop_grace_period` riêng cho database/backend/worker/frontend. Đây là giới hạn local demo; môi trường production vẫn nên chuyển log sang driver/collector tập trung nếu có yêu cầu retention hoặc audit.
+
 Dừng bằng docker compose stop; khởi động lại bằng docker compose up -d. Volume postgres_data giữ dữ liệu. Đổi DB_PASSWORD trong .env không tự đổi mật khẩu role trong volume đã tồn tại.
 
 ## Kiểm tra sau khi chạy
