@@ -3570,3 +3570,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - Thêm `PATCH /api/auth/profile`: chỉ cập nhật `display_name` 1–120 ký tự hoặc đặt `null`; ownership lấy từ `requireAuth`, cookie mutation bắt buộc CSRF. Email/role/email_verified_at không nhận từ payload.
 - Kiểm chứng auth controller **3/3**, Node syntax và diff check đạt. Chưa bật form UI; endpoint là nền tảng cho bước Personal details tiếp theo.
+
+## Profile card production UI â€” 2026-10-05
+
+- TÃ¡i cáº¥u trÃºc profile card sidebar theo hierarchy tÃ i khoáº£n: email/vai trÃ², tráº¡ng thÃ¡i xÃ¡c thá»±c, form tÃªn hiá»ƒn thá»‹ vÃ  Ä‘Äƒng xuáº¥t; khÃ´ng cÃ²n email/Ä‘Äƒng xuáº¥t nÃ y náº±m ngang hÃ ng vá»›i tiÃªu Ä‘á» dashboard.
+- Collapsed sidebar giá»¯ biá»ƒu tÆ°á»£ng tÃ i khoáº£n tá»‘i giáº£n; expanded sidebar cÃ³ card ná»n, avatar, spacing vÃ  focus state phÃ¹ há»£p UI production.
+- Kiá»ƒm chá»©ng: `npm.cmd run build` thÃ nh cÃ´ng, bundle integrity passed; Preview `4173` cáº§n reload Ä‘á»ƒ nháº­n bundle `index-nf7z_QeI.js`.
