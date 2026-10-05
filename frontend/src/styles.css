@@ -181,6 +181,17 @@ button, input { font: inherit; }
   white-space: nowrap;
 }
 
+.topbar-actions:focus-within {
+  outline: 2px solid rgba(94, 234, 212, .4);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.topbar-actions .ghost-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .primary-btn,
 .ghost-btn,
 .prompt-chip {
