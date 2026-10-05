@@ -667,3 +667,16 @@ The remaining incident was worker concurrency and provider instability: simultan
 - P2 checkpoint 2026-10-05: Advisor có persistence nhiều hội thoại theo JWT qua migration 018 và API list/create/update/delete. Contract giới hạn 20 hội thoại/user, 100 message/hội thoại, context enum, text/citation length và URL HTTP(S); UI chống gửi chồng khi đang persist. Backend **34 suite / 149 test**, frontend **39/39**, audit desktop/mobile **2/2**, build xanh; migration development đã áp dụng và backend restart.
 - P2 còn lại sau P1: chart benchmark khi có index-series contract. Phân trang ledger bị hoãn theo bằng chứng quy mô hiện tại; đo lại khi p95 vượt 50 hoặc chi phí render thực tế vượt budget. Historical volume breadth/divergence, drill-down/citation Đề xuất, cấu hình cột/sticky/export Bảng giá, ledger CRUD/import/export, lọc vị thế đóng, điều hướng/tooltip/zoom Chi tiết, so sánh snapshot và Advisor context/citation/persistence nhiều hội thoại đã có bản đầu.
 - Chi tiết, tiêu chí nghiệm thu và giới hạn nằm tại [UI_UX_AUDIT](UI_UX_AUDIT.md).
+
+## Thứ tự phát triển sau checkpoint 6df3dd6 — 2026-10-05
+
+Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
+
+1. **P1 — Loại bỏ hai nguồn runtime của trang Đề xuất.** Di chuyển toàn bộ lifecycle đang còn trong `App.jsx` sang `RecommendationWorkbench` và chỉ render component này từ app shell. Nghiệm thu khi source component là đường chạy duy nhất, source-parity/build xanh, targeted Recommendation/Portfolio và full Playwright xanh; không thay contract API hoặc logic chấm điểm trong cùng thay đổi.
+2. **P1 — Gate vận hành EOD ở phiên giao dịch kế tiếp.** Đọc evidence cron tự động, xác nhận universe 551 mã listed, không chọn delisted, có `trade_priority/selected_traded`, fairness xoay vòng và worker concurrency 1. So sánh coverage, lỗi provider và quote latency với mốc 02/10; không tăng concurrency hoặc backfill giả nếu chưa có bằng chứng.
+3. **P1 — Hardening xác thực trước public deployment.** Thiết kế chuyển bearer token khỏi `localStorage` sang cookie HttpOnly/SameSite, CSRF policy, refresh/expiry/revocation và migration tương thích. Chỉ triển khai sau khi có contract và test nhiều tab/401/logout; password recovery là nhánh riêng cần token expiry và delivery provider.
+4. **P2 — Benchmark thị trường có nguồn thật.** Chọn provider/license cho VNINDEX hoặc chỉ số tương ứng, định nghĩa session/timezone/adjustment/gap contract, persist series rồi mới thêm API/UI overlay. Không tổng hợp chỉ số giả từ stock breadth.
+5. **P2 — Đo trước khi tối ưu.** Chạy trace Bảng giá authenticated production-like và đo p50/p95 list/quote/navigation. Chỉ thêm pagination/windowing/provider changes khi vượt budget; đo lại ledger khi p95 số dòng vượt 50 hoặc render thực tế chậm.
+6. **P2 — Vận hành dịch vụ bền vững.** Đóng gate Compose còn lại hoặc bổ sung supervisor cho backend/worker trên môi trường đích, health/restart policy và log rotation. Không coi các process terminal hiện tại là daemon bền qua reboot.
+
+Điểm bắt đầu chủ động tiếp theo là mục 1 vì độc lập với phiên giao dịch, credential và provider; mục 2 được kiểm tra vào phiên giao dịch kế tiếp mà không chặn refactor.

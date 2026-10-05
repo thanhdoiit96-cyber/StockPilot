@@ -3474,3 +3474,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Migration 018 đã áp dụng lên database development thành công trong 0,182 giây; không sửa/xóa bảng hoặc dữ liệu cũ. Backend đã restart. Không tạo hội thoại smoke trên tài khoản thật.
 - Kiểm chứng: backend targeted Advisor **3/3**, toàn backend **34 suite / 149 test**; frontend unit/encoding **39/39**; page audit desktop/mobile **2/2** có create rồi update cùng conversation; production safe-build/bundle integrity đạt với `index-DsQDmD2E.js`.
 - Điểm tiếp tục: đo quy mô và hành vi retention khi có dữ liệu người dùng thực; generative AI vẫn khóa theo AI gate. Feature lớn còn bị chặn là benchmark vì chưa có index-series contract.
+
+## Phân tích ưu tiên sau commit 6df3dd6 — 2026-10-05
+
+- Đã commit toàn bộ worktree đã kiểm chứng thành `6df3dd6 feat: persist market scopes and advisor conversations`; ngay sau commit worktree sạch.
+- Tạm dừng mở rộng AI Advisor theo yêu cầu người dùng. Rủi ro kỹ thuật ưu tiên nhất ngoài Advisor là runtime Đề xuất còn nằm trong `App.jsx` phục hồi trong khi `RecommendationWorkbench.jsx` tồn tại song song. Lượt E2E drill-down đã chứng minh build có thể xanh dù sửa nhầm boundary không được render, nên cần hợp nhất về một nguồn trước khi thêm behavior mới.
+- Lộ trình được ghi chi tiết ở ROADMAP theo thứ tự: hợp nhất runtime Đề xuất; kiểm chứng cron EOD phiên kế tiếp; auth HttpOnly/CSRF contract; benchmark có index-series thật; đo hiệu năng trước tối ưu; hardening vận hành Compose/supervisor.
+- Điểm tiếp tục cụ thể cho phiên sau: tách/migrate Recommendation Workbench khỏi `App.jsx` theo từng boundary có regression, giữ nguyên API và scoring. Song song chỉ đọc evidence cron khi có phiên mới; không ép ingestion ngoài lịch.
