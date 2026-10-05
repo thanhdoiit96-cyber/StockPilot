@@ -26,6 +26,8 @@ try {
   const csrf = decodeURIComponent((await current.cookies()).find(cookie => cookie.name === 'sp_csrf').value);
   const revokeOne = id => current.request.post(origin + '/api/auth/sessions/revoke', { headers: { 'X-CSRF-Token': csrf }, data: { session_id: id } });
   if ((await revokeOne(foreign)).status() !== 404) throw new Error('Foreign session not protected');
+  const foreignLabel = await current.request.patch(origin + '/api/auth/sessions/label', { headers: { 'X-CSRF-Token': csrf }, data: { session_id: foreign, label: 'Not allowed' } });
+  if (foreignLabel.status() !== 404) throw new Error('Foreign session rename not protected');
   if ((await revokeOne(payload.data.sessions.find(row => row.current).id.toUpperCase())).status() !== 409) throw new Error('Current session not protected');
   if (/token_hash|password_hash|csrf_token/.test(JSON.stringify(payload))) throw new Error('Credential disclosure');
   const page = await current.newPage();
@@ -33,6 +35,14 @@ try {
   await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click();
   await page.getByRole('tab', { name: 'Bảo mật', exact: true }).click();
   await expect(page.getByText('Phiên hiện tại', { exact: true })).toBeVisible();
+  await page.locator('.account-session-list li').first().getByRole('button', { name: 'Đặt tên phiên', exact: true }).click();
+  await page.getByLabel('Tên phiên do bạn đặt').fill('Laptop kiểm thử');
+  await page.getByRole('button', { name: 'Lưu tên phiên', exact: true }).click();
+  await expect(page.getByText('Đã lưu tên phiên đăng nhập.')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click();
+  await page.getByRole('tab', { name: 'Bảo mật', exact: true }).click();
+  await expect(page.getByText('Laptop kiểm thử', { exact: true })).toBeVisible();
   const targetIndex = payload.data.sessions.findIndex(row => row.id === target);
   await page.locator('.account-session-list li').nth(targetIndex).getByRole('button', { name: /Đăng xuất phiên khác/ }).click();
   await page.getByRole('button', { name: 'Xác nhận đăng xuất phiên này' }).click();

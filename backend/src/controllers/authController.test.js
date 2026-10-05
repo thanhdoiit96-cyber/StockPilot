@@ -29,6 +29,28 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('session label validates input, enforces ownership/expiry/csrf and supports clearing', async () => {
+    const { Op } = require('sequelize');
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const id = 'c785cda2-65cc-4a88-b71c-61907c8109f6';
+    const send = body => request(app).patch('/api/auth/sessions/label').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send(body);
+    expect((await request(app).patch('/api/auth/sessions/label').set('Cookie', cookieHeader(cookies)).send({ session_id: id, label: 'PC' })).status).toBe(403);
+    for (const label of [123, {}, 'a'.repeat(81), 'bad\nlabel']) expect((await send({ session_id: id, label })).status).toBe(400);
+    expect((await send({ session_id: id })).status).toBe(400);
+    expect((await send({ session_id: 'bad', label: 'PC' })).status).toBe(400);
+    expect(mockAuthSession.update).not.toHaveBeenCalled();
+    const response = await send({ session_id: id, label: '  Laptop cá nhân  ' });
+    expect(response.status).toBe(200);
+    expect(response.body.data.label).toBe('Laptop cá nhân');
+    const where = mockAuthSession.update.mock.calls.at(-1)[1].where;
+    expect(where).toMatchObject({ id, user_id: 'user-a', revoked_at: null });
+    expect(where.expires_at[Op.gt]).toBeInstanceOf(Date);
+    expect(where.idle_expires_at[Op.gt]).toBeInstanceOf(Date);
+    expect((await send({ session_id: id, label: null })).body.data.label).toBeNull();
+    mockAuthSession.update.mockResolvedValueOnce([0]);
+    expect((await send({ session_id: id, label: 'PC' })).status).toBe(404);
+  });
   test('single-session revoke requires csrf, excludes current session and enforces ownership', async () => {
     const { Op } = require('sequelize');
     const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });

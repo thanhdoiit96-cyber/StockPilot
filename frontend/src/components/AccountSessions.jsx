@@ -4,7 +4,11 @@ const dateLabel = value => {
   const date = new Date(value);
   return value && Number.isFinite(date.getTime()) ? date.toLocaleString("vi-VN") : "Chưa có thông tin";
 };
-export default function AccountSessions({ active, onLoad, onRevoke, disabled }) {
+export default function AccountSessions({ active, onLoad, onRevoke, onRename, onDirty, disabled }) {
+  const [editing, setEditing] = useState(null);
+  const labelInput = useRef(null);
+  useEffect(() => { if (editing) labelInput.current?.focus(); }, [editing?.id]);
+  useEffect(() => () => onDirty?.(false), [onDirty]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [revoking, setRevoking] = useState(false);
@@ -41,21 +45,42 @@ export default function AccountSessions({ active, onLoad, onRevoke, disabled }) 
     } catch (reason) { setError(reason.message || "Chưa thể đăng xuất các phiên khác."); }
     finally { setRevoking(false); }
   }
+  async function rename(event) {
+    event.preventDefault();
+    if (!editing || disabled || revoking || loading) return;
+    setRevoking(true); setError(""); setNotice("");
+    try {
+      const response = await onRename(editing.id, editing.value.trim() || null);
+      if (response?.data?.id !== editing.id || (response.data.label !== null && typeof response.data.label !== "string")) throw new Error("Không thể xác nhận tên phiên đã lưu.");
+      setData(current => ({ ...current, sessions: current.sessions.map(session => session.id === editing.id ? { ...session, label: response.data.label } : session) }));
+      setEditing(null); onDirty?.(false); setNotice("Đã lưu tên phiên đăng nhập.");
+      heading.current?.focus();
+    } catch (reason) { setError(reason.message || "Không thể lưu tên phiên."); }
+    finally { setRevoking(false); }
+  }
   const locked = disabled || loading || revoking;
   const otherCount = data?.sessions.filter(session => !session.current).length || 0;
   return <section className="account-sessions" aria-labelledby="account-sessions-title" aria-busy={loading || revoking}>
-    <div className="account-sessions-heading"><h3 ref={heading} tabIndex={-1} id="account-sessions-title">Phiên đăng nhập</h3><button type="button" className="ghost-btn" disabled={locked} onClick={() => { setConfirm(false); load(); }}>Làm mới phiên</button></div>
+    <div className="account-sessions-heading"><h3 ref={heading} tabIndex={-1} id="account-sessions-title">Phiên đăng nhập</h3><button type="button" className="ghost-btn" disabled={locked || Boolean(editing)} onClick={() => { setConfirm(false); load(); }}>Làm mới phiên</button></div>
     <p>Kiểm tra các phiên còn hiệu lực. Thời gian hiển thị theo múi giờ trình duyệt; lần gia hạn không đồng nghĩa với thao tác gần nhất.</p>
     {loading && <p role="status">Đang tải phiên đăng nhập…</p>}
     {error && <p role="alert" className="account-error">{error}</p>}
     {notice && <p role="status" className="account-success">{notice}</p>}
     {data && <>
       <ul className="account-session-list">{data.sessions.map((session, index) => <li key={session.id}>
-        <strong>{session.current ? "Phiên hiện tại" : "Phiên khác " + (index + (data.sessions[0]?.current ? 0 : 1))}</strong>
+        <strong>{session.label || (session.current ? "Phiên hiện tại" : "Phiên khác " + (index + (data.sessions[0]?.current ? 0 : 1)))}</strong>
         {session.current && <span className="account-verified">Đang sử dụng</span>}
         <dl><div><dt>Đăng nhập</dt><dd>{dateLabel(session.created_at)}</dd></div><div><dt>Gia hạn gần nhất</dt><dd>{dateLabel(session.last_used_at)}</dd></div><div><dt>Hết hạn dự kiến</dt><dd>{dateLabel(session.expires_at)}</dd></div></dl>
-        {!session.current && data.can_revoke_others && (confirm === session.id
-          ? <div className="account-session-confirm"><p>Đăng xuất phiên đăng nhập lúc {dateLabel(session.created_at)}? Các phiên khác không bị ảnh hưởng.</p>
+        {onRename && data.can_revoke_others && (editing?.id === session.id
+          ? <form className="account-session-label-form" onSubmit={rename}>
+              <label htmlFor="session-label-input">Tên phiên do bạn đặt</label>
+              <input ref={labelInput} id="session-label-input" value={editing.value} maxLength={80} disabled={locked} placeholder="Ví dụ: Laptop cá nhân" onChange={event => { setEditing({ ...editing, value: event.target.value }); onDirty?.(event.target.value.trim() !== editing.original); }} aria-describedby="session-label-hint" />
+              <small id="session-label-hint">Tối đa 80 ký tự. Để trống để dùng tên mặc định.</small>
+              <div><button type="button" className="ghost-btn" disabled={locked} onClick={() => { setEditing(null); onDirty?.(false); setError(""); heading.current?.focus(); }}>Hủy đổi tên</button><button type="submit" className="primary-btn" disabled={locked || editing.value.trim() === editing.original}>Lưu tên phiên</button></div>
+            </form>
+          : <button type="button" className="ghost-btn account-session-revoke" disabled={locked || Boolean(editing)} onClick={() => { setEditing({ id: session.id, value: session.label || "", original: session.label || "" }); setConfirm(false); setError(""); setNotice(""); }}>{session.label ? "Đổi tên phiên" : "Đặt tên phiên"}</button>)}
+        {!session.current && data.can_revoke_others && !editing && (confirm === session.id
+          ? <div className="account-session-confirm"><p>Đăng xuất {session.label ? "“" + session.label + "”" : "phiên"} đăng nhập lúc {dateLabel(session.created_at)}? Các phiên khác không bị ảnh hưởng.</p>
             <button type="button" className="ghost-btn" disabled={locked} onClick={() => { setConfirm(false); heading.current?.focus(); }}>Giữ phiên này</button>
             <button type="button" className="primary-btn" disabled={locked} onClick={() => revoke(session.id)}>Xác nhận đăng xuất phiên này</button>
           </div>
@@ -65,7 +90,7 @@ export default function AccountSessions({ active, onLoad, onRevoke, disabled }) 
       {data.has_more && <p>Đang hiển thị 50 phiên khác gần nhất. Nút “Đăng xuất các phiên khác” áp dụng cho toàn bộ phiên khác.</p>}
       {!data.can_revoke_others && <p>Vui lòng đăng nhập lại để quản lý các phiên khác.</p>}
       {confirm === "all" ? <div className="account-session-confirm"><p>Các phiên khác sẽ cần đăng nhập lại. Tiếp tục?</p><button type="button" className="ghost-btn" disabled={locked} onClick={() => setConfirm(false)}>Hủy đăng xuất phiên</button><button type="button" className="primary-btn" disabled={locked} onClick={() => revoke()}>Xác nhận đăng xuất phiên khác</button></div>
-        : <button type="button" className="ghost-btn" disabled={locked || !data.can_revoke_others || (!otherCount && !data.has_more)} onClick={() => { setConfirm("all"); setNotice(""); }}>Đăng xuất các phiên khác</button>}
+        : <button type="button" className="ghost-btn" disabled={locked || Boolean(editing) || !data.can_revoke_others || (!otherCount && !data.has_more)} onClick={() => { setConfirm("all"); setNotice(""); }}>Đăng xuất các phiên khác</button>}
       <p className="account-sessions-note">Đổi mật khẩu để vô hiệu toàn bộ thông tin đăng nhập cũ.</p>
     </>}
   </section>;

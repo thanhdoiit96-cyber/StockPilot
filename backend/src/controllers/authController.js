@@ -144,7 +144,7 @@ router.post('/password', requireAuth, passwordLimiter, async (req, res, next) =>
 });
 
 const sessionView = (row, currentId) => ({
-  id: row.id, current: row.id === currentId,
+  id: row.id, current: row.id === currentId, label: row.label || null,
   created_at: row.created_at, last_used_at: row.last_used_at,
   expires_at: new Date(Math.min(new Date(row.expires_at).getTime(), new Date(row.idle_expires_at).getTime()))
 });
@@ -153,7 +153,7 @@ router.get('/sessions', requireAuth, async (req, res, next) => {
     const current = req.authSession;
     const now = new Date();
     const rows = await AuthSession.findAll({
-      attributes: ['id', 'created_at', 'last_used_at', 'expires_at', 'idle_expires_at'],
+      attributes: ['id', 'label', 'created_at', 'last_used_at', 'expires_at', 'idle_expires_at'],
       where: { user_id: req.user.sub, revoked_at: null, expires_at: { [Op.gt]: now }, idle_expires_at: { [Op.gt]: now },
         ...(current ? { id: { [Op.ne]: current.id } } : {}) },
       order: [['last_used_at', 'DESC'], ['id', 'ASC']], limit: 51
@@ -187,6 +187,25 @@ router.post('/sessions/revoke', requireAuth, async (req, res, next) => {
     });
     if (!count) return res.status(404).json({ success: false, message: 'Phiên không còn khả dụng. Vui lòng làm mới danh sách.' });
     return res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
+router.patch('/sessions/label', requireAuth, async (req, res, next) => {
+  if (!req.authSession) return res.status(409).json({ success: false, message: 'Vui lòng đăng nhập lại để quản lý phiên.' });
+  const { session_id: id, label } = req.body || {};
+  if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ||
+      (label !== null && typeof label !== 'string') ||
+      (typeof label === 'string' && (label.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(label)))) {
+    return res.status(400).json({ success: false, message: 'Tên phiên tối đa 80 ký tự, không chứa ký tự điều khiển.' });
+  }
+  const normalized = typeof label === 'string' ? label.trim() || null : null;
+  try {
+    const now = new Date();
+    const [count] = await AuthSession.update({ label: normalized, updated_at: now }, {
+      where: { id, user_id: req.user.sub, revoked_at: null, expires_at: { [Op.gt]: now }, idle_expires_at: { [Op.gt]: now } }
+    });
+    if (!count) return res.status(404).json({ success: false, message: 'Phiên không còn khả dụng. Vui lòng làm mới danh sách.' });
+    return res.json({ success: true, data: { id, label: normalized } });
   } catch (error) { next(error); }
 });
 

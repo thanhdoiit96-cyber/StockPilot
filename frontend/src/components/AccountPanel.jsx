@@ -4,7 +4,8 @@ import "./AccountPanel.css";
 import PasswordChangeForm from "./PasswordChangeForm.jsx";
 import AccountSessions from "./AccountSessions.jsx";
 
-export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions }) {
+export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession }) {
+  const [sessionDirty, setSessionDirty] = useState(false);
   const [passwordDirty, setPasswordDirty] = useState(false);
   const [tab, setTab] = useState("profile");
   const dialog = useRef(null);
@@ -18,7 +19,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
   const identity = user?.display_name || user?.email?.split("@")[0] || "Tài khoản";
   const initial = Array.from(identity.trim())[0]?.toUpperCase() || "U";
   const profileDirty = name.trim() !== (user?.display_name || "");
-  const dirty = profileDirty || passwordDirty;
+  const dirty = profileDirty || passwordDirty || sessionDirty;
   useEffect(() => {
     if (!opened || (!dirty && !busy)) return;
     const warn = event => { event.preventDefault(); event.returnValue = ""; };
@@ -27,7 +28,11 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
   }, [opened, dirty, busy]);
   useEffect(() => {
     if (pendingExit) keepEditing.current?.focus();
-    else if (opened) dialog.current?.querySelector(tab === "profile" ? "#account-display-name" : "#password-change-current")?.focus();
+    else if (opened) {
+      const target = tab === "profile" ? dialog.current?.querySelector("#account-display-name")
+        : dialog.current?.querySelector("#session-label-input") || dialog.current?.querySelector("#password-change-current");
+      target?.focus();
+    }
   }, [pendingExit, opened]);
   const verified = Boolean(user?.email_verified_at && Number.isFinite(Date.parse(user.email_verified_at)));
   const verification = verified ? "Đã xác thực" : user?.email_verified_at === null ? "Chưa xác thực" : "Chưa có thông tin";
@@ -118,8 +123,9 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
       </div>
       {opened && onPasswordChange && <div id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" className="account-password-section" hidden={tab !== "security"} inert={pendingExit ? "" : undefined}>
         {profileDirty && <div className="account-profile-reminder" role="status">Bạn có thay đổi hồ sơ chưa lưu. <button type="button" className="ghost-btn" onClick={() => selectTab("profile")}>Quay lại Hồ sơ</button></div>}
-        <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty} />
-        {onLoadSessions && <AccountSessions active={tab === "security"} onLoad={onLoadSessions} onRevoke={onRevokeSessions} disabled={busy} />}
+        {sessionDirty && <p className="account-profile-reminder" role="status">Hãy lưu hoặc hủy tên phiên đang sửa trước khi đổi mật khẩu.</p>}
+        <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty || sessionDirty} />
+        {onLoadSessions && <AccountSessions active={tab === "security"} onLoad={onLoadSessions} onRevoke={onRevokeSessions} onRename={onRenameSession} onDirty={setSessionDirty} disabled={busy} />}
       </div>}
       <footer className="account-footer" inert={pendingExit ? "" : undefined}><div><strong>Phiên đăng nhập</strong><p>Đăng xuất khỏi tài khoản trên trình duyệt này.</p></div><button type="button" className="ghost-btn account-signout" disabled={busy} onClick={() => logout()}>Đăng xuất</button></footer>
     </dialog>, document.body)}
