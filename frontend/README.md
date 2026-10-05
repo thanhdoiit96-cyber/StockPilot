@@ -28,6 +28,8 @@
 
 UI gọi health, thống kê cache, danh sách và chi tiết cổ phiếu. Lịch sử hiển thị 12 giá mới nhất theo thời gian tăng dần. Danh mục lưu giao dịch do người dùng nhập qua backend; AI Advisor hiện trả lời theo phân tích rule-based.
 
+Auth browser mặc định dùng cookie mode: login/register gửi `X-Auth-Mode: cookie-v1`; request dùng same-origin credentials, mutation tự gắn CSRF từ cookie và một refresh mutex chỉ retry một lần sau 401. React/localStorage không giữ access hoặc refresh token. Nhiều tab dùng `BroadcastChannel('stockpilot-auth')`, fallback storage chỉ chứa type/time/nonce không bí mật. Parser Bearer/localStorage cũ được giữ tạm trong compatibility window cho session/test cũ và phải được loại sau khi rollout cookie ổn định.
+
 Health, cache, danh sách và chi tiết tải độc lập. Lỗi HTTP/JSON có thông báo và nút thử lại; danh sách rỗng hợp lệ có trạng thái riêng. Khi đổi cổ phiếu, chi tiết cũ được ẩn ngay trong render và request cũ bị hủy. Lỗi chi tiết chỉ xuất hiện ở trang chi tiết; lỗi cache không làm mất danh sách.
 
 Banner chất lượng EOD hiển thị coverage hiện tại và trạng thái vận hành tách biệt: job đang chạy dùng `runtime`, còn trạng thái nhàn rỗi dùng evidence EOD chính/gap retry gần nhất cùng thời điểm Việt Nam và kết quả hoàn tất/lỗi/chưa hoàn tất. Với gap retry mới, banner còn hiển thị số gap được price board xác nhận có giao dịch, phạm vi probe và tỷ lệ mã được ưu tiên; khi probe lỗi, banner nói rõ scheduler đã giữ phần hợp lệ và dùng fairness cho phần còn lại. Khi chưa có evidence cho phiên, banner nói rõ thay vì ngầm hiểu scheduler chưa được cấu hình.

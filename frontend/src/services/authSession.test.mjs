@@ -43,10 +43,18 @@ test('removes malformed JSON and invalid auth objects during bootstrap', () => {
 test('normalizes a valid auth response and rejects incomplete 2xx payloads', () => {
   assert.deepEqual(
     authFromResponse({ success: true, token: ' token ', user: { id: 'u1', email: ' investor@example.com ', role: ' user ' } }),
-    { token: 'token', user: { id: 'u1', email: 'investor@example.com', role: 'user' } }
+    { token: 'token', mode: 'bearer', user: { id: 'u1', email: 'investor@example.com', role: 'user' } }
   )
-  for (const payload of [null, {}, { success: true }, { token: 'token', user: {} }, { token: '', user: { email: 'a@b.c', role: 'user' } }]) {
+  assert.deepEqual(authFromResponse({ success: true, user: { id: 'u1', email: ' investor@example.com ', role: ' user ' } }), { token: true, mode: 'cookie', user: { id: 'u1', email: 'investor@example.com', role: 'user' } })
+  for (const payload of [null, {}, { success: true }, { token: 'token', user: {} }, { token: '', user: {} }]) {
     assert.throws(() => authFromResponse(payload), /phiên đăng nhập không hợp lệ/)
+  }
+})
+
+test('accepts only non-secret cross-tab login events', () => {
+  assert.deepEqual(authFromStorageValue(JSON.stringify({ type: 'login', at: 1, nonce: 'abc' })), { event: 'login' })
+  for (const value of [{ type: 'login', nonce: 'abc' }, { type: 'logout', at: 1, nonce: 'abc' }, { type: 'login', at: 1, nonce: 3 }]) {
+    assert.throws(() => authFromStorageValue(JSON.stringify(value)), /Dữ liệu phiên đăng nhập không hợp lệ/)
   }
 })
 

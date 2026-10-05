@@ -1,4 +1,5 @@
 import { notifySessionExpired } from './authSession.mjs'
+import { sessionFetch } from './cookieSession.mjs'
 
 export class ApiError extends Error {
   constructor(message, status = null) { super(message); this.name = 'ApiError'; this.status = status }
@@ -9,7 +10,7 @@ export async function requestJson(url, { signal, method = 'GET', body, token, ti
   const requestSignal = signal && deadline ? AbortSignal.any([signal, deadline]) : signal || deadline
   let response
   try {
-    response = await fetch(url, { ...(requestSignal ? { signal: requestSignal } : {}), method, headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
+    response = await sessionFetch(url, { token, ...(requestSignal ? { signal: requestSignal } : {}), method, headers: { Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
   } catch (error) {
     if (signal?.aborted || error.name === 'AbortError') throw error
     throw new ApiError('Không thể kết nối máy chủ. Vui lòng thử lại.')

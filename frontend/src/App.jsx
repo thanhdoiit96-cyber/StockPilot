@@ -19,7 +19,8 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
-import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
+import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
+import { sessionFetch } from "./services/cookieSession.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -35,12 +36,13 @@ async function je(e, {
     a = n ? AbortSignal.any([n, o]) : o;
   let u;
   try {
-    u = await fetch(e, {
+    u = await sessionFetch(e, {
+      token: l,
       signal: a,
       method: t,
       headers: {
         Accept: "application/json",
-        ...(l ? {
+        ...(typeof l === "string" ? {
           Authorization: `Bearer ${l}`
         } : {}),
         ...(r ? {
@@ -639,7 +641,11 @@ function lv() {
     [Jl, s] = D.useState(0),
     $r = D.useRef(null);
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
-  const [ue, Bt] = D.useState(readStoredAuth),
+  const [ue, Bt] = D.useState(() => readStoredAuth() || {
+      token: true,
+      mode: "cookie",
+      user: null
+    }),
     [authVerification, setAuthVerification] = D.useState(() => ({
       status: ue ? "verifying" : "idle",
       message: ""
@@ -726,6 +732,14 @@ function lv() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
   D.useEffect(() => {
+    const applyCookieEvent = type => {
+      if (type === "logout") return endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      $r.current = null;
+      Bn([]);
+      mt(null);
+      setAuthVerification({ status: "verifying", message: "" });
+      Bt({ token: true, mode: "cookie", user: null });
+    };
     const handleAuthStorage = event => {
       if (event.key !== AUTH_STORAGE_KEY) return;
       if (event.newValue === null) return endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
@@ -734,6 +748,9 @@ function lv() {
         nextAuth = authFromStorageValue(event.newValue);
       } catch {
         return endSession("Dữ liệu phiên từ tab khác không hợp lệ. Vui lòng đăng nhập lại.");
+      }
+      if (nextAuth.event) {
+        return applyCookieEvent(nextAuth.event);
       }
       if (nextAuth.token === currentAuthRef.current?.token) return;
       $r.current = null;
@@ -752,8 +769,13 @@ function lv() {
       });
       Bt(nextAuth);
     };
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("stockpilot-auth") : null;
+    if (channel) channel.onmessage = event => applyCookieEvent(event.data?.type);
     window.addEventListener("storage", handleAuthStorage);
-    return () => window.removeEventListener("storage", handleAuthStorage);
+    return () => {
+      window.removeEventListener("storage", handleAuthStorage);
+      channel == null || channel.close();
+    };
   }, []);
   D.useEffect(() => {
     if (!ue || authVerification.status !== "verifying") return;
@@ -765,7 +787,7 @@ function lv() {
     }).then(response => {
       if (!active) return;
       const verified = authFromResponse({
-        token: ue.token,
+        ...(typeof ue.token === "string" ? { token: ue.token } : {}),
         user: response.user
       });
       Bt(verified);
@@ -827,7 +849,7 @@ function lv() {
     $r.current !== ue.token && (Bn([]), mt(null), $r.current = ue.token);
     let d = false;
     const S = new AbortController();
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(ue));
+    typeof ue.token === "string" && localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(ue));
     const $ = A => {
       d || A.status !== 401 && Dr("Không tải được danh mục. Vui lòng thử lại.");
     };
@@ -949,7 +971,7 @@ function lv() {
         }), Bt($), Vt({
           email: "",
           password: ""
-        }), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
+        }), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on(""), broadcastAuthEvent("login");
       } catch (S) {
         setAuthError(S.message);
       } finally {
@@ -1366,8 +1388,11 @@ function lv() {
             children: ue.user.email
           }), O.jsx("button", {
             className: "ghost-btn",
-            onClick: () => {
-              endSession("", "Bạn đã đăng xuất an toàn.");
+            onClick: async () => {
+              try {
+                await je("/api/auth/logout", { method: "POST", token: ue.token });
+              } catch {}
+              broadcastAuthEvent("logout"), endSession("", "Bạn đã đăng xuất an toàn.");
             },
             children: p("Đăng xuất")
           })]
