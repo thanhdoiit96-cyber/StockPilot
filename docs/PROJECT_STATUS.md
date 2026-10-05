@@ -3481,3 +3481,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Tạm dừng mở rộng AI Advisor theo yêu cầu người dùng. Rủi ro kỹ thuật ưu tiên nhất ngoài Advisor là runtime Đề xuất còn nằm trong `App.jsx` phục hồi trong khi `RecommendationWorkbench.jsx` tồn tại song song. Lượt E2E drill-down đã chứng minh build có thể xanh dù sửa nhầm boundary không được render, nên cần hợp nhất về một nguồn trước khi thêm behavior mới.
 - Lộ trình được ghi chi tiết ở ROADMAP theo thứ tự: hợp nhất runtime Đề xuất; kiểm chứng cron EOD phiên kế tiếp; auth HttpOnly/CSRF contract; benchmark có index-series thật; đo hiệu năng trước tối ưu; hardening vận hành Compose/supervisor.
 - Điểm tiếp tục cụ thể cho phiên sau: tách/migrate Recommendation Workbench khỏi `App.jsx` theo từng boundary có regression, giữ nguyên API và scoring. Song song chỉ đọc evidence cron khi có phiên mới; không ép ingestion ngoài lịch.
+
+## Hợp nhất runtime Đề xuất — 2026-10-05
+
+- `App.jsx` nay chỉ điều phối và render `RecommendationWorkbench`; bản runtime `Zm` cùng các helper Đề xuất trùng lặp đã được loại bỏ. Component có tên sở hữu toàn bộ lifecycle trọng số, tạo kết quả, snapshot lưu trên API, fallback/migration từ local storage, load/xóa, so sánh snapshot, evidence và action thêm vào Danh mục.
+- Giữ nguyên endpoint và logic chấm điểm. `RecommendationEvidence` và `RecommendationSnapshotComparison` tiếp tục là boundary dùng chung; bảng evidence nhận cùng catalog tiêu chí để không mất diễn giải score sau khi chuyển runtime.
+- Lần migrate đầu cắt nhầm formatter/mapper liền sau khối Đề xuất làm UI không bootstrap; build không phát hiện lỗi runtime này. Đã phục hồi từ checkpoint, thu hẹp ranh giới chính xác từ `Oi` đến trước `xa`, rồi xác nhận bằng E2E. Không giữ lại bản build lỗi.
+- Kiểm chứng: frontend unit/encoding **39/39**, source parity **9 marker**, targeted Recommendation/Portfolio/page audit **16/16**, full Playwright **78/78**, production safe-build/bundle integrity đạt với `index-C3__AJMU.js`.
+- Điểm tiếp tục: đọc evidence cron EOD tự động của phiên giao dịch kế tiếp để xác nhận universe listed, trade priority, fairness và worker concurrency 1. Nếu chưa có evidence phiên mới, chuyển sang thiết kế contract HttpOnly/SameSite + CSRF; tiếp tục không mở rộng AI Advisor.

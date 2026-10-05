@@ -672,11 +672,11 @@ The remaining incident was worker concurrency and provider instability: simultan
 
 Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 
-1. **P1 — Loại bỏ hai nguồn runtime của trang Đề xuất.** Di chuyển toàn bộ lifecycle đang còn trong `App.jsx` sang `RecommendationWorkbench` và chỉ render component này từ app shell. Nghiệm thu khi source component là đường chạy duy nhất, source-parity/build xanh, targeted Recommendation/Portfolio và full Playwright xanh; không thay contract API hoặc logic chấm điểm trong cùng thay đổi.
+1. **P1 — Loại bỏ hai nguồn runtime của trang Đề xuất — hoàn thành 2026-10-05.** `App.jsx` chỉ còn render `RecommendationWorkbench`; component này sở hữu lifecycle trọng số, snapshot API/local fallback, comparison, evidence và action Danh mục. Không đổi contract API hoặc logic chấm điểm. Nghiệm thu đạt: unit **39/39**, source parity, targeted **16/16**, full Playwright **78/78** và production build/bundle integrity xanh.
 2. **P1 — Gate vận hành EOD ở phiên giao dịch kế tiếp.** Đọc evidence cron tự động, xác nhận universe 551 mã listed, không chọn delisted, có `trade_priority/selected_traded`, fairness xoay vòng và worker concurrency 1. So sánh coverage, lỗi provider và quote latency với mốc 02/10; không tăng concurrency hoặc backfill giả nếu chưa có bằng chứng.
 3. **P1 — Hardening xác thực trước public deployment.** Thiết kế chuyển bearer token khỏi `localStorage` sang cookie HttpOnly/SameSite, CSRF policy, refresh/expiry/revocation và migration tương thích. Chỉ triển khai sau khi có contract và test nhiều tab/401/logout; password recovery là nhánh riêng cần token expiry và delivery provider.
 4. **P2 — Benchmark thị trường có nguồn thật.** Chọn provider/license cho VNINDEX hoặc chỉ số tương ứng, định nghĩa session/timezone/adjustment/gap contract, persist series rồi mới thêm API/UI overlay. Không tổng hợp chỉ số giả từ stock breadth.
 5. **P2 — Đo trước khi tối ưu.** Chạy trace Bảng giá authenticated production-like và đo p50/p95 list/quote/navigation. Chỉ thêm pagination/windowing/provider changes khi vượt budget; đo lại ledger khi p95 số dòng vượt 50 hoặc render thực tế chậm.
 6. **P2 — Vận hành dịch vụ bền vững.** Đóng gate Compose còn lại hoặc bổ sung supervisor cho backend/worker trên môi trường đích, health/restart policy và log rotation. Không coi các process terminal hiện tại là daemon bền qua reboot.
 
-Điểm bắt đầu chủ động tiếp theo là mục 1 vì độc lập với phiên giao dịch, credential và provider; mục 2 được kiểm tra vào phiên giao dịch kế tiếp mà không chặn refactor.
+Điểm bắt đầu chủ động tiếp theo là mục 2: đọc evidence cron tự động của phiên giao dịch kế tiếp, không ép ingestion ngoài lịch. Nếu evidence mới chưa tồn tại, chuyển sang thiết kế contract mục 3 mà không mở rộng AI Advisor.

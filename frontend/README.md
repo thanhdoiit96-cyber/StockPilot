@@ -9,6 +9,7 @@
 | [src/components/MarketBoardPage.jsx](src/components/MarketBoardPage.jsx) | Page Bảng giá: tải danh sách, render, phân trang, toolbar và vòng đời quote bằng React |
 | [src/components/MarketBreadth.jsx](src/components/MarketBreadth.jsx) | Breadth Tổng quan: scope sàn/ngành dùng chung cho snapshot, Top list và mở mã dẫn đầu |
 | [src/components/MarketBreadthHistory.jsx](src/components/MarketBreadthHistory.jsx) | Timeline A/D và volume breadth EOD theo scope sàn/ngành; chỉ vẽ chuỗi liên tục, phân kỳ nội tại không giả benchmark |
+| [src/components/RecommendationWorkbench.jsx](src/components/RecommendationWorkbench.jsx) | Runtime duy nhất của trang Đề xuất: trọng số, xếp hạng, snapshot server/local fallback, so sánh snapshot, evidence và action thêm vào Danh mục |
 | [src/components/RecommendationEvidence.jsx](src/components/RecommendationEvidence.jsx) | Drill-down provenance từng mã Đề xuất: model, nguồn/thời điểm giá, số phiên, chỉ báo, phép chấm điểm và citation HTTP(S) đã xác minh; nguồn ngoài hệ thống không được cộng điểm |
 | [src/components/PortfolioAllocation.jsx](src/components/PortfolioAllocation.jsx) | Donut Danh mục có tooltip chuột/bàn phím và audit P/L theo quote |
 | [src/components/RecommendationSnapshotComparison.jsx](src/components/RecommendationSnapshotComparison.jsx) | So sánh hai snapshot Đề xuất đã lưu theo tiêu chí, membership, hạng và điểm |

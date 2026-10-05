@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
-import { recommendationEvidence } from '../services/recommendationEvidence.mjs'
+import RecommendationEvidence from './RecommendationEvidence.jsx'
+import RecommendationSnapshotComparison from './RecommendationSnapshotComparison.jsx'
 
 const defaults = { trend: 30, momentum: 25, rsi: 15, stability: 15, liquidity: 15 }
 const criteria = [
@@ -11,33 +12,6 @@ const criteria = [
   { key: 'liquidity', label: 'Thanh khoản', description: 'Xếp hạng tương đối theo khối lượng 20 phiên' },
 ]
 const money = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value) + ' đ'
-const number = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(value)
-const dateTime = value => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value)) : 'Chưa có thời điểm'
-
-function RecommendationEvidence({ item }) {
-  const evidence = recommendationEvidence(item, criteria)
-  return <details className="recommendation-evidence">
-    <summary>Xem bằng chứng chấm điểm</summary>
-    <div className="recommendation-evidence-body">
-      <dl className="recommendation-provenance">
-        <div><dt>Mô hình</dt><dd>{evidence.model || 'Chưa công bố'}</dd></div>
-        <div><dt>Nguồn giá</dt><dd>{evidence.priceSource || 'Chưa xác định'}</dd></div>
-        <div><dt>Thời điểm giá</dt><dd>{dateTime(evidence.observedAt)}</dd></div>
-        <div><dt>Số phiên đầu vào</dt><dd>{evidence.observations ?? 'Chưa công bố'}</dd></div>
-      </dl>
-      <div className="recommendation-indicator-evidence" aria-label="Chỉ báo đầu vào">
-        <span>Xu hướng <b>{evidence.trend || 'Chưa có'}</b></span>
-        <span>RSI14 <b>{number(evidence.rsi14)}</b></span>
-        <span>Momentum 10 phiên <b>{number(evidence.momentum10)}</b></span>
-        <span>Biến động ngày <b>{evidence.volatilityPct == null ? '—' : `${number(evidence.volatilityPct)}%`}</b></span>
-        <span>Khối lượng TB <b>{evidence.averageVolume == null ? '—' : new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(evidence.averageVolume)}</b></span>
-      </div>
-      {evidence.factors.length ? <div className="recommendation-factor-table table-wrap"><table><thead><tr><th>Tiêu chí</th><th>Điểm</th><th>Trọng số</th><th>Hiệu chỉnh</th></tr></thead><tbody>{evidence.factors.map(factor => <tr key={factor.key}><td>{factor.label}</td><td>{number(factor.score)}/100</td><td>{factor.weight == null ? 'Theo snapshot' : number(factor.weight)}</td><td>{factor.calibration == null ? '1,00×' : `${number(factor.calibration)}×`}</td></tr>)}</tbody></table></div> : <p className="muted-text">Snapshot này chưa lưu chi tiết điểm từng tiêu chí.</p>}
-      <p className="muted-text recommendation-evidence-note">Điểm số dùng provenance kỹ thuật. Nguồn ngoài hệ thống được liệt kê riêng để tham khảo, không được cộng điểm và không chứng minh quan hệ nhân quả.</p>
-    </div>
-  </details>
-}
-
 export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio }) {
   const [weights, setWeights] = useState(() => {
     try { return { ...defaults, ...JSON.parse(localStorage.getItem('stockpilot.recommendation.criteria') || '{}') } } catch { return defaults }
@@ -55,6 +29,23 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
 
   useEffect(() => { localStorage.setItem('stockpilot.recommendation.criteria', JSON.stringify(weights)) }, [weights])
   useEffect(() => { setResult(null) }, [initialData?.run?.id])
+  useEffect(() => {
+    if (!token) return
+    requestJson('/api/recommendations/saved', { token }).then(async response => {
+      if (!Array.isArray(response.data)) return
+      let local = []
+      try { local = JSON.parse(localStorage.getItem('stockpilot.recommendation.saved') || '[]') } catch {}
+      const serverIds = new Set(response.data.map(item => item.id))
+      const pending = local.filter(item => item?.id && !serverIds.has(item.id) && item.criteria && item.result).slice(0, 20)
+      const migrated = []
+      for (const snapshot of pending) {
+        try { const saved = await requestJson('/api/recommendations/saved', { method: 'POST', body: { criteria: snapshot.criteria, result: snapshot.result }, token }); if (saved.data?.id) migrated.push(saved.data) } catch {}
+      }
+      const next = [...migrated, ...response.data].slice(0, 20)
+      setSavedProposals(next)
+      localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next))
+    }).catch(() => {})
+  }, [token])
 
   async function generate(event) {
     event?.preventDefault()
@@ -63,12 +54,14 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
       const response = await requestJson('/api/recommendations/personalized', { method: 'POST', body: { criteria: weights, limit: 10, horizon_days: 20 }, token })
       setResult(response.data)
       setCriteriaCollapsed(true)
-      const snapshot = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), criteria: { ...weights }, result: response.data }
-      setSavedProposals(current => {
-        const next = [snapshot, ...current].slice(0, 20)
-        localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next))
-        return next
-      })
+      try {
+        const saved = await requestJson('/api/recommendations/saved', { method: 'POST', body: { criteria: weights, result: response.data }, token })
+        if (saved.data?.id) { setSavedProposals(current => { const next = [saved.data, ...current].slice(0, 20); localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next)); return next }); setSelectedProposalId(saved.data.id) }
+      } catch {
+        const snapshot = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), criteria: { ...weights }, result: response.data }
+        setSavedProposals(current => { const next = [snapshot, ...current].slice(0, 20); localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next)); return next })
+        setSelectedProposalId(snapshot.id)
+      }
     } catch (requestError) { setError(requestError.message) } finally { setLoading(false) }
   }
 
@@ -79,7 +72,8 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     setError('')
   }
 
-  function deleteProposal(id) {
+  async function deleteProposal(id) {
+    try { await requestJson(`/api/recommendations/saved/${id}`, { method: 'DELETE', token }) } catch {}
     setSavedProposals(current => {
       const next = current.filter(item => item.id !== id)
       localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next))
@@ -99,9 +93,10 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
       {error && <p role="alert" className="error-text">{error}</p>}
     </section>
 
+    <RecommendationSnapshotComparison snapshots={savedProposals} />
     <div className="recommendation-grid personalized-results">
       <section className="panel insights-panel"><div className="recommendation-section-heading"><div><h3>{result ? 'Kết quả theo tiêu chí đã chọn' : 'Đề xuất hiện tại'}</h3><p className="muted-text">{result ? `Đã rà soát ${result.eligible_count} mã đủ ít nhất 50 phiên.` : 'Dữ liệu snapshot gần nhất; hãy tạo đề xuất cá nhân để xếp hạng lại theo bộ lọc.'}</p></div>{recommendations.length > 0 && <span className="chip success">{recommendations.length} mã</span>}</div>
-        {recommendations.length ? <ol className="insights-list personalized-list">{recommendations.map(item => { const score = Number(item.score || 0); const scoreTone = score >= 75 ? 'high' : score >= 55 ? 'medium' : 'low'; const symbol = item.stock?.code || item.symbol; const generatedAt = result?.generated_at || initialData?.run?.created_at || initialData?.run?.as_of; const source = result ? 'personalized' : 'scheduled'; return <li key={item.id || item.stock_id || item.symbol}><div className="recommendation-stock-heading"><strong>{symbol}</strong><span className={`recommendation-score score-${scoreTone}`}><b>{score.toFixed(1)}</b><small>/100 điểm</small></span><span className="rank-label">Hạng {item.rank}</span><button type="button" className="ghost-btn small-btn recommendation-add-btn" onClick={() => onAddToPortfolio?.({ symbol, name: item.stock?.name || item.name || symbol, price: item.entry_price, recommendationContext: { source, symbol, model: result?.model || initialData?.run?.model || 'short_term_rule_v2', generated_at: generatedAt, horizon_days: Number(item.horizon_days || initialData?.run?.horizon_days || 20), score, rank: Number(item.rank), expected_entry_price: Number(item.entry_price), criteria: result?.criteria || null } })}>＋ Thêm vào danh mục</button></div><p>{(item.rationale?.factors || []).slice(0, 3).join(' · ')}</p>{item.rationale?.score_parts && <div className="score-breakdown">{criteria.map(criterion => { const value = Math.max(0, Math.min(100, Number(item.rationale.score_parts[criterion.key] || 0))); return <span className={`criterion-${criterion.key}`} key={criterion.key} title={`${criterion.label}: ${value} điểm`}><small>{criterion.label}</small><b>{value.toFixed(0)}<i>/100</i></b><span className="criterion-meter"><i style={{ width: `${value}%` }} /></span></span>})}</div>}<div className="recommendation-result-footer"><div className="recommendation-data-chips"><span>Giá tham chiếu <b>{money(item.entry_price)}</b><small>{item.rationale?.reference_plan?.price_source === 'intraday' ? 'Intraday' : 'EOD fallback'}</small></span><span>RSI <b>{item.rationale?.indicators?.rsi14 == null ? '—' : Number(item.rationale.indicators.rsi14).toFixed(1)}</b></span><span>Quan sát <b>{item.rationale?.observations || item.rationale?.evidence?.objective?.observations || '—'} phiên</b></span></div></div><RecommendationEvidence item={item} /></li> })}</ol> : <p className="muted-text">{result ? 'Chưa có mã đạt ngưỡng điểm với trọng số này. Hãy điều chỉnh tiêu chí rồi thử lại.' : 'Chưa có đề xuất khả dụng.'}</p>}
+        {recommendations.length ? <ol className="insights-list personalized-list">{recommendations.map(item => { const score = Number(item.score || 0); const scoreTone = score >= 75 ? 'high' : score >= 55 ? 'medium' : 'low'; const symbol = item.stock?.code || item.symbol; const generatedAt = result?.generated_at || initialData?.run?.created_at || initialData?.run?.as_of; const source = result ? 'personalized' : 'scheduled'; return <li key={item.id || item.stock_id || item.symbol}><div className="recommendation-stock-heading"><strong>{symbol}</strong><span className={`recommendation-score score-${scoreTone}`}><b>{score.toFixed(1)}</b><small>/100 điểm</small></span><span className="rank-label">Hạng {item.rank}</span><button type="button" className="ghost-btn small-btn recommendation-add-btn" onClick={() => onAddToPortfolio?.({ symbol, name: item.stock?.name || item.name || symbol, price: item.entry_price, recommendationContext: { source, symbol, model: result?.model || initialData?.run?.model || 'short_term_rule_v2', generated_at: generatedAt, horizon_days: Number(item.horizon_days || initialData?.run?.horizon_days || 20), score, rank: Number(item.rank), expected_entry_price: Number(item.entry_price), criteria: result?.criteria || null } })}>＋ Thêm vào danh mục</button></div><p>{(item.rationale?.factors || []).slice(0, 3).join(' · ')}</p>{item.rationale?.score_parts && <div className="score-breakdown">{criteria.map(criterion => { const value = Math.max(0, Math.min(100, Number(item.rationale.score_parts[criterion.key] || 0))); return <span className={`criterion-${criterion.key}`} key={criterion.key} title={`${criterion.label}: ${value} điểm`}><small>{criterion.label}</small><b>{value.toFixed(0)}<i>/100</i></b><span className="criterion-meter"><i style={{ width: `${value}%` }} /></span></span>})}</div>}<div className="recommendation-result-footer"><div className="recommendation-data-chips"><span>Giá tham chiếu <b>{money(item.entry_price)}</b><small>{item.rationale?.reference_plan?.price_source === 'intraday' ? 'Intraday' : 'EOD fallback'}</small></span><span>RSI <b>{item.rationale?.indicators?.rsi14 == null ? '—' : Number(item.rationale.indicators.rsi14).toFixed(1)}</b></span><span>Quan sát <b>{item.rationale?.observations || item.rationale?.evidence?.objective?.observations || '—'} phiên</b></span></div></div><RecommendationEvidence item={item} criteria={criteria} /></li> })}</ol> : <p className="muted-text">{result ? 'Chưa có mã đạt ngưỡng điểm với trọng số này. Hãy điều chỉnh tiêu chí rồi thử lại.' : 'Chưa có đề xuất khả dụng.'}</p>}
         <p className="analysis-disclaimer">Điểm số hỗ trợ nghiên cứu, không phải lời khuyên hay lệnh mua bán.</p>
       </section>
       <section className="panel learning-panel"><span className="eyebrow accent">VÒNG PHẢN HỒI</span><h3>Hiệu quả các đợt đề xuất của hệ thống</h3><p className="muted-text">Mỗi dòng lịch sử là một đợt đề xuất chung được tạo theo lịch. Hệ thống so giá tại thời điểm đề xuất với giá sau tối đa 20 phiên: lợi nhuận dương được tính là một mã dự báo tăng. “Tỷ lệ dương” là phần trăm mã có kết quả dương; “lợi nhuận trung bình” là mức sinh lời trung bình của các mã đã đo.</p>
