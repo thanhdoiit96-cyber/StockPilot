@@ -563,10 +563,13 @@ docker-compose -f docker-compose.prod.yml up -d
 
 Repository cung cấp mẫu cấu hình tại `ops/prometheus/`. Prometheus scrape backend qua `/api/ops/metrics/prometheus` bằng bearer token đọc từ secret file; không đặt token trực tiếp trong `prometheus.yml`.
 
+Trước khi đóng gói frontend, chạy `npm run verify:release` trong thư mục `frontend/`; lệnh này bao gồm unit/encoding, bundle integrity và kiểm tra alert–metric contract Prometheus.
+
 - Mount `ops/prometheus/prometheus.yml` và `alerts.yml` vào Prometheus.
 - Cấp secret metrics tại `/run/secrets/metrics_api_key` với giá trị khớp `ADMIN_API_KEY` của backend.
 - Khai báo Alertmanager tại `alertmanager:9093` hoặc thay bằng địa chỉ collector production.
 - Các rule cảnh báo auth/CORS, worker error và partial dùng `increase(...[10m])`; điều chỉnh ngưỡng theo traffic thật trước khi bật paging.
 - OpenTelemetry Collector có thể scrape cùng endpoint Prometheus và chuyển tiếp sang backend metrics hiện có; không expose endpoint này public.
+- Trên host collector, chạy `promtool check config` và `promtool check rules` trước khi reload để bắt lỗi YAML/rule mà static gate trong repository không thể phát hiện.
 
 Đây là cấu hình triển khai mẫu, chưa tuyên bố Prometheus/Alertmanager đã chạy trong workspace hiện tại.
