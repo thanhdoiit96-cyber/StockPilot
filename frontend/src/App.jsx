@@ -1383,6 +1383,10 @@ function lv() {
         }), O.jsx("small", {
           className: "profile-details-note",
           children: p("Email là định danh đăng nhập; chỉnh sửa thông tin cá nhân sẽ được bổ sung khi backend có contract xác thực.")
+        }), O.jsx("span", {
+          className: "profile-verification-status",
+          role: "status",
+          children: p("Xác thực email: chưa có dữ liệu")
         }), O.jsx("p", {
           className: "eyebrow",
           children: p("Danh mục")
