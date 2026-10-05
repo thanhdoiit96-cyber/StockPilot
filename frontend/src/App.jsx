@@ -660,7 +660,7 @@ function lv() {
     [authNotice, setAuthNotice] = D.useState(""),
     [authSubmitting, setAuthSubmitting] = D.useState(false),
     [transactionSubmitting, setTransactionSubmitting] = D.useState(false),
-    [profileName, setProfileName] = D.useState(() => ue.user?.display_name || ""),
+    [profileName, setProfileName] = D.useState(() => ue?.user?.display_name || ""),
     [profileSaving, setProfileSaving] = D.useState(false),
     [profileMessage, setProfileMessage] = D.useState(""),
     [dt, on] = D.useState(""),
@@ -730,7 +730,7 @@ function lv() {
     on("");
     Bt(null);
   };
-  D.useEffect(() => { setProfileName(ue.user?.display_name || ""); }, [ue.user?.display_name]);
+  D.useEffect(() => { setProfileName(ue?.user?.display_name || ""); }, [ue?.user?.display_name]);
   const saveProfile = async event => {
     event.preventDefault();
     if (profileSaving) return;
