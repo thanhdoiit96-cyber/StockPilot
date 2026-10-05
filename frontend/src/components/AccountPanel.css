@@ -51,3 +51,12 @@
 .account-password-form h3 { margin:0; }
 .account-password-form > p { color:#94a3b8; font-size:13px; line-height:1.6; margin:0; }
 .account-password-form button { align-self:flex-start; min-height:44px; }
+.account-dialog [hidden] { display:none !important; }
+.account-tabs { display:flex; gap:6px; padding:16px 30px 0; }
+.account-tabs [role="tab"] { min-height:44px; padding:10px 22px; border:1px solid transparent; border-radius:10px; background:transparent; color:#94a3b8; font:inherit; font-size:14px; cursor:pointer; }
+.account-tabs [aria-selected="true"] { background:#173e40; border-color:#2b6361; color:#99f6e4; font-weight:700; }
+.account-draft-dot { color:#facc15; }
+.account-global-error { margin:16px 30px 0; font-size:13px; }
+.account-profile-reminder { margin-bottom:20px; padding:12px; border:1px solid #8a7040; border-radius:10px; font-size:13px; color:#e2cfab; line-height:1.6; }
+.account-profile-reminder button { margin-top:8px; display:block; }
+@media(max-width:560px) { .account-tabs { padding:16px 20px 0; }.account-tabs button { flex:1; }.account-password-section { padding:20px; } }

@@ -18,6 +18,7 @@ try {
   const page = await first.newPage();
   await page.goto(origin);
   await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click();
+  await page.getByRole('tab', { name: 'Bảo mật', exact: true }).click();
   await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill('wrong-password');
   await page.getByLabel('Mật khẩu mới', { exact: true }).fill(nextPassword);
   await page.getByLabel('Xác nhận mật khẩu mới', { exact: true }).fill('mismatch');

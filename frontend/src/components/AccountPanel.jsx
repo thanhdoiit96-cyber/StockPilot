@@ -5,6 +5,7 @@ import PasswordChangeForm from "./PasswordChangeForm.jsx";
 
 export default function AccountPanel({ user, onSave, onLogout, onPasswordChange }) {
   const [passwordDirty, setPasswordDirty] = useState(false);
+  const [tab, setTab] = useState("profile");
   const dialog = useRef(null);
   const keepEditing = useRef(null);
   const [opened, setOpened] = useState(false);
@@ -25,12 +26,13 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange 
   }, [opened, dirty, busy]);
   useEffect(() => {
     if (pendingExit) keepEditing.current?.focus();
-    else if (opened) dialog.current?.querySelector("#account-display-name")?.focus();
+    else if (opened) dialog.current?.querySelector(tab === "profile" ? "#account-display-name" : "#password-change-current")?.focus();
   }, [pendingExit, opened]);
   const verified = Boolean(user?.email_verified_at && Number.isFinite(Date.parse(user.email_verified_at)));
   const verification = verified ? "Đã xác thực" : user?.email_verified_at === null ? "Chưa xác thực" : "Chưa có thông tin";
   function open() {
     setName(user?.display_name || "");
+    setTab("profile");
     setPasswordDirty(false);
     setError("");
     setMessage("");
@@ -65,21 +67,35 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange 
     catch { setError("Chưa thể đăng xuất. Vui lòng thử lại."); }
     finally { setBusy(false); }
   }
+  function selectTab(next) {
+    if (busy || pendingExit) return;
+    setTab(next);
+    dialog.current?.querySelector("#account-tab-" + next)?.focus();
+  }
+  function tabKeys(event) {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    selectTab(event.key === "Home" ? "profile" : event.key === "End" ? "security" : tab === "profile" ? "security" : "profile");
+  }
   return <>
     <button className="account-trigger" type="button" onClick={open} title="Tài khoản và thông tin cá nhân" aria-label="Tài khoản và thông tin cá nhân" aria-haspopup="dialog">
       <span className="account-avatar" aria-hidden="true">{initial}</span>
       <span className="account-trigger-copy"><strong>{identity}</strong><small>Tài khoản cá nhân</small></span>
       <span className="account-chevron" aria-hidden="true">›</span>
     </button>
-    {createPortal(<dialog ref={dialog} className="account-dialog" aria-labelledby="account-title" onClose={() => { setOpened(false); setPendingExit(null); }} onCancel={event => { event.preventDefault(); close(); }}>
+    {createPortal(<dialog ref={dialog} className="account-dialog" aria-labelledby="account-title" onClose={() => { setOpened(false); setPendingExit(null); }} onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(); } }} onCancel={event => { event.preventDefault(); close(); }}>
       <header className="account-heading"><div><span className="account-kicker">CÀI ĐẶT TÀI KHOẢN</span><h2 id="account-title">Thông tin cá nhân</h2><p>Quản lý hồ sơ và thông tin đăng nhập của bạn.</p></div><button type="button" className="account-close" aria-label="Đóng thông tin cá nhân" disabled={busy} onClick={close}>×</button></header>
       {pendingExit && <section className="account-discard" role="alert" aria-label="Thay đổi chưa lưu">
         <strong>Bạn có thay đổi chưa lưu</strong>
         <p>{pendingExit === "logout" ? "Đăng xuất sẽ bỏ các thay đổi trong hồ sơ." : "Đóng hồ sơ sẽ bỏ các thay đổi bạn vừa nhập."}</p>
-        <div><button ref={keepEditing} type="button" className="primary-btn" onClick={() => { setPendingExit(null); document.getElementById("account-display-name")?.focus(); }}>Tiếp tục chỉnh sửa</button>
+        <div><button ref={keepEditing} type="button" className="primary-btn" onClick={() => setPendingExit(null)}>Tiếp tục chỉnh sửa</button>
         <button type="button" className="ghost-btn" onClick={() => pendingExit === "logout" ? logout(true) : dialog.current.close()}>{pendingExit === "logout" ? "Bỏ thay đổi và đăng xuất" : "Bỏ thay đổi và đóng"}</button></div>
       </section>}
-      <div className="account-body" inert={pendingExit ? "" : undefined}>
+      {onPasswordChange && <div className="account-tabs" role="tablist" aria-label="Cài đặt tài khoản" inert={pendingExit ? "" : undefined}>
+        {[["profile", "Hồ sơ", profileDirty], ["security", "Bảo mật", passwordDirty]].map(([key, label, edited]) => <button key={key} id={"account-tab-" + key} type="button" role="tab" aria-label={label} aria-description={edited ? "Có thay đổi chưa lưu" : undefined} aria-selected={tab === key} aria-controls={"account-panel-" + key} tabIndex={tab === key ? 0 : -1} disabled={busy} onClick={() => selectTab(key)} onKeyDown={tabKeys}>{label}{edited && <span className="account-draft-dot" aria-label="Có thay đổi chưa lưu"> •</span>}</button>)}
+      </div>}
+      {error && <p role="alert" className="account-error account-global-error">{error}</p>}
+      <div id="account-panel-profile" role="tabpanel" aria-labelledby="account-tab-profile" className="account-body" hidden={tab !== "profile"} inert={pendingExit ? "" : undefined}>
         <section className="account-summary" aria-label="Tóm tắt tài khoản">
           <span className="account-avatar account-avatar-large" aria-hidden="true">{initial}</span>
           <h3>{identity}</h3><p>{user?.email || "Chưa có email"}</p>
@@ -91,15 +107,18 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange 
           <label htmlFor="account-display-name">Tên hiển thị <span>(không bắt buộc)</span></label>
           <input id="account-display-name" name="display_name" autoComplete="nickname" maxLength={120} value={name} disabled={busy} placeholder="Nhập tên bạn muốn sử dụng" onChange={event => { setName(event.target.value); setMessage(""); setError(""); }} aria-describedby="account-name-hint" />
           <small id="account-name-hint">{name.length}/120 ký tự. Để trống để dùng tên từ email.</small>
-          {dirty && !name.trim() && <small className="account-reset-hint">Khi lưu, tên hiển thị hiện tại sẽ được xóa. Email đăng nhập vẫn giữ nguyên.</small>}
+          {profileDirty && !name.trim() && <small className="account-reset-hint">Khi lưu, tên hiển thị hiện tại sẽ được xóa. Email đăng nhập vẫn giữ nguyên.</small>}
           <div className="account-email-heading"><label htmlFor="account-email">Email đăng nhập</label><span className={verified ? "account-verified" : "account-unverified"}>{verification}</span></div>
           <input id="account-email" type="email" value={user?.email || ""} readOnly />
           <small>Email hiện chưa thể thay đổi tại đây.</small>
-          <div className="account-feedback" aria-live="polite">{error ? <p role="alert" className="account-error">{error}</p> : message ? <p className="account-success">{message}</p> : null}</div>
+          <div className="account-feedback" aria-live="polite">{message ? <p className="account-success">{message}</p> : null}</div>
           <div className="account-form-actions"><button type="button" className="ghost-btn" disabled={busy || !profileDirty} onClick={() => { setName(user?.display_name || ""); setError(""); setMessage(""); }}>Hoàn tác</button><button type="submit" className="primary-btn" disabled={busy || !profileDirty}>{busy ? "Đang xử lý…" : "Lưu thay đổi"}</button></div>
         </form>
       </div>
-      {opened && onPasswordChange && <div className="account-password-section" inert={pendingExit ? "" : undefined}><PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty} /></div>}
+      {opened && onPasswordChange && <div id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" className="account-password-section" hidden={tab !== "security"} inert={pendingExit ? "" : undefined}>
+        {profileDirty && <div className="account-profile-reminder" role="status">Bạn có thay đổi hồ sơ chưa lưu. <button type="button" className="ghost-btn" onClick={() => selectTab("profile")}>Quay lại Hồ sơ</button></div>}
+        <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty} />
+      </div>}
       <footer className="account-footer" inert={pendingExit ? "" : undefined}><div><strong>Phiên đăng nhập</strong><p>Đăng xuất khỏi tài khoản trên trình duyệt này.</p></div><button type="button" className="ghost-btn account-signout" disabled={busy} onClick={() => logout()}>Đăng xuất</button></footer>
     </dialog>, document.body)}
   </>;

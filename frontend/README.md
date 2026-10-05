@@ -4,6 +4,8 @@
 
 Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất và cảnh báo trình duyệt khi tải lại trong lúc chưa lưu. Bản nháp chỉ ở bộ nhớ; không được phục hồi sau khi xác nhận rời trang. Escape hủy xác nhận và trả focus về trường tên.
 
+Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và Home/End chuyển tab; bản nháp được giữ khi chuyển tab, mật khẩu nháp bị xóa khi đóng. Cần lưu/hoàn tác tên trước khi đổi mật khẩu.
+
 | Tệp | Vai trò |
 | --- | --- |
 | [src/components/PasswordChangeForm.jsx](src/components/PasswordChangeForm.jsx) | Đổi mật khẩu trong dialog tài khoản, xác nhận/ẩn-hiện và thông báo lỗi; thành công kết thúc phiên và yêu cầu đăng nhập lại |
