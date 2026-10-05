@@ -1,6 +1,6 @@
 # Thiết kế hardening phiên xác thực
 
-> Trạng thái: contract mục tiêu; backend foundation đã triển khai qua migration 019, model/service, cookie helpers và `requireAuth` dual-mode. Login/register/refresh/logout và frontend vẫn dùng JWT Bearer/localStorage cho đến các lát cắt tiếp theo; xem [Backend README](../backend/README.md), [Frontend README](../frontend/README.md) và [PROJECT_STATUS](PROJECT_STATUS.md).
+> Trạng thái: contract mục tiêu; backend cookie mode opt-in đã triển khai qua migrations 019–020, rotation/replay revoke, logout và CSRF enforcement. Bearer vẫn là mặc định và frontend vẫn dùng JWT/localStorage cho đến lát cắt chuyển client; xem [Backend README](../backend/README.md), [Frontend README](../frontend/README.md) và [PROJECT_STATUS](PROJECT_STATUS.md).
 
 ## Mục tiêu và phạm vi
 
