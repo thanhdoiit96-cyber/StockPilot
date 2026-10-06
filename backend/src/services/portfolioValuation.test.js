@@ -80,13 +80,49 @@ test('marks coverage partial from a due pending event and withholds TWR without 
   expect(result.points[2].unresolved_event_ids).toEqual(['pending-dividend']);
 });
 
-test('keeps confirmed stock events explicit and unsupported until their accounting step ships', () => {
+test('keeps confirmed rights issues explicit and unsupported until their accounting step ships', () => {
   const result = buildDailyValuationSeries({
     cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
-    portfolioEvents: [{ id: 'split-1', event_type: 'STOCK_SPLIT', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 2, ratio_denominator: 1 } }],
+    portfolioEvents: [{ id: 'rights-1', stock_id: 's', event_type: 'RIGHTS_ISSUE', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 1, ratio_denominator: 5, exercised_quantity: 0 } }],
     sessionDates: ['2026-10-01', '2026-10-02', '2026-10-03']
   });
   expect(result.event_coverage).toEqual({ applied_events: 0, pending_events: 0, unsupported_events: 1 });
-  expect(result.limitations).toContain('unsupported_portfolio_events');
+  expect(result.limitations).toContain('unsupported_or_fractional_portfolio_events');
   expect(result.twr_available).toBe(false);
+});
+
+test('applies a whole-share stock split before same-day trades while preserving cost basis and valuation continuity', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'split', stock_id: 's', event_type: 'STOCK_SPLIT', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 2, ratio_denominator: 1 } }],
+    priceRows: [prices[0], { ...prices[1], close: 5000 }, { ...prices[2], close: 5000 }]
+  });
+  expect(result).toMatchObject({ status: 'complete', twr_available: true, cumulative_twr_pct: 0, event_coverage: { applied_events: 1, unsupported_events: 0 }, fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred' });
+  expect(result.points[1]).toMatchObject({ portfolio_value: 100000, total_cost_basis: 100000, daily_return_pct: 0, stock_event_adjustments: [{ event_id: 'split', quantity_before: 10, quantity_after: 20, cost_basis_before: 100000, cost_basis_after: 100000, average_cost_after: 5000 }] });
+});
+
+test('applies confirmed stock dividend received quantity without changing total cost basis', () => {
+  const adjustedPrice = 100000 / 12;
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'stock-div', stock_id: 's', event_type: 'STOCK_DIVIDEND', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 2, ratio_denominator: 10, received_quantity: 2 } }],
+    priceRows: [prices[0], { ...prices[1], close: adjustedPrice }, { ...prices[2], close: adjustedPrice }]
+  });
+  expect(result.event_coverage.applied_events).toBe(1);
+  expect(result.points[1].stock_event_adjustments[0]).toMatchObject({ quantity_before: 10, quantity_after: 12, cost_basis_after: 100000 });
+  expect(result.points[1].stock_event_adjustments[0].average_cost_after).toBeCloseTo(adjustedPrice, 6);
+  expect(result.points[1].portfolio_value).toBeCloseTo(100000, 6);
+});
+
+test('does not infer rounding or cash in lieu when a split creates fractional shares', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 3, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 30000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'fractional-split', stock_id: 's', event_type: 'STOCK_SPLIT', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 1, ratio_denominator: 2 } }],
+    priceRows: prices
+  });
+  expect(result).toMatchObject({ status: 'partial', twr_available: false, fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred', event_coverage: { applied_events: 0, unsupported_events: 1 } });
+  expect(result.points[1]).toMatchObject({ portfolio_value: null, unresolved_event_ids: ['fractional-split'], stock_event_adjustments: [] });
 });
