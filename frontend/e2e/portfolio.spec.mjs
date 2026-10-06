@@ -41,6 +41,22 @@ test('uses the same search field format for positions and Watchlist', async ({ p
   await page.getByRole('button', { name: 'Xóa tìm kiếm' }).last().click()
   await expect(watchlistSearch).toBeFocused()
 })
+
+test('portfolio exposes shareable detail links and compact Watchlist actions', async ({ page }) => {
+  await boot(page, [{ stock_id: 'a', symbol: 'FPT', name: 'Công nghệ FPT', quantity: 10 }])
+  const row = page.locator('.portfolio-table tbody tr').filter({ hasText: 'FPT' })
+  const link = row.getByRole('link', { name: 'FPT' })
+  await expect(link).toHaveAttribute('href', '/?stock=a')
+  const watch = row.getByRole('button', { name: 'Thêm FPT vào Watchlist' })
+  await expect(watch).toHaveText('☆')
+  await expect(watch).toHaveCSS('width', '34px')
+  await link.click()
+  await expect(page).toHaveURL(/\?stock=a$/)
+  await expect(page.locator('.detail-page')).toBeVisible()
+  await page.reload()
+  await expect(page.locator('.detail-page')).toBeVisible()
+  await expect(page.locator('.detail-hero h2')).toContainText('FPT')
+})
 async function boot(page,initialPositions=[],initialTransactions=[],initialClosedPositions=[],initialWatch=[]){
   let watch=initialWatch;let positions=initialPositions;let transactions=initialTransactions;let closedPositions=initialClosedPositions;let transactionBody=null;const imports=[];const mutations=[]
   await page.route('**/api/**',async route=>{
@@ -53,6 +69,7 @@ async function boot(page,initialPositions=[],initialTransactions=[],initialClose
     else if(path==='/api/recommendations/latest')payload={success:true,data:{recommendations:[]}}
     else if(path==='/api/recommendations/history')payload={success:true,data:[]}
     else if(path==='/api/recommendations/readiness')payload={success:true,data:{coverage:[]}}
+    else if(path.startsWith('/api/stocks/'))payload={success:true,data:{id:'a',code:'FPT',name:'FPT Corp',price:120000,price_history:[]}}
     else if(path==='/api/auth/me')payload={success:true,user:{id:'e2e',email:'e2e@example.com',role:'admin'}}
     else if(path==='/api/watchlist'&&req.method()==='GET')payload={success:true,data:watch}
     else if(path==='/api/watchlist'&&req.method()==='POST'){watch=[{stock_id:'a',Stock:{code:'FPT',name:'FPT Corp'}}];payload={success:true,data:watch}}
@@ -80,7 +97,7 @@ test('shows cost basis and realized versus unrealized P/L separately',async({pag
 test('filters open and fully closed positions without mixing their metrics',async({page})=>{await boot(page,[{stock_id:'a',symbol:'FPT',quantity:10,market_price:120000,avg_cost:100000,unrealized_pnl:200000,realized_pnl:0}],[],[{stock_id:'b',symbol:'VCB',name:'Vietcombank',status:'closed',quantity:0,realized_pnl:150000,closed_at:'2026-09-30T03:00:00Z'}]);const positions=page.locator('.portfolio-positions');await expect(positions.getByRole('button',{name:'Đang mở 1'})).toHaveAttribute('aria-pressed','true');await expect(positions.getByRole('table',{name:'Vị thế đang mở'})).toContainText('FPT');await positions.getByRole('button',{name:'Đã đóng 1'}).click();await expect(positions.getByRole('button',{name:'Đã đóng 1'})).toHaveAttribute('aria-pressed','true');const closed=positions.getByRole('table',{name:'Vị thế đã đóng'});await expect(closed).toContainText('VCB');await expect(closed).toContainText('Đã đóng');await expect(closed).toContainText('150.000');await expect(closed).not.toContainText('Giá hiện tại')})
 test('adds a symbol to watchlist through the tracking form',async({page})=>{await boot(page);const input=page.getByLabel('Thêm mã theo dõi');await input.fill('FPT');await page.locator('.watchlist-panel button.primary-btn').click();await expect(page.locator('.watchlist li')).toContainText('FPT')})
 
-test('searches watchlist and separates opening from confirmed removal',async({page})=>{await boot(page,[],[],[],[{stock_id:'a',Stock:{id:'a',code:'FPT',name:'Công nghệ FPT'}},{stock_id:'b',Stock:{id:'b',code:'HPG',name:'Hòa Phát'}}]);const panel=page.locator('.watchlist-panel');const search=panel.getByLabel('Tìm trong Watchlist');await search.fill('hoa phat');await expect(panel.locator('.watchlist li')).toHaveCount(1);await expect(panel.locator('.watchlist li')).toContainText('HPG');await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await expect(panel.getByRole('group',{name:'Xác nhận xóa HPG'})).toBeVisible();await panel.getByRole('button',{name:'Hủy'}).click();await expect(panel.locator('.watchlist li')).toHaveCount(1);await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await panel.getByRole('button',{name:'Xác nhận xóa'}).click();await expect(panel.getByText(/Không có mã phù hợp/)).toBeVisible();await panel.getByRole('button',{name:'Xóa tìm kiếm'}).click();await expect(search).toBeFocused();await expect(panel.locator('.watchlist li')).toHaveCount(1);await panel.getByRole('button',{name:'Mở chi tiết'}).click();await expect(page.getByRole('button',{name:'Chi tiết mã',exact:true})).toHaveClass(/active/);})
+test('searches watchlist and separates opening from confirmed removal',async({page})=>{await boot(page,[],[],[],[{stock_id:'a',Stock:{id:'a',code:'FPT',name:'Công nghệ FPT'}},{stock_id:'b',Stock:{id:'b',code:'HPG',name:'Hòa Phát'}}]);const panel=page.locator('.watchlist-panel');const search=panel.getByLabel('Tìm trong Watchlist');await search.fill('hoa phat');await expect(panel.locator('.watchlist li')).toHaveCount(1);await expect(panel.locator('.watchlist li')).toContainText('HPG');await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await expect(panel.getByRole('group',{name:'Xác nhận xóa HPG'})).toBeVisible();await panel.getByRole('button',{name:'Hủy'}).click();await expect(panel.locator('.watchlist li')).toHaveCount(1);await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await panel.getByRole('button',{name:'Xác nhận xóa'}).click();await expect(panel.getByText(/Không có mã phù hợp/)).toBeVisible();await panel.getByRole('button',{name:'Xóa tìm kiếm'}).click();await expect(search).toBeFocused();await expect(panel.locator('.watchlist li')).toHaveCount(1);const detailLink=panel.getByRole('link',{name:'Mở chi tiết'});await expect(detailLink).toHaveAttribute('href','/?stock=a');await detailLink.click();await expect(page.getByRole('button',{name:'Chi tiết mã',exact:true})).toHaveClass(/active/);})
 
 test('blocks duplicate watchlist mutations and keeps recoverable failures local', async ({ page }) => {
   await boot(page, [], [], [], [{ stock_id: 'b', Stock: { id: 'b', code: 'HPG', name: 'Hòa Phát' } }])

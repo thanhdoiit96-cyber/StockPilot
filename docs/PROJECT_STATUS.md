@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Watchlist tối giản và deep-link Chi tiết mã
+
+- Nút thêm nhanh Watchlist thu về icon 34×34: ☆ chưa theo dõi, … đang lưu, ★ đã theo dõi, ! lỗi/thử lại. Tooltip và accessible name vẫn nêu đầy đủ mã/trạng thái; tại Chi tiết dùng biến thể 42px cân với nút danh mục.
+- Mã trong Vị thế, Watchlist và Đề xuất là anchor có href `/?stock=<id>`; click thường điều hướng nội bộ, Ctrl/Cmd-click hoặc sao chép link vẫn hoạt động. URL đồng bộ khi mở/rời Chi tiết và reload deep-link khôi phục đúng mã.
+- Vị thế và từng kết quả Đề xuất có nút Watchlist ngay cạnh hành động chính, dùng chung trạng thái toàn ứng dụng. Bố cục Đề xuất chuyển một cột trước ngưỡng 1400px để action/evidence không chồng panel khi sidebar mở.
+- Kiểm chứng: frontend 49/49 test; 28/28 Playwright hồi quy Tổng quan/Bảng giá/Danh mục/Đề xuất đạt, sau thay đổi cuối targeted 2/2 link Danh mục/Watchlist đạt. Deep-link Danh mục đã được kiểm tra qua reload; recommendation href và mutation icon đạt với API mô phỏng. Build/bundle integrity đạt, bundle index-BdWgiQGG.js. Chưa chạy deep-link mới qua tài khoản development thật.
+- Điểm tiếp tục: bổ sung deep-link cho mã ở Market Breadth/Bảng giá bằng cùng component hoặc cải thiện bộ lọc Nhật ký giao dịch.
+
 ## 2026-10-06 — Đồng bộ định dạng ô tìm kiếm
 
 - Chuẩn hóa ô tìm kiếm Bảng giá, Vị thế và Watchlist: cao 42px, nền/border tối đồng nhất, bo góc 11px, icon kính lúp, placeholder dễ đọc và focus ring cùng màu thương hiệu.

@@ -14,6 +14,8 @@ Mutation Watchlist có trạng thái loading và khóa gửi lặp. Thông báo 
 
 Bảng giá, bảng cổ phiếu Tổng quan và Chi tiết mã có nút “Theo dõi” cạnh thao tác thêm vào danh mục. Nút dùng trạng thái Đang thêm/Đã theo dõi/Thử lại, đồng bộ Watchlist và nhóm mã ghim sau khi lưu; mã đã theo dõi không gửi POST lặp.
 
+Nút Watchlist nhanh hiển thị compact bằng ☆/…/★/! nhưng giữ tooltip và accessible name đầy đủ. Mã trong Vị thế, Watchlist và Đề xuất dùng link `/?stock=<id>`: click điều hướng nội bộ, link có thể sao chép/mở tab mới và reload khôi phục thẳng Chi tiết mã.
+
 Các ô tìm kiếm Bảng giá, Vị thế và Watchlist dùng chung format `app-search-input`: chiều cao, icon, màu nền/border, placeholder và focus ring nhất quán. Nút xóa tìm kiếm giữ focus tại input và bộ đếm kết quả dùng cùng kiểu pill.
 
 Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay trên thẻ; giữ phiên hiện tại và các phiên chưa chọn. API từ chối phiên không còn khả dụng thì hiển thị lỗi và cho làm mới.

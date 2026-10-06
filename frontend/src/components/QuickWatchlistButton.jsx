@@ -17,6 +17,7 @@ export default function QuickWatchlistButton({ symbol, watched = false, onAdd, c
     } finally { locked.current = false }
   }
   const saved = watched || state.status === 'success'
-  const label = saved ? 'Đã theo dõi' : state.status === 'loading' ? 'Đang thêm…' : state.status === 'error' ? 'Thử lại' : 'Theo dõi'
-  return <button type="button" className={`ghost-btn small-btn quick-watchlist-btn${saved ? ' is-watched' : ''}${state.status === 'error' ? ' has-error' : ''}${className ? ` ${className}` : ''}`} disabled={!code || saved || state.status === 'loading'} aria-label={saved ? `${code} đã có trong Watchlist` : state.status === 'error' ? `Thử thêm lại ${code} vào Watchlist` : `Thêm ${code} vào Watchlist`} aria-live="polite" title={state.message || `Thêm ${code} vào Watchlist`} onClick={add}><span aria-hidden="true">{saved ? '✓' : '☆'}</span><span>{label}</span></button>
+  const icon = saved ? '★' : state.status === 'loading' ? '…' : state.status === 'error' ? '!' : '☆'
+  const label = saved ? `${code} đã có trong Watchlist` : state.status === 'loading' ? `Đang thêm ${code} vào Watchlist` : state.status === 'error' ? `Thử thêm lại ${code} vào Watchlist` : `Thêm ${code} vào Watchlist`
+  return <button type="button" className={`ghost-btn small-btn quick-watchlist-btn${saved ? ' is-watched' : ''}${state.status === 'error' ? ' has-error' : ''}${className ? ` ${className}` : ''}`} disabled={!code || saved || state.status === 'loading'} aria-label={label} aria-live="polite" title={state.message || label} onClick={add}><span aria-hidden="true">{icon}</span></button>
 }
