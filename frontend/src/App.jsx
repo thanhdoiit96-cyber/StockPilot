@@ -996,7 +996,7 @@ function lv() {
         });
         Bn(S.data || []), el("");
       } catch (S) {
-        on(S.message);
+        throw S;
       }
     },
     Ao = d => {
@@ -1136,7 +1136,7 @@ function lv() {
           return ((A = $.Stock) == null ? void 0 : A.code) !== d;
         }));
       } catch (S) {
-        on(S.message);
+        throw S;
       }
     },
     mi = ((pe == null ? void 0 : pe.positions) || []).map(d => {

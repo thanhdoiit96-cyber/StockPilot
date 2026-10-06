@@ -66,6 +66,33 @@ test('adds a symbol to watchlist through the tracking form',async({page})=>{awai
 
 test('searches watchlist and separates opening from confirmed removal',async({page})=>{await boot(page,[],[],[],[{stock_id:'a',Stock:{id:'a',code:'FPT',name:'Công nghệ FPT'}},{stock_id:'b',Stock:{id:'b',code:'HPG',name:'Hòa Phát'}}]);const panel=page.locator('.watchlist-panel');const search=panel.getByLabel('Tìm trong Watchlist');await search.fill('hoa phat');await expect(panel.locator('.watchlist li')).toHaveCount(1);await expect(panel.locator('.watchlist li')).toContainText('HPG');await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await expect(panel.getByRole('group',{name:'Xác nhận xóa HPG'})).toBeVisible();await panel.getByRole('button',{name:'Hủy'}).click();await expect(panel.locator('.watchlist li')).toHaveCount(1);await panel.getByRole('button',{name:'Xóa HPG khỏi Watchlist'}).click();await panel.getByRole('button',{name:'Xác nhận xóa'}).click();await expect(panel.getByText(/Không có mã phù hợp/)).toBeVisible();await panel.getByRole('button',{name:'Xóa tìm kiếm'}).click();await expect(search).toBeFocused();await expect(panel.locator('.watchlist li')).toHaveCount(1);await panel.getByRole('button',{name:'Mở chi tiết'}).click();await expect(page.getByRole('button',{name:'Chi tiết mã',exact:true})).toHaveClass(/active/);})
 
+test('blocks duplicate watchlist mutations and keeps recoverable failures local', async ({ page }) => {
+  await boot(page, [], [], [], [{ stock_id: 'b', Stock: { id: 'b', code: 'HPG', name: 'Hòa Phát' } }])
+  const panel = page.locator('.watchlist-panel')
+  let postCount = 0
+  await page.route('**/api/watchlist', async route => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    postCount += 1
+    await new Promise(resolve => setTimeout(resolve, 150))
+    return route.fulfill({ status: 503, json: { success: false, message: 'Watchlist đang tạm gián đoạn.' } })
+  })
+  const addInput = panel.getByLabel('Thêm mã theo dõi')
+  await addInput.fill('FPT')
+  const addButton = panel.getByRole('button', { name: 'Thêm mã' })
+  await addButton.evaluate(button => { button.click(); button.click() })
+  await expect(panel.getByRole('button', { name: 'Đang thêm FPT…' })).toBeDisabled()
+  await expect(panel.getByRole('alert')).toContainText('Watchlist đang tạm gián đoạn.')
+  expect(postCount).toBe(1)
+  await expect(addInput).toHaveValue('FPT')
+
+  await page.route('**/api/watchlist/HPG', route => route.fulfill({ status: 503, json: { success: false, message: 'Chưa thể xóa HPG.' } }))
+  await panel.getByRole('button', { name: 'Xóa HPG khỏi Watchlist' }).click()
+  await panel.getByRole('button', { name: 'Xác nhận xóa' }).click()
+  await expect(panel.getByRole('alert')).toContainText('Chưa thể xóa HPG.')
+  await expect(panel.getByRole('group', { name: 'Xác nhận xóa HPG' })).toBeVisible()
+  await expect(panel.locator('.watchlist li')).toContainText('HPG')
+})
+
 test('renders the transaction ledger and exports all rows to CSV',async({page})=>{await boot(page,[],[{id:'tx-1',stock_id:'a',symbol:'FPT',name:'FPT Corp',side:'BUY',quantity:10,price:120000,fees:1500,traded_at:'2026-10-01T03:00:00Z',source:'manual'}]);const panel=page.locator('.portfolio-ledger-panel');await expect(panel).toBeVisible();await expect(panel.locator('tbody tr')).toHaveCount(1);await expect(panel.locator('tbody tr')).toContainText('FPT');await expect(panel.locator('tbody tr')).toContainText('120.000');const downloadPromise=page.waitForEvent('download');await panel.getByRole('button',{name:'Xuất CSV'}).click();const download=await downloadPromise;expect(download.suggestedFilename()).toMatch(/^stockpilot-ledger-\d{4}-\d{2}-\d{2}\.csv$/)})
 
 test('previews then atomically imports a valid ledger CSV',async({page})=>{const state=await boot(page);const panel=page.locator('.portfolio-ledger-panel');await panel.locator('input[type=file]').setInputFiles({name:'ledger.csv',mimeType:'text/csv',buffer:Buffer.from('Mã,Loại,Số lượng,Giá,Phí,Thời điểm giao dịch\nFPT,Mua,10,120000,1000,2026-10-01T03:00:00.000Z')});await expect(panel.locator('.portfolio-import-status')).toContainText('Sẵn sàng nhập');await expect.poll(()=>state.getImports().length).toBe(1);expect(state.getImports()[0].dry_run).toBe(true);await panel.getByRole('button',{name:'Nhập 1 giao dịch'}).click();await expect(panel.locator('.portfolio-import-status')).toContainText('Đã nhập 1 giao dịch');await expect(panel.locator('tbody tr')).toContainText('FPT');await expect.poll(()=>state.getImports().length).toBe(2);expect(state.getImports()[1].dry_run).toBe(false)})
