@@ -666,6 +666,7 @@ function lv() {
     [dt, on] = D.useState(""),
     [re, Xe] = D.useState(() => {
       try {
+        if (new URLSearchParams(window.location.search).has("stock")) return "detail";
         return sessionStorage.getItem("stockpilot-view") || (sessionStorage.getItem("stockpilot-market-view") === "board" ? "market-board" : "overview");
       } catch {
         return "overview";
@@ -680,7 +681,7 @@ function lv() {
     }),
     [Cn, ht] = D.useState(() => {
       try {
-        return sessionStorage.getItem("stockpilot-selected-id") || null;
+        return new URLSearchParams(window.location.search).get("stock") || sessionStorage.getItem("stockpilot-selected-id") || null;
       } catch {
         return null;
       }
@@ -839,6 +840,11 @@ function lv() {
   D.useEffect(() => {
     try {
       sessionStorage.setItem("stockpilot-view", re), Cn == null ? sessionStorage.removeItem("stockpilot-selected-id") : sessionStorage.setItem("stockpilot-selected-id", String(Cn));
+      const url = new URL(window.location.href);
+      if (re === "detail" && Cn) url.searchParams.set("stock", String(Cn));
+      else url.searchParams.delete("stock");
+      url.searchParams.delete("symbol");
+      window.history.replaceState(null, "", url);
     } catch {}
   }, [re, Cn]), D.useEffect(() => {
     try {
@@ -1313,6 +1319,12 @@ function lv() {
         window.__stockpilotRequestAnalysis?.();
       }
       Xe("detail");
+    },
+    openLinkedStock = (stockId, symbol) => {
+      const fallback = il.find(stock => String(stock.symbol || stock.code).toUpperCase() === String(symbol || "").toUpperCase());
+      const id = stockId || (fallback == null ? void 0 : fallback.id);
+      if (!id) return;
+      ht(id), Xe("detail");
     };
   return O.jsxs("div", {
     className: `dashboard-shell ${yn ? "sidebar-collapsed" : ""}`,
@@ -1834,7 +1846,10 @@ function lv() {
         initialData: nf,
         history: uu.data || [],
         token: ue.token,
-        onAddToPortfolio: Ao
+        onAddToPortfolio: Ao,
+        onOpenDetail: openLinkedStock,
+        watchlistSymbols: [...yt],
+        onAddToWatchlist: addToWatchlist
       }), re === "portfolio" && O.jsxs("section", {
         className: "personal-page",
         children: [Ir && O.jsx("p", {
@@ -1930,9 +1945,9 @@ function lv() {
               closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
               loading: Ir,
               error: bt,
-              onOpenDetail: d => {
-                ht(d), Xe("detail");
-              }
+              onOpenDetail: openLinkedStock,
+              watchlistSymbols: [...yt],
+              onAddToWatchlist: addToWatchlist
             }), O.jsx(Jm, {
               entries: lf
             })]

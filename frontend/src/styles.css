@@ -295,11 +295,18 @@ button, input { font: inherit; }
 }
 
 .stock-row-actions { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
-.quick-watchlist-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 92px; }
+.quick-watchlist-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; min-width: 34px; height: 34px; padding: 0; border-radius: 9px; }
 .quick-watchlist-btn > span:first-child { color: #facc15; font-size: 15px; line-height: 1; }
 .quick-watchlist-btn.is-watched { color: #a7f3d0; border-color: rgba(52, 211, 153, .32); background: rgba(16, 185, 129, .09); opacity: 1; }
 .quick-watchlist-btn.has-error { color: #fecaca; border-color: rgba(248, 113, 113, .45); }
-.detail-watchlist-btn { min-height: 42px; padding-inline: 14px; }
+.detail-watchlist-btn { width: 42px; min-width: 42px; height: 42px; }
+.portfolio-symbol-actions, .recommendation-row-actions { display: inline-flex; align-items: center; gap: 7px; }
+.portfolio-detail-link, .recommendation-symbol-link { color: var(--primary); text-decoration: none; text-underline-offset: 3px; }
+.portfolio-detail-link:hover, .portfolio-detail-link:focus-visible, .recommendation-symbol-link:hover, .recommendation-symbol-link:focus-visible { color: #99f6e4; text-decoration: underline; outline: none; }
+.watchlist-actions a { text-decoration: none; }
+.watchlist-actions a.is-disabled { pointer-events: none; opacity: .58; }
+.recommendation-row-actions { width: 100%; min-width: 0; margin-left: 0; justify-content: flex-end; flex-wrap: wrap; }
+.recommendation-row-actions .recommendation-add-btn { margin-left: 0; }
 
 /* Shared search treatment across Market Board, positions and Watchlist. */
 .app-search-input {
@@ -1571,6 +1578,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .recommendation-result-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
 .recommendation-data-chips span { padding: 6px 9px; border-radius: 8px; background: rgba(255,255,255,.035); }
 @media (max-width: 900px) { .personalized-results { grid-template-columns: 1fr; } }
+@media (max-width: 1400px) { .recommendation-grid.personalized-results { grid-template-columns: minmax(0, 1fr); } }
+.recommendation-grid.personalized-results > * { min-width: 0; }
 @media (max-width: 650px) { .criteria-grid { grid-template-columns: 1fr; } .criteria-actions, .recommendation-section-heading { align-items: stretch; flex-direction: column; } .criteria-actions > div { flex-direction: column-reverse; } .criteria-actions button { width: 100%; } .score-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); } .learning-stat-grid { grid-template-columns: 1fr; } .personalized-list > li { padding: 14px 11px; } .recommendation-add-btn { width: 100%; margin: 6px 0 0; } .recommendation-result-footer { align-items: stretch; } .recommendation-data-chips { gap: 6px; } }
 
 /* Keep restored controls visually consistent with the dark StockPilot surface. */

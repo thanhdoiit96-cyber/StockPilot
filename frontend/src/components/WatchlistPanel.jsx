@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { matchesSearch } from '../services/positionSearch.mjs'
+import StockDetailLink from './StockDetailLink.jsx'
 
 export default function WatchlistPanel({ entries = [], addValue, onAddValueChange, onAdd, onOpenDetail, onRemove }) {
   const [query, setQuery] = useState('')
@@ -52,7 +53,7 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
         const removing = confirmCode === stock.code
         return <li key={entry.stock_id}>
           <div className="watchlist-company"><strong>{stock.code}</strong>{stock.name && <small>{stock.name}</small>}</div>
-          {removing ? <div className="watchlist-confirm" role="group" aria-label={`Xác nhận xóa ${stock.code}`} aria-busy={mutation.type === 'removing' && mutation.code === stock.code}><span>Xóa khỏi Watchlist?</span><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => setConfirmCode('')}>Hủy</button><button type="button" className="danger-btn small-btn" disabled={busy} onClick={() => remove(stock.code)}>{mutation.type === 'removing' && mutation.code === stock.code ? 'Đang xóa…' : 'Xác nhận xóa'}</button></div> : <div className="watchlist-actions"><button type="button" className="ghost-btn small-btn" disabled={busy || !stock.id} onClick={() => onOpenDetail(stock.id)}>Mở chi tiết</button><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => { setConfirmCode(stock.code); setMutation({ type: '', code: '', message: '', error: false }) }} aria-label={`Xóa ${stock.code} khỏi Watchlist`}>Xóa</button></div>}
+          {removing ? <div className="watchlist-confirm" role="group" aria-label={`Xác nhận xóa ${stock.code}`} aria-busy={mutation.type === 'removing' && mutation.code === stock.code}><span>Xóa khỏi Watchlist?</span><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => setConfirmCode('')}>Hủy</button><button type="button" className="danger-btn small-btn" disabled={busy} onClick={() => remove(stock.code)}>{mutation.type === 'removing' && mutation.code === stock.code ? 'Đang xóa…' : 'Xác nhận xóa'}</button></div> : <div className="watchlist-actions"><StockDetailLink className={`ghost-btn small-btn${busy || !stock.id ? ' is-disabled' : ''}`} stockId={stock.id} symbol={stock.code} onOpenDetail={busy ? undefined : onOpenDetail}>Mở chi tiết</StockDetailLink><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => { setConfirmCode(stock.code); setMutation({ type: '', code: '', message: '', error: false }) }} aria-label={`Xóa ${stock.code} khỏi Watchlist`}>Xóa</button></div>}
         </li>
       })}
       {!entries.length && <li className="muted-text watchlist-empty">Chưa có mã theo dõi. Thêm mã ở phía trên để bắt đầu.</li>}
