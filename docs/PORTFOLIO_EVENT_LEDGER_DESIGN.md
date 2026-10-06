@@ -101,7 +101,7 @@ Mọi mutation khóa portfolio timeline trong transaction. Client manual không 
 ## 6. Thứ tự tích hợp valuation
 
 1. Migration/model/validator/API và ownership tests, chưa ảnh hưởng valuation — hoàn thành 2026-10-06.
-2. Reconciliation dựng entitlement từ transaction ledger tại `record_date`; test timezone và giao dịch cùng ngày.
+2. Reconciliation dựng entitlement từ transaction ledger tại `record_date`; test timezone và giao dịch cùng ngày — hoàn thành 2026-10-06 theo `trade_date_end_of_day_proxy_v1`. Giao dịch cùng ngày được tính; response luôn ghi `unverified_t_plus_settlement` vì ledger chưa có ngày settlement/VSD.
 3. Áp dụng cash dividend tại payment date; TWR coi đây là investment return, không phải external flow.
 4. Áp dụng stock dividend/split vào quantity/cost basis tại effective date.
 5. Quyền mua chỉ áp dụng phần người dùng xác nhận thực hiện.
