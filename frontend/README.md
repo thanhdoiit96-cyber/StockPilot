@@ -8,6 +8,8 @@ Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và H
 
 Bảng Vị thế danh mục hỗ trợ tìm theo mã/tên doanh nghiệp không phân biệt dấu tiếng Việt, kết hợp nhóm Đang mở/Đã đóng và giữ từ khóa khi chuyển nhóm. Tìm kiếm chỉ lọc bảng, không thay đổi tổng giá trị hoặc phân bổ danh mục; từ khóa không lưu vào storage.
 
+Khối Dòng tiền trên trang Danh mục quản lý nạp/rút tiền tách biệt với giao dịch và P/L. Form khóa gửi lặp, giữ dữ liệu khi API lỗi; sửa dùng dialog có Escape/backdrop, xóa yêu cầu xác nhận. Sau mutation, toàn bộ portfolio contract được tải lại để timeline, tổng nạp/rút/ròng và Hiệu suất dùng cùng dữ liệu. Bảng cuộn cục bộ và form chuyển một cột trên mobile.
+
 Watchlist có tìm kiếm mã/tên không phân biệt dấu, bộ đếm kết quả và trạng thái rỗng. Mở Chi tiết và Xóa là hai nút riêng; xóa cần xác nhận inline để tránh thao tác nhầm. Từ khóa Watchlist chỉ tồn tại trong bộ nhớ của trang.
 
 Mutation Watchlist có trạng thái loading và khóa gửi lặp. Thông báo thành công/lỗi nằm trong panel; lỗi thêm giữ mã đang nhập, lỗi xóa giữ xác nhận và dòng hiện tại để thử lại. `scripts/verify-live-watchlist.mjs` kiểm tra thêm/xóa và persistence qua reload với cookie session development thật; script tạo và giữ một account cô lập, không ghi credential.
@@ -40,6 +42,7 @@ Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận d
 | [src/components/RecommendationWorkbench.jsx](src/components/RecommendationWorkbench.jsx) | Runtime duy nhất của trang Đề xuất: trọng số, xếp hạng, snapshot server/local fallback, so sánh snapshot, evidence và action thêm vào Danh mục |
 | [src/components/RecommendationEvidence.jsx](src/components/RecommendationEvidence.jsx) | Drill-down provenance từng mã Đề xuất: model, nguồn/thời điểm giá, số phiên, chỉ báo, phép chấm điểm và citation HTTP(S) đã xác minh; nguồn ngoài hệ thống không được cộng điểm |
 | [src/components/PortfolioAllocation.jsx](src/components/PortfolioAllocation.jsx) | Donut Danh mục có tooltip chuột/bàn phím và audit P/L theo quote |
+| [src/components/PortfolioCashFlows.jsx](src/components/PortfolioCashFlows.jsx) | Tổng hợp và quản lý nạp/rút tiền, có add/edit/delete, xác nhận, trạng thái lỗi và responsive |
 | [src/components/RecommendationSnapshotComparison.jsx](src/components/RecommendationSnapshotComparison.jsx) | So sánh hai snapshot Đề xuất đã lưu theo tiêu chí, membership, hạng và điểm |
 | [src/components/AdvisorWorkspace.jsx](src/components/AdvisorWorkspace.jsx) | Advisor rule-based với phạm vi mã/Danh mục/Thị trường và citation theo từng câu trả lời |
 | [src/components/AuthPasswordField.jsx](src/components/AuthPasswordField.jsx) | Trường mật khẩu dùng chung có hiện/ẩn, Caps Lock và hướng dẫn đăng ký accessible |

@@ -7,6 +7,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
+import PortfolioCashFlows from "./components/PortfolioCashFlows.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
@@ -1102,6 +1103,21 @@ function lv() {
       });
       mt(refreshed.data);
     },
+    createPortfolioCashFlow = async values => {
+      await je("/api/portfolio/cash-flows", { method: "POST", token: ue.token, body: values });
+      const refreshed = await je("/api/portfolio", { token: ue.token });
+      mt(refreshed.data);
+    },
+    updatePortfolioCashFlow = async (cashFlowId, values) => {
+      await je(`/api/portfolio/cash-flows/${encodeURIComponent(cashFlowId)}`, { method: "PUT", token: ue.token, body: values });
+      const refreshed = await je("/api/portfolio", { token: ue.token });
+      mt(refreshed.data);
+    },
+    deletePortfolioCashFlow = async cashFlowId => {
+      await je(`/api/portfolio/cash-flows/${encodeURIComponent(cashFlowId)}`, { method: "DELETE", token: ue.token, body: { confirmed: true } });
+      const refreshed = await je("/api/portfolio", { token: ue.token });
+      mt(refreshed.data);
+    },
     Jh = d => Ze(() => {
       En(1), ti(S => S.key === d ? {
         key: d,
@@ -1875,6 +1891,11 @@ function lv() {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
             loading: Ir
+          }), O.jsx(PortfolioCashFlows, {
+            entries: (pe == null ? void 0 : pe.cash_flows) || [],
+            onCreate: createPortfolioCashFlow,
+            onUpdate: updatePortfolioCashFlow,
+            onDelete: deletePortfolioCashFlow
           }), O.jsxs("article", {
             className: "panel portfolio-panel",
             children: [O.jsx("h3", {

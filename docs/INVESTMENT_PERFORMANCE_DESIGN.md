@@ -36,4 +36,6 @@ Nhà đầu tư cần biết danh mục đang tạo ra bao nhiêu lãi/lỗ từ
 
 ### Điều kiện trước TWR/MWR
 
-Tiếp theo cần UI quản lý nạp/rút có xác nhận và phản hồi lỗi, rồi tạo daily valuation series theo Asia/Ho_Chi_Minh với quy tắc cash flow đầu/cuối ngày và continuity. Chỉ sau đó mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.
+UI quản lý nạp/rút đã triển khai ngày 2026-10-06: tổng nạp/rút/ròng, thêm/sửa/xóa, xác nhận xóa, khóa mutation lặp, lỗi phục hồi tại chỗ và responsive 390px. Sau mỗi mutation, frontend tải lại toàn bộ portfolio contract thay vì tự vá hiệu suất cục bộ.
+
+Tiếp theo cần tạo daily valuation series theo Asia/Ho_Chi_Minh với quy tắc cash flow đầu/cuối ngày và continuity. Chỉ sau đó mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.
