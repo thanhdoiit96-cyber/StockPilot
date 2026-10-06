@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Daily valuation/TWR và UI lịch sử danh mục
+
+- Backend bổ sung `GET /api/portfolio/performance/history?sessions=2..260` theo ownership. Contract `daily_close_twr_v1` dựng lại tiền mặt/vị thế theo phiên Việt Nam từ ledger, dòng tiền ngoài và EOD đã lưu; dòng tiền dùng quy ước đầu phiên. Mọi mã đang nắm giữ phải có giá đúng phiên và số dư tiền không âm mới được coi là `complete`; không nội suy giá và không gọi provider.
+- TWR chỉ được công bố khi toàn bộ khoảng liên tục và có ít nhất một daily return hợp lệ. Phiên thiếu giá, ledger cũ thiếu vốn ban đầu, cổ tức hoặc corporate action chưa theo dõi đều được trình bày thành giới hạn rõ ràng thay vì tạo tỷ suất giả.
+- UI Danh mục tải lười lịch sử khi người dùng mở trang, có lựa chọn 20/30/60/120 phiên, summary giá trị/TWR/coverage, SVG nhẹ và accessible, loading/empty/error/retry/partial. Đường biểu đồ ngắt tại phiên thiếu; mobile 390px không tràn. Sau mutation portfolio, object portfolio đổi và lịch sử tự tải lại.
+- Kiểm chứng: backend 42 suite / 200 test đạt; live smoke qua Preview 4173 trên PostgreSQL development thật đạt 5 phiên hoàn chỉnh, TWR tiền mặt bằng 0, ownership isolation và cleanup. Smoke dùng cookie/CSRF trong bộ nhớ, giữ hai account test cô lập nhưng không lưu credential. Frontend 49/49 unit/service, Danh mục Playwright 23/23 và build/bundle integrity đạt; bundle mới `index-Cg3DZoGC.js` đang nằm trong `dist` cho Preview 4173. Lần chạy browser smoke ban đầu gặp `spawn EPERM`, nên bằng chứng database dùng HTTP cookie-session thuần Node đúng chỉ dẫn tạm bỏ qua lỗi spawn.
+- Giới hạn/điểm tiếp tục: chưa tính cổ tức, corporate action hoặc MWR/XIRR; chưa có benchmark hợp lệ. Bước tiếp theo của P1 là thiết kế event ledger có provenance cho cổ tức/corporate action, rồi mới quyết định MWR và so sánh benchmark. Không mở rộng AI Advisor.
+
 ## 2026-10-06 — UI quản lý nạp/rút tiền
 
 - Trang Danh mục đã có panel Dòng tiền đầy đủ: tổng đã nạp/đã rút/dòng tiền ròng, form thêm, timeline, sửa trong dialog và xóa có xác nhận. Dòng tiền được trình bày riêng khỏi giao dịch mua/bán và lãi/lỗ.

@@ -139,3 +139,6 @@ Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 
 [market-board-productivity.spec.mjs](e2e/market-board-productivity.spec.mjs) kiểm tra sticky mã, persistence cấu hình cột, nội dung CSV và budget tương tác fixture 300/500 mã. Số đo này chỉ là regression baseline cục bộ với mock API, không phải SLA production.
+# Daily portfolio performance
+
+The Portfolio page lazily requests `/api/portfolio/performance/history` only while the authenticated portfolio view is active. Users can inspect 20, 30, 60 or 120 stored sessions. The lightweight SVG chart does not connect across partial valuation gaps, and TWR remains explicitly unavailable unless the backend marks the full range complete. Portfolio mutations refresh the portfolio object and therefore the history without polling.

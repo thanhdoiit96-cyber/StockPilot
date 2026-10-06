@@ -2,7 +2,7 @@ jest.mock('../models', () => ({
   Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
   PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
-  sequelize: { transaction: jest.fn() }
+  sequelize: { transaction: jest.fn(), query: jest.fn() }
 }));
 jest.mock('../middleware/requireAuth', () => (req, res, next) => { req.user = { sub: 'user-a' }; next(); });
 jest.mock('../services/liveQuoteService', () => ({ liveQuoteService: { load: jest.fn() } }));
@@ -21,6 +21,7 @@ beforeEach(() => {
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
   models.sequelize.transaction.mockImplementation(callback => callback({ id: 'db-transaction' }));
+  models.sequelize.query.mockResolvedValue([{ session_date: '2026-09-24' }]);
 });
 const app = express(); app.use(express.json()); app.use('/portfolio', router);
 
@@ -131,6 +132,31 @@ test('calculates day change from the previous distinct EOD session', async () =>
     day_change_pct: 20,
     price_source: 'intraday'
   });
+});
+
+test('returns bounded daily valuation history from stored market sessions without provider calls', async () => {
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([{ id: 'tx', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-23T02:00:00Z', created_at: '2026-09-23T02:00:01Z' }]);
+  models.PortfolioCashFlow.findAll.mockResolvedValueOnce([{ id: 'cf', type: 'DEPOSIT', amount: 500000, occurred_at: '2026-09-23T01:00:00Z' }]);
+  models.sequelize.query.mockResolvedValueOnce([{ session_date: '2026-09-24' }, { session_date: '2026-09-23' }]);
+  models.StockPrice.findAll.mockResolvedValueOnce([
+    { id: 'p1', stock_id: 's', interval: '1d', observed_at: '2026-09-23T09:00:00Z', close: 50000 },
+    { id: 'p2', stock_id: 's', interval: '1d', observed_at: '2026-09-24T09:00:00Z', close: 55000 }
+  ]);
+  const response = await request(app).get('/portfolio/performance/history?sessions=999');
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({ methodology: 'daily_close_twr_v1', requested_sessions: 260, twr_available: true, cumulative_twr_pct: 10, coverage: { sessions: 2, complete_sessions: 2 } });
+  expect(models.sequelize.query).toHaveBeenCalledWith(expect.stringContaining("AT TIME ZONE 'Asia/Ho_Chi_Minh'"), expect.objectContaining({ replacements: { sessions: 260 } }));
+  expect(liveQuoteService.load).not.toHaveBeenCalled();
+});
+
+test('withholds daily TWR when a stored market session lacks a held-symbol price', async () => {
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([{ stock_id: 's', side: 'BUY', quantity: 1, price: 50000, fees: 0, traded_at: '2026-09-23T02:00:00Z' }]);
+  models.PortfolioCashFlow.findAll.mockResolvedValueOnce([{ type: 'DEPOSIT', amount: 50000, occurred_at: '2026-09-23T01:00:00Z' }]);
+  models.sequelize.query.mockResolvedValueOnce([{ session_date: '2026-09-25' }, { session_date: '2026-09-24' }, { session_date: '2026-09-23' }]);
+  models.StockPrice.findAll.mockResolvedValueOnce([{ stock_id: 's', interval: '1d', observed_at: '2026-09-23T09:00:00Z', close: 50000 }, { stock_id: 's', interval: '1d', observed_at: '2026-09-25T09:00:00Z', close: 60000 }]);
+  const response = await request(app).get('/portfolio/performance/history?sessions=3');
+  expect(response.body.data).toMatchObject({ status: 'partial', twr_available: false, cumulative_twr_pct: null, coverage: { sessions: 3, complete_sessions: 2, incomplete_sessions: 1 } });
+  expect(response.body.data.points[1]).toMatchObject({ date: '2026-09-24', status: 'partial', portfolio_value: null });
 });
 
 test('database errors produce an explicit HTTP error rather than an empty portfolio', async () => {

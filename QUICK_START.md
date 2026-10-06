@@ -295,4 +295,14 @@ Khi backend đang chạy, tại thư mục backend:
 node scripts/verify-intraday-pages.cjs
 ```
 
-Script chỉ đọc API, kiểm tra nhóm FPT/SSI/VCB và quote Chi tiết FPT, lưu thời gian/HTTP/payload vào `evidence/intraday-pages-*.json`. Đọc `returned`, timestamp và cờ `cached`/`stale` để phân biệt quote mới, cache và response thiếu mã. Script không truy cập danh mục cá nhân hoặc ghi giao dịch. UI preview hiện tại ở http://127.0.0.1:4180; reload một lần để nạp bundle mới sau build.
+Script chỉ đọc API, kiểm tra nhóm FPT/SSI/VCB và quote Chi tiết FPT, lưu thời gian/HTTP/payload vào `evidence/intraday-pages-*.json`. Đọc `returned`, timestamp và cờ `cached`/`stale` để phân biệt quote mới, cache và response thiếu mã. Script không truy cập danh mục cá nhân hoặc ghi giao dịch. UI preview hiện tại ở http://127.0.0.1:4173; reload một lần để nạp bundle mới sau build.
+
+### Kiểm tra daily valuation trên PostgreSQL development
+
+Khi backend và Preview 4173 đang chạy, tại thư mục frontend:
+
+```powershell
+npm.cmd run verify:live:portfolio-performance
+```
+
+Script tạo hai tài khoản cookie-session cô lập, ghi rồi dọn một dòng tiền thử, kiểm tra 5 phiên định giá, TWR cash-only và ownership. Hai tài khoản test được giữ lại; credential chỉ tồn tại trong bộ nhớ process và không được ghi ra đĩa.
