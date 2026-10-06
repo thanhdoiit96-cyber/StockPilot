@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Reconciliation entitlement cho portfolio event
+
+- Service mới dựng số lượng nắm giữ đúng mã đến hết `record_date` theo ngày giao dịch `Asia/Ho_Chi_Minh`; giao dịch cùng ngày được tính, giao dịch sang ngày Việt Nam kế tiếp bị loại. Kết quả trả recorded/ledger quantity, difference, số giao dịch dùng, theoretical benefit và reasons có cấu trúc.
+- Contract cố ý ghi `trade_date_end_of_day_proxy_v1` và `unverified_t_plus_settlement`: dữ liệu hiện có không có settlement/VSD nên đây chưa phải bằng chứng pháp lý về quyền hưởng. Cash dividend bị chặn khi net+tax vượt gross entitlement; stock dividend/right bị chặn khi số nhận/thực hiện vượt entitlement lý thuyết.
+- Event creation trả reconciliation ngay; endpoint ownership `GET /api/portfolio/events/:id/reconciliation` cho phép kiểm tra lại. Confirm chỉ thành công khi status `matched`; mismatch trả HTTP 409 và không sửa event. Event chưa được áp dụng vào daily valuation.
+- Kiểm chứng: backend 44 suite / 214 test đạt; controller event 24/24. Isolated PostgreSQL đạt entitlement 80 từ BUY/SELL thật, confirm và ownership isolation rồi dọn schema. Live cookie/CSRF smoke trên PostgreSQL development đạt cả matched flow và mismatch gate, correction/cancel/ownership; backend đã restart.
+- Điểm tiếp tục: áp dụng `CASH_DIVIDEND` confirmed vào cash tại `payment_date` như investment return, không đưa vào external flow; test TWR/partial/pending trước khi triển khai stock dividend hoặc split.
+
 ## 2026-10-06 — Nền event ledger trên PostgreSQL
 
 - Migration 025 và model `PortfolioEvent` đã triển khai schema core + JSONB payload, bốn loại event, lifecycle/provenance constraints, entitlement không âm, correction self-reference, ba index truy vấn và unique provider reference có điều kiện. Migration đã áp dụng trên PostgreSQL development.

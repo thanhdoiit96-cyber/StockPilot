@@ -175,13 +175,25 @@ test('creates and lists a pending manual portfolio event without trusting client
 
 test('confirms only an owned pending event and never rewrites its financial payload', async () => {
   const update = jest.fn(function (values) { Object.assign(this, values); return Promise.resolve(this); });
-  const event = { id: 'event-1', status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', entitlement_quantity: 10, payload: { ratio_numerator: 2, ratio_denominator: 1 }, update };
+  const event = { id: 'event-1', stock_id: 's', event_type: 'STOCK_SPLIT', record_date: '2026-09-24', status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', entitlement_quantity: 10, payload: { ratio_numerator: 2, ratio_denominator: 1 }, update };
   models.PortfolioEvent.findOne.mockResolvedValueOnce(event);
   const response = await request(app).post('/portfolio/events/event-1/confirm').send({ confirmed: true, payload: { ratio_numerator: 999 } });
   expect(response.status).toBe(200);
   expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: 'CONFIRMED', verification_status: 'USER_CONFIRMED' }));
   expect(update.mock.calls[0][0]).not.toHaveProperty('payload');
   expect(models.PortfolioEvent.findOne).toHaveBeenCalledWith({ where: { id: 'event-1', portfolio_id: 'p' } });
+});
+
+test('exposes reconciliation and blocks confirmation when entitlement differs from the ledger', async () => {
+  const event = { id: 'event-2', stock_id: 's', event_type: 'STOCK_SPLIT', record_date: '2026-09-24', status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', entitlement_quantity: 20, payload: { ratio_numerator: 2, ratio_denominator: 1 }, update: jest.fn() };
+  models.PortfolioEvent.findOne.mockResolvedValue(event);
+  const reconciliation = await request(app).get('/portfolio/events/event-2/reconciliation');
+  expect(reconciliation.status).toBe(200);
+  expect(reconciliation.body.data).toMatchObject({ status: 'mismatch', ledger_quantity: 10, difference: 10, calculation_basis: 'trade_date_end_of_day_proxy_v1' });
+  const confirmation = await request(app).post('/portfolio/events/event-2/confirm').send({ confirmed: true });
+  expect(confirmation.status).toBe(409);
+  expect(confirmation.body.data.reasons).toContain('entitlement_quantity_mismatch');
+  expect(event.update).not.toHaveBeenCalled();
 });
 
 test('corrects an event by creating a pending replacement and superseding the original atomically', async () => {

@@ -8,6 +8,7 @@ const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolio
 const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../services/portfolioCashFlow');
 const { normalizeSessionLimit, buildDailyValuationSeries } = require('../services/portfolioValuation');
 const { normalizePortfolioEventInput, presentPortfolioEvent } = require('../services/portfolioEvent');
+const { reconcilePortfolioEvent } = require('../services/portfolioEventReconciliation');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -165,6 +166,19 @@ router.get('/events', async (req, res) => {
   }
 });
 
+router.get('/events/:eventId/reconciliation', async (req, res) => {
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    const event = portfolio ? await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id } }) : null;
+    if (!event) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
+    const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: event.stock_id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    return res.json({ success: true, data: reconcilePortfolioEvent(event, transactions) });
+  } catch (error) {
+    console.error('[Portfolio] Reconcile event failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể đối chiếu quyền hưởng sự kiện.' });
+  }
+});
+
 router.post('/events', async (req, res) => {
   const input = normalizePortfolioEventInput(req.body); if (input.error) return res.status(400).json({ success: false, message: input.error });
   try {
@@ -174,7 +188,9 @@ router.post('/events', async (req, res) => {
     if (!stock) return res.status(404).json({ success: false, message: 'Không tìm thấy mã chứng khoán.' });
     const { symbol, ...value } = input.value;
     const event = await PortfolioEvent.create({ portfolio_id: portfolio.id, stock_id: stock.id, ...value, status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', created_by: req.user.sub });
-    return res.status(201).json({ success: true, data: presentPortfolioEvent({ ...(event.toJSON ? event.toJSON() : event), Stock: stock }) });
+    const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    const presented = presentPortfolioEvent({ ...(event.toJSON ? event.toJSON() : event), Stock: stock });
+    return res.status(201).json({ success: true, data: { ...presented, reconciliation: reconcilePortfolioEvent(event, transactions) } });
   } catch (error) {
     console.error('[Portfolio] Create event failed:', error.message);
     return res.status(500).json({ success: false, message: 'Không thể lưu sự kiện danh mục. Chưa có dữ liệu nào được thay đổi.' });
@@ -188,8 +204,11 @@ router.post('/events/:eventId/confirm', async (req, res) => {
     const event = portfolio ? await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id } }) : null;
     if (!event) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
     if (event.status !== 'PENDING') return res.status(409).json({ success: false, message: 'Chỉ sự kiện đang chờ mới có thể xác nhận.' });
+    const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: event.stock_id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    const reconciliation = reconcilePortfolioEvent(event, transactions);
+    if (reconciliation.status !== 'matched') return res.status(409).json({ success: false, message: 'Số lượng hưởng quyền chưa khớp với nhật ký giao dịch.', data: reconciliation });
     await event.update({ status: 'CONFIRMED', verification_status: event.source_type === 'PROVIDER' ? event.verification_status : 'USER_CONFIRMED', updated_at: new Date() });
-    return res.json({ success: true, data: presentPortfolioEvent(event) });
+    return res.json({ success: true, data: { ...presentPortfolioEvent(event), reconciliation } });
   } catch (error) {
     console.error('[Portfolio] Confirm event failed:', error.message);
     return res.status(500).json({ success: false, message: 'Không thể xác nhận sự kiện danh mục.' });

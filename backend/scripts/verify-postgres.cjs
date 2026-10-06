@@ -137,7 +137,8 @@ async function main() {
     assert.equal(tracked.evaluation.status, 'evaluated');
     assert.equal(tracked.evaluation.outcome, 'positive');
     assert.deepEqual(portfolioView.performance.external_cash_flows, { count: 1, deposits: 2000, withdrawals: 0, net: 2000 });
-    const createdEvent = (await request(app).post('/api/portfolio/events').set('Authorization', `Bearer ${userAToken}`).send({ event_type: 'CASH_DIVIDEND', symbol: 'VERIFY', record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: 82, payload: { gross_per_share: 1000, withholding_tax: 0, net_cash_amount: 82000, currency: 'VND' } }).expect(201)).body.data;
+    const createdEvent = (await request(app).post('/api/portfolio/events').set('Authorization', `Bearer ${userAToken}`).send({ event_type: 'CASH_DIVIDEND', symbol: 'VERIFY', record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: 80, payload: { gross_per_share: 1000, withholding_tax: 0, net_cash_amount: 80000, currency: 'VND' } }).expect(201)).body.data;
+    assert.equal(createdEvent.reconciliation.status, 'matched'); assert.equal(createdEvent.reconciliation.ledger_quantity, 80);
     assert.equal(createdEvent.status, 'PENDING'); assert.equal(createdEvent.source_type, 'MANUAL');
     await request(app).post(`/api/portfolio/events/${createdEvent.id}/confirm`).set('Authorization', `Bearer ${userAToken}`).send({ confirmed: true }).expect(200);
     const ownedEvents = (await request(app).get('/api/portfolio/events').set('Authorization', `Bearer ${userAToken}`).expect(200)).body.data.events;

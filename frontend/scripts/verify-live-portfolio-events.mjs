@@ -18,11 +18,16 @@ async function register(label) {
 }
 
 const owner = await register('owner'); const other = await register('other'); const headers = { 'X-CSRF-Token': owner.csrf() }
-const eventBody = { event_type: 'STOCK_SPLIT', symbol: 'FPT', record_date: '2026-09-20', effective_date: '2026-09-21', entitlement_quantity: 100, payload: { ratio_numerator: 2, ratio_denominator: 1 }, source_type: 'PROVIDER', verification_status: 'SOURCE_VERIFIED' }
+const eventBody = { event_type: 'STOCK_SPLIT', symbol: 'FPT', record_date: '2026-09-20', effective_date: '2026-09-21', entitlement_quantity: 0, payload: { ratio_numerator: 2, ratio_denominator: 1 }, source_type: 'PROVIDER', verification_status: 'SOURCE_VERIFIED' }
 const created = await owner.request('/api/portfolio/events', { method: 'POST', headers, body: eventBody })
-if (created.status !== 201 || created.payload.data.status !== 'PENDING' || created.payload.data.source_type !== 'MANUAL' || created.payload.data.verification_status !== 'UNVERIFIED') throw new Error(`Manual event contract failed: HTTP ${created.status}`)
+if (created.status !== 201 || created.payload.data.status !== 'PENDING' || created.payload.data.source_type !== 'MANUAL' || created.payload.data.verification_status !== 'UNVERIFIED' || created.payload.data.reconciliation?.status !== 'matched') throw new Error(`Manual event/reconciliation contract failed: HTTP ${created.status}`)
 const event = created.payload.data
 if ((await other.request('/api/portfolio/events')).payload.data.events.length !== 0) throw new Error('Event leaked across portfolio owners')
+const mismatch = await owner.request('/api/portfolio/events', { method: 'POST', headers, body: { ...eventBody, entitlement_quantity: 1 } })
+if (mismatch.status !== 201 || mismatch.payload.data.reconciliation?.status !== 'mismatch') throw new Error('Entitlement mismatch was not disclosed')
+const blocked = await owner.request(`/api/portfolio/events/${mismatch.payload.data.id}/confirm`, { method: 'POST', headers, body: { confirmed: true } })
+if (blocked.status !== 409 || !blocked.payload.data?.reasons?.includes('entitlement_quantity_mismatch')) throw new Error('Mismatched entitlement was not blocked')
+await owner.request(`/api/portfolio/events/${mismatch.payload.data.id}/cancel`, { method: 'POST', headers, body: { confirmed: true } })
 const confirmed = await owner.request(`/api/portfolio/events/${event.id}/confirm`, { method: 'POST', headers, body: { confirmed: true } })
 if (confirmed.status !== 200 || confirmed.payload.data.verification_status !== 'USER_CONFIRMED') throw new Error(`Confirm lifecycle failed: HTTP ${confirmed.status}`)
 const corrected = await owner.request(`/api/portfolio/events/${event.id}/correct`, { method: 'POST', headers, body: { ...eventBody, payload: { ratio_numerator: 3, ratio_denominator: 2 } } })
@@ -31,5 +36,5 @@ const replacement = corrected.payload.data
 const cancelled = await owner.request(`/api/portfolio/events/${replacement.id}/cancel`, { method: 'POST', headers, body: { confirmed: true } })
 if (cancelled.status !== 200 || cancelled.payload.data.status !== 'CANCELLED') throw new Error(`Cancel lifecycle failed: HTTP ${cancelled.status}`)
 const timeline = (await owner.request('/api/portfolio/events')).payload.data.events
-if (timeline.length !== 2 || !timeline.some(item => item.id === event.id && item.status === 'SUPERSEDED') || !timeline.some(item => item.id === replacement.id && item.status === 'CANCELLED')) throw new Error('Persisted correction chain is inconsistent')
-console.log('Real development portfolio event ledger passed: pending/manual enforcement, confirmation, atomic correction chain, cancellation and ownership isolation. Two isolated smoke accounts retained; no credentials persisted.')
+if (timeline.length !== 3 || !timeline.some(item => item.id === event.id && item.status === 'SUPERSEDED') || !timeline.some(item => item.id === replacement.id && item.status === 'CANCELLED')) throw new Error('Persisted correction chain is inconsistent')
+console.log('Real development portfolio event ledger passed: entitlement reconciliation/mismatch gate, pending/manual enforcement, confirmation, atomic correction chain, cancellation and ownership isolation. Two isolated smoke accounts retained; no credentials persisted.')
