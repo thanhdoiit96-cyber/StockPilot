@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — UI quản lý nạp/rút tiền
+
+- Trang Danh mục đã có panel Dòng tiền đầy đủ: tổng đã nạp/đã rút/dòng tiền ròng, form thêm, timeline, sửa trong dialog và xóa có xác nhận. Dòng tiền được trình bày riêng khỏi giao dịch mua/bán và lãi/lỗ.
+- Mutation có lock đồng bộ chống double-submit, pending state, lỗi tại panel giữ nguyên input để thử lại; dialog hỗ trợ Escape/backdrop khi chưa lưu. Sau thành công, frontend tải lại `/api/portfolio` để snapshot hiệu suất, tổng và timeline nhất quán.
+- Responsive: form và summary chuyển một cột, bảng cuộn trong container tại 390px; panel không làm tràn document. Việc thêm panel làm donut nằm dưới fold nên E2E hover đã cuộn component vào viewport trước khi dùng tọa độ, phản ánh hành vi người dùng thực tế.
+- Kiểm chứng: frontend 49/49 unit/service, targeted cash-flow/error/donut 3/3, full Danh mục 21/21 và production build/bundle integrity đạt với bundle `index-D1L76zVh.js`. Ca hover donut cũ nay cuộn component vào viewport trước khi dùng tọa độ, phù hợp với trang dài hơn. Chưa live-smoke mutation với tài khoản development thật.
+- Điểm tiếp tục: thiết kế và triển khai daily valuation series có cutoff Asia/Ho_Chi_Minh, quy tắc timing dòng tiền và continuity/coverage; chưa thêm chart hoặc TWR/MWR trước khi contract này đạt.
+
 ## 2026-10-06 — Nền dữ liệu dòng tiền ngoài danh mục
 
 - Migration 024 đã tạo `portfolio_cash_flows` cho nạp/rút tiền, có ràng buộc type, amount dương, cascade theo portfolio và index timeline; migration đã áp dụng trên development.
