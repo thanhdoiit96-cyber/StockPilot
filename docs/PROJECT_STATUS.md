@@ -1,11 +1,18 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Rights issue chỉ áp phần thực hiện đã xác nhận
+
+- `daily_close_twr_v1` nay áp `RIGHTS_ISSUE` confirmed tại `effective_date` bằng đúng `exercised_quantity`: giảm cash theo `exercise_cash_amount`, tăng quantity và total cost basis tương ứng, rồi tính average cost mới. Khoản chi thực hiện quyền là triển khai vốn đầu tư và giữ `external_cash_flow=0`.
+- Không suy diễn từ entitlement: `exercised_quantity=0` là no-op dù tỷ lệ quyền cho phép mua; hệ thống không tự động thực hiện toàn bộ quyền. Validator và reconciliation yêu cầu `exercise_cash_amount = exercised_quantity × subscription_price` trong sai số 0,01 VND, chặn số thực hiện vượt entitlement và chặn cổ phiếu lẻ theo chính sách v1.
+- Kiểm chứng: backend 44/44 suite, 223/223 test và isolated PostgreSQL regression đạt; schema thử đã được dọn, application schema không bị thay đổi. Live PostgreSQL development qua Preview 4173 đạt cả quyền mua 0 (quantity/basis/cash không đổi) và thực hiện 1 quyền (quantity 1→2, basis 10.000→20.000, cash giảm 10.000, external flow 0); cash dividend, pending coverage gate và split continuity vẫn đạt. Giao dịch/dòng tiền thử đã dọn, cancelled event audit và tài khoản cô lập được giữ; backend cổng 5000 đã restart.
+- Giới hạn còn lại: v1 chưa suy diễn phần lẻ/cash-in-lieu và reconciliation vẫn dùng trade-date EOD proxy, chưa xác minh settlement/VSD. Điểm tiếp tục: chốt contract MWR/XIRR, quy tắc nhiều nghiệm/không có nghiệm và bộ đối chiếu độc lập trước khi triển khai UI; benchmark tiếp tục chờ index-series hợp lệ.
+
 ## 2026-10-06 — Stock dividend và split trong valuation
 
 - Daily valuation nay theo dõi quantity và total cost basis song song với cash. BUY cộng giá trị+phí vào basis; SELL loại basis theo giá vốn bình quân. `STOCK_DIVIDEND` confirmed cộng đúng `received_quantity`; `STOCK_SPLIT` confirmed nhân quantity theo tỷ lệ tại `effective_date`, trước giao dịch cùng ngày. Cả hai giữ nguyên total cost basis và trả adjustment trước/sau cùng average cost mới.
-- Chính sách phần lẻ v1 là `whole_share_only_v1_cash_in_lieu_not_inferred`: chỉ áp khi kết quả là cổ phiếu nguyên; không làm tròn, không bỏ phần lẻ và không tự tạo tiền bù. Event fractional làm coverage partial, giữ unresolved ID và khóa TWR. Rights issue vẫn chưa áp dụng.
+- Chính sách phần lẻ v1 là `whole_share_only_v1_cash_in_lieu_not_inferred`: chỉ áp khi kết quả là cổ phiếu nguyên; không làm tròn, không bỏ phần lẻ và không tự tạo tiền bù. Event fractional làm coverage partial, giữ unresolved ID và khóa TWR. Rights issue được hoàn tất ở mục bàn giao ngay phía trên.
 - Kiểm chứng: backend 44 suite / 221 test đạt. Unit chứng minh split 2:1 với giá điều chỉnh giữ value/TWR 0 và basis 100.000; stock dividend 20% đổi quantity 10→12 nhưng giữ basis; reverse split 3×1:2 bị chặn partial. Live PostgreSQL development đạt split 1:1 xuyên suốt API/reconciliation/valuation, quantity và cost basis không đổi; cash dividend/pending gate regression vẫn đạt, dữ liệu transaction/cash thử đã dọn.
-- Backend đã restart. Điểm tiếp tục: triển khai rights issue chỉ cho `exercised_quantity` đã xác nhận, giảm cash theo `exercise_cash_amount`, tăng quantity và cost basis; không tự thực hiện toàn bộ entitlement. Sau đó mới cân nhắc MWR/XIRR.
+- Backend đã restart. Điểm tiếp tục của hạng mục stock action khi đó là rights issue; phần này đã hoàn tất và điểm tiếp tục hiện tại chuyển sang contract MWR/XIRR như mục bàn giao phía trên.
 
 ## 2026-10-06 — Cash dividend trong daily valuation/TWR
 

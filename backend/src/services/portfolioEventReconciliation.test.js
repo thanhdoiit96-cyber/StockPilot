@@ -24,3 +24,8 @@ test('blocks impossible cash, stock dividend and rights benefits', () => {
   expect(reconcilePortfolioEvent({ stock_id: 's', event_type: 'STOCK_DIVIDEND', record_date: '2026-10-01', entitlement_quantity: 10, payload: { ratio_numerator: 1, ratio_denominator: 10, received_quantity: 3 } }, transactions).reasons).toContain('received_quantity_exceeds_theoretical');
   expect(reconcilePortfolioEvent({ stock_id: 's', event_type: 'RIGHTS_ISSUE', record_date: '2026-10-01', entitlement_quantity: 10, payload: { ratio_numerator: 1, ratio_denominator: 10, exercised_quantity: 2 } }, transactions).reasons).toContain('exercised_quantity_exceeds_entitlement');
 });
+test('rejects fractional or internally inconsistent exercised rights', () => {
+  const transactions = [{ stock_id: 's', side: 'BUY', quantity: 10, traded_at: '2026-09-30T03:00:00Z' }];
+  const result = reconcilePortfolioEvent({ stock_id: 's', event_type: 'RIGHTS_ISSUE', record_date: '2026-10-01', entitlement_quantity: 10, payload: { ratio_numerator: 1, ratio_denominator: 2, subscription_price: 10000, exercised_quantity: 1.5, exercise_cash_amount: 10000 } }, transactions);
+  expect(result.reasons).toEqual(expect.arrayContaining(['fractional_exercised_quantity_unsupported', 'exercise_cash_amount_mismatch']));
+});

@@ -31,8 +31,18 @@ function reconcilePortfolioEvent(eventInput, transactionInputs = []) {
     if (Number(payload.net_cash_amount || 0) + Number(payload.withholding_tax || 0) > theoreticalBenefit + TOLERANCE) reasons.push('cash_amount_exceeds_gross_entitlement');
   } else if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0) {
     theoreticalBenefit = ledgerQuantity * numerator / denominator;
-    if (event.event_type === 'STOCK_DIVIDEND' && Number(payload.received_quantity || 0) > theoreticalBenefit + 1) reasons.push('received_quantity_exceeds_theoretical');
-    if (event.event_type === 'RIGHTS_ISSUE' && Number(payload.exercised_quantity || 0) > theoreticalBenefit + TOLERANCE) reasons.push('exercised_quantity_exceeds_entitlement');
+    if (event.event_type === 'STOCK_DIVIDEND') {
+      const received = Number(payload.received_quantity || 0);
+      if (received > theoreticalBenefit + 1) reasons.push('received_quantity_exceeds_theoretical');
+      if (Math.abs(received - Math.round(received)) > TOLERANCE) reasons.push('fractional_received_quantity_unsupported');
+    }
+    if (event.event_type === 'STOCK_SPLIT' && Math.abs(theoreticalBenefit - Math.round(theoreticalBenefit)) > TOLERANCE) reasons.push('fractional_split_quantity_unsupported');
+    if (event.event_type === 'RIGHTS_ISSUE') {
+      const exercised = Number(payload.exercised_quantity || 0); const price = Number(payload.subscription_price || 0); const cash = Number(payload.exercise_cash_amount || 0);
+      if (exercised > theoreticalBenefit + TOLERANCE) reasons.push('exercised_quantity_exceeds_entitlement');
+      if (Math.abs(exercised - Math.round(exercised)) > TOLERANCE) reasons.push('fractional_exercised_quantity_unsupported');
+      if (Math.abs(cash - exercised * price) > 0.01) reasons.push('exercise_cash_amount_mismatch');
+    }
   }
   return {
     status: reasons.length ? 'mismatch' : 'matched',
