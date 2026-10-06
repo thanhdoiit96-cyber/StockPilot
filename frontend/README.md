@@ -10,6 +10,8 @@ Bảng Vị thế danh mục hỗ trợ tìm theo mã/tên doanh nghiệp không
 
 Watchlist có tìm kiếm mã/tên không phân biệt dấu, bộ đếm kết quả và trạng thái rỗng. Mở Chi tiết và Xóa là hai nút riêng; xóa cần xác nhận inline để tránh thao tác nhầm. Từ khóa Watchlist chỉ tồn tại trong bộ nhớ của trang.
 
+Mutation Watchlist có trạng thái loading và khóa gửi lặp. Thông báo thành công/lỗi nằm trong panel; lỗi thêm giữ mã đang nhập, lỗi xóa giữ xác nhận và dòng hiện tại để thử lại. `scripts/verify-live-watchlist.mjs` kiểm tra thêm/xóa và persistence qua reload với cookie session development thật; script tạo và giữ một account cô lập, không ghi credential.
+
 Danh sách phiên hỗ trợ đăng xuất từng phiên với xác nhận ngay trên thẻ; giữ phiên hiện tại và các phiên chưa chọn. API từ chối phiên không còn khả dụng thì hiển thị lỗi và cho làm mới.
 
 Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận diện phiên trước khi thu hồi; không phải thông tin thiết bị được hệ thống xác minh. Form hỗ trợ lưu/hủy/xóa nhãn và cảnh báo bản nháp.

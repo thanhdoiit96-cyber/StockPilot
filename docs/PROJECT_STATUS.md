@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Phản hồi mutation Watchlist
+
+- Thêm trạng thái Đang thêm/Đang xóa theo thao tác, khóa input và hành động liên quan trong lúc request chạy, đồng thời dùng lock để chặn hai lần submit trước khi React kịp render disabled.
+- Thành công và lỗi hiển thị ngay trong panel bằng live region. Thêm lỗi giữ nguyên mã đã nhập; xóa lỗi giữ dòng và xác nhận để thử lại. Lỗi Watchlist không còn đẩy sang thông báo chung của toàn trang.
+- Kiểm chứng: frontend 49/49 test; 3/3 Playwright Watchlist đạt thêm/tìm/mở/xác nhận xóa, submit kép chỉ tạo một POST và lỗi 503 có thể phục hồi. Build/bundle integrity đạt, Preview 4173 dùng index-BCif0pqu.js.
+- Live smoke với cookie session/backend/database development thật đạt: thêm FPT, reload còn dữ liệu, xác nhận xóa và reload không còn dữ liệu. Một account test riêng được giữ; không lưu credential. Điểm tiếp tục: bổ sung undo ngắn hạn sau khi xóa hoặc sắp xếp Watchlist nếu có đủ nhu cầu; ưu tiên rà soát UX nhật ký giao dịch trước.
+
 ## 2026-10-06 — Hoàn thiện trải nghiệm Watchlist
 
 - Tách Watchlist thành component riêng: thêm tìm kiếm theo mã/tên doanh nghiệp không phân biệt dấu, bộ đếm tổng/đang hiển thị, trạng thái rỗng và nút xóa tìm kiếm trả focus về ô nhập.
