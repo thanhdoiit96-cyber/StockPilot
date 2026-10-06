@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Triển khai tab Danh mục cá nhân
+
+- Đã triển khai Tổng quan (mặc định), Giao dịch, Dòng tiền, Watchlist. Tổng quan ưu tiên kết quả, vị thế/phân bổ trước lịch sử TWR/MWR; Giao dịch đặt form và nhật ký trước theo dõi mã từ đề xuất. Các tab có bộ đếm và mô tả ngắn.
+- Panel giữ mounted để bảo toàn bản nháp, bộ lọc, import preview và trạng thái mutation khi chuyển tab; panel ẩn không nhận focus. Bốn cặp tab/panel riêng với roving tabindex, mũi tên trái/phải, Home/End; mobile bố trí 2×2, desktop một hàng. Thêm từ trang khác mở tab Giao dịch và focus số lượng.
+- Kiểm chứng: frontend unit 49/49; hồi quy Danh mục 25/25 và luồng Đề xuất 1/1 đạt với API mô phỏng. Sau chỉnh mobile 2×2, chạy lại test giữ state/bàn phím/mobile và workflow chuyển tab đạt 2/2; ảnh 390px đã được kiểm tra. Test xác nhận giữ bản nháp giao dịch/dòng tiền/Watchlist, từ khóa tìm kiếm và không phát sinh request history khi chuyển tab. Production build/bundle integrity đạt; HTML và asset Preview `http://localhost:4173/` đều HTTP 200 với bundle `index-CeFiKTls.js`. Đây là hồi quy UI dùng mock API, không phải live auth browser smoke.
+- Benchmark tiếp tục chờ index-series hợp lệ. Điểm tiếp tục sản phẩm là mở rộng thông tin cá nhân theo backlog; state tab chỉ được giữ trong bộ nhớ trang, không lưu bản nháp tài chính xuống storage.
+
 ## 2026-10-06 — Card MWR “Từ khi bắt đầu”
 
 - Panel lịch sử hiệu suất nay có card MWR riêng, ghi rõ phạm vi “Từ khi bắt đầu” và bản chất thường niên hóa; tooltip giải thích MWR phản ánh thời điểm/quy mô nạp rút và không phải lợi nhuận tuyệt đối. Card độc lập với bộ lọc 20/30/60/120 phiên của TWR/biểu đồ.

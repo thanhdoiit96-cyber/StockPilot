@@ -9,6 +9,7 @@ import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
 import PortfolioPerformanceHistory from "./components/PortfolioPerformanceHistory.jsx";
 import PortfolioCashFlows from "./components/PortfolioCashFlows.jsx";
+import PortfolioSectionTabs from "./components/PortfolioSectionTabs.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
@@ -667,6 +668,7 @@ function lv() {
     [authSubmitting, setAuthSubmitting] = D.useState(false),
     [transactionSubmitting, setTransactionSubmitting] = D.useState(false),
     [dt, on] = D.useState(""),
+    [portfolioTab, setPortfolioTab] = D.useState("overview"),
     [re, Xe] = D.useState(() => {
       try {
         if (new URLSearchParams(window.location.search).has("stock")) return "detail";
@@ -1019,7 +1021,7 @@ function lv() {
         fees: "",
         traded_at: (/* @__PURE__ */new Date()).toISOString().slice(0, 10),
         recommendation_context: d.recommendationContext || null
-      }), on(""), Xe("portfolio"), jt(true);
+      }), on(""), setPortfolioTab("transactions"), Xe("portfolio"), jt(true);
     },
     Zh = async d => {
       d.preventDefault();
@@ -1057,6 +1059,7 @@ function lv() {
           };
         }
         mt($.data), on(p("Ghi nhận giao dịch"));
+        setPortfolioTab("overview");
       } catch (S) {
         on(S.message);
       } finally {
@@ -1886,24 +1889,39 @@ function lv() {
           }), O.jsx("p", {
             children: p("Chỉ theo dõi giao dịch bên ngoài, không thực hiện mua bán trong ứng dụng.")
           })]
-        }), O.jsxs("div", {
-          className: "personal-grid",
-          children: [O.jsx(PortfolioPerformance, {
+        }), O.jsx(PortfolioSectionTabs, {
+          active: portfolioTab,
+          onChange: setPortfolioTab,
+          counts: {
+            overview: mi.length,
+            transactions: ((pe == null ? void 0 : pe.transactions) || []).length,
+            cash: ((pe == null ? void 0 : pe.cash_flows) || []).length,
+            watchlist: pt.length
+          }
+        }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioPerformance, {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
             loading: Ir
+          }), O.jsx("article", { className: "panel portfolio-panel", children: O.jsx(PortfolioPositions, {
+              positions: mi,
+              closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
+              loading: Ir,
+              error: bt,
+              onOpenDetail: openLinkedStock,
+              watchlistSymbols: [...yt],
+              onAddToWatchlist: addToWatchlist
+            }) }), O.jsx(PortfolioAllocation, {
+            allocations: Wt,
+            positions: mi,
+            quoteCount: Oo.filter(symbol => di[symbol]).length,
+            positionCount: Oo.length,
+            quoteError: Qh,
+            providerStatus: hi == null ? void 0 : hi.status
           }), O.jsx(PortfolioPerformanceHistory, {
             token: ue.token,
             active: authVerification.status === "verified" && re === "portfolio",
             refreshKey: pe
-          }), O.jsx(PortfolioCashFlows, {
-            entries: (pe == null ? void 0 : pe.cash_flows) || [],
-            onCreate: createPortfolioCashFlow,
-            onUpdate: updatePortfolioCashFlow,
-            onDelete: deletePortfolioCashFlow
-          }), O.jsxs("article", {
-            className: "panel portfolio-panel",
-            children: [O.jsx("h3", {
+          })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-transactions", "aria-labelledby": "portfolio-tab-transactions", hidden: portfolioTab !== "transactions", tabIndex: 0, children: [O.jsxs("article", { className: "panel portfolio-panel transaction-entry-panel", children: [O.jsx("h3", {
               children: p("Ghi nhận giao dịch")
             }), O.jsxs("form", {
               className: "transaction-form",
@@ -1971,134 +1989,17 @@ function lv() {
             }), dt && O.jsx("p", {
               role: "status",
               children: dt
-            }), O.jsx(PortfolioPositions, {
-              positions: mi,
-              closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
-              loading: Ir,
-              error: bt,
-              onOpenDetail: openLinkedStock,
-              watchlistSymbols: [...yt],
-              onAddToWatchlist: addToWatchlist
-            }), O.jsx(Jm, {
-              entries: lf
-            })]
-          }), O.jsx(PortfolioAllocation, {
-            allocations: Wt,
-            positions: mi,
-            quoteCount: Oo.filter(symbol => di[symbol]).length,
-            positionCount: Oo.length,
-            quoteError: Qh,
-            providerStatus: hi == null ? void 0 : hi.status
-          }), O.jsx(PortfolioLedger, {
+            })] }), O.jsx(PortfolioLedger, {
             entries: (pe == null ? void 0 : pe.transactions) || [],
             onImport: importPortfolioTransactions,
             onUpdate: updatePortfolioTransaction,
             onDelete: deletePortfolioTransaction
-          }), false && O.jsxs("article", {
-            className: "panel legacy-allocation-panel",
-            children: [O.jsxs("div", {
-              className: "allocation-panel-heading",
-              children: [O.jsxs("div", {
-                children: [O.jsx("h3", {
-                  children: p("Phân bổ danh mục")
-                }), O.jsx("p", {
-                  className: "muted-text",
-                  children: p("Tỷ trọng theo giá trị thị trường hiện tại.")
-                })]
-              }), O.jsxs("span", {
-                className: "chip neutral",
-                children: [Wt.length, " mã"]
-              })]
-            }), Wt.length ? O.jsxs("div", {
-              className: "allocation-visual",
-              children: [O.jsx("div", {
-                className: "allocation-donut",
-                role: "img",
-                "aria-label": p("Biểu đồ phân bổ danh mục"),
-                style: {
-                  background: pu ? "conic-gradient(" + pu + ")" : "var(--border)"
-                },
-                children: O.jsxs("div", {
-                  children: [O.jsx("small", {
-                    className: "allocation-total-label",
-                    children: p("Tổng giá trị")
-                  }), O.jsx("strong", {
-                    className: "allocation-total-value",
-                    children: oe(vi)
-                  }), O.jsx("small", {
-                    className: "allocation-day-change",
-                    children: (() => {
-                      const d = mi.reduce(($, A) => $ + Number(A.quantity || 0) * Number(A.previous_market_price || 0), 0),
-                        S = d > 0 ? vi - d : null;
-                      return S == null ? "Chưa có dữ liệu hôm qua" : O.jsxs(i.Fragment, {
-                        children: ["So với hôm qua: ", O.jsx("span", {
-                          className: S > 0 ? "positive" : S < 0 ? "negative" : "neutral",
-                          children: `${oe(S)} · ${S >= 0 ? "+" : ""}${d > 0 ? (S / d * 100).toFixed(2) : "0"}%`
-                        })]
-                      });
-                    })()
-                  }), O.jsx("svg", {
-                    className: "allocation-donut-svg",
-                    viewBox: "0 0 100 100",
-                    role: "presentation",
-                    children: Wt.map((d, S) => {
-                      const $ = Wt.slice(0, S).reduce((Tn, uf) => Tn + uf.weight, 0) * 3.6 - 90,
-                        A = $ + d.weight * 3.6,
-                        Z = 58,
-                        de = 40,
-                        Gt = Tn => 50 + Z * Math.cos(Tn * Math.PI / 180),
-                        St = Tn => 50 + Z * Math.sin(Tn * Math.PI / 180),
-                        sl = Tn => 50 + de * Math.cos(Tn * Math.PI / 180),
-                        ul = Tn => 50 + de * Math.sin(Tn * Math.PI / 180),
-                        xu = d.weight > 50 ? 1 : 0;
-                      return O.jsxs("path", {
-                        d: `M${Gt($)} ${St($)} A${Z} ${Z} 0 ${xu} 1 ${Gt(A)} ${St(A)} L${sl(A)} ${ul(A)} A${de} ${de} 0 ${xu} 0 ${sl($)} ${ul($)} Z`,
-                        fill: "transparent",
-                        children: [O.jsx("title", {
-                          children: `${d.symbol}: ${d.weight.toFixed(1)}% · ${oe(d.market_value)}`
-                        })]
-                      }, d.stock_id);
-                    })
-                  })]
-                })
-              }), O.jsx("ol", {
-                className: "allocation-list",
-                children: Wt.map((d, S) => O.jsxs("li", {
-                  title: `${d.symbol}: ${d.weight.toFixed(1)}% · ${oe(d.market_value)}`,
-                  children: [O.jsxs("div", {
-                    className: "allocation-item-heading",
-                    children: [O.jsx("i", {
-                      style: {
-                        backgroundColor: qt[S % qt.length]
-                      }
-                    }), O.jsxs("div", {
-                      children: [O.jsx("strong", {
-                        children: d.symbol
-                      }), O.jsx("small", {
-                        children: oe(d.market_value)
-                      })]
-                    }), O.jsxs("b", {
-                      children: [d.weight.toFixed(1), "%"]
-                    })]
-                  }), O.jsx("div", {
-                    className: "allocation-track",
-                    children: O.jsx("span", {
-                      style: {
-                        width: d.weight + "%",
-                        backgroundColor: qt[S % qt.length]
-                      }
-                    })
-                  })]
-                }, d.stock_id))
-              })]
-            }) : O.jsx("p", {
-              className: "muted-text",
-              children: p("Chưa có dữ liệu phân bổ.")
-            }), O.jsxs("p", {
-              className: "allocation-footnote",
-              children: [Object.keys(di).length, "/", Oo.length, " ", p("mã có quote intraday"), " · ", Qh || Object.keys(di).length < Oo.length ? p("Mã thiếu quote dùng giá EOD; tỷ trọng kết hợp dữ liệu hiện có.") : p("Tỷ trọng dựa trên quote intraday mới nhất."), (hi == null ? void 0 : hi.status) === "circuit_open" ? " Provider tạm ngắt, sẽ tự thử lại." : (hi == null ? void 0 : hi.status) === "degraded" ? " Provider đang chậm." : ""]
-            })]
-          }), O.jsx(WatchlistPanel, {
+          }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
+            entries: (pe == null ? void 0 : pe.cash_flows) || [],
+            onCreate: createPortfolioCashFlow,
+            onUpdate: updatePortfolioCashFlow,
+            onDelete: deletePortfolioCashFlow
+          })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-watchlist", "aria-labelledby": "portfolio-tab-watchlist", hidden: portfolioTab !== "watchlist", tabIndex: 0, children: [O.jsx(WatchlistPanel, {
             entries: pt,
             addValue: Jr,
             onAddValueChange: el,
@@ -2107,8 +2008,7 @@ function lv() {
               d && (ht(d), Xe("detail"));
             },
             onRemove: rf
-          })]
-        })]
+          })] })]
       }), re === "detail" && O.jsxs("section", {
         className: "detail-page",
         children: [O.jsx(DetailSymbolSearch, {
