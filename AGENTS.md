@@ -8,6 +8,19 @@
 
 Người dùng yêu cầu chủ động xây dựng và thực thi lộ trình hoàn thiện dự án, luôn lưu tiến độ để phiên sau tiếp nối.
 
+## Cổng phân tích sản phẩm trước khi triển khai
+
+Mọi yêu cầu chức năng hoặc UI/UX mới phải được xử lý như một bài toán sản phẩm, không chuyển thẳng mô tả ban đầu thành mã nguồn. Trước khi sửa, tác nhân phải:
+
+1. **Xác định yêu cầu:** nêu người dùng mục tiêu, vấn đề cần giải quyết, luồng chính, dữ liệu cần có, ràng buộc, trường hợp biên và tiêu chí thành công. Phân biệt rõ điều người dùng đã chốt với giả định cần kiểm chứng.
+2. **Đánh giá chuyên gia:** kiểm tra tính đúng đắn nghiệp vụ, quyền riêng tư/bảo mật, khả năng truy cập, tính nhất quán với sản phẩm hiện tại và rủi ro tạo số liệu hoặc trạng thái gây hiểu nhầm.
+3. **So sánh phương án:** cân nhắc tối thiểu phương án đơn giản nhất đáp ứng nhu cầu và phương án mở rộng; đánh giá giá trị người dùng, độ phức tạp, phụ thuộc dữ liệu/backend, khả năng bảo trì và chi phí hiệu năng. Chọn phương án tối ưu tổng thể, không chỉ phương án code nhanh nhất.
+4. **Thiết kế trải nghiệm:** xác định phân cấp thông tin, vị trí hành động, trạng thái loading/empty/error/success, desktop/mobile, bàn phím/screen reader và cách giảm thao tác hoặc tải nhận thức. UI phải gọn, rõ, chuyên nghiệp và dùng component/design pattern sẵn có khi phù hợp.
+5. **Đặt ngân sách hiệu năng:** mô tả request, payload, render, cache/persistence và các điểm có thể đo. Không thêm pagination, virtualization, polling hoặc cache chỉ theo cảm tính; đo trước và xác minh lại sau với mức kiểm thử tương xứng.
+6. **Chốt phương án và triển khai:** ghi quyết định, trade-off, tiêu chí nghiệm thu và phần chưa làm vào tài liệu chịu trách nhiệm; sau đó mới code, kiểm thử và đo. Nếu thiếu dữ liệu hoặc phụ thuộc khiến kết quả không thể đúng, ưu tiên trạng thái trung thực hoặc hoãn phần phụ thuộc thay vì tạo dữ liệu giả.
+
+Mức độ tài liệu phải tương xứng với rủi ro: thay đổi nhỏ có thể ghi ngắn trong PROJECT_STATUS hoặc ROADMAP; tính năng lớn, thay đổi schema/API, nghiệp vụ tài chính, xác thực hoặc luồng đa màn hình cần tài liệu thiết kế riêng và liên kết từ ROADMAP. Khi người dùng yêu cầu chủ động thực hiện, tác nhân tự đưa ra giả định hợp lý và chọn phương án sau phân tích; chỉ dừng hỏi khi thiếu quyết định có thể làm thay đổi đáng kể phạm vi hoặc gây tác động khó hoàn tác.
+
 ## Phân công vai trò tài liệu
 
 - [README](README.md): giới thiệu và điểm vào; không chép checklist tiến độ.
