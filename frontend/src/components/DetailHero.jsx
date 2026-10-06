@@ -1,3 +1,5 @@
+import QuickWatchlistButton from './QuickWatchlistButton.jsx'
+
 const safeExternalUrl = value => {
   try {
     const url = new URL(value)
@@ -7,7 +9,7 @@ const safeExternalUrl = value => {
   }
 }
 
-export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, providerStatus, quoteError, analysis, onRequestAnalysis, onAddToPortfolio }) {
+export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, providerStatus, quoteError, analysis, onRequestAnalysis, onAddToPortfolio, onAddToWatchlist, watched }) {
   const licenseUrl = safeExternalUrl(quote?.license_url)
   const statusMessage = providerStatus === 'circuit_open'
     ? 'Provider tạm ngắt; giá gần nhất vẫn được giữ và sẽ tự thử lại.'
@@ -27,6 +29,7 @@ export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, p
     <div className="detail-actions">
       <button className="ghost-btn detail-analysis-btn" type="button" onClick={onRequestAnalysis}>{analysis.status === 'loading' ? 'Đang phân tích...' : analysis.data ? 'Cập nhật phân tích' : 'Phân tích chuyên sâu'}</button>
       <button className="primary-btn detail-add-btn" type="button" onClick={onAddToPortfolio}>Thêm vào danh mục</button>
+      <QuickWatchlistButton symbol={symbol} watched={watched} onAdd={onAddToWatchlist} className="detail-watchlist-btn" />
     </div>
     {analysis.data?.expert_guidance && <div className="detail-analysis-ready"><strong>Phân tích nâng cao đã sẵn sàng</strong><span>Điểm kỹ thuật {analysis.data.expert_guidance.technical_score ?? '-'} /100 · {analysis.data.expert_guidance.stance}</span></div>}
   </div>
