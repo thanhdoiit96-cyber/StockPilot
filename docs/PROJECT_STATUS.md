@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Ghi nhận backlog sản phẩm mới
+
+- Đã thêm vào ROADMAP năm ưu tiên tương lai theo đúng thứ tự người dùng chốt: (1) Hiệu suất đầu tư, (2) chọn tối đa 3–4 chỉ số Bảng giá như VNINDEX/VN30/HNX30/HNXINDEX, (3) mở rộng thông tin cá nhân, (4) Việt/Anh, (5) Dark/Light.
+- Mỗi mục đã có phạm vi, phụ thuộc và tiêu chí nghiệm thu; không coi tên chỉ số dự kiến là xác nhận provider/license hiện đã hỗ trợ. Không thay đổi mã ứng dụng trong bước tài liệu này.
+- Điểm tiếp tục sản phẩm: bắt đầu contract Hiệu suất đầu tư bằng cách kiểm kê ledger, price history, phí/cổ tức/corporate action và chọn phương pháp TWR/MWR trước khi dựng UI. Tạm thời không ưu tiên mở rộng AI Advisor.
+
 ## 2026-10-06 — Watchlist tối giản và deep-link Chi tiết mã
 
 - Nút thêm nhanh Watchlist thu về icon 34×34: ☆ chưa theo dõi, … đang lưu, ★ đã theo dõi, ! lỗi/thử lại. Tooltip và accessible name vẫn nêu đầy đủ mã/trạng thái; tại Chi tiết dùng biến thể 42px cân với nút danh mục.
