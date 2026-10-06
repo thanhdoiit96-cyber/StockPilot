@@ -1,6 +1,7 @@
 'use strict';
 
 const { normalizeTransactionPrice, vietnamTradingDate } = require('./portfolioAccounting');
+const { calculatePortfolioXirr } = require('./portfolioXirr');
 
 function asPlain(row) { return row?.toJSON ? row.toJSON() : row; }
 
@@ -101,6 +102,8 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
   const completePoints = points.filter(point => point.status === 'complete').length;
   const canPublishTwr = points.length >= 2 && completePoints === points.length && points.every(point => point.cash_balance >= -0.01) && points.some(point => point.daily_return_pct != null);
   if (!canPublishTwr) points.forEach(point => { point.daily_return_pct = null; point.cumulative_twr_pct = null; });
+  const terminalPoint = points.at(-1);
+  const mwr = calculatePortfolioXirr({ cashFlows, terminalValue: terminalPoint?.portfolio_value, terminalDate: terminalPoint?.date, valuationComplete: Boolean(terminalPoint) && completePoints === points.length });
   return {
     status: points.length === 0 ? 'empty' : completePoints === points.length ? 'complete' : 'partial',
     methodology: 'daily_close_twr_v1',
@@ -110,6 +113,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     coverage: { sessions: points.length, complete_sessions: completePoints, incomplete_sessions: points.length - completePoints },
     twr_available: canPublishTwr,
     cumulative_twr_pct: canPublishTwr ? points.at(-1).cumulative_twr_pct : null,
+    mwr,
     event_coverage: { applied_events: appliedEvents, pending_events: pendingEvents, unsupported_events: unsupportedEvents },
     points,
     fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred',

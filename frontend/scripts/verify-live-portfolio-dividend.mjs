@@ -27,6 +27,7 @@ if (confirmed.status !== 200) throw new Error(`Dividend confirmation failed: HTT
 const applied = (await request('/api/portfolio/performance/history?sessions=5')).payload.data
 const paymentPoint = applied.points.find(point => point.date === paymentDate)
 if (applied.event_coverage.applied_events !== 1 || paymentPoint?.dividend_income !== 1000 || paymentPoint?.external_cash_flow !== 0) throw new Error('Confirmed dividend was not applied as investment return')
+if (applied.mwr?.status !== 'available' || !(applied.mwr.annualized_mwr_pct > 0) || Math.abs(applied.mwr.npv_residual) > 0.01) throw new Error('Confirmed dividend did not produce an independently verified positive MWR/XIRR')
 await request(`/api/portfolio/events/${event.payload.data.id}/cancel`, { method: 'POST', body: { confirmed: true } })
 const split = await request('/api/portfolio/events', { method: 'POST', body: { event_type: 'STOCK_SPLIT', symbol: 'FPT', record_date: recordDate, effective_date: paymentDate, entitlement_quantity: 1, payload: { ratio_numerator: 1, ratio_denominator: 1 } } })
 if (split.status !== 201 || split.payload.data.reconciliation?.status !== 'matched') throw new Error(`Split event setup failed: HTTP ${split.status}`)
