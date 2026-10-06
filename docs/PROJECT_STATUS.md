@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Chốt thiết kế event ledger danh mục
+
+- Đã chốt contract tại `PORTFOLIO_EVENT_LEDGER_DESIGN.md` cho `CASH_DIVIDEND`, `STOCK_DIVIDEND`, `STOCK_SPLIT`, `RIGHTS_ISSUE`. Mô hình dùng core columns có constraint/index cùng JSONB payload theo version; không trộn cổ tức vào external cash flow và không dùng JSON tự do làm toàn bộ ledger.
+- Ledger append-only đối với nội dung tài chính: correction tạo event mới qua `supersedes_event_id`; cancel/supersede giữ audit. Provenance tách manual/provider và `UNVERIFIED|USER_CONFIRMED|SOURCE_VERIFIED`; provider ingest có source reference idempotent. Valuation chỉ áp dụng event confirmed và phải cảnh báo/giữ TWR unavailable khi pending, entitlement mismatch hoặc loại chưa hỗ trợ.
+- Đã quy định record/effective/payment date, snapshot entitlement, payload từng loại, ownership/API mục tiêu, thứ tự rollout, UI dự kiến, ngân sách truy vấn và tiêu chí nghiệm thu. Quyền mua không tự động thực hiện; cổ tức là investment return chứ không phải dòng tiền ngoài.
+- Đây là thay đổi thiết kế/tài liệu, chưa có migration, model, endpoint hoặc hành vi production mới nên không chạy lại test ứng dụng. Điểm tiếp tục: triển khai migration/model/validator/API độc lập với valuation, kiểm tra isolated PostgreSQL; sau đó reconciliation và daily valuation. MWR/XIRR và benchmark tiếp tục bị khóa.
+
 ## 2026-10-06 — Daily valuation/TWR và UI lịch sử danh mục
 
 - Backend bổ sung `GET /api/portfolio/performance/history?sessions=2..260` theo ownership. Contract `daily_close_twr_v1` dựng lại tiền mặt/vị thế theo phiên Việt Nam từ ledger, dòng tiền ngoài và EOD đã lưu; dòng tiền dùng quy ước đầu phiên. Mọi mã đang nắm giữ phải có giá đúng phiên và số dư tiền không âm mới được coi là `complete`; không nội suy giá và không gọi provider.
