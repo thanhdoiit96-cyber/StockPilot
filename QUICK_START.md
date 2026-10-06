@@ -316,10 +316,10 @@ npm.cmd run verify:live:portfolio-events
 
 Script kiểm tra pending/manual enforcement, confirm, correction chain, cancel và ownership isolation. Hai tài khoản test cô lập được giữ để bảo toàn audit; credential không được ghi ra đĩa.
 
-Kiểm tra tác động cổ tức tiền mặt và stock split lên valuation/TWR:
+Kiểm tra tác động cổ tức tiền mặt, stock split và quyền mua lên valuation/TWR:
 
 ```powershell
 npm.cmd run verify:live:portfolio-dividend
 ```
 
-Script tạo ledger cô lập, xác nhận pending event khóa coverage/TWR, kiểm tra `dividend_income` được cộng vào cash trong khi `external_cash_flow` vẫn bằng 0, rồi kiểm tra split giữ quantity/cost basis continuity. Giao dịch và dòng tiền thử được dọn; account cùng cancelled event audit được giữ, không lưu credential.
+Script tạo ledger cô lập, xác nhận pending event khóa coverage/TWR, kiểm tra `dividend_income` được cộng vào cash trong khi `external_cash_flow` vẫn bằng 0, split giữ quantity/cost basis continuity, quyền mua 0 không tự thực hiện entitlement và quyền mua một phần cập nhật đúng quantity/cash/cost basis. Giao dịch và dòng tiền thử được dọn; account cùng cancelled event audit được giữ, không lưu credential.

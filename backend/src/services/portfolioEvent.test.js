@@ -22,6 +22,7 @@ test('rejects invalid dates, unsupported types, negative entitlement and malform
   expect(normalizePortfolioEventInput({ ...base, event_type: 'CASH_DIVIDEND', payment_date: 'bad', payload: {} }).error).toBeTruthy();
   expect(normalizePortfolioEventInput({ ...base, entitlement_quantity: -1, event_type: 'STOCK_SPLIT', effective_date: '2026-10-01', payload: { ratio_numerator: 2, ratio_denominator: 1 } }).error).toBeTruthy();
   expect(normalizePortfolioEventInput({ ...base, event_type: 'RIGHTS_ISSUE', effective_date: '2026-10-01', payload: { ratio_numerator: 1, ratio_denominator: 0 } }).error).toBeTruthy();
+  expect(normalizePortfolioEventInput({ ...base, event_type: 'RIGHTS_ISSUE', effective_date: '2026-10-01', payload: { ratio_numerator: 1, ratio_denominator: 5, subscription_price: 15000, exercised_quantity: 2, exercise_cash_amount: 20000 } }).error).toMatch(/khớp/);
 });
 
 test('presents numeric entitlement and bounded public provenance', () => {

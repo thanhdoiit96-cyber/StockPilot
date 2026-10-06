@@ -80,15 +80,26 @@ test('marks coverage partial from a due pending event and withholds TWR without 
   expect(result.points[2].unresolved_event_ids).toEqual(['pending-dividend']);
 });
 
-test('keeps confirmed rights issues explicit and unsupported until their accounting step ships', () => {
+test('does not auto-exercise an entitlement when confirmed exercised quantity is zero', () => {
   const result = buildDailyValuationSeries({
-    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
-    portfolioEvents: [{ id: 'rights-1', stock_id: 's', event_type: 'RIGHTS_ISSUE', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 1, ratio_denominator: 5, exercised_quantity: 0 } }],
-    sessionDates: ['2026-10-01', '2026-10-02', '2026-10-03']
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 150000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'rights-zero', stock_id: 's', event_type: 'RIGHTS_ISSUE', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 1, ratio_denominator: 5, subscription_price: 10000, exercised_quantity: 0, exercise_cash_amount: 0 } }],
+    priceRows: prices.map(row => ({ ...row, close: 10000 }))
   });
-  expect(result.event_coverage).toEqual({ applied_events: 0, pending_events: 0, unsupported_events: 1 });
-  expect(result.limitations).toContain('unsupported_or_fractional_portfolio_events');
-  expect(result.twr_available).toBe(false);
+  expect(result).toMatchObject({ status: 'complete', cumulative_twr_pct: 0, event_coverage: { applied_events: 1, pending_events: 0, unsupported_events: 0 } });
+  expect(result.points[1]).toMatchObject({ cash_balance: 50000, total_cost_basis: 100000, external_cash_flow: 0, stock_event_adjustments: [{ event_id: 'rights-zero', quantity_before: 10, quantity_after: 10, cost_basis_before: 100000, cost_basis_after: 100000, cash_change: 0 }] });
+});
+
+test('applies only confirmed exercised rights to quantity, cash and cost basis', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 150000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'rights-partial', stock_id: 's', event_type: 'RIGHTS_ISSUE', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 1, ratio_denominator: 5, subscription_price: 10000, exercised_quantity: 1, exercise_cash_amount: 10000 } }],
+    priceRows: prices.map(row => ({ ...row, close: 10000 }))
+  });
+  expect(result).toMatchObject({ status: 'complete', twr_available: true, cumulative_twr_pct: 0, event_coverage: { applied_events: 1, unsupported_events: 0 } });
+  expect(result.points[1]).toMatchObject({ portfolio_value: 150000, cash_balance: 40000, total_cost_basis: 110000, external_cash_flow: 0, daily_return_pct: 0, stock_event_adjustments: [{ event_id: 'rights-partial', quantity_before: 10, quantity_after: 11, cost_basis_before: 100000, cost_basis_after: 110000, cash_change: -10000, average_cost_after: 10000 }] });
 });
 
 test('applies a whole-share stock split before same-day trades while preserving cost basis and valuation continuity', () => {

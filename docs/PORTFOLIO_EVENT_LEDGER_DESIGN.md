@@ -104,8 +104,8 @@ Mọi mutation khóa portfolio timeline trong transaction. Client manual không 
 2. Reconciliation dựng entitlement từ transaction ledger tại `record_date`; test timezone và giao dịch cùng ngày — hoàn thành 2026-10-06 theo `trade_date_end_of_day_proxy_v1`. Giao dịch cùng ngày được tính; response luôn ghi `unverified_t_plus_settlement` vì ledger chưa có ngày settlement/VSD.
 3. Áp dụng cash dividend tại payment date; TWR coi đây là investment return, không phải external flow — hoàn thành 2026-10-06, gồm pending/unsupported coverage gate và live PostgreSQL smoke.
 4. Áp dụng stock dividend/split vào quantity/cost basis tại effective date — hoàn thành 2026-10-06. Stock dividend dùng đúng `received_quantity` đã xác nhận; split chỉ áp kết quả cổ phiếu nguyên. V1 không tự làm tròn hoặc suy diễn cash-in-lieu, event tạo phần lẻ giữ valuation partial.
-5. Quyền mua chỉ áp dụng phần người dùng xác nhận thực hiện.
-6. Chạy isolated PostgreSQL và live development smoke trước khi bật event trong UI/valuation mặc định.
+5. Quyền mua chỉ áp dụng phần người dùng xác nhận thực hiện — hoàn thành 2026-10-06. `exercised_quantity=0` là no-op; phần dương giảm cash đúng `exercise_cash_amount`, tăng quantity và total cost basis tương ứng. Server kiểm tra `exercise_cash_amount = exercised_quantity × subscription_price`, không coi khoản này là external flow và không tự thực hiện toàn bộ entitlement. V1 chỉ nhận số cổ phiếu nguyên.
+6. Chạy isolated PostgreSQL và live development smoke trước khi bật event trong UI/valuation mặc định — hoàn thành 2026-10-06 cho cash dividend, stock dividend/split và quyền mua 0/một phần.
 
 Nếu có event pending, entitlement mismatch hoặc loại chưa hỗ trợ trong khoảng, history phải trả `partial`, `twr_available=false` và limitation cụ thể; không bỏ qua im lặng.
 

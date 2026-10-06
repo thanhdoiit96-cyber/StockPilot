@@ -19,7 +19,9 @@ function normalizePayload(type, input = {}) {
   }
   if (type === 'STOCK_SPLIT') return { value: ratio };
   if (!finite(input.subscription_price, { zero: true }) || !finite(input.exercised_quantity, { zero: true }) || !finite(input.exercise_cash_amount, { zero: true })) return { error: 'Thông tin thực hiện quyền mua không hợp lệ.' };
-  return { value: { ...ratio, subscription_price: Number(input.subscription_price), exercised_quantity: Number(input.exercised_quantity), exercise_cash_amount: Number(input.exercise_cash_amount) } };
+  const subscriptionPrice = Number(input.subscription_price); const exercisedQuantity = Number(input.exercised_quantity); const exerciseCashAmount = Number(input.exercise_cash_amount);
+  if (Math.abs(exerciseCashAmount - exercisedQuantity * subscriptionPrice) > 0.01) return { error: 'Số tiền thực hiện quyền phải khớp với số lượng và giá đăng ký.' };
+  return { value: { ...ratio, subscription_price: subscriptionPrice, exercised_quantity: exercisedQuantity, exercise_cash_amount: exerciseCashAmount } };
 }
 
 function normalizePortfolioEventInput(body) {

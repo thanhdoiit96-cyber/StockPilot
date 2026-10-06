@@ -54,17 +54,21 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
         const amount = Number(row.payload?.net_cash_amount);
         if (Number.isFinite(amount) && amount >= 0) { cash += amount; dividendIncome += amount; appliedEvents += 1; }
         else { unresolvedEvent = true; unresolvedEventIdsState.add(row.id); unsupportedEvents += 1; }
-      } else if (row.status === 'CONFIRMED' && ['STOCK_DIVIDEND', 'STOCK_SPLIT'].includes(row.event_type)) {
+      } else if (row.status === 'CONFIRMED' && ['STOCK_DIVIDEND', 'STOCK_SPLIT', 'RIGHTS_ISSUE'].includes(row.event_type)) {
         const stockId = String(row.stock_id); const beforeQuantity = holdings.get(stockId) || 0; const costBasis = costBasisByStock.get(stockId) || 0;
         const received = row.event_type === 'STOCK_DIVIDEND' ? Number(row.payload?.received_quantity) : null;
+        const exercised = row.event_type === 'RIGHTS_ISSUE' ? Number(row.payload?.exercised_quantity) : null;
+        const subscriptionPrice = row.event_type === 'RIGHTS_ISSUE' ? Number(row.payload?.subscription_price) : null;
+        const exerciseCash = row.event_type === 'RIGHTS_ISSUE' ? Number(row.payload?.exercise_cash_amount) : 0;
         const numerator = Number(row.payload?.ratio_numerator); const denominator = Number(row.payload?.ratio_denominator);
-        const afterQuantity = row.event_type === 'STOCK_DIVIDEND' ? beforeQuantity + received : beforeQuantity * numerator / denominator;
+        const afterQuantity = row.event_type === 'STOCK_DIVIDEND' ? beforeQuantity + received : row.event_type === 'RIGHTS_ISSUE' ? beforeQuantity + exercised : beforeQuantity * numerator / denominator;
+        const afterCostBasis = row.event_type === 'RIGHTS_ISSUE' ? costBasis + exerciseCash : costBasis;
         const wholeShare = Number.isFinite(afterQuantity) && Math.abs(afterQuantity - Math.round(afterQuantity)) <= 1e-8;
-        const valid = Number.isFinite(beforeQuantity) && beforeQuantity >= 0 && Number.isFinite(costBasis) && costBasis >= 0 && wholeShare && (row.event_type !== 'STOCK_DIVIDEND' || (Number.isFinite(received) && received >= 0)) && (row.event_type !== 'STOCK_SPLIT' || (Number.isFinite(numerator) && numerator > 0 && Number.isFinite(denominator) && denominator > 0));
+        const valid = Number.isFinite(beforeQuantity) && beforeQuantity >= 0 && Number.isFinite(costBasis) && costBasis >= 0 && Number.isFinite(afterCostBasis) && afterCostBasis >= 0 && wholeShare && (row.event_type !== 'STOCK_DIVIDEND' || (Number.isFinite(received) && received >= 0)) && (row.event_type !== 'STOCK_SPLIT' || (Number.isFinite(numerator) && numerator > 0 && Number.isFinite(denominator) && denominator > 0)) && (row.event_type !== 'RIGHTS_ISSUE' || (Number.isFinite(exercised) && exercised >= 0 && Number.isFinite(subscriptionPrice) && subscriptionPrice >= 0 && Number.isFinite(exerciseCash) && exerciseCash >= 0 && Math.abs(exerciseCash - exercised * subscriptionPrice) <= 0.01));
         if (valid) {
           const normalizedQuantity = Math.round(afterQuantity);
-          holdings.set(stockId, normalizedQuantity); costBasisByStock.set(stockId, costBasis); appliedEvents += 1;
-          stockEventAdjustments.push({ event_id: row.id, event_type: row.event_type, stock_id: stockId, quantity_before: beforeQuantity, quantity_after: normalizedQuantity, cost_basis_before: costBasis, cost_basis_after: costBasis, average_cost_after: normalizedQuantity > 0 ? costBasis / normalizedQuantity : null });
+          holdings.set(stockId, normalizedQuantity); costBasisByStock.set(stockId, afterCostBasis); cash -= exerciseCash; appliedEvents += 1;
+          stockEventAdjustments.push({ event_id: row.id, event_type: row.event_type, stock_id: stockId, quantity_before: beforeQuantity, quantity_after: normalizedQuantity, cost_basis_before: costBasis, cost_basis_after: afterCostBasis, cash_change: exerciseCash === 0 ? 0 : -exerciseCash, average_cost_after: normalizedQuantity > 0 ? afterCostBasis / normalizedQuantity : null });
         } else { unresolvedEvent = true; unresolvedEventIdsState.add(row.id); unsupportedEvents += 1; }
       } else if (row.status === 'PENDING') {
         unresolvedEvent = true; unresolvedEventIdsState.add(row.id); pendingEvents += 1;
@@ -110,7 +114,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     points,
     fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred',
     event_application_order: 'corporate_actions_before_same_day_trades',
-    limitations: ['exact_session_prices_required', ...(pendingEvents ? ['pending_portfolio_events'] : []), ...(unsupportedEvents ? ['unsupported_or_fractional_portfolio_events'] : []), 'rights_issues_not_applied']
+    limitations: ['exact_session_prices_required', ...(pendingEvents ? ['pending_portfolio_events'] : []), ...(unsupportedEvents ? ['unsupported_or_fractional_portfolio_events'] : []), 'settlement_and_cash_in_lieu_not_verified']
   };
 }
 
