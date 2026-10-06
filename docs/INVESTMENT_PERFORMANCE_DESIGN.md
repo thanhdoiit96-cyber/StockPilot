@@ -38,4 +38,11 @@ Nhà đầu tư cần biết danh mục đang tạo ra bao nhiêu lãi/lỗ từ
 
 UI quản lý nạp/rút đã triển khai ngày 2026-10-06: tổng nạp/rút/ròng, thêm/sửa/xóa, xác nhận xóa, khóa mutation lặp, lỗi phục hồi tại chỗ và responsive 390px. Sau mỗi mutation, frontend tải lại toàn bộ portfolio contract thay vì tự vá hiệu suất cục bộ.
 
-Tiếp theo cần tạo daily valuation series theo Asia/Ho_Chi_Minh với quy tắc cash flow đầu/cuối ngày và continuity. Chỉ sau đó mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.
+### Daily valuation và TWR — triển khai 2026-10-06
+
+- `GET /api/portfolio/performance/history?sessions=N` dùng `daily_close_twr_v1`, giới hạn 2–260 phiên và múi giờ `Asia/Ho_Chi_Minh`. Endpoint chỉ đọc EOD trong PostgreSQL, không gọi provider.
+- Dòng tiền ngoài được áp dụng đầu phiên (`beginning_of_session`); giao dịch dựng lại holdings và cash. Một điểm chỉ `complete` khi mọi mã đang nắm giữ có giá đúng phiên và cash không âm. Không carry-forward hoặc nội suy qua khoảng trống.
+- TWR chỉ công bố khi toàn bộ chuỗi hoàn chỉnh, có ít nhất hai điểm và có daily return tính được. Ledger cũ thiếu khoản nạp ban đầu được đánh dấu partial thay vì giả định vốn bằng giao dịch mua.
+- UI tải lười tại trang Danh mục, cho chọn 20/30/60/120 phiên. Đường SVG tách segment qua điểm partial; summary và cảnh báo giữ `Chưa đủ dữ liệu` khi TWR không hợp lệ. Không thêm chart dependency hoặc polling.
+
+Điểm tiếp theo là contract cổ tức/corporate action có liên kết mã, entitlement, ngày hiệu lực và provenance. Chỉ sau khi các event này đi vào valuation mới đánh giá MWR/XIRR và benchmark.

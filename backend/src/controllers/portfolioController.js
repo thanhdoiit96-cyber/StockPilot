@@ -1,11 +1,12 @@
 'use strict';
 const express = require('express');
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 const { Portfolio, PortfolioTransaction, PortfolioCashFlow, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
 const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../services/portfolioCashFlow');
+const { normalizeSessionLimit, buildDailyValuationSeries } = require('../services/portfolioValuation');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -126,6 +127,25 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Load failed:', error.message);
     res.status(500).json({ success: false, message: 'Không tải được danh mục. Vui lòng thử lại.' });
+  }
+});
+
+router.get('/performance/history', async (req, res) => {
+  try {
+    const sessions = normalizeSessionLimit(req.query.sessions);
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return res.json({ success: true, data: buildDailyValuationSeries({ sessions }) });
+    const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    const cashFlows = await PortfolioCashFlow.findAll({ where: { portfolio_id: portfolio.id }, order: [['occurred_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    const stockIds = [...new Set(transactions.map(item => item.stock_id).filter(Boolean))];
+    const sessionDates = await sequelize.query("SELECT DISTINCT (observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS session_date FROM stock_prices WHERE interval='1d' AND observed_at IS NOT NULL ORDER BY session_date DESC LIMIT :sessions", { replacements: { sessions }, type: QueryTypes.SELECT });
+    const orderedSessionDates = sessionDates.map(row => row.session_date).sort();
+    const fromDate = orderedSessionDates[0];
+    const priceRows = stockIds.length && fromDate ? await StockPrice.findAll({ where: { stock_id: { [Op.in]: stockIds }, interval: '1d', observed_at: { [Op.gte]: new Date(`${fromDate}T00:00:00+07:00`) } }, order: [['observed_at', 'DESC'], ['id', 'DESC']], limit: 100000 }) : [];
+    return res.json({ success: true, data: buildDailyValuationSeries({ transactions, cashFlows, priceRows, sessionDates: orderedSessionDates, sessions }) });
+  } catch (error) {
+    console.error('[Portfolio] Performance history failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể tải lịch sử hiệu suất. Vui lòng thử lại.' });
   }
 });
 

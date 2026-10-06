@@ -7,6 +7,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
+import PortfolioPerformanceHistory from "./components/PortfolioPerformanceHistory.jsx";
 import PortfolioCashFlows from "./components/PortfolioCashFlows.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
@@ -1891,6 +1892,10 @@ function lv() {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
             loading: Ir
+          }), O.jsx(PortfolioPerformanceHistory, {
+            token: ue.token,
+            active: authVerification.status === "verified" && re === "portfolio",
+            refreshKey: pe
           }), O.jsx(PortfolioCashFlows, {
             entries: (pe == null ? void 0 : pe.cash_flows) || [],
             onCreate: createPortfolioCashFlow,
