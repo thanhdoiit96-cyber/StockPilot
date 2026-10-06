@@ -162,6 +162,19 @@ test('withholds daily TWR when a stored market session lacks a held-symbol price
   expect(response.body.data.points[1]).toMatchObject({ date: '2026-09-24', status: 'partial', portfolio_value: null });
 });
 
+test('loads confirmed cash dividends into daily valuation without classifying them as external flows', async () => {
+  models.PortfolioTransaction.findAll.mockResolvedValueOnce([{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-09-23T02:00:00Z' }]);
+  models.PortfolioCashFlow.findAll.mockResolvedValueOnce([{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-09-23T01:00:00Z' }]);
+  models.PortfolioEvent.findAll.mockResolvedValueOnce([{ id: 'div', stock_id: 's', event_type: 'CASH_DIVIDEND', status: 'CONFIRMED', payment_date: '2026-09-24', payload: { net_cash_amount: 1000 } }]);
+  models.sequelize.query.mockResolvedValueOnce([{ session_date: '2026-09-24' }, { session_date: '2026-09-23' }]);
+  models.StockPrice.findAll.mockResolvedValueOnce([{ stock_id: 's', interval: '1d', observed_at: '2026-09-23T09:00:00Z', close: 10000 }, { stock_id: 's', interval: '1d', observed_at: '2026-09-24T09:00:00Z', close: 10000 }]);
+  const response = await request(app).get('/portfolio/performance/history?sessions=2');
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({ cumulative_twr_pct: 1, event_coverage: { applied_events: 1, pending_events: 0, unsupported_events: 0 } });
+  expect(response.body.data.points[1]).toMatchObject({ dividend_income: 1000, external_cash_flow: 0, portfolio_value: 101000 });
+  expect(models.PortfolioEvent.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ portfolio_id: 'p' }) }));
+});
+
 test('creates and lists a pending manual portfolio event without trusting client provenance', async () => {
   const created = { id: 'event-1', stock_id: 's', event_type: 'CASH_DIVIDEND', status: 'PENDING', schema_version: 1, record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: '1000', payload: { gross_per_share: 2000, withholding_tax: 0, net_cash_amount: 2000000, currency: 'VND' }, source_type: 'MANUAL', verification_status: 'UNVERIFIED', toJSON() { return { ...this }; } };
   models.PortfolioEvent.create.mockResolvedValueOnce(created);

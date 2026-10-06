@@ -51,6 +51,8 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
   const points = Array.isArray(data?.points) ? data.points : []
   const geometry = useMemo(() => chartGeometry(points), [points])
   const coverage = data?.coverage || { sessions: 0, complete_sessions: 0, incomplete_sessions: 0 }
+  const eventCoverage = data?.event_coverage || { applied_events: 0, pending_events: 0, unsupported_events: 0 }
+  const unresolvedEvents = Number(eventCoverage.pending_events || 0) + Number(eventCoverage.unsupported_events || 0)
   const latest = [...points].reverse().find(point => point.status === 'complete')
 
   return <section className="panel performance-history-panel" aria-labelledby={titleId} aria-busy={state.status === 'loading'}>
@@ -73,7 +75,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
       <div className="performance-history-summary">
         <div><small>Giá trị phiên gần nhất</small><strong>{money(latest?.portfolio_value)}</strong><span>{latest ? longDate(latest.date) : 'Chưa có phiên đầy đủ'}</span></div>
         <div><small>TWR lũy kế</small><strong className={data.twr_available ? Number(data.cumulative_twr_pct) >= 0 ? 'positive' : 'negative' : 'neutral'}>{data.twr_available ? percent(data.cumulative_twr_pct) : 'Chưa đủ dữ liệu'}</strong><span>{data.twr_available ? `${coverage.sessions} phiên liên tục` : 'Không ước tính khi chuỗi bị thiếu'}</span></div>
-        <div><small>Độ phủ định giá</small><strong>{coverage.complete_sessions}/{coverage.sessions} phiên</strong><span>{coverage.incomplete_sessions ? `${coverage.incomplete_sessions} phiên cần bổ sung` : 'Đầy đủ trong khoảng đã chọn'}</span></div>
+        <div><small>Độ phủ định giá</small><strong>{coverage.complete_sessions}/{coverage.sessions} phiên</strong><span>{unresolvedEvents ? `${unresolvedEvents} sự kiện cần xử lý` : coverage.incomplete_sessions ? `${coverage.incomplete_sessions} phiên cần bổ sung` : 'Đầy đủ trong khoảng đã chọn'}</span></div>
       </div>
 
       <div className="performance-history-chart-shell">
@@ -85,7 +87,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
         <div className="performance-history-axis"><span>{points[0] ? shortDate(points[0].date) : ''}</span><span>{points.at(-1) ? shortDate(points.at(-1).date) : ''}</span></div>
       </div>
 
-      {coverage.incomplete_sessions > 0 && <p className="performance-history-warning" role="status">Có {coverage.incomplete_sessions} phiên thiếu giá hoặc thiếu số dư tiền hợp lệ. Biểu đồ ngắt tại khoảng thiếu và TWR được giữ ở trạng thái chưa công bố.</p>}
+      {coverage.incomplete_sessions > 0 && <p className="performance-history-warning" role="status">{unresolvedEvents ? `Có ${coverage.incomplete_sessions} phiên bị ảnh hưởng bởi ${unresolvedEvents} sự kiện đang chờ xác nhận hoặc chưa hỗ trợ.` : `Có ${coverage.incomplete_sessions} phiên thiếu giá hoặc thiếu số dư tiền hợp lệ.`} Biểu đồ ngắt tại khoảng thiếu và TWR được giữ ở trạng thái chưa công bố.</p>}
       <p className="performance-note">TWR dùng quy ước dòng tiền đầu phiên, múi giờ Việt Nam. Chưa bao gồm cổ tức và corporate action; số liệu phục vụ theo dõi, không phải báo cáo môi giới.</p>
     </>}
   </section>

@@ -139,12 +139,13 @@ router.get('/performance/history', async (req, res) => {
     if (!portfolio) return res.json({ success: true, data: buildDailyValuationSeries({ sessions }) });
     const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
     const cashFlows = await PortfolioCashFlow.findAll({ where: { portfolio_id: portfolio.id }, order: [['occurred_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+    const portfolioEvents = await PortfolioEvent.findAll({ where: { portfolio_id: portfolio.id, status: { [Op.in]: ['PENDING', 'CONFIRMED'] } }, order: [['record_date', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
     const stockIds = [...new Set(transactions.map(item => item.stock_id).filter(Boolean))];
     const sessionDates = await sequelize.query("SELECT DISTINCT (observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS session_date FROM stock_prices WHERE interval='1d' AND observed_at IS NOT NULL ORDER BY session_date DESC LIMIT :sessions", { replacements: { sessions }, type: QueryTypes.SELECT });
     const orderedSessionDates = sessionDates.map(row => row.session_date).sort();
     const fromDate = orderedSessionDates[0];
     const priceRows = stockIds.length && fromDate ? await StockPrice.findAll({ where: { stock_id: { [Op.in]: stockIds }, interval: '1d', observed_at: { [Op.gte]: new Date(`${fromDate}T00:00:00+07:00`) } }, order: [['observed_at', 'DESC'], ['id', 'DESC']], limit: 100000 }) : [];
-    return res.json({ success: true, data: buildDailyValuationSeries({ transactions, cashFlows, priceRows, sessionDates: orderedSessionDates, sessions }) });
+    return res.json({ success: true, data: buildDailyValuationSeries({ transactions, cashFlows, portfolioEvents, priceRows, sessionDates: orderedSessionDates, sessions }) });
   } catch (error) {
     console.error('[Portfolio] Performance history failed:', error.message);
     return res.status(500).json({ success: false, message: 'Không thể tải lịch sử hiệu suất. Vui lòng thử lại.' });
