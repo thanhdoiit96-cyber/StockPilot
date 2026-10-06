@@ -86,10 +86,10 @@ function summarizePortfolioHoldings(transactions = [], prices = new Map()) {
   const byStock = new Map();
   for (const tx of transactions) {
     const key = tx.stock_id;
-    const current = byStock.get(key) || { stock_id: key, symbol: tx.Stock?.code, name: tx.Stock?.name, quantity: 0, cost: 0, realized_pnl: 0, first_traded_at: tx.traded_at, last_traded_at: tx.traded_at };
+    const current = byStock.get(key) || { stock_id: key, symbol: tx.Stock?.code, name: tx.Stock?.name, quantity: 0, cost: 0, realized_cost_basis: 0, realized_pnl: 0, first_traded_at: tx.traded_at, last_traded_at: tx.traded_at };
     const quantity = Number(tx.quantity); const price = normalizeTransactionPrice(tx.price); const fees = Number(tx.fees || 0);
     if (tx.side === 'BUY') { current.cost += quantity * price + fees; current.quantity += quantity; }
-    else if (tx.side === 'SELL') { const average = current.quantity ? current.cost / current.quantity : 0; current.realized_pnl += quantity * (price - average) - fees; current.cost -= quantity * average; current.quantity -= quantity; }
+    else if (tx.side === 'SELL') { const average = current.quantity ? current.cost / current.quantity : 0; const disposedCost = quantity * average; current.realized_cost_basis += disposedCost; current.realized_pnl += quantity * price - fees - disposedCost; current.cost -= disposedCost; current.quantity -= quantity; }
     current.last_traded_at = tx.traded_at;
     byStock.set(key, current);
   }
@@ -104,4 +104,35 @@ function summarizePortfolioTransactions(transactions = [], prices = new Map()) {
   return summarizePortfolioHoldings(transactions, prices).filter(item => item.status === 'open');
 }
 
-module.exports = { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions };
+function summarizeInvestmentPerformance({ transactions = [], positions = [], closedPositions = [], generatedAt = new Date() } = {}) {
+  const holdings = [...positions, ...closedPositions];
+  const openCost = positions.reduce((sum, item) => sum + Number(item.cost || 0), 0);
+  const realizedCostBasis = holdings.reduce((sum, item) => sum + Number(item.realized_cost_basis || 0), 0);
+  const realizedPnl = holdings.reduce((sum, item) => sum + Number(item.realized_pnl || 0), 0);
+  const pricedPositions = positions.filter(item => item.market_value != null && Number.isFinite(Number(item.market_value)));
+  const complete = pricedPositions.length === positions.length;
+  const marketValue = pricedPositions.reduce((sum, item) => sum + Number(item.market_value || 0), 0);
+  const unrealizedPnl = complete ? positions.reduce((sum, item) => sum + Number(item.unrealized_pnl || 0), 0) : null;
+  const totalPnl = unrealizedPnl == null ? null : realizedPnl + unrealizedPnl;
+  const costBasis = openCost + realizedCostBasis;
+  return {
+    status: transactions.length === 0 ? 'empty' : complete ? 'complete' : 'partial',
+    methodology: 'weighted_average_cost_basis_v1',
+    generated_at: new Date(generatedAt).toISOString(),
+    period: { from: transactions[0]?.traded_at || null, to: transactions.at(-1)?.traded_at || null },
+    coverage: { priced_positions: pricedPositions.length, open_positions: positions.length },
+    market_value: complete ? marketValue : null,
+    open_cost_basis: openCost,
+    realized_cost_basis: realizedCostBasis,
+    total_cost_basis: costBasis,
+    realized_pnl: realizedPnl,
+    unrealized_pnl: unrealizedPnl,
+    total_pnl: totalPnl,
+    return_on_cost_pct: totalPnl == null || costBasis <= 0 ? null : Number((totalPnl / costBasis * 100).toFixed(4)),
+    time_weighted_return_pct: null,
+    money_weighted_return_pct: null,
+    limitations: ['cash_flows_not_tracked', 'dividends_not_tracked', 'corporate_actions_not_applied']
+  };
+}
+
+module.exports = { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance };

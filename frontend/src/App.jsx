@@ -6,6 +6,7 @@ import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
+import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
@@ -1870,7 +1871,11 @@ function lv() {
           })]
         }), O.jsxs("div", {
           className: "personal-grid",
-          children: [O.jsxs("article", {
+          children: [O.jsx(PortfolioPerformance, {
+            performance: pe == null ? void 0 : pe.performance,
+            positions: mi,
+            loading: Ir
+          }), O.jsxs("article", {
             className: "panel portfolio-panel",
             children: [O.jsx("h3", {
               children: p("Ghi nhận giao dịch")

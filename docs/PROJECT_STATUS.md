@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Hiệu suất đầu tư, lát cắt giá vốn đầu tiên
+
+- Đã hoàn thành contract và UI snapshot hiệu suất dựa trên ledger thật với phương pháp `weighted_average_cost_basis_v1`: giá trị hiện tại, giá vốn đang mở/đã tất toán, lãi/lỗ đã thực hiện, chưa thực hiện, tổng lãi/lỗ và tỷ suất trên giá vốn. Phí mua nằm trong giá vốn; phí bán trừ khỏi lợi nhuận thực hiện.
+- Contract trả `empty|partial|complete` và coverage giá. Nếu bất kỳ vị thế mở nào thiếu giá, các tổng phụ thuộc giá và tỷ suất được giữ `null`, không biến `null` thành 0 hoặc đưa ra kết quả giả. TWR/MWR vẫn `null`; UI nêu rõ chưa tính nạp/rút, cổ tức và corporate action.
+- UI mới nằm đầu trang Danh mục, có phân cấp số liệu, trạng thái dữ liệu và bố cục một cột trên mobile. Không có request/provider call mới: phép tính đi cùng `GET /api/portfolio`; các tổng phụ thuộc giá được tái định giá từ chính quote refresh của bảng vị thế để hai phần không lệch nhau.
+- Kiểm chứng: backend 40 suite / 185 test đạt; frontend 49/49 unit/service, Danh mục 19/19 Playwright (gồm 390px), targeted tái định giá 2/2 và production build/bundle integrity đạt với bundle `index-DONgl8cR.js`. Chưa live-smoke contract mới với ledger tài khoản development thật.
+- Điểm tiếp tục của hạng mục 1: thiết kế cash-flow/corporate-action schema và daily valuation continuity trước khi thêm khoảng thời gian, biểu đồ, TWR/MWR hoặc benchmark. Không gọi tỷ suất trên giá vốn hiện tại là hiệu suất chuẩn hóa theo thời gian.
+
 ## 2026-10-06 — Chuẩn hóa cổng phân tích sản phẩm
 
 - Đã bổ sung vào `AGENTS.md` quy trình bắt buộc cho mọi yêu cầu chức năng/UI/UX: xác định bài toán và tiêu chí thành công, đánh giá chuyên gia, so sánh phương án, thiết kế trải nghiệm, đặt ngân sách hiệu năng rồi mới triển khai.

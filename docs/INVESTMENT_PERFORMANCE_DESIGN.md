@@ -1,0 +1,30 @@
+# Thiết kế Hiệu suất đầu tư
+
+## Mục tiêu và người dùng
+
+Nhà đầu tư cần biết danh mục đang tạo ra bao nhiêu lãi/lỗ từ các giao dịch họ đã ghi nhận, đồng thời hiểu dữ liệu nào đã và chưa được tính. Bản đầu ưu tiên tính đúng, truy vết tới ledger và phản ánh trung thực dữ liệu thiếu hơn là dựng biểu đồ hoặc tỷ suất chuẩn ngành khi chưa đủ cash flow.
+
+## Quyết định bản đầu
+
+- Dùng giá vốn bình quân theo từng mã, nhất quán với vị thế hiện có.
+- Công bố giá trị thị trường, giá vốn đang mở, giá vốn đã tất toán, lãi/lỗ đã thực hiện, chưa thực hiện, tổng lãi/lỗ và lợi nhuận trên tổng giá vốn.
+- Chỉ công bố tổng lãi/lỗ và tỷ suất khi mọi vị thế mở đều có giá. Nếu thiếu giá, giữ phần đã thực hiện nhưng trả trạng thái `partial` và để các tổng phụ thuộc giá là `null`.
+- Gắn contract `weighted_average_cost_basis_v1`. Đây là tỷ suất trên giá vốn, không phải time-weighted return (TWR) hoặc money-weighted return (MWR/XIRR).
+- UI đặt đầu trang Danh mục, ưu tiên một con số tổng, ba thành phần đối chiếu và trạng thái coverage; responsive một cột trên mobile.
+
+## Phương án đã loại
+
+- Không dùng `(giá trị hiện tại - tổng tiền mua) / tổng tiền mua`: cách này sai khi có bán một phần hoặc tái sử dụng vốn.
+- Không gọi kết quả hiện tại là TWR/MWR: ledger chưa có nạp/rút tiền, cash balance, cổ tức và corporate action.
+- Chưa dựng chuỗi biểu đồ từ giá EOD: cần valuation theo từng phiên, quy tắc cutoff/timezone và coverage lịch sử trước.
+
+## Contract và tiêu chí nghiệm thu
+
+- API danh mục trả thêm `performance`, không tạo request riêng và không làm tăng số lần gọi provider. Frontend tái định giá các trường phụ thuộc giá từ cùng quote refresh đang dùng cho vị thế để snapshot không lệch với bảng bên dưới.
+- Kết quả phải khớp tổng `realized_pnl` và `unrealized_pnl` của các vị thế; phí mua nằm trong giá vốn, phí bán trừ khỏi lợi nhuận đã thực hiện.
+- Trả coverage số vị thế có giá/tổng vị thế mở, `complete|partial|empty`, các limitation có cấu trúc và TWR/MWR là `null`.
+- Unit test bao phủ bán một phần, phí, dữ liệu giá đầy đủ và thiếu giá. UI phải có trạng thái empty/partial/complete, đọc được bằng screen reader và không tràn ở 390px.
+
+## Bước mở rộng có điều kiện
+
+Thiết kế cash-flow ledger cho nạp/rút, cổ tức và corporate action; sau đó tạo daily valuation series theo Asia/Ho_Chi_Minh, kiểm tra continuity rồi mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.

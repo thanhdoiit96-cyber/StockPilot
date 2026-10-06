@@ -3,7 +3,7 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { Portfolio, PortfolioTransaction, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
-const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions } = require('../services/portfolioAccounting');
+const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
 const router = express.Router();
 router.use(requireAuth);
@@ -94,11 +94,13 @@ router.get('/', async (req, res) => {
       price_source: 'intraday'
     };
   });
+  const performance = summarizeInvestmentPerformance({ transactions, positions, closedPositions });
   res.json({ success: true, data: {
     portfolio,
     positions,
     closed_positions: closedPositions,
     position_counts: { open: positions.length, closed: closedPositions.length },
+    performance,
     transactions: transactions.map(tx => ({
       id: tx.id,
       stock_id: tx.stock_id,
