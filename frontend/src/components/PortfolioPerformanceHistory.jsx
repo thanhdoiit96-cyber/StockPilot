@@ -6,6 +6,24 @@ const percent = value => value == null ? 'Chưa đủ dữ liệu' : `${Number(v
 const shortDate = value => new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(new Date(`${value}T12:00:00+07:00`))
 const longDate = value => new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${value}T12:00:00+07:00`))
 
+function describeMwr(mwr) {
+  if (mwr?.status === 'available' && Number.isFinite(Number(mwr.annualized_mwr_pct))) return {
+    value: percent(mwr.annualized_mwr_pct),
+    tone: Number(mwr.annualized_mwr_pct) >= 0 ? 'positive' : 'negative',
+    detail: 'Tỷ suất thường niên hóa · Từ khi bắt đầu'
+  }
+  if (mwr?.status === 'multiple_roots') return { value: 'Không duy nhất', tone: 'neutral', detail: 'Dòng tiền đổi chiều tạo nhiều kết quả; hệ thống không chọn tùy ý.' }
+  if (mwr?.status === 'no_root') return { value: 'Không xác định', tone: 'neutral', detail: 'Dòng tiền hiện tại không tạo được tỷ suất hợp lệ.' }
+  const unavailable = {
+    partial_valuation: 'Cần hoàn tất các phiên định giá và sự kiện còn thiếu.',
+    insufficient_sign_change: 'Cần có vốn nạp và giá trị danh mục cuối kỳ hợp lệ.',
+    external_cash_flow_after_terminal: 'Đang chờ phiên định giá mới sau dòng tiền gần nhất.',
+    invalid_external_cash_flow: 'Có dòng tiền cần được kiểm tra lại.',
+    invalid_terminal_value: 'Chưa có giá trị danh mục cuối kỳ hợp lệ.'
+  }
+  return { value: 'Chưa thể tính', tone: 'neutral', detail: unavailable[mwr?.reason] || 'Chưa đủ dữ liệu để tính tỷ suất từ khi bắt đầu.' }
+}
+
 function chartGeometry(points) {
   const valid = points.map((point, index) => ({ ...point, index, value: Number(point.portfolio_value) })).filter(point => point.status === 'complete' && Number.isFinite(point.value))
   if (!valid.length) return { valid, segments: [], min: 0, max: 0 }
@@ -54,6 +72,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
   const eventCoverage = data?.event_coverage || { applied_events: 0, pending_events: 0, unsupported_events: 0 }
   const unresolvedEvents = Number(eventCoverage.pending_events || 0) + Number(eventCoverage.unsupported_events || 0)
   const latest = [...points].reverse().find(point => point.status === 'complete')
+  const mwr = describeMwr(data?.mwr)
 
   return <section className="panel performance-history-panel" aria-labelledby={titleId} aria-busy={state.status === 'loading'}>
     <div className="performance-history-heading">
@@ -75,6 +94,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
       <div className="performance-history-summary">
         <div><small>Giá trị phiên gần nhất</small><strong>{money(latest?.portfolio_value)}</strong><span>{latest ? longDate(latest.date) : 'Chưa có phiên đầy đủ'}</span></div>
         <div><small>TWR lũy kế</small><strong className={data.twr_available ? Number(data.cumulative_twr_pct) >= 0 ? 'positive' : 'negative' : 'neutral'}>{data.twr_available ? percent(data.cumulative_twr_pct) : 'Chưa đủ dữ liệu'}</strong><span>{data.twr_available ? `${coverage.sessions} phiên liên tục` : 'Không ước tính khi chuỗi bị thiếu'}</span></div>
+        <div className="performance-mwr-card"><small><span>MWR từ khi bắt đầu</span><span className="metric-info" title="MWR phản ánh thời điểm và quy mô tiền bạn nạp/rút. Kết quả được thường niên hóa nên không phải mức sinh lời tuyệt đối." aria-label="Giải thích MWR thường niên hóa">i</span></small><strong className={mwr.tone}>{mwr.value}</strong><span>{mwr.detail}</span></div>
         <div><small>Độ phủ định giá</small><strong>{coverage.complete_sessions}/{coverage.sessions} phiên</strong><span>{unresolvedEvents ? `${unresolvedEvents} sự kiện cần xử lý` : coverage.incomplete_sessions ? `${coverage.incomplete_sessions} phiên cần bổ sung` : 'Đầy đủ trong khoảng đã chọn'}</span></div>
       </div>
 
@@ -88,7 +108,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey 
       </div>
 
       {coverage.incomplete_sessions > 0 && <p className="performance-history-warning" role="status">{unresolvedEvents ? `Có ${coverage.incomplete_sessions} phiên bị ảnh hưởng bởi ${unresolvedEvents} sự kiện đang chờ xác nhận hoặc chưa hỗ trợ.` : `Có ${coverage.incomplete_sessions} phiên thiếu giá hoặc thiếu số dư tiền hợp lệ.`} Biểu đồ ngắt tại khoảng thiếu và TWR được giữ ở trạng thái chưa công bố.</p>}
-      <p className="performance-note">TWR dùng quy ước dòng tiền đầu phiên, múi giờ Việt Nam. Chưa bao gồm cổ tức và corporate action; số liệu phục vụ theo dõi, không phải báo cáo môi giới.</p>
+      <p className="performance-note">TWR phản ánh khoảng phiên đang chọn; MWR phản ánh thời điểm và quy mô nạp/rút tiền từ khi bắt đầu, được thường niên hóa. Cổ tức và sự kiện đã xác nhận được tính trong giá trị danh mục. Số liệu phục vụ theo dõi, không phải báo cáo môi giới.</p>
     </>}
   </section>
 }

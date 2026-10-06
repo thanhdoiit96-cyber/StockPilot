@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Card MWR “Từ khi bắt đầu”
+
+- Panel lịch sử hiệu suất nay có card MWR riêng, ghi rõ phạm vi “Từ khi bắt đầu” và bản chất thường niên hóa; tooltip giải thích MWR phản ánh thời điểm/quy mô nạp rút và không phải lợi nhuận tuyệt đối. Card độc lập với bộ lọc 20/30/60/120 phiên của TWR/biểu đồ.
+- `available` hiển thị phần trăm có màu theo dấu. `partial_valuation` và các lý do unavailable có hướng dẫn hành động; `no_root` hiển thị “Không xác định”; `multiple_roots` hiển thị “Không duy nhất” và nêu hệ thống không chọn tùy ý. UI không hiển thị `roots_pct` hoặc thuật ngữ solver. Ghi chú cũ sai về cổ tức/corporate action đã được sửa theo contract hiện tại.
+- Layout summary chuyển 4 cột desktop, 2 cột tablet và 1 cột mobile. Frontend unit 49/49, Danh mục Playwright 24/24, encoding và production build/bundle integrity đạt; bundle mới là `index-yV-Vku4y.js`. Preview 4173 đã phục vụ bundle này và trả HTTP 200.
+- Phạm vi Hiệu suất đầu tư không benchmark đã hoàn tất. Benchmark và lựa chọn chỉ số vẫn chờ index-series hợp lệ; nếu chưa gỡ được blocker này, điểm tiếp tục theo backlog là mở rộng thông tin cá nhân thay vì suy diễn chỉ số thị trường.
+
 ## 2026-10-06 — Contract và kiểm chứng MWR/XIRR
 
 - History API nay trả `mwr` theo `xirr_actual_365_v1`, scope `inception_to_terminal`. `DEPOSIT` là dòng tiền âm của nhà đầu tư; `WITHDRAWAL` và terminal portfolio value là dương. Cổ tức/corporate action/quyền mua không bị đếm lại như external flow vì tác động đã nằm trong terminal value. MWR không đổi theo selector số phiên của chart.
