@@ -81,6 +81,7 @@ test('summarizes traceable cost-basis performance without claiming TWR or MWR', 
     return_on_cost_pct: 13.7862, time_weighted_return_pct: null, money_weighted_return_pct: null
   });
   expect(performance.coverage).toEqual({ priced_positions: 1, open_positions: 1 });
+  expect(performance.external_cash_flows).toEqual({ count: 0, deposits: 0, withdrawals: 0, net: 0 });
 });
 
 test('withholds aggregate return when any open position lacks a price', () => {

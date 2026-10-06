@@ -27,4 +27,13 @@ Nhà đầu tư cần biết danh mục đang tạo ra bao nhiêu lãi/lỗ từ
 
 ## Bước mở rộng có điều kiện
 
-Thiết kế cash-flow ledger cho nạp/rút, cổ tức và corporate action; sau đó tạo daily valuation series theo Asia/Ho_Chi_Minh, kiểm tra continuity rồi mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.
+### Cash-flow ledger — triển khai 2026-10-06
+
+- Migration 024 tạo `portfolio_cash_flows` cho đúng hai loại dòng tiền bên ngoài: `DEPOSIT` và `WITHDRAWAL`. Số tiền luôn dương; chiều dòng tiền do `type` quyết định. Mỗi bản ghi có thời điểm, ghi chú tùy chọn, audit timestamp và thuộc đúng một portfolio.
+- `GET /api/portfolio` trả timeline `cash_flows` và tổng `deposits`, `withdrawals`, `net` trong `performance.external_cash_flows`. Dòng tiền không được cộng vào realized/unrealized P&L.
+- POST/PUT kiểm tra loại, số tiền, mốc từ năm 2000 đến hiện tại + 5 phút và ghi chú tối đa 240 ký tự. PUT/DELETE lọc đồng thời `id` và `portfolio_id`; DELETE yêu cầu `confirmed=true`.
+- Cổ tức không dùng loại cash flow chung vì cần stock/entitlement/source; stock split và quyền mua cần contract corporate action riêng.
+
+### Điều kiện trước TWR/MWR
+
+Tiếp theo cần UI quản lý nạp/rút có xác nhận và phản hồi lỗi, rồi tạo daily valuation series theo Asia/Ho_Chi_Minh với quy tắc cash flow đầu/cuối ngày và continuity. Chỉ sau đó mới thêm bộ lọc thời gian, benchmark, TWR và MWR/XIRR.
