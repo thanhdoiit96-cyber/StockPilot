@@ -6,6 +6,7 @@ import MarketBreadth from "./components/MarketBreadth.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
+import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
@@ -2041,50 +2042,15 @@ function lv() {
               className: "allocation-footnote",
               children: [Object.keys(di).length, "/", Oo.length, " ", p("mã có quote intraday"), " · ", Qh || Object.keys(di).length < Oo.length ? p("Mã thiếu quote dùng giá EOD; tỷ trọng kết hợp dữ liệu hiện có.") : p("Tỷ trọng dựa trên quote intraday mới nhất."), (hi == null ? void 0 : hi.status) === "circuit_open" ? " Provider tạm ngắt, sẽ tự thử lại." : (hi == null ? void 0 : hi.status) === "degraded" ? " Provider đang chậm." : ""]
             })]
-          }), O.jsxs("article", {
-            className: "panel watchlist-panel",
-            children: [O.jsx("h3", {
-              children: "Watchlist"
-            }), O.jsxs("form", {
-              onSubmit: Xh,
-              className: "auth-form",
-              children: [O.jsx("input", {
-                placeholder: p("Thêm mã, ví dụ FPT"),
-                value: Jr,
-                onChange: d => el(d.target.value.toUpperCase())
-              }), O.jsx("button", {
-                className: "primary-btn",
-                type: "submit",
-                children: p("Thêm mã")
-              })]
-            }), O.jsxs("ul", {
-              className: "watchlist",
-              children: [pt.map(d => O.jsxs("li", {
-                className: "watchlist-detail-link",
-                role: "link",
-                tabIndex: 0,
-                "aria-label": `Mở Chi tiết mã ${d.Stock.code}`,
-                onClick: () => {
-                  d.Stock.id && (ht(d.Stock.id), Xe("detail"));
-                },
-                onKeyDown: S => {
-                  d.Stock.id && (S.key === "Enter" || S.key === " ") && (S.preventDefault(), ht(d.Stock.id), Xe("detail"));
-                },
-                children: [O.jsx("strong", {
-                  children: d.Stock.code
-                }), O.jsx("button", {
-                  className: "ghost-btn small-btn",
-                  type: "button",
-                  onClick: S => {
-                    S.stopPropagation(), rf(d.Stock.code);
-                  },
-                  children: p("Xóa")
-                })]
-              }, d.stock_id)), !pt.length && O.jsx("li", {
-                className: "muted-text",
-                children: p("Chưa có mã")
-              })]
-            })]
+          }), O.jsx(WatchlistPanel, {
+            entries: pt,
+            addValue: Jr,
+            onAddValueChange: el,
+            onAdd: Xh,
+            onOpenDetail: d => {
+              d && (ht(d), Xe("detail"));
+            },
+            onRemove: rf
           })]
         })]
       }), re === "detail" && O.jsxs("section", {

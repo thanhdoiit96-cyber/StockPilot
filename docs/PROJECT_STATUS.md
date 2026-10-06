@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Hoàn thiện trải nghiệm Watchlist
+
+- Tách Watchlist thành component riêng: thêm tìm kiếm theo mã/tên doanh nghiệp không phân biệt dấu, bộ đếm tổng/đang hiển thị, trạng thái rỗng và nút xóa tìm kiếm trả focus về ô nhập.
+- Mỗi dòng có nút Mở chi tiết và Xóa riêng; bỏ hành vi cả dòng là link để tránh mở nhầm khi thao tác. Xóa yêu cầu xác nhận inline, hủy không gửi request; bố cục hành động tự xếp trên màn hình hẹp.
+- Kiểm chứng: frontend 49/49 test; toàn bộ 22 Playwright test của Danh mục/Watchlist đạt với API mô phỏng, gồm thêm/tìm không dấu/hủy-xác nhận xóa/mở chi tiết và regression bảng ghim. Build/bundle integrity đạt, bundle index-DKsRjbRI.js. Chưa chạy luồng Watchlist mới với tài khoản/database development thật.
+- Điểm tiếp tục: cải thiện phản hồi mutation Watchlist (loading theo dòng, thông báo thành công/lỗi và chống gửi lặp) rồi chạy live smoke với session development; không mở rộng AI Advisor.
+
 ## 2026-10-05 — Tìm kiếm vị thế danh mục
 
 - Thêm tìm kiếm mã/tên doanh nghiệp, không phân biệt hoa thường và dấu tiếng Việt; kết hợp với nhóm Đang mở/Đã đóng, giữ từ khóa khi chuyển nhóm. Hiển thị số kết quả, thông báo không khớp và nút xóa trả focus về ô tìm kiếm.

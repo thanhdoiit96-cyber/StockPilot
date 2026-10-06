@@ -454,6 +454,16 @@ button, input { font: inherit; }
   gap: 16px;
 }
 
+.watchlist-heading, .watchlist-add-form > div, .watchlist-search, .watchlist-actions, .watchlist-confirm { display: flex; align-items: center; gap: 10px; }
+.watchlist-heading { justify-content: space-between; align-items: flex-start; }
+.watchlist-heading h3 { margin-bottom: 4px; }
+.watchlist-add-form > label, .watchlist-search label { color: var(--muted); font-size: 13px; }
+.watchlist-add-form > div input { flex: 1; min-width: 0; }
+.watchlist-search { flex-wrap: wrap; margin: 16px 0; align-items: end; }
+.watchlist-search label { display: grid; gap: 6px; flex: 1 1 240px; }
+.watchlist-search label input { width: 100%; min-width: 0; }
+.watchlist-search [role="status"] { color: var(--muted); font-size: 13px; padding-bottom: 10px; }
+
 .watchlist li {
   display: flex;
   justify-content: space-between;
@@ -462,7 +472,6 @@ button, input { font: inherit; }
   border-radius: 12px;
   background: rgba(148, 163, 184, 0.04);
   border: 1px solid var(--border);
-  cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
@@ -474,12 +483,21 @@ button, input { font: inherit; }
 .position-search-toolbar label { display: grid; gap: 6px; flex: 1 1 240px; color: var(--muted); font-size: 13px; }
 .position-search-toolbar input { width: 100%; min-width: 0; }
 .position-search-toolbar [role="status"] { color: var(--muted); font-size: 13px; padding-bottom: 10px; }
-.watchlist-detail-link:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(94, 234, 212, .16); outline: none; }
-.watchlist-detail-link:hover strong, .watchlist-detail-link:focus-visible strong { color: #99f6e4; }
+.watchlist-company { min-width: 0; }
+.watchlist-actions { flex: 0 0 auto; }
+.watchlist-confirm { justify-content: flex-end; flex-wrap: wrap; }
+.watchlist-confirm span { color: var(--muted); font-size: 13px; }
+.watchlist-empty { cursor: default; justify-content: flex-start !important; }
 
 .watchlist li strong,
 .watchlist li small { display: block; }
 .watchlist li small { color: var(--muted); margin-top: 4px; }
+
+@media (max-width: 520px) {
+  .watchlist li { align-items: flex-start; flex-direction: column; }
+  .watchlist-actions, .watchlist-confirm { width: 100%; justify-content: flex-end; }
+  .watchlist-add-form > div { align-items: stretch; }
+}
 
 .trend {
   font-weight: 700;

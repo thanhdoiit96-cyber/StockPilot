@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { filterPositions } from './positionSearch.mjs'
+import { filterPositions, matchesSearch } from './positionSearch.mjs'
 
 const rows = [{ symbol: 'FPT', name: 'Công nghệ FPT' }, { symbol: 'HPG', name: 'Hòa Phát' }, { symbol: 'DXG', name: 'Đất Xanh' }]
 test('position search matches symbols and Vietnamese names without accents', () => {
@@ -13,4 +13,8 @@ test('empty and unmatched searches preserve source rows and tolerate missing nam
   assert.deepEqual(filterPositions(rows, 'missing'), [])
   assert.deepEqual(filterPositions([{ symbol: 'FPT' }], 'fpt'), [{ symbol: 'FPT' }])
   assert.equal(rows.length, 3)
+})
+test('shared matcher supports nested watchlist values', () => {
+  assert.equal(matchesSearch(['VCB', 'Ngân hàng Ngoại thương'], 'ngoai thuong'), true)
+  assert.equal(matchesSearch(['VCB', 'Ngân hàng Ngoại thương'], 'FPT'), false)
 })
