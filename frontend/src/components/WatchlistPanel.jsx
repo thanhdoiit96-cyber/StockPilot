@@ -42,9 +42,9 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
     </form>
     {mutation.message && <p className={mutation.error ? 'watchlist-mutation error' : 'watchlist-mutation success'} role={mutation.error ? 'alert' : 'status'}>{mutation.message}</p>}
     <div className="watchlist-search">
-      <label htmlFor="watchlist-search">Tìm trong Watchlist<input ref={searchRef} id="watchlist-search" type="search" value={query} onChange={event => { setQuery(event.target.value); setConfirmCode('') }} placeholder="Mã hoặc tên doanh nghiệp" /></label>
-      {query && <button type="button" className="ghost-btn" disabled={busy} onClick={() => { setQuery(''); setConfirmCode(''); searchRef.current?.focus() }}>Xóa tìm kiếm</button>}
-      <span role="status">{visible.length}/{entries.length} mã hiển thị</span>
+      <label className="search-field-label" htmlFor="watchlist-search">Tìm trong Watchlist<input ref={searchRef} className="app-search-input" id="watchlist-search" type="search" value={query} onChange={event => { setQuery(event.target.value); setConfirmCode('') }} placeholder="Mã hoặc tên doanh nghiệp" /></label>
+      {query && <button type="button" className="ghost-btn small-btn search-clear-btn" disabled={busy} onClick={() => { setQuery(''); setConfirmCode(''); searchRef.current?.focus() }}>Xóa tìm kiếm</button>}
+      <span className="search-result-count" role="status">{visible.length}/{entries.length} mã hiển thị</span>
     </div>
     <ul className="watchlist">
       {visible.map(entry => {

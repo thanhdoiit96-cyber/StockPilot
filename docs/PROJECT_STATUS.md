@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Đồng bộ định dạng ô tìm kiếm
+
+- Chuẩn hóa ô tìm kiếm Bảng giá, Vị thế và Watchlist: cao 42px, nền/border tối đồng nhất, bo góc 11px, icon kính lúp, placeholder dễ đọc và focus ring cùng màu thương hiệu.
+- Nhãn dùng cùng typography; nút Xóa tìm kiếm dùng kích thước compact và trả focus về input; bộ đếm kết quả chuyển thành pill nhất quán. Giữ type=search và accessible label trên cả desktop/mobile.
+- Kiểm chứng: frontend 49/49 test; Playwright targeted đạt style tính toán giống nhau cho Vị thế/Watchlist, Bảng giá mobile 390px có height/radius/padding/icon đúng và regression nút Thêm vẫn đọc được. Build/bundle integrity đạt, bundle index-B1JfX7aG.js.
+- Điểm tiếp tục: rà soát và chuẩn hóa select/filter toolbar cạnh search (ngành, page size) hoặc chuyển sang bộ lọc Nhật ký giao dịch.
+
 ## 2026-10-06 — Thêm nhanh vào Watchlist
 
 - Bổ sung nút phụ “Theo dõi” ngay cạnh “Thêm” vào danh mục trên Bảng giá, bảng cổ phiếu Tổng quan và Chi tiết mã. Thiết kế gọn với biểu tượng sao, nhãn rõ và cùng nhóm hành động; mobile vẫn giữ hai nút trong ô thao tác cuộn ngang.

@@ -46,11 +46,11 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
       </div>
     </div>
     <div className="position-search-toolbar">
-      <label htmlFor="position-search">Tìm vị thế theo mã hoặc tên doanh nghiệp
-        <input id="position-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Ví dụ: FPT, Hòa Phát" />
+      <label className="search-field-label" htmlFor="position-search">Tìm vị thế theo mã hoặc tên doanh nghiệp
+        <input className="app-search-input" id="position-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Ví dụ: FPT, Hòa Phát" />
       </label>
-      {query && <button type="button" className="ghost-btn" onClick={() => { setQuery(''); document.getElementById('position-search')?.focus() }}>Xóa tìm kiếm</button>}
-      {!loading && !error && <span role="status">{rows.length}/{sourceRows.length} vị thế {closed ? 'đã đóng' : 'đang mở'}</span>}
+      {query && <button type="button" className="ghost-btn small-btn search-clear-btn" onClick={() => { setQuery(''); document.getElementById('position-search')?.focus() }}>Xóa tìm kiếm</button>}
+      {!loading && !error && <span className="search-result-count" role="status">{rows.length}/{sourceRows.length} vị thế {closed ? 'đã đóng' : 'đang mở'}</span>}
     </div>
     {!loading && !error && query.trim() && !rows.length ? <p role="status">Không có vị thế phù hợp. Thử mã hoặc tên khác, hoặc xóa tìm kiếm.</p> : null}
     <div className="table-wrap portfolio-table">

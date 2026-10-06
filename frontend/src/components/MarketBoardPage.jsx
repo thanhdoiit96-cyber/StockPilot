@@ -234,7 +234,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
             {SECTOR_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
           </select>
         </div>
-        <input className="table-search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={queryInput} onChange={event => setQueryInput(event.target.value)} />
+        <input className="table-search app-search-input" type="search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={queryInput} onChange={event => setQueryInput(event.target.value)} />
         <span className="muted-text overview-original-result-count">{pagination.total || rows.length} mã</span>
         {hasFilters && <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button>}
         <label className="page-size-control"><span>Số mã / trang</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
