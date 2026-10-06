@@ -104,7 +104,7 @@ function summarizePortfolioTransactions(transactions = [], prices = new Map()) {
   return summarizePortfolioHoldings(transactions, prices).filter(item => item.status === 'open');
 }
 
-function summarizeInvestmentPerformance({ transactions = [], positions = [], closedPositions = [], generatedAt = new Date() } = {}) {
+function summarizeInvestmentPerformance({ transactions = [], positions = [], closedPositions = [], cashFlowSummary = { count: 0, deposits: 0, withdrawals: 0, net: 0 }, generatedAt = new Date() } = {}) {
   const holdings = [...positions, ...closedPositions];
   const openCost = positions.reduce((sum, item) => sum + Number(item.cost || 0), 0);
   const realizedCostBasis = holdings.reduce((sum, item) => sum + Number(item.realized_cost_basis || 0), 0);
@@ -131,7 +131,8 @@ function summarizeInvestmentPerformance({ transactions = [], positions = [], clo
     return_on_cost_pct: totalPnl == null || costBasis <= 0 ? null : Number((totalPnl / costBasis * 100).toFixed(4)),
     time_weighted_return_pct: null,
     money_weighted_return_pct: null,
-    limitations: ['cash_flows_not_tracked', 'dividends_not_tracked', 'corporate_actions_not_applied']
+    external_cash_flows: cashFlowSummary,
+    limitations: [cashFlowSummary.count ? 'cash_flows_recorded_not_applied_to_twr' : 'cash_flows_not_recorded', 'dividends_not_tracked', 'corporate_actions_not_applied']
   };
 }
 

@@ -28,24 +28,32 @@ async function main() {
     created = true;
     const [location] = await db.query('SELECT current_schema() AS name', { type: Sequelize.QueryTypes.SELECT });
     assert.equal(location.name, schema);
-    for (const file of ['001_create_system_cache', '002_create_stocks', '003_create_stock_prices', '004_expand_market_data_contract', '005_create_market_data_ingestion_runs', '006_create_market_data_reconciliation_runs', '007_create_users_watchlist', '008_create_portfolios', '012_add_portfolio_recommendation_context', '013_add_stock_listing_metadata', '014_add_stock_listing_checked_at']) {
+    for (const file of ['001_create_system_cache', '002_create_stocks', '003_create_stock_prices', '004_expand_market_data_contract', '005_create_market_data_ingestion_runs', '006_create_market_data_reconciliation_runs', '007_create_users_watchlist', '008_create_portfolios', '012_add_portfolio_recommendation_context', '013_add_stock_listing_metadata', '014_add_stock_listing_checked_at', '015_add_market_breadth_metrics', '024_create_portfolio_cash_flows']) {
       await require(`../src/migrations/${file}`).up(db.getQueryInterface(), Sequelize);
     }
     console.log('PASS: isolated core schema migrations, recommendation provenance, and stock listing metadata migrations');
 
     const Stock = require('../src/models/Stock')(db, DataTypes);
     const StockPrice = require('../src/models/StockPrice')(db, DataTypes);
-    const User = require('../src/models/User')(db, DataTypes);
+    // Keep this isolated verifier aligned with its deliberately minimal users
+    // schema instead of loading profile/auth fields from later migrations.
+    const User = db.define('User', {
+      id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+      email: { type: DataTypes.STRING(255), allowNull: false },
+      password_hash: { type: DataTypes.STRING(255), allowNull: false },
+      role: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'user' }
+    }, { tableName: 'users', underscored: true, timestamps: false });
     const WatchlistItem = require('../src/models/WatchlistItem')(db, DataTypes);
     const Portfolio = require('../src/models/Portfolio')(db, DataTypes);
     const PortfolioTransaction = require('../src/models/PortfolioTransaction')(db, DataTypes);
-    const models = { Stock, StockPrice, User, WatchlistItem, Portfolio, PortfolioTransaction };
+    const PortfolioCashFlow = require('../src/models/PortfolioCashFlow')(db, DataTypes);
+    const models = { Stock, StockPrice, User, WatchlistItem, Portfolio, PortfolioTransaction, PortfolioCashFlow };
     Stock.associate(models);
     StockPrice.associate(models);
-    User.associate(models);
     WatchlistItem.associate(models);
     Portfolio.associate(models);
     PortfolioTransaction.associate(models);
+    PortfolioCashFlow.associate(models);
     // Use production router with real models bound to the isolated connection.
     require.cache[modelPath] = { id: modelPath, filename: modelPath, loaded: true, exports: models };
     const cache = new CacheService(db);
@@ -102,6 +110,7 @@ async function main() {
     console.log('PASS: watchlist ownership is isolated per user');
 
     const portfolio = await Portfolio.create({ user_id: userA.id, name: 'Danh mục kiểm thử' });
+    await PortfolioCashFlow.create({ portfolio_id: portfolio.id, type: 'DEPOSIT', amount: 2000, occurred_at: new Date('2026-08-31'), note: 'Vốn kiểm thử' });
     const recommendationContext = { source: 'personalized', generated_at: '2026-09-01T00:00:00.000Z', horizon_days: 20, score: 82, expected_entry_price: 10 };
     await PortfolioTransaction.create({ portfolio_id: portfolio.id, stock_id: stock.id, side: 'BUY', quantity: 100, price: 10, fees: 5, traded_at: new Date('2026-09-01'), recommendation_context: recommendationContext });
     await PortfolioTransaction.create({ portfolio_id: portfolio.id, stock_id: stock.id, side: 'SELL', quantity: 20, price: 12, fees: 2, traded_at: new Date('2026-09-02') });
@@ -109,6 +118,7 @@ async function main() {
     assert.deepEqual(transactions[0].recommendation_context, recommendationContext);
     const bought = Number(transactions[0].quantity); const sold = Number(transactions[1].quantity); const cost = Number(transactions[0].quantity) * Number(transactions[0].price) + Number(transactions[0].fees); const quantity = bought - sold; const average = cost / bought; const realized = sold * (Number(transactions[1].price) - average) - Number(transactions[1].fees);
     assert.equal(quantity, 80); assert.ok(Math.abs(average - 10.05) < 1e-9); assert.ok(Math.abs(realized - 37) < 1e-9);
+    assert.equal(Number((await PortfolioCashFlow.findOne({ where: { portfolio_id: portfolio.id } })).amount), 2000);
     const userBPortfolio = await Portfolio.findOne({ where: { user_id: userB.id } });
     assert.equal(userBPortfolio, null);
     console.log('PASS: portfolio ledger calculates quantity, average cost, and realized P&L');
@@ -124,12 +134,14 @@ async function main() {
     assert.equal(tracked.recommendation.score, 81);
     assert.equal(tracked.evaluation.status, 'evaluated');
     assert.equal(tracked.evaluation.outcome, 'positive');
+    assert.deepEqual(portfolioView.performance.external_cash_flows, { count: 1, deposits: 2000, withdrawals: 0, net: 2000 });
     const userBToken = jwt.sign({ sub: userB.id, email: userB.email, role: 'user' }, process.env.JWT_SECRET || 'development-only-change-me');
     const otherPortfolio = (await request(app).get('/api/portfolio').set('Authorization', `Bearer ${userBToken}`).expect(200)).body.data;
     assert.equal(otherPortfolio.recommendation_entries.length, 0);
+    assert.equal(otherPortfolio.cash_flows.length, 0);
     console.log('PASS: linked recommendation is horizon-evaluated and remains private to its portfolio owner');
 
-    const keys = ['v8:stocks:1:200:name:ASC::::', `v4:stock:${stock.id}`, `stock:price:${stock.id}`];
+    const keys = ['v11:stocks:1:200:name:ASC::::::', `v7:stock:${stock.id}`, `stock:price:${stock.id}`];
     for (const url of urls) {
       const expectedSource = url.endsWith('/price') ? 'cache' : 'database';
       assert.equal((await request(app).get(url).expect(200)).body.source, expectedSource);

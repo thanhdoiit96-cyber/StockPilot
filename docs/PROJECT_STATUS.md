@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Nền dữ liệu dòng tiền ngoài danh mục
+
+- Migration 024 đã tạo `portfolio_cash_flows` cho nạp/rút tiền, có ràng buộc type, amount dương, cascade theo portfolio và index timeline; migration đã áp dụng trên development.
+- `GET /api/portfolio` trả timeline cùng tổng nạp/rút/net trong `performance.external_cash_flows`. POST/PUT/DELETE có validation thời điểm/số tiền/ghi chú, lọc ownership theo portfolio và yêu cầu xác nhận khi xóa. Dòng tiền vẫn tách khỏi realized/unrealized P&L và chưa được dùng để công bố TWR/MWR.
+- Cổ tức/corporate action được giữ ngoài contract này vì cần liên kết mã, entitlement và nguồn; không dùng một loại dòng tiền chung để mô phỏng.
+- Kiểm chứng: backend 41 suite / 193 test đạt; targeted cash-flow/accounting 12/12, portfolio controller 18/18, stock controller 17/17. PostgreSQL isolated-schema đạt cả migration/model/API ownership và dọn schema; đồng thời sửa cache invalidation Chi tiết mã từ key cũ `v4` sang runtime key `v7` được phát hiện bởi verifier.
+- Điểm tiếp tục: xây UI quản lý nạp/rút trong trang Danh mục với add/edit/delete, empty/error/pending và mobile; sau đó mới thiết kế daily valuation continuity/TWR. Chưa live-smoke mutation cash flow bằng tài khoản development thật.
+
 ## 2026-10-06 — Hiệu suất đầu tư, lát cắt giá vốn đầu tiên
 
 - Đã hoàn thành contract và UI snapshot hiệu suất dựa trên ledger thật với phương pháp `weighted_average_cost_basis_v1`: giá trị hiện tại, giá vốn đang mở/đã tất toán, lãi/lỗ đã thực hiện, chưa thực hiện, tổng lãi/lỗ và tỷ suất trên giá vốn. Phí mua nằm trong giá vốn; phí bán trừ khỏi lợi nhuận thực hiện.

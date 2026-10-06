@@ -1,5 +1,6 @@
 jest.mock('../models', () => ({
   Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
+  PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
   sequelize: { transaction: jest.fn() }
 }));
@@ -16,6 +17,7 @@ beforeEach(() => {
   models.Portfolio.findOne.mockResolvedValue({ id: 'p', user_id: 'user-a' });
   models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
   models.PortfolioTransaction.bulkCreate.mockResolvedValue([{ id: 'import-1' }]);
+  models.PortfolioCashFlow.findAll.mockResolvedValue([]);
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
   models.sequelize.transaction.mockImplementation(callback => callback({ id: 'db-transaction' }));
@@ -54,6 +56,52 @@ test('returns the authenticated portfolio transaction history as normalized ledg
     created_at: '2026-09-24T02:01:00Z',
     source: 'manual'
   }]);
+});
+
+test('returns external cash flows separately from profit and summarizes their net amount', async () => {
+  models.PortfolioCashFlow.findAll.mockResolvedValue([
+    { id: 'cf-1', type: 'DEPOSIT', amount: '1000000.00', occurred_at: '2026-09-01T03:00:00Z', note: 'Vốn đầu kỳ', created_at: '2026-09-01T03:00:01Z', updated_at: '2026-09-01T03:00:01Z' },
+    { id: 'cf-2', type: 'WITHDRAWAL', amount: '250000.00', occurred_at: '2026-09-20T03:00:00Z', note: null, created_at: '2026-09-20T03:00:01Z', updated_at: '2026-09-20T03:00:01Z' }
+  ]);
+  liveQuoteService.load.mockResolvedValue({});
+  const response = await request(app).get('/portfolio');
+  expect(response.body.data.cash_flows).toHaveLength(2);
+  expect(response.body.data.performance.external_cash_flows).toEqual({ count: 2, deposits: 1000000, withdrawals: 250000, net: 750000 });
+  expect(response.body.data.performance.limitations).toContain('cash_flows_recorded_not_applied_to_twr');
+  expect(response.body.data.performance.realized_pnl).toBe(0);
+});
+
+test('creates a validated cash flow inside the authenticated portfolio', async () => {
+  models.PortfolioCashFlow.create.mockResolvedValue({ id: 'cf-1', type: 'DEPOSIT', amount: 1000000 });
+  const response = await request(app).post('/portfolio/cash-flows').send({ type: 'deposit', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: 'Vốn ban đầu' });
+  expect(response.status).toBe(201);
+  expect(models.PortfolioCashFlow.create).toHaveBeenCalledWith(expect.objectContaining({ portfolio_id: 'p', type: 'DEPOSIT', amount: 1000000, note: 'Vốn ban đầu' }));
+});
+
+test('rejects invalid cash flows before writing', async () => {
+  const response = await request(app).post('/portfolio/cash-flows').send({ type: 'DIVIDEND', amount: -1, occurred_at: 'not-a-date' });
+  expect(response.status).toBe(400);
+  expect(models.PortfolioCashFlow.create).not.toHaveBeenCalled();
+});
+
+test('updates only a cash flow owned by the authenticated portfolio', async () => {
+  const update = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioCashFlow.findOne.mockResolvedValue({ id: 'cf-1', update });
+  const response = await request(app).put('/portfolio/cash-flows/cf-1').send({ type: 'withdrawal', amount: 200000, occurred_at: '2026-10-01T03:00:00Z', note: '' });
+  expect(response.status).toBe(200);
+  expect(models.PortfolioCashFlow.findOne).toHaveBeenCalledWith({ where: { id: 'cf-1', portfolio_id: 'p' } });
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ type: 'WITHDRAWAL', amount: 200000, note: null, updated_at: expect.any(Date) }));
+});
+
+test('requires confirmation and ownership before deleting a cash flow', async () => {
+  const unconfirmed = await request(app).delete('/portfolio/cash-flows/cf-1').send({});
+  expect(unconfirmed.status).toBe(400);
+  const destroy = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioCashFlow.findOne.mockResolvedValue({ id: 'cf-1', destroy });
+  const confirmed = await request(app).delete('/portfolio/cash-flows/cf-1').send({ confirmed: true });
+  expect(confirmed.status).toBe(200);
+  expect(models.PortfolioCashFlow.findOne).toHaveBeenCalledWith({ where: { id: 'cf-1', portfolio_id: 'p' } });
+  expect(destroy).toHaveBeenCalled();
 });
 
 test('returns fully sold symbols separately from open positions', async () => {

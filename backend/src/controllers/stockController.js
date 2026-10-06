@@ -552,7 +552,7 @@ module.exports = function(cacheService) {
       }
 
       await stock.update({ ...value, updated_at: new Date() });
-      await cacheService.delete(`v4:stock:${id}`);
+      await cacheService.delete(`v7:stock:${id}`);
       await cacheService.delete(`stock:price:${id}`);
       await cacheService.deleteByType('stock');
 

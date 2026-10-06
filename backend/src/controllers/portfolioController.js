@@ -1,10 +1,11 @@
 'use strict';
 const express = require('express');
 const { Op } = require('sequelize');
-const { Portfolio, PortfolioTransaction, Stock, StockPrice, sequelize } = require('../models');
+const { Portfolio, PortfolioTransaction, PortfolioCashFlow, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
+const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../services/portfolioCashFlow');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -15,6 +16,7 @@ router.get('/', async (req, res) => {
   let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
   if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
   const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }], order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+  const cashFlows = await PortfolioCashFlow.findAll({ where: { portfolio_id: portfolio.id }, order: [['occurred_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
   const stocks = [...new Set(transactions.map(tx => tx.stock_id))]; const prices = new Map();
   const previousPrices = new Map();
   if (stocks.length) {
@@ -94,13 +96,14 @@ router.get('/', async (req, res) => {
       price_source: 'intraday'
     };
   });
-  const performance = summarizeInvestmentPerformance({ transactions, positions, closedPositions });
+  const performance = summarizeInvestmentPerformance({ transactions, positions, closedPositions, cashFlowSummary: summarizeExternalCashFlows(cashFlows) });
   res.json({ success: true, data: {
     portfolio,
     positions,
     closed_positions: closedPositions,
     position_counts: { open: positions.length, closed: closedPositions.length },
     performance,
+    cash_flows: cashFlows.map(flow => ({ id: flow.id, type: flow.type, amount: Number(flow.amount), occurred_at: flow.occurred_at, note: flow.note || null, created_at: flow.created_at, updated_at: flow.updated_at })),
     transactions: transactions.map(tx => ({
       id: tx.id,
       stock_id: tx.stock_id,
@@ -123,6 +126,51 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Load failed:', error.message);
     res.status(500).json({ success: false, message: 'Không tải được danh mục. Vui lòng thử lại.' });
+  }
+});
+
+router.post('/cash-flows', async (req, res) => {
+  const input = normalizeCashFlowInput(req.body);
+  if (input.error) return res.status(400).json({ success: false, message: input.error });
+  try {
+    let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
+    const flow = await PortfolioCashFlow.create({ portfolio_id: portfolio.id, ...input.value });
+    return res.status(201).json({ success: true, data: flow });
+  } catch (error) {
+    console.error('[Portfolio] Create cash flow failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể lưu dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
+  }
+});
+
+router.put('/cash-flows/:cashFlowId', async (req, res) => {
+  const input = normalizeCashFlowInput(req.body);
+  if (input.error) return res.status(400).json({ success: false, message: input.error });
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
+    const flow = await PortfolioCashFlow.findOne({ where: { id: req.params.cashFlowId, portfolio_id: portfolio.id } });
+    if (!flow) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
+    await flow.update({ ...input.value, updated_at: new Date() });
+    return res.json({ success: true, data: flow });
+  } catch (error) {
+    console.error('[Portfolio] Update cash flow failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể sửa dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
+  }
+});
+
+router.delete('/cash-flows/:cashFlowId', async (req, res) => {
+  if (req.body?.confirmed !== true) return res.status(400).json({ success: false, message: 'Cần xác nhận trước khi xóa dòng tiền.' });
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
+    const flow = await PortfolioCashFlow.findOne({ where: { id: req.params.cashFlowId, portfolio_id: portfolio.id } });
+    if (!flow) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
+    await flow.destroy();
+    return res.json({ success: true, data: { id: flow.id } });
+  } catch (error) {
+    console.error('[Portfolio] Delete cash flow failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể xóa dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
   }
 });
 
