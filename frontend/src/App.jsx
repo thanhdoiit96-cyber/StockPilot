@@ -1585,7 +1585,7 @@ function lv() {
                   })]
                 })]
               }), O.jsx("input", {
-                className: "table-search",
+                className: "table-search app-search-input",
                 "aria-label": p("Tìm cổ phiếu"),
                 placeholder: p("Tìm mã hoặc tên công ty"),
                 value: ft,

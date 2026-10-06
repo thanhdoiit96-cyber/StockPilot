@@ -301,6 +301,33 @@ button, input { font: inherit; }
 .quick-watchlist-btn.has-error { color: #fecaca; border-color: rgba(248, 113, 113, .45); }
 .detail-watchlist-btn { min-height: 42px; padding-inline: 14px; }
 
+/* Shared search treatment across Market Board, positions and Watchlist. */
+.app-search-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 10px 36px 10px 40px;
+  border: 1px solid #40516b;
+  border-radius: 11px;
+  color: #f8fafc;
+  background-color: #17243a;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 13px center;
+  font: inherit;
+  line-height: 1.2;
+  color-scheme: dark;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.app-search-input::placeholder { color: #94a3b8; opacity: 1; }
+.app-search-input:hover { border-color: #64748b; background-color: #1b2a43; }
+.app-search-input:focus, .app-search-input:focus-visible { border-color: var(--primary); background-color: #17243a; box-shadow: 0 0 0 3px rgba(94, 234, 212, .14); outline: none; }
+.app-search-input::-webkit-search-cancel-button { cursor: pointer; filter: invert(88%) sepia(8%) saturate(562%) hue-rotate(179deg); }
+.search-field-label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .01em; }
+.search-clear-btn { min-height: 42px; white-space: nowrap; }
+.search-result-count { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 9px !important; border: 1px solid rgba(148, 163, 184, .18); border-radius: 999px; background: rgba(148, 163, 184, .07); white-space: nowrap; }
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -1716,6 +1743,19 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .table-panel[data-react-market-board] > .panel-header .page-size-control:not(.overview-page-size-control) { display: none; }
 .table-panel[data-react-market-board] .table-pagination { flex-wrap: wrap; }
 .table-panel[data-react-market-board] .pagination-actions { display: flex; align-items: center; gap: 8px; }
+
+/* The legacy table selector above is intentionally overridden for search inputs. */
+.table-panel .overview-filter-row .table-search.app-search-input {
+  min-height: 42px;
+  padding: 10px 36px 10px 40px;
+  border-color: #40516b;
+  border-radius: 11px;
+  background-color: #17243a;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 13px center;
+}
+.table-panel .overview-filter-row .table-search.app-search-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(94, 234, 212, .14); }
 @media (max-width: 700px) {
   .table-panel[data-react-market-board] > .panel-header, .market-session-timeline-header { align-items: stretch; flex-direction: column; }
   .market-board-toolbar { justify-content: stretch; }

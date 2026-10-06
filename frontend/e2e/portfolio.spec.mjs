@@ -25,6 +25,22 @@ test('searches positions without accents and keeps query across status filters',
   await expect(search).toBeVisible()
   expect(await region.locator('.position-search-toolbar').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 })
+
+test('uses the same search field format for positions and Watchlist', async ({ page }) => {
+  await boot(page, [{ stock_id: 'a', symbol: 'FPT', name: 'Công nghệ FPT', quantity: 10 }], [], [], [{ stock_id: 'a', Stock: { id: 'a', code: 'FPT', name: 'Công nghệ FPT' } }])
+  const positionSearch = page.getByLabel('Tìm vị thế theo mã hoặc tên doanh nghiệp')
+  const watchlistSearch = page.getByLabel('Tìm trong Watchlist')
+  for (const search of [positionSearch, watchlistSearch]) {
+    await expect(search).toHaveCSS('min-height', '42px')
+    await expect(search).toHaveCSS('border-radius', '11px')
+    await expect(search).toHaveCSS('padding-left', '40px')
+    expect(await search.evaluate(element => getComputedStyle(element).backgroundImage)).not.toBe('none')
+  }
+  await watchlistSearch.fill('FPT')
+  await expect(page.locator('.watchlist-search .search-result-count')).toHaveText('1/1 mã hiển thị')
+  await page.getByRole('button', { name: 'Xóa tìm kiếm' }).last().click()
+  await expect(watchlistSearch).toBeFocused()
+})
 async function boot(page,initialPositions=[],initialTransactions=[],initialClosedPositions=[],initialWatch=[]){
   let watch=initialWatch;let positions=initialPositions;let transactions=initialTransactions;let closedPositions=initialClosedPositions;let transactionBody=null;const imports=[];const mutations=[]
   await page.route('**/api/**',async route=>{
