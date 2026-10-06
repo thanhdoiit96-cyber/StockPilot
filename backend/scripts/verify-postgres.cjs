@@ -28,7 +28,7 @@ async function main() {
     created = true;
     const [location] = await db.query('SELECT current_schema() AS name', { type: Sequelize.QueryTypes.SELECT });
     assert.equal(location.name, schema);
-    for (const file of ['001_create_system_cache', '002_create_stocks', '003_create_stock_prices', '004_expand_market_data_contract', '005_create_market_data_ingestion_runs', '006_create_market_data_reconciliation_runs', '007_create_users_watchlist', '008_create_portfolios', '012_add_portfolio_recommendation_context', '013_add_stock_listing_metadata', '014_add_stock_listing_checked_at', '015_add_market_breadth_metrics', '024_create_portfolio_cash_flows']) {
+    for (const file of ['001_create_system_cache', '002_create_stocks', '003_create_stock_prices', '004_expand_market_data_contract', '005_create_market_data_ingestion_runs', '006_create_market_data_reconciliation_runs', '007_create_users_watchlist', '008_create_portfolios', '012_add_portfolio_recommendation_context', '013_add_stock_listing_metadata', '014_add_stock_listing_checked_at', '015_add_market_breadth_metrics', '024_create_portfolio_cash_flows', '025_create_portfolio_events']) {
       await require(`../src/migrations/${file}`).up(db.getQueryInterface(), Sequelize);
     }
     console.log('PASS: isolated core schema migrations, recommendation provenance, and stock listing metadata migrations');
@@ -47,13 +47,15 @@ async function main() {
     const Portfolio = require('../src/models/Portfolio')(db, DataTypes);
     const PortfolioTransaction = require('../src/models/PortfolioTransaction')(db, DataTypes);
     const PortfolioCashFlow = require('../src/models/PortfolioCashFlow')(db, DataTypes);
-    const models = { Stock, StockPrice, User, WatchlistItem, Portfolio, PortfolioTransaction, PortfolioCashFlow };
+    const PortfolioEvent = require('../src/models/PortfolioEvent')(db, DataTypes);
+    const models = { Stock, StockPrice, User, WatchlistItem, Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent };
     Stock.associate(models);
     StockPrice.associate(models);
     WatchlistItem.associate(models);
     Portfolio.associate(models);
     PortfolioTransaction.associate(models);
     PortfolioCashFlow.associate(models);
+    PortfolioEvent.associate(models);
     // Use production router with real models bound to the isolated connection.
     require.cache[modelPath] = { id: modelPath, filename: modelPath, loaded: true, exports: models };
     const cache = new CacheService(db);
@@ -135,10 +137,17 @@ async function main() {
     assert.equal(tracked.evaluation.status, 'evaluated');
     assert.equal(tracked.evaluation.outcome, 'positive');
     assert.deepEqual(portfolioView.performance.external_cash_flows, { count: 1, deposits: 2000, withdrawals: 0, net: 2000 });
+    const createdEvent = (await request(app).post('/api/portfolio/events').set('Authorization', `Bearer ${userAToken}`).send({ event_type: 'CASH_DIVIDEND', symbol: 'VERIFY', record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: 82, payload: { gross_per_share: 1000, withholding_tax: 0, net_cash_amount: 82000, currency: 'VND' } }).expect(201)).body.data;
+    assert.equal(createdEvent.status, 'PENDING'); assert.equal(createdEvent.source_type, 'MANUAL');
+    await request(app).post(`/api/portfolio/events/${createdEvent.id}/confirm`).set('Authorization', `Bearer ${userAToken}`).send({ confirmed: true }).expect(200);
+    const ownedEvents = (await request(app).get('/api/portfolio/events').set('Authorization', `Bearer ${userAToken}`).expect(200)).body.data.events;
+    assert.equal(ownedEvents.length, 1); assert.equal(ownedEvents[0].verification_status, 'USER_CONFIRMED');
     const userBToken = jwt.sign({ sub: userB.id, email: userB.email, role: 'user' }, process.env.JWT_SECRET || 'development-only-change-me');
     const otherPortfolio = (await request(app).get('/api/portfolio').set('Authorization', `Bearer ${userBToken}`).expect(200)).body.data;
     assert.equal(otherPortfolio.recommendation_entries.length, 0);
     assert.equal(otherPortfolio.cash_flows.length, 0);
+    assert.equal((await request(app).get('/api/portfolio/events').set('Authorization', `Bearer ${userBToken}`).expect(200)).body.data.events.length, 0);
+    console.log('PASS: portfolio events persist lifecycle state and remain isolated by owner');
     console.log('PASS: linked recommendation is horizon-evaluated and remains private to its portfolio owner');
 
     const keys = ['v11:stocks:1:200:name:ASC::::::', `v7:stock:${stock.id}`, `stock:price:${stock.id}`];

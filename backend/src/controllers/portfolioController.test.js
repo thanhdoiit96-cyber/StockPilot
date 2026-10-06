@@ -1,6 +1,7 @@
 jest.mock('../models', () => ({
   Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
   PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
+  PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
   sequelize: { transaction: jest.fn(), query: jest.fn() }
 }));
@@ -18,7 +19,9 @@ beforeEach(() => {
   models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
   models.PortfolioTransaction.bulkCreate.mockResolvedValue([{ id: 'import-1' }]);
   models.PortfolioCashFlow.findAll.mockResolvedValue([]);
+  models.PortfolioEvent.findAll.mockResolvedValue([]);
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
+  models.Stock.findOne.mockResolvedValue({ id: 's', code: 'FPT', name: 'FPT Corp' });
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
   models.sequelize.transaction.mockImplementation(callback => callback({ id: 'db-transaction' }));
   models.sequelize.query.mockResolvedValue([{ session_date: '2026-09-24' }]);
@@ -157,6 +160,39 @@ test('withholds daily TWR when a stored market session lacks a held-symbol price
   const response = await request(app).get('/portfolio/performance/history?sessions=3');
   expect(response.body.data).toMatchObject({ status: 'partial', twr_available: false, cumulative_twr_pct: null, coverage: { sessions: 3, complete_sessions: 2, incomplete_sessions: 1 } });
   expect(response.body.data.points[1]).toMatchObject({ date: '2026-09-24', status: 'partial', portfolio_value: null });
+});
+
+test('creates and lists a pending manual portfolio event without trusting client provenance', async () => {
+  const created = { id: 'event-1', stock_id: 's', event_type: 'CASH_DIVIDEND', status: 'PENDING', schema_version: 1, record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: '1000', payload: { gross_per_share: 2000, withholding_tax: 0, net_cash_amount: 2000000, currency: 'VND' }, source_type: 'MANUAL', verification_status: 'UNVERIFIED', toJSON() { return { ...this }; } };
+  models.PortfolioEvent.create.mockResolvedValueOnce(created);
+  const response = await request(app).post('/portfolio/events').send({ event_type: 'CASH_DIVIDEND', symbol: 'FPT', record_date: '2026-09-20', payment_date: '2026-10-10', entitlement_quantity: 1000, payload: created.payload, source_type: 'PROVIDER', verification_status: 'SOURCE_VERIFIED' });
+  expect(response.status).toBe(201);
+  expect(models.PortfolioEvent.create).toHaveBeenCalledWith(expect.objectContaining({ portfolio_id: 'p', stock_id: 's', status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', created_by: 'user-a' }));
+  models.PortfolioEvent.findAll.mockResolvedValueOnce([{ ...created, Stock: { code: 'FPT' } }]);
+  const listed = await request(app).get('/portfolio/events');
+  expect(listed.body.data.events[0]).toMatchObject({ id: 'event-1', symbol: 'FPT', entitlement_quantity: 1000 });
+});
+
+test('confirms only an owned pending event and never rewrites its financial payload', async () => {
+  const update = jest.fn(function (values) { Object.assign(this, values); return Promise.resolve(this); });
+  const event = { id: 'event-1', status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', entitlement_quantity: 10, payload: { ratio_numerator: 2, ratio_denominator: 1 }, update };
+  models.PortfolioEvent.findOne.mockResolvedValueOnce(event);
+  const response = await request(app).post('/portfolio/events/event-1/confirm').send({ confirmed: true, payload: { ratio_numerator: 999 } });
+  expect(response.status).toBe(200);
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: 'CONFIRMED', verification_status: 'USER_CONFIRMED' }));
+  expect(update.mock.calls[0][0]).not.toHaveProperty('payload');
+  expect(models.PortfolioEvent.findOne).toHaveBeenCalledWith({ where: { id: 'event-1', portfolio_id: 'p' } });
+});
+
+test('corrects an event by creating a pending replacement and superseding the original atomically', async () => {
+  const update = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioEvent.findOne.mockResolvedValueOnce({ id: 'old-event', status: 'CONFIRMED', update });
+  const replacement = { id: 'new-event', stock_id: 's', status: 'PENDING', entitlement_quantity: 100, payload: {}, toJSON() { return { ...this }; } };
+  models.PortfolioEvent.create.mockResolvedValueOnce(replacement);
+  const response = await request(app).post('/portfolio/events/old-event/correct').send({ event_type: 'STOCK_SPLIT', symbol: 'FPT', record_date: '2026-09-20', effective_date: '2026-10-01', entitlement_quantity: 100, payload: { ratio_numerator: 2, ratio_denominator: 1 } });
+  expect(response.status).toBe(201);
+  expect(models.PortfolioEvent.create).toHaveBeenCalledWith(expect.objectContaining({ supersedes_event_id: 'old-event', status: 'PENDING' }), { transaction: { id: 'db-transaction' } });
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: 'SUPERSEDED' }), { transaction: { id: 'db-transaction' } });
 });
 
 test('database errors produce an explicit HTTP error rather than an empty portfolio', async () => {

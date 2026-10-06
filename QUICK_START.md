@@ -306,3 +306,12 @@ npm.cmd run verify:live:portfolio-performance
 ```
 
 Script tạo hai tài khoản cookie-session cô lập, ghi rồi dọn một dòng tiền thử, kiểm tra 5 phiên định giá, TWR cash-only và ownership. Hai tài khoản test được giữ lại; credential chỉ tồn tại trong bộ nhớ process và không được ghi ra đĩa.
+
+Kiểm tra lifecycle event ledger mới trên PostgreSQL development:
+
+```powershell
+cd D:\MyProject\frontend
+npm.cmd run verify:live:portfolio-events
+```
+
+Script kiểm tra pending/manual enforcement, confirm, correction chain, cancel và ownership isolation. Hai tài khoản test cô lập được giữ để bảo toàn audit; credential không được ghi ra đĩa.

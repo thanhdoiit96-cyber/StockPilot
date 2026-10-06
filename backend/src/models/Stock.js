@@ -55,6 +55,7 @@ module.exports = (sequelize, DataTypes) => {
     Stock.hasMany(models.StockPrice, { foreignKey: 'stock_id', as: 'prices' });
     if (models.WatchlistItem) Stock.hasMany(models.WatchlistItem, { foreignKey: 'stock_id', as: 'watchlistItems' });
     if (models.PortfolioTransaction) Stock.hasMany(models.PortfolioTransaction, { foreignKey: 'stock_id', as: 'portfolioTransactions' });
+    if (models.PortfolioEvent) Stock.hasMany(models.PortfolioEvent, { foreignKey: 'stock_id', as: 'portfolioEvents' });
   };
 
   return Stock;

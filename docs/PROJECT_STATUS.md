@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Nền event ledger trên PostgreSQL
+
+- Migration 025 và model `PortfolioEvent` đã triển khai schema core + JSONB payload, bốn loại event, lifecycle/provenance constraints, entitlement không âm, correction self-reference, ba index truy vấn và unique provider reference có điều kiện. Migration đã áp dụng trên PostgreSQL development.
+- Validator v1 kiểm tra payload riêng cho cash dividend, stock dividend, split và rights issue. API ownership gồm list/create/confirm/cancel/correct; manual event luôn bị ép về `PENDING/UNVERIFIED`, confirm không nhận sửa payload, correction tạo replacement và supersede bản cũ trong cùng transaction. Event vẫn chưa tác động daily valuation.
+- Kiểm chứng: backend 43 suite / 209 test đạt. Isolated PostgreSQL chạy toàn migration đến 025, lifecycle thật và ownership isolation rồi dọn schema đạt. Live cookie/CSRF smoke qua Preview 4173 trên PostgreSQL development đạt pending/manual enforcement, confirm, atomic correction chain, cancel và cách ly tài khoản; hai account cô lập được giữ, không lưu credential.
+- Điểm tiếp tục: xây reconciliation service tính holdings/entitlement tại `record_date`, phát hiện mismatch và quy tắc giao dịch cùng ngày theo Asia/Ho_Chi_Minh. Sau đó mới áp cash dividend/split/stock dividend/right vào valuation. MWR/XIRR và benchmark tiếp tục bị khóa.
+
 ## 2026-10-06 — Chốt thiết kế event ledger danh mục
 
 - Đã chốt contract tại `PORTFOLIO_EVENT_LEDGER_DESIGN.md` cho `CASH_DIVIDEND`, `STOCK_DIVIDEND`, `STOCK_SPLIT`, `RIGHTS_ISSUE`. Mô hình dùng core columns có constraint/index cùng JSONB payload theo version; không trộn cổ tức vào external cash flow và không dùng JSON tự do làm toàn bộ ledger.
