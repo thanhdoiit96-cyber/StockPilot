@@ -1,6 +1,6 @@
 # Thiết kế event ledger cho cổ tức và corporate action
 
-Trạng thái: thiết kế đã chốt, chưa triển khai schema/API. Ví dụ trong tài liệu không phải dữ liệu hay endpoint đang tồn tại.
+Trạng thái: thiết kế đã chốt; migration/model/validator/API nền đã triển khai ngày 2026-10-06. Reconciliation entitlement và ảnh hưởng lên valuation chưa triển khai. Ví dụ payload tiếp tục là contract, không phải dữ liệu thật.
 
 ## 1. Bài toán và tiêu chí thành công
 
@@ -100,7 +100,7 @@ Mọi mutation khóa portfolio timeline trong transaction. Client manual không 
 
 ## 6. Thứ tự tích hợp valuation
 
-1. Migration/model/validator/API và ownership tests, chưa ảnh hưởng valuation.
+1. Migration/model/validator/API và ownership tests, chưa ảnh hưởng valuation — hoàn thành 2026-10-06.
 2. Reconciliation dựng entitlement từ transaction ledger tại `record_date`; test timezone và giao dịch cùng ngày.
 3. Áp dụng cash dividend tại payment date; TWR coi đây là investment return, không phải external flow.
 4. Áp dụng stock dividend/split vào quantity/cost basis tại effective date.

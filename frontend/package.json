@@ -16,6 +16,7 @@
     "check:prometheus": "node ../scripts/verify-prometheus-contract.mjs",
     "verify:live-analysis": "node scripts/verify-live-analysis.mjs",
     "verify:live:portfolio-performance": "node scripts/verify-live-portfolio-performance.mjs",
+    "verify:live:portfolio-events": "node scripts/verify-live-portfolio-events.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
     "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
     "verify:release": "npm run test -- --runInBand && npm run check:bundle && npm run check:prometheus"

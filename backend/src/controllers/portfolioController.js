@@ -1,12 +1,13 @@
 'use strict';
 const express = require('express');
 const { Op, QueryTypes } = require('sequelize');
-const { Portfolio, PortfolioTransaction, PortfolioCashFlow, Stock, StockPrice, sequelize } = require('../models');
+const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
 const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../services/portfolioCashFlow');
 const { normalizeSessionLimit, buildDailyValuationSeries } = require('../services/portfolioValuation');
+const { normalizePortfolioEventInput, presentPortfolioEvent } = require('../services/portfolioEvent');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -146,6 +147,92 @@ router.get('/performance/history', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Performance history failed:', error.message);
     return res.status(500).json({ success: false, message: 'Không thể tải lịch sử hiệu suất. Vui lòng thử lại.' });
+  }
+});
+
+router.get('/events', async (req, res) => {
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return res.json({ success: true, data: { events: [], has_more: false } });
+    const where = { portfolio_id: portfolio.id };
+    const type = String(req.query.type || '').trim().toUpperCase(); const status = String(req.query.status || '').trim().toUpperCase();
+    if (type) where.event_type = type; if (status) where.status = status;
+    const rows = await PortfolioEvent.findAll({ where, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }], order: [['record_date', 'DESC'], ['id', 'ASC']], limit: 51 });
+    return res.json({ success: true, data: { events: rows.slice(0, 50).map(presentPortfolioEvent), has_more: rows.length > 50 } });
+  } catch (error) {
+    console.error('[Portfolio] Load events failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể tải sự kiện danh mục. Vui lòng thử lại.' });
+  }
+});
+
+router.post('/events', async (req, res) => {
+  const input = normalizePortfolioEventInput(req.body); if (input.error) return res.status(400).json({ success: false, message: input.error });
+  try {
+    let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
+    const stock = await Stock.findOne({ where: { code: input.value.symbol } });
+    if (!stock) return res.status(404).json({ success: false, message: 'Không tìm thấy mã chứng khoán.' });
+    const { symbol, ...value } = input.value;
+    const event = await PortfolioEvent.create({ portfolio_id: portfolio.id, stock_id: stock.id, ...value, status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', created_by: req.user.sub });
+    return res.status(201).json({ success: true, data: presentPortfolioEvent({ ...(event.toJSON ? event.toJSON() : event), Stock: stock }) });
+  } catch (error) {
+    console.error('[Portfolio] Create event failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể lưu sự kiện danh mục. Chưa có dữ liệu nào được thay đổi.' });
+  }
+});
+
+router.post('/events/:eventId/confirm', async (req, res) => {
+  if (req.body?.confirmed !== true) return res.status(400).json({ success: false, message: 'Cần xác nhận trước khi áp dụng sự kiện.' });
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    const event = portfolio ? await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id } }) : null;
+    if (!event) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
+    if (event.status !== 'PENDING') return res.status(409).json({ success: false, message: 'Chỉ sự kiện đang chờ mới có thể xác nhận.' });
+    await event.update({ status: 'CONFIRMED', verification_status: event.source_type === 'PROVIDER' ? event.verification_status : 'USER_CONFIRMED', updated_at: new Date() });
+    return res.json({ success: true, data: presentPortfolioEvent(event) });
+  } catch (error) {
+    console.error('[Portfolio] Confirm event failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể xác nhận sự kiện danh mục.' });
+  }
+});
+
+router.post('/events/:eventId/cancel', async (req, res) => {
+  if (req.body?.confirmed !== true) return res.status(400).json({ success: false, message: 'Cần xác nhận trước khi hủy sự kiện.' });
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    const event = portfolio ? await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id } }) : null;
+    if (!event) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
+    if (!['PENDING', 'CONFIRMED'].includes(event.status)) return res.status(409).json({ success: false, message: 'Sự kiện này không thể hủy.' });
+    await event.update({ status: 'CANCELLED', updated_at: new Date() });
+    return res.json({ success: true, data: presentPortfolioEvent(event) });
+  } catch (error) {
+    console.error('[Portfolio] Cancel event failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể hủy sự kiện danh mục.' });
+  }
+});
+
+router.post('/events/:eventId/correct', async (req, res) => {
+  const input = normalizePortfolioEventInput(req.body); if (input.error) return res.status(400).json({ success: false, message: input.error });
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']], transaction, lock: true });
+      if (!portfolio) return { status: 'not_found' };
+      const previous = await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id }, transaction, lock: true });
+      if (!previous) return { status: 'not_found' };
+      if (!['PENDING', 'CONFIRMED'].includes(previous.status)) return { status: 'conflict' };
+      const stock = await Stock.findOne({ where: { code: input.value.symbol }, transaction }); if (!stock) return { status: 'stock_not_found' };
+      const { symbol, ...value } = input.value;
+      const replacement = await PortfolioEvent.create({ portfolio_id: portfolio.id, stock_id: stock.id, ...value, status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', supersedes_event_id: previous.id, created_by: req.user.sub }, { transaction });
+      await previous.update({ status: 'SUPERSEDED', updated_at: new Date() }, { transaction });
+      return { status: 'ok', replacement, stock };
+    });
+    if (result.status === 'not_found') return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
+    if (result.status === 'stock_not_found') return res.status(404).json({ success: false, message: 'Không tìm thấy mã chứng khoán.' });
+    if (result.status === 'conflict') return res.status(409).json({ success: false, message: 'Sự kiện này không thể đính chính.' });
+    return res.status(201).json({ success: true, data: presentPortfolioEvent({ ...(result.replacement.toJSON ? result.replacement.toJSON() : result.replacement), Stock: result.stock }) });
+  } catch (error) {
+    console.error('[Portfolio] Correct event failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Không thể đính chính sự kiện danh mục.' });
   }
 });
 
