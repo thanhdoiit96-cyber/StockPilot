@@ -45,4 +45,4 @@ UI quản lý nạp/rút đã triển khai ngày 2026-10-06: tổng nạp/rút/r
 - TWR chỉ công bố khi toàn bộ chuỗi hoàn chỉnh, có ít nhất hai điểm và có daily return tính được. Ledger cũ thiếu khoản nạp ban đầu được đánh dấu partial thay vì giả định vốn bằng giao dịch mua.
 - UI tải lười tại trang Danh mục, cho chọn 20/30/60/120 phiên. Đường SVG tách segment qua điểm partial; summary và cảnh báo giữ `Chưa đủ dữ liệu` khi TWR không hợp lệ. Không thêm chart dependency hoặc polling.
 
-Điểm tiếp theo là contract cổ tức/corporate action có liên kết mã, entitlement, ngày hiệu lực và provenance. Chỉ sau khi các event này đi vào valuation mới đánh giá MWR/XIRR và benchmark.
+Contract cổ tức/corporate action đã được chốt tại [PORTFOLIO_EVENT_LEDGER_DESIGN.md](PORTFOLIO_EVENT_LEDGER_DESIGN.md): ledger append-only, core columns + payload versioned, entitlement snapshot, provenance và correction chain. Bước triển khai kế tiếp là migration/model/validator/API độc lập với valuation; chỉ sau khi event đã được reconcile và áp dụng vào daily valuation mới đánh giá MWR/XIRR và benchmark.
