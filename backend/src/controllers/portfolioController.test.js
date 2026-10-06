@@ -158,7 +158,7 @@ test('withholds daily TWR when a stored market session lacks a held-symbol price
   models.sequelize.query.mockResolvedValueOnce([{ session_date: '2026-09-25' }, { session_date: '2026-09-24' }, { session_date: '2026-09-23' }]);
   models.StockPrice.findAll.mockResolvedValueOnce([{ stock_id: 's', interval: '1d', observed_at: '2026-09-23T09:00:00Z', close: 50000 }, { stock_id: 's', interval: '1d', observed_at: '2026-09-25T09:00:00Z', close: 60000 }]);
   const response = await request(app).get('/portfolio/performance/history?sessions=3');
-  expect(response.body.data).toMatchObject({ status: 'partial', twr_available: false, cumulative_twr_pct: null, coverage: { sessions: 3, complete_sessions: 2, incomplete_sessions: 1 } });
+  expect(response.body.data).toMatchObject({ status: 'partial', twr_available: false, cumulative_twr_pct: null, mwr: { status: 'unavailable', reason: 'partial_valuation', annualized_mwr_pct: null }, coverage: { sessions: 3, complete_sessions: 2, incomplete_sessions: 1 } });
   expect(response.body.data.points[1]).toMatchObject({ date: '2026-09-24', status: 'partial', portfolio_value: null });
 });
 
@@ -170,7 +170,9 @@ test('loads confirmed cash dividends into daily valuation without classifying th
   models.StockPrice.findAll.mockResolvedValueOnce([{ stock_id: 's', interval: '1d', observed_at: '2026-09-23T09:00:00Z', close: 10000 }, { stock_id: 's', interval: '1d', observed_at: '2026-09-24T09:00:00Z', close: 10000 }]);
   const response = await request(app).get('/portfolio/performance/history?sessions=2');
   expect(response.status).toBe(200);
-  expect(response.body.data).toMatchObject({ cumulative_twr_pct: 1, event_coverage: { applied_events: 1, pending_events: 0, unsupported_events: 0 } });
+  expect(response.body.data).toMatchObject({ cumulative_twr_pct: 1, mwr: { status: 'available', scope: 'inception_to_terminal', reason: null }, event_coverage: { applied_events: 1, pending_events: 0, unsupported_events: 0 } });
+  expect(response.body.data.mwr.annualized_mwr_pct).toBeGreaterThan(0);
+  expect(Math.abs(response.body.data.mwr.npv_residual)).toBeLessThanOrEqual(0.01);
   expect(response.body.data.points[1]).toMatchObject({ dividend_income: 1000, external_cash_flow: 0, portfolio_value: 101000 });
   expect(models.PortfolioEvent.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ portfolio_id: 'p' }) }));
 });

@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Contract và kiểm chứng MWR/XIRR
+
+- History API nay trả `mwr` theo `xirr_actual_365_v1`, scope `inception_to_terminal`. `DEPOSIT` là dòng tiền âm của nhà đầu tư; `WITHDRAWAL` và terminal portfolio value là dương. Cổ tức/corporate action/quyền mua không bị đếm lại như external flow vì tác động đã nằm trong terminal value. MWR không đổi theo selector số phiên của chart.
+- Solver tìm nghiệm trên `log(1+r)` bằng grid + bisection + multi-seed Newton, sau đó kiểm tra NPV residual. Chỉ đúng một nghiệm mới trả `annualized_mwr_pct`; 0 nghiệm, nhiều nghiệm, thiếu đổi dấu, partial valuation hoặc dòng tiền sau terminal đều giữ null và trả status/reason rõ. Miền hỗ trợ được công bố; không chọn nghiệm gần guess mặc định.
+- Đối chiếu độc lập đạt: fixture 1 năm -100.000/+110.000 cho 10% và NPV ≤0,01; chuỗi `[-100,+230,-132]` nhận diện hai nghiệm 10%/20%; chuỗi `[-100,+100,-100]` trả no-root. Backend đạt 45/45 suite, 230/230 test. Live PostgreSQL qua Preview 4173 đạt cash-only TWR/MWR 0, ownership/cleanup và cash dividend tạo MWR dương với residual hợp lệ; backend cổng 5000 đã restart.
+- Chưa triển khai UI trong lát cắt này. Điểm tiếp tục: thêm card MWR “Từ khi bắt đầu”, giải thích annualized và mapping trạng thái unavailable/no-root/multiple-roots thành nội dung người dùng hiểu được; không đưa danh sách nghiệm kỹ thuật lên giao diện chính. Benchmark vẫn bị khóa đến khi có index-series hợp lệ về license, timezone, continuity và total-return/price-return semantics.
+
 ## 2026-10-06 — Rights issue chỉ áp phần thực hiện đã xác nhận
 
 - `daily_close_twr_v1` nay áp `RIGHTS_ISSUE` confirmed tại `effective_date` bằng đúng `exercised_quantity`: giảm cash theo `exercise_cash_amount`, tăng quantity và total cost basis tương ứng, rồi tính average cost mới. Khoản chi thực hiện quyền là triển khai vốn đầu tư và giữ `external_cash_flow=0`.

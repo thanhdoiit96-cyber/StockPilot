@@ -52,6 +52,7 @@ const history = historyResponse.payload.data
 if (history.methodology !== 'daily_close_twr_v1' || history.timezone !== 'Asia/Ho_Chi_Minh' || history.cash_flow_timing !== 'beginning_of_session') throw new Error('Daily valuation contract metadata mismatch')
 if (history.coverage.sessions < 2 || history.coverage.complete_sessions !== history.coverage.sessions) throw new Error('Development EOD sessions are insufficient or incomplete')
 if (!history.twr_available || history.cumulative_twr_pct !== 0) throw new Error('Cash-only portfolio should publish zero TWR across complete sessions')
+if (history.mwr?.status !== 'available' || history.mwr.annualized_mwr_pct !== 0 || Math.abs(history.mwr.npv_residual) > 0.01 || history.mwr.scope !== 'inception_to_terminal') throw new Error('Cash-only portfolio should publish independently verifiable zero MWR/XIRR')
 if (history.points.some(point => point.portfolio_value !== 1000000 || point.cash_balance !== 1000000 || point.status !== 'complete')) throw new Error('Cash-only daily valuation is inconsistent')
 
 const isolated = (await other.request('/api/portfolio/performance/history?sessions=5')).payload.data
@@ -61,4 +62,5 @@ const removed = await owner.request(`/api/portfolio/cash-flows/${encodeURICompon
 if (removed.status !== 200) throw new Error(`Cash-flow cleanup failed: HTTP ${removed.status}`)
 const after = (await owner.request('/api/portfolio/performance/history?sessions=5')).payload.data
 if (after.points.some(point => point.portfolio_value !== 0 || point.cash_balance !== 0)) throw new Error('Daily valuation did not refresh after cash-flow deletion')
-console.log(`Real development daily valuation passed: ${history.coverage.sessions} sessions, complete coverage, zero cash-only TWR, ownership isolation and cleanup. Two isolated smoke accounts retained; no credentials persisted.`)
+if (after.mwr?.status !== 'unavailable' || after.mwr.reason !== 'insufficient_sign_change') throw new Error('MWR should be withheld after its external cash-flow basis is removed')
+console.log(`Real development daily valuation passed: ${history.coverage.sessions} sessions, complete coverage, zero cash-only TWR/MWR, ownership isolation and cleanup. Two isolated smoke accounts retained; no credentials persisted.`)

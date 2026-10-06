@@ -305,7 +305,7 @@ Khi backend và Preview 4173 đang chạy, tại thư mục frontend:
 npm.cmd run verify:live:portfolio-performance
 ```
 
-Script tạo hai tài khoản cookie-session cô lập, ghi rồi dọn một dòng tiền thử, kiểm tra 5 phiên định giá, TWR cash-only và ownership. Hai tài khoản test được giữ lại; credential chỉ tồn tại trong bộ nhớ process và không được ghi ra đĩa.
+Script tạo hai tài khoản cookie-session cô lập, ghi rồi dọn một dòng tiền thử, kiểm tra 5 phiên định giá, TWR/MWR cash-only, NPV residual và ownership. Hai tài khoản test được giữ lại; credential chỉ tồn tại trong bộ nhớ process và không được ghi ra đĩa.
 
 Kiểm tra lifecycle event ledger mới trên PostgreSQL development:
 
