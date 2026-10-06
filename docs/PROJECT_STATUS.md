@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Cash dividend trong daily valuation/TWR
+
+- `daily_close_twr_v1` nay tải event active cùng ledger và áp `CASH_DIVIDEND` confirmed vào cash tại phiên lưu đầu tiên có ngày bằng hoặc sau `payment_date`. Response tách `dividend_income` khỏi `external_cash_flow`; vì vậy cổ tức làm tăng investment return/TWR thay vì bị trung hòa như nạp tiền.
+- Event pending đến hạn hoặc confirmed nhưng thuộc loại stock action chưa hỗ trợ làm mọi điểm từ ngày tác động thành partial, giữ `unresolved_event_ids`, cập nhật `event_coverage`, limitation và khóa TWR. Cancelled/superseded không tác động. UI lịch sử phân biệt event gap với thiếu giá/số dư và báo số sự kiện cần xử lý.
+- Kiểm chứng: backend 44 suite / 218 test đạt; test service chứng minh giá đi ngang + cổ tức tạo TWR 1%, external flow 0, pending làm coverage 1/3 và confirmed split vẫn bị chặn rõ. Frontend 49/49, Danh mục Playwright 23/23, build/bundle integrity đạt với `index-th2Hgq9y.js`.
+- Live PostgreSQL development qua cookie/CSRF đạt: pending cash dividend khóa coverage/TWR; sau confirm, payment point có `dividend_income=1000`, `external_cash_flow=0`; giao dịch và cash flow thử đã dọn, account/cancelled audit được giữ. Backend đã restart, Preview 4173 dùng bundle mới.
+- Điểm tiếp tục: áp stock dividend và split vào holdings/cost basis tại `effective_date`, xử lý fractional quantity minh bạch và kiểm tra continuity trước khi triển khai rights issue. MWR/XIRR và benchmark tiếp tục bị khóa.
+
 ## 2026-10-06 — Reconciliation entitlement cho portfolio event
 
 - Service mới dựng số lượng nắm giữ đúng mã đến hết `record_date` theo ngày giao dịch `Asia/Ho_Chi_Minh`; giao dịch cùng ngày được tính, giao dịch sang ngày Việt Nam kế tiếp bị loại. Kết quả trả recorded/ledger quantity, difference, số giao dịch dùng, theoretical benefit và reasons có cấu trúc.

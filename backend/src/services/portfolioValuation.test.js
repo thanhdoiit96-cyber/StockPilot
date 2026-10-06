@@ -54,3 +54,39 @@ test('bounds requested sessions and deduplicates the latest price in a Vietnam s
   expect(result.requested_sessions).toBe(260);
   expect(result.points).toHaveLength(3);
 });
+
+test('treats a confirmed cash dividend as investment return rather than external cash flow', () => {
+  const flatPrices = prices.map(row => ({ ...row, close: 10000 }));
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'div-1', stock_id: 's', event_type: 'CASH_DIVIDEND', status: 'CONFIRMED', payment_date: '2026-10-02', payload: { net_cash_amount: 1000 } }],
+    priceRows: flatPrices
+  });
+  expect(result).toMatchObject({ status: 'complete', twr_available: true, cumulative_twr_pct: 1, event_coverage: { applied_events: 1, pending_events: 0, unsupported_events: 0 } });
+  expect(result.points[1]).toMatchObject({ portfolio_value: 101000, cash_balance: 1000, dividend_income: 1000, external_cash_flow: 0, daily_return_pct: 1 });
+  expect(result.points[2]).toMatchObject({ portfolio_value: 101000, dividend_income: 0, daily_return_pct: 0 });
+});
+
+test('marks coverage partial from a due pending event and withholds TWR without silently skipping it', () => {
+  const result = buildDailyValuationSeries({
+    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'pending-dividend', event_type: 'CASH_DIVIDEND', status: 'PENDING', payment_date: '2026-10-02', payload: { net_cash_amount: 1000 } }],
+    sessionDates: ['2026-10-01', '2026-10-02', '2026-10-03']
+  });
+  expect(result).toMatchObject({ status: 'partial', twr_available: false, coverage: { sessions: 3, complete_sessions: 1, incomplete_sessions: 2 }, event_coverage: { applied_events: 0, pending_events: 1, unsupported_events: 0 } });
+  expect(result.limitations).toContain('pending_portfolio_events');
+  expect(result.points[1]).toMatchObject({ status: 'partial', portfolio_value: null, unresolved_event_ids: ['pending-dividend'] });
+  expect(result.points[2].unresolved_event_ids).toEqual(['pending-dividend']);
+});
+
+test('keeps confirmed stock events explicit and unsupported until their accounting step ships', () => {
+  const result = buildDailyValuationSeries({
+    cashFlows: [{ type: 'DEPOSIT', amount: 100000, occurred_at: '2026-10-01T01:00:00Z' }],
+    portfolioEvents: [{ id: 'split-1', event_type: 'STOCK_SPLIT', status: 'CONFIRMED', effective_date: '2026-10-02', payload: { ratio_numerator: 2, ratio_denominator: 1 } }],
+    sessionDates: ['2026-10-01', '2026-10-02', '2026-10-03']
+  });
+  expect(result.event_coverage).toEqual({ applied_events: 0, pending_events: 0, unsupported_events: 1 });
+  expect(result.limitations).toContain('unsupported_portfolio_events');
+  expect(result.twr_available).toBe(false);
+});
