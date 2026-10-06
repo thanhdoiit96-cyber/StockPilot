@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Chuẩn hóa cổng phân tích sản phẩm
+
+- Đã bổ sung vào `AGENTS.md` quy trình bắt buộc cho mọi yêu cầu chức năng/UI/UX: xác định bài toán và tiêu chí thành công, đánh giá chuyên gia, so sánh phương án, thiết kế trải nghiệm, đặt ngân sách hiệu năng rồi mới triển khai.
+- Quy trình yêu cầu phân biệt dữ kiện với giả định, ưu tiên dữ liệu/trạng thái trung thực, bao phủ responsive/accessibility/loading/empty/error và đo trước khi thêm tối ưu phức tạp. Mức tài liệu được điều chỉnh theo rủi ro để không tạo thủ tục dư thừa cho thay đổi nhỏ.
+- Năm hạng mục backlog mới và mọi yêu cầu sau phải qua cổng này. Điểm tiếp tục không đổi: bắt đầu Hiệu suất đầu tư bằng bản yêu cầu/contract nghiệp vụ và kiểm kê dữ liệu thật trước khi thiết kế UI hay viết công thức production.
+
 ## 2026-10-06 — Ghi nhận backlog sản phẩm mới
 
 - Đã thêm vào ROADMAP năm ưu tiên tương lai theo đúng thứ tự người dùng chốt: (1) Hiệu suất đầu tư, (2) chọn tối đa 3–4 chỉ số Bảng giá như VNINDEX/VN30/HNX30/HNXINDEX, (3) mở rộng thông tin cá nhân, (4) Việt/Anh, (5) Dark/Light.
