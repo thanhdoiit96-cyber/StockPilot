@@ -8,6 +8,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
   let watch = [{ stock_id: 'FPT', Stock: { code: 'FPT' } }]
   const transactions = []
+  const watchMutations = []
   const listRequests = []
   await page.route('**/api/**', async route => {
     const request = route.request()
@@ -30,7 +31,14 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
         return { session_date: `2026-09-${String(index + 1).padStart(2, '0')}`, advances: 3, declines: 1, unchanged: 0, classified: 4, covered: 4, universe: 4, ad_ratio: 3, spread: index % 2 ? -1 : 2, coverage_pct: 100, volume: { advances: latest ? 100 : 300, declines: latest ? 300 : 100, unchanged: 0, observations: 4, coverage_pct: 100, directional_total: 400, total: 400, net: latest ? -200 : 200, net_pct: latest ? -50 : 50, ad_ratio: latest ? 0.3333 : 3, advancing_pct: latest ? 25 : 75, signal: latest ? 'negative_divergence' : 'confirmation' }, traded_value: null }
       }) }
     } else if (path === '/api/portfolio') payload.data = { positions }
-    else if (path === '/api/watchlist') payload.data = watch
+    else if (path === '/api/watchlist' && request.method() === 'GET') payload.data = watch
+    else if (path === '/api/watchlist' && request.method() === 'POST') {
+      const symbol = request.postDataJSON().symbol
+      watchMutations.push(symbol)
+      const stock = stocks.find(item => item.code === symbol)
+      watch = [...watch, { stock_id: stock.id, Stock: stock }]
+      payload.data = watch.at(-1)
+    }
     else if (path === '/api/watchlist/FPT' && request.method() === 'DELETE') { watch = []; return route.fulfill({ status: 204 }) }
     else if (path === '/api/portfolio/transactions') {
       transactions.push(request.postDataJSON())
@@ -54,7 +62,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
     await page.locator('.table-sort-btn').first().click()
     await expect(page.locator('.table-panel tbody tr').first()).toContainText('FPT')
   }
-  return { transactions, listRequests }
+  return { transactions, listRequests, watchMutations }
 }
 
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
@@ -159,6 +167,35 @@ test('overview add opens a prefilled form, writes only on save and then pins the
   await expect.poll(() => symbols(page)).toEqual(['AAA', 'FPT', 'ZZZ', 'BBB'])
 })
 
+test('adds a stock to Watchlist beside the portfolio action and synchronizes its state', async ({ page }) => {
+  const state = await setup(page)
+  const aaa = page.locator('.table-panel tbody tr').filter({ hasText: 'AAA Company' })
+  const watchedFpt = page.locator('.table-panel tbody tr').filter({ hasText: 'FPT Company' }).getByRole('button', { name: 'FPT đã có trong Watchlist' })
+  await expect(watchedFpt).toBeDisabled()
+  const quickAdd = aaa.getByRole('button', { name: 'Thêm AAA vào Watchlist' })
+  await expect(quickAdd).toContainText('Theo dõi')
+  await quickAdd.click()
+  await expect(aaa.getByRole('button', { name: 'AAA đã có trong Watchlist' })).toBeDisabled()
+  expect(state.watchMutations).toEqual(['AAA'])
+  await expect.poll(() => state.listRequests.at(-1).get('pinned')).toContain('AAA')
+})
+
+test('quick Watchlist action stays compact and offers retry after an error', async ({ page }) => {
+  await setup(page)
+  await page.route('**/api/watchlist', route => route.request().method() === 'POST'
+    ? route.fulfill({ status: 503, json: { success: false, message: 'Watchlist đang tạm gián đoạn.' } })
+    : route.fallback())
+  const aaa = page.locator('.table-panel tbody tr').filter({ hasText: 'AAA Company' })
+  await aaa.getByRole('button', { name: 'Thêm AAA vào Watchlist' }).click()
+  const retry = aaa.getByRole('button', { name: 'Thử thêm lại AAA vào Watchlist' })
+  await expect(retry).toContainText('Thử lại')
+  await expect(retry).toHaveAttribute('title', /Watchlist đang tạm gián đoạn/)
+  await page.setViewportSize({ width: 390, height: 844 })
+  const actionGroup = aaa.locator('.stock-row-actions')
+  await expect(actionGroup).toBeVisible()
+  expect(await actionGroup.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
 test('failed save does not pin a stock', async ({ page }) => {
   await setup(page, { rejectTransaction: true })
   await page.getByRole('button', { name: 'Thêm AAA vào danh mục', exact: true }).click()
@@ -185,6 +222,9 @@ test('URL data exposes hover titles and external links without selecting the row
   await popup.close()
   await expect(page.locator('.table-panel')).toBeVisible()
   await fpt.locator('.symbol').click()
+  const detailActions = page.locator('.detail-actions')
+  await expect(detailActions.getByRole('button', { name: 'Thêm vào danh mục' })).toBeVisible()
+  await expect(detailActions.getByRole('button', { name: 'FPT đã có trong Watchlist' })).toBeDisabled()
   await page.locator('.detail-analysis-btn').click()
   await expect(page.getByRole('link', { name: /Economic data/ })).toHaveAttribute('title', 'https://example.test/data')
 })

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import PageLoadingOverlay from './PageLoadingOverlay.jsx'
+import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
 import { SECTOR_OPTIONS } from '../constants/sectorOptions.mjs'
@@ -64,7 +65,7 @@ function MarketTimeline({ rows }) {
   </section>
 }
 
-export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio }) {
+export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio, onAddToWatchlist }) {
   const [query, setQuery] = useState('')
   const [queryInput, setQueryInput] = useState('')
   const [sector, setSector] = useState('')
@@ -281,7 +282,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <td><span className="volume-context" title={`Khối lượng giao dịch ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume)}</span></td>
           <td className="data-time"><span>{observedLabel(row.quote)}</span></td>
           <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label="Mở phân tích chuyên sâu" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>Phân tích chuyên sâu</button></td>
-          <td><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={`Thêm ${row.symbol} vào danh mục`} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>Thêm</button></td>
+          <td><div className="stock-row-actions"><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={`Thêm ${row.symbol} vào danh mục`} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>Thêm</button><QuickWatchlistButton symbol={row.symbol} watched={row.inWatchlist} onAdd={onAddToWatchlist} /></div></td>
         </tr>) : listState.error ? null : <tr><td colSpan="8"><div className="empty-state market-board-empty-state" role="status"><strong>{listState.loading ? 'Đang tải danh sách…' : hasFilters ? 'Không tìm thấy mã phù hợp' : 'Chưa có cổ phiếu trong dữ liệu'}</strong>{hasFilters && !listState.loading && <><span>Thử xóa bộ lọc hoặc tìm theo mã khác.</span><button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button></>}</div></td></tr>}</tbody>
       </table>
     </div>

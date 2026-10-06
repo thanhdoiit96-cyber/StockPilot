@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Thêm nhanh vào Watchlist
+
+- Bổ sung nút phụ “Theo dõi” ngay cạnh “Thêm” vào danh mục trên Bảng giá, bảng cổ phiếu Tổng quan và Chi tiết mã. Thiết kế gọn với biểu tượng sao, nhãn rõ và cùng nhóm hành động; mobile vẫn giữ hai nút trong ô thao tác cuộn ngang.
+- Component dùng chung khóa gửi lặp, chuyển Đang thêm → Đã theo dõi, đồng bộ danh sách/nhãn ghim toàn ứng dụng; mã đã có bị disabled. Lỗi chuyển thành nút Thử lại tại chỗ, giữ thông báo HTTP trong title/accessible name thay vì điều hướng khỏi trang.
+- Kiểm chứng: frontend 49/49 test; 9/9 Playwright Tổng quan/Bảng giá đạt, gồm thêm nhanh, đồng bộ pinned, trạng thái đã có, lỗi/thử lại, mobile 390px và vị trí cạnh nút danh mục ở Chi tiết. Build/bundle integrity đạt, bundle index-BBQ1MMyF.js.
+- Live smoke với cookie session/backend/database development thật đạt sau khi tìm FPT trên Bảng giá: thêm nhanh, reload còn dữ liệu, xác nhận xóa và reload không còn dữ liệu. Một account test thành công được giữ; account của lần smoke đầu timeout trước mutation cũng được giữ, không lưu credential. Điểm tiếp tục: thêm thao tác bỏ theo dõi nhanh có xác nhận/undo hoặc chuyển sang cải thiện bộ lọc Nhật ký giao dịch.
+
 ## 2026-10-06 — Phản hồi mutation Watchlist
 
 - Thêm trạng thái Đang thêm/Đang xóa theo thao tác, khóa input và hành động liên quan trong lúc request chạy, đồng thời dùng lock để chặn hai lần submit trước khi React kịp render disabled.

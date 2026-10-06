@@ -7,6 +7,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
+import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
@@ -981,20 +982,21 @@ function lv() {
         setAuthSubmitting(false);
       }
     },
+    addToWatchlist = async d => {
+      const S = String(d || "").trim().toUpperCase();
+      if (!S || yt.has(S)) return;
+      await je("/api/watchlist", {
+        method: "POST",
+        token: ue.token,
+        body: { symbol: S }
+      });
+      const $ = await je("/api/watchlist", { token: ue.token });
+      Bn($.data || []);
+    },
     Xh = async d => {
       d.preventDefault();
       try {
-        await je("/api/watchlist", {
-          method: "POST",
-          token: ue.token,
-          body: {
-            symbol: Jr
-          }
-        });
-        const S = await je("/api/watchlist", {
-          token: ue.token
-        });
-        Bn(S.data || []), el("");
+        await addToWatchlist(Jr), el("");
       } catch (S) {
         throw S;
       }
@@ -1450,6 +1452,7 @@ function lv() {
         portfolioSymbols: [...gt],
         watchlistSymbols: [...yt],
         onOpenDetail: openMarketStock,
+        onAddToWatchlist: addToWatchlist,
         onAddToPortfolio: stock => Ao({
           ...stock,
           symbol: stock.symbol || stock.code
@@ -1740,7 +1743,9 @@ function lv() {
                         });
                       })()
                     }), O.jsx("td", {
-                      children: O.jsx("button", {
+                      children: O.jsxs("div", {
+                        className: "stock-row-actions",
+                        children: [O.jsx("button", {
                         type: "button",
                         className: "icon-action-btn add-portfolio-btn",
                         title: `Thêm ${d.symbol} vào danh mục`,
@@ -1755,6 +1760,11 @@ function lv() {
                         }), O.jsx("span", {
                           children: "Thêm"
                         })]
+                      }), O.jsx(QuickWatchlistButton, {
+                        symbol: d.symbol,
+                        watched: yt.has(String(d.symbol || "").toUpperCase()),
+                        onAdd: addToWatchlist
+                      })]
                       })
                     })]
                   }, d.id);
@@ -2103,7 +2113,9 @@ function lv() {
               onAddToPortfolio: () => Ao({
                 symbol: Ee.data.code,
                 price: (Te == null ? void 0 : Te.price) ?? Ee.data.price
-              })
+              }),
+              onAddToWatchlist: addToWatchlist,
+              watched: yt.has(String(Ee.data.code || "").toUpperCase())
             })
           }), O.jsxs("div", {
             id: "detail-chart",

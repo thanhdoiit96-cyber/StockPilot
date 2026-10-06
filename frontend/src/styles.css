@@ -294,6 +294,13 @@ button, input { font: inherit; }
   font-size: 0.8rem;
 }
 
+.stock-row-actions { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.quick-watchlist-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 92px; }
+.quick-watchlist-btn > span:first-child { color: #facc15; font-size: 15px; line-height: 1; }
+.quick-watchlist-btn.is-watched { color: #a7f3d0; border-color: rgba(52, 211, 153, .32); background: rgba(16, 185, 129, .09); opacity: 1; }
+.quick-watchlist-btn.has-error { color: #fecaca; border-color: rgba(248, 113, 113, .45); }
+.detail-watchlist-btn { min-height: 42px; padding-inline: 14px; }
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
