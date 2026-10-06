@@ -31,11 +31,12 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     })
   ].filter(event => event.date && Number.isFinite(event.time)).sort((a, b) => a.time - b.time || (a.kind === 'cash_flow' ? -1 : 1));
   const holdings = new Map();
+  const costBasisByStock = new Map();
   let cash = 0; let eventIndex = 0; let previousValue = null; let cumulative = 1; let twrAvailable = true; let unresolvedEvent = false; const unresolvedEventIdsState = new Set();
   let appliedEvents = 0; let pendingEvents = 0; let unsupportedEvents = 0;
   const points = [];
   for (const date of dates) {
-    let externalFlow = 0; let dividendIncome = 0; const unresolvedEventIds = [];
+    let externalFlow = 0; let dividendIncome = 0; const unresolvedEventIds = []; const stockEventAdjustments = [];
     while (eventIndex < events.length && events[eventIndex].date <= date) {
       const event = events[eventIndex++]; const row = event.row;
       if (event.kind === 'cash_flow') {
@@ -43,13 +44,28 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
         cash += signed; if (event.date === date) externalFlow += signed;
       } else if (event.kind === 'trade') {
         const stockId = String(row.stock_id); const quantity = Number(row.quantity || 0); const price = normalizeTransactionPrice(row.price); const fees = Number(row.fees || 0);
+        const previousQuantity = holdings.get(stockId) || 0; const previousCost = costBasisByStock.get(stockId) || 0;
         const signedQuantity = row.side === 'BUY' ? quantity : -quantity;
-        holdings.set(stockId, (holdings.get(stockId) || 0) + signedQuantity);
+        holdings.set(stockId, previousQuantity + signedQuantity);
+        if (row.side === 'BUY') costBasisByStock.set(stockId, previousCost + quantity * price + fees);
+        else costBasisByStock.set(stockId, Math.max(0, previousCost - (previousQuantity > 0 ? previousCost / previousQuantity * quantity : 0)));
         cash += row.side === 'BUY' ? -(quantity * price + fees) : quantity * price - fees;
       } else if (row.status === 'CONFIRMED' && row.event_type === 'CASH_DIVIDEND') {
         const amount = Number(row.payload?.net_cash_amount);
         if (Number.isFinite(amount) && amount >= 0) { cash += amount; dividendIncome += amount; appliedEvents += 1; }
         else { unresolvedEvent = true; unresolvedEventIdsState.add(row.id); unsupportedEvents += 1; }
+      } else if (row.status === 'CONFIRMED' && ['STOCK_DIVIDEND', 'STOCK_SPLIT'].includes(row.event_type)) {
+        const stockId = String(row.stock_id); const beforeQuantity = holdings.get(stockId) || 0; const costBasis = costBasisByStock.get(stockId) || 0;
+        const received = row.event_type === 'STOCK_DIVIDEND' ? Number(row.payload?.received_quantity) : null;
+        const numerator = Number(row.payload?.ratio_numerator); const denominator = Number(row.payload?.ratio_denominator);
+        const afterQuantity = row.event_type === 'STOCK_DIVIDEND' ? beforeQuantity + received : beforeQuantity * numerator / denominator;
+        const wholeShare = Number.isFinite(afterQuantity) && Math.abs(afterQuantity - Math.round(afterQuantity)) <= 1e-8;
+        const valid = Number.isFinite(beforeQuantity) && beforeQuantity >= 0 && Number.isFinite(costBasis) && costBasis >= 0 && wholeShare && (row.event_type !== 'STOCK_DIVIDEND' || (Number.isFinite(received) && received >= 0)) && (row.event_type !== 'STOCK_SPLIT' || (Number.isFinite(numerator) && numerator > 0 && Number.isFinite(denominator) && denominator > 0));
+        if (valid) {
+          const normalizedQuantity = Math.round(afterQuantity);
+          holdings.set(stockId, normalizedQuantity); costBasisByStock.set(stockId, costBasis); appliedEvents += 1;
+          stockEventAdjustments.push({ event_id: row.id, event_type: row.event_type, stock_id: stockId, quantity_before: beforeQuantity, quantity_after: normalizedQuantity, cost_basis_before: costBasis, cost_basis_after: costBasis, average_cost_after: normalizedQuantity > 0 ? costBasis / normalizedQuantity : null });
+        } else { unresolvedEvent = true; unresolvedEventIdsState.add(row.id); unsupportedEvents += 1; }
       } else if (row.status === 'PENDING') {
         unresolvedEvent = true; unresolvedEventIdsState.add(row.id); pendingEvents += 1;
       } else if (row.status === 'CONFIRMED') {
@@ -60,6 +76,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     const dailyPrices = pricesByDate.get(date) || new Map();
     const missing = active.filter(([stockId]) => !dailyPrices.has(stockId)).map(([stockId]) => stockId);
     const marketValue = active.reduce((sum, [stockId, quantity]) => sum + (dailyPrices.get(stockId)?.price || 0) * quantity, 0);
+    const totalCostBasis = active.reduce((sum, [stockId]) => sum + Number(costBasisByStock.get(stockId) || 0), 0);
     const cashDeficit = cash < -0.01;
     const complete = missing.length === 0 && !cashDeficit && !unresolvedEvent;
     const portfolioValue = complete ? cash + marketValue : null;
@@ -74,7 +91,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
       } else twrAvailable = false;
     } else if (points.length && !complete) twrAvailable = false;
     unresolvedEventIds.push(...unresolvedEventIdsState);
-    points.push({ date, status: complete ? 'complete' : 'partial', portfolio_value: portfolioValue, market_value: missing.length ? null : marketValue, cash_balance: cash, external_cash_flow: externalFlow, dividend_income: dividendIncome, open_positions: active.length, priced_positions: active.length - missing.length, missing_stock_ids: missing, unresolved_event_ids: unresolvedEventIds, daily_return_pct: dailyReturnPct, cumulative_twr_pct: cumulativeReturnPct });
+    points.push({ date, status: complete ? 'complete' : 'partial', portfolio_value: portfolioValue, market_value: missing.length ? null : marketValue, cash_balance: cash, total_cost_basis: totalCostBasis, external_cash_flow: externalFlow, dividend_income: dividendIncome, stock_event_adjustments: stockEventAdjustments, open_positions: active.length, priced_positions: active.length - missing.length, missing_stock_ids: missing, unresolved_event_ids: unresolvedEventIds, daily_return_pct: dailyReturnPct, cumulative_twr_pct: cumulativeReturnPct });
     previousValue = complete ? portfolioValue : null;
   }
   const completePoints = points.filter(point => point.status === 'complete').length;
@@ -91,7 +108,9 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     cumulative_twr_pct: canPublishTwr ? points.at(-1).cumulative_twr_pct : null,
     event_coverage: { applied_events: appliedEvents, pending_events: pendingEvents, unsupported_events: unsupportedEvents },
     points,
-    limitations: ['exact_session_prices_required', ...(pendingEvents ? ['pending_portfolio_events'] : []), ...(unsupportedEvents ? ['unsupported_portfolio_events'] : []), 'stock_dividends_splits_rights_not_applied']
+    fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred',
+    event_application_order: 'corporate_actions_before_same_day_trades',
+    limitations: ['exact_session_prices_required', ...(pendingEvents ? ['pending_portfolio_events'] : []), ...(unsupportedEvents ? ['unsupported_or_fractional_portfolio_events'] : []), 'rights_issues_not_applied']
   };
 }
 

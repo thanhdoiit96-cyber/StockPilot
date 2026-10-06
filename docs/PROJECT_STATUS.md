@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-06 — Stock dividend và split trong valuation
+
+- Daily valuation nay theo dõi quantity và total cost basis song song với cash. BUY cộng giá trị+phí vào basis; SELL loại basis theo giá vốn bình quân. `STOCK_DIVIDEND` confirmed cộng đúng `received_quantity`; `STOCK_SPLIT` confirmed nhân quantity theo tỷ lệ tại `effective_date`, trước giao dịch cùng ngày. Cả hai giữ nguyên total cost basis và trả adjustment trước/sau cùng average cost mới.
+- Chính sách phần lẻ v1 là `whole_share_only_v1_cash_in_lieu_not_inferred`: chỉ áp khi kết quả là cổ phiếu nguyên; không làm tròn, không bỏ phần lẻ và không tự tạo tiền bù. Event fractional làm coverage partial, giữ unresolved ID và khóa TWR. Rights issue vẫn chưa áp dụng.
+- Kiểm chứng: backend 44 suite / 221 test đạt. Unit chứng minh split 2:1 với giá điều chỉnh giữ value/TWR 0 và basis 100.000; stock dividend 20% đổi quantity 10→12 nhưng giữ basis; reverse split 3×1:2 bị chặn partial. Live PostgreSQL development đạt split 1:1 xuyên suốt API/reconciliation/valuation, quantity và cost basis không đổi; cash dividend/pending gate regression vẫn đạt, dữ liệu transaction/cash thử đã dọn.
+- Backend đã restart. Điểm tiếp tục: triển khai rights issue chỉ cho `exercised_quantity` đã xác nhận, giảm cash theo `exercise_cash_amount`, tăng quantity và cost basis; không tự thực hiện toàn bộ entitlement. Sau đó mới cân nhắc MWR/XIRR.
+
 ## 2026-10-06 — Cash dividend trong daily valuation/TWR
 
 - `daily_close_twr_v1` nay tải event active cùng ledger và áp `CASH_DIVIDEND` confirmed vào cash tại phiên lưu đầu tiên có ngày bằng hoặc sau `payment_date`. Response tách `dividend_income` khỏi `external_cash_flow`; vì vậy cổ tức làm tăng investment return/TWR thay vì bị trung hòa như nạp tiền.
