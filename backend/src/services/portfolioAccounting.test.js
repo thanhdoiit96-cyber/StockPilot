@@ -1,4 +1,4 @@
-const { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions } = require('./portfolioAccounting');
+const { normalizeTransactionPrice, normalizeRecommendationContext, vietnamTradingDate, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('./portfolioAccounting');
 
 test('normalizes legacy thousand-unit input to VND per share', () => {
   expect(normalizeTransactionPrice(21.55)).toBe(21550);
@@ -65,4 +65,29 @@ test('keeps a fully sold symbol as a closed holding with realized P/L', () => {
     { stock_id: 'a', side: 'BUY', quantity: 1, price: 10000, fees: 0 },
     { stock_id: 'a', side: 'SELL', quantity: 1, price: 12000, fees: 0 }
   ])).toEqual([]);
+});
+
+test('summarizes traceable cost-basis performance without claiming TWR or MWR', () => {
+  const transactions = [
+    { stock_id: 'a', side: 'BUY', quantity: 10, price: 10000, fees: 100, traded_at: '2026-09-01T03:00:00Z', Stock: { code: 'FPT' } },
+    { stock_id: 'a', side: 'SELL', quantity: 4, price: 12000, fees: 100, traded_at: '2026-09-10T03:00:00Z' }
+  ];
+  const holdings = summarizePortfolioHoldings(transactions, new Map([['a', 11000]]));
+  const performance = summarizeInvestmentPerformance({ transactions, positions: holdings, generatedAt: '2026-09-11T03:00:00Z' });
+  expect(performance).toMatchObject({
+    status: 'complete', methodology: 'weighted_average_cost_basis_v1',
+    open_cost_basis: 60060, realized_cost_basis: 40040, market_value: 66000,
+    realized_pnl: 7860, unrealized_pnl: 5940, total_pnl: 13800,
+    return_on_cost_pct: 13.7862, time_weighted_return_pct: null, money_weighted_return_pct: null
+  });
+  expect(performance.coverage).toEqual({ priced_positions: 1, open_positions: 1 });
+});
+
+test('withholds aggregate return when any open position lacks a price', () => {
+  const transactions = [{ stock_id: 'a', side: 'BUY', quantity: 2, price: 10000, fees: 0, traded_at: '2026-09-01T03:00:00Z' }];
+  const positions = summarizePortfolioHoldings(transactions, new Map());
+  expect(summarizeInvestmentPerformance({ transactions, positions })).toMatchObject({
+    status: 'partial', market_value: null, unrealized_pnl: null, total_pnl: null, return_on_cost_pct: null,
+    coverage: { priced_positions: 0, open_positions: 1 }
+  });
 });
