@@ -2,6 +2,8 @@
 
 Ứng dụng React 18/Vite, viết bằng JavaScript và CSS. Cách chạy và build nằm ở [QUICK_START](../QUICK_START.md); kết quả kiểm tra và công việc tiếp theo nằm ở [PROJECT_STATUS](../docs/PROJECT_STATUS.md).
 
+Trang Danh mục cá nhân gồm Tổng quan, Giao dịch, Dòng tiền, Watchlist. Tổng quan hiển thị kết quả, vị thế/phân bổ trước lịch sử TWR/MWR; Giao dịch gồm form, nhật ký CSV và theo dõi đề xuất. Các panel giữ mounted và dùng `hidden`, nên chuyển tab giữ bộ lọc, bản nháp, trạng thái mutation và khoảng lịch sử mà không gọi lại history chỉ vì chuyển tab. State ở bộ nhớ, không phục hồi sau reload hoặc rời trang. Mũi tên trái/phải và Home/End chọn tab; `aria-controls` liên kết từng panel riêng. Mobile dùng hai cột để thấy đủ bốn tab. Nút thêm từ Bảng giá/Đề xuất/Chi tiết mở đúng tab Giao dịch.
+
 Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất và cảnh báo trình duyệt khi tải lại trong lúc chưa lưu. Bản nháp chỉ ở bộ nhớ; không được phục hồi sau khi xác nhận rời trang. Escape hủy xác nhận và trả focus về trường tên.
 
 Dialog tài khoản tách thành tab Hồ sơ/Bảo mật. Phím mũi tên và Home/End chuyển tab; bản nháp được giữ khi chuyển tab, mật khẩu nháp bị xóa khi đóng. Cần lưu/hoàn tác tên trước khi đổi mật khẩu.

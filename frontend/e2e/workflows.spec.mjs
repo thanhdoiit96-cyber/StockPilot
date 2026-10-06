@@ -279,7 +279,7 @@ test('sidebar collapses to labelled icons while overview headers and symbols sta
   await page.evaluate(() => { document.querySelector('.dashboard-shell').style.minHeight = '2200px'; window.scrollTo(0, 640) })
   await expect.poll(() => page.evaluate(() => Math.round(document.querySelector('.sidebar').getBoundingClientRect().top))).toBe(0)
 })
-test('personal tab renders portfolio and watchlist',async({page})=>{await boot(page);await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(page.locator('.transaction-form')).toBeVisible();await expect(page.getByRole('heading', { name: 'Watchlist' })).toBeVisible()})
+test('personal tab renders portfolio and watchlist',async({page})=>{await boot(page);await page.getByRole('button',{name:'Danh mục cá nhân',exact:true}).click();await expect(page.locator('.portfolio-positions')).toBeVisible();await page.getByRole('tab',{name:/Giao dịch/}).click();await expect(page.locator('.transaction-form')).toBeVisible();await page.getByRole('tab',{name:/Watchlist/}).click();await expect(page.getByRole('heading', { name: 'Watchlist' })).toBeVisible()})
 
 test('recommendations live in a dedicated workspace', async ({ page }) => {
   await boot(page)
