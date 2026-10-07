@@ -1596,7 +1596,8 @@ function lv() {
           stocks: si,
           quotes: an,
           universeTotal: vu,
-          onOpenDetail: openMarketStock
+          onOpenDetail: openMarketStock,
+          language: profileLanguage
         }), false && O.jsxs("section", {
           className: "panel legacy-table-panel",
           children: [O.jsxs("div", {
