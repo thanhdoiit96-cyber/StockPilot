@@ -1529,11 +1529,11 @@ function lv() {
           children: [O.jsxs("div", {
             children: [O.jsx("p", {
               className: "eyebrow accent",
-              children: p("Tổng quan thị trường")
+              children: tr("page.overview")
             }), O.jsx("h2", {
-              children: p("Theo dõi giá và các mã quan tâm của bạn.")
+              children: profileLanguage === "en" ? "Track prices and the symbols you care about." : "Theo dõi giá và các mã quan tâm của bạn."
             }), O.jsx("p", {
-              children: p("Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD.")
+              children: profileLanguage === "en" ? "Intraday prices are used when a quote is available; other symbols keep their EOD price." : "Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD."
             })]
           }), O.jsxs("div", {
             className: "overview-hero-actions",
@@ -1541,55 +1541,55 @@ function lv() {
               className: "primary-btn",
               type: "button",
               onClick: () => Xe("portfolio"),
-              children: p("Mã danh mục cá nhân")
+              children: profileLanguage === "en" ? "Personal portfolio symbols" : "Mã danh mục cá nhân"
             }), O.jsx("button", {
               className: "ghost-btn",
               type: "button",
               onClick: () => Xe("recommendations"),
-              children: p("Đến tab đề xuất")
+              children: profileLanguage === "en" ? "Open Ideas" : "Đến tab đề xuất"
             })]
           })]
         }), O.jsxs("section", {
           className: "overview-metrics",
-          "aria-label": p("Tóm tắt thị trường"),
+          "aria-label": profileLanguage === "en" ? "Market summary" : "Tóm tắt thị trường",
           children: [O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("Mã trong vũ trụ dữ liệu")
+              children: profileLanguage === "en" ? "Symbols in data universe" : "Mã trong vũ trụ dữ liệu"
             }), O.jsx("strong", {
               children: vu
             }), O.jsx("small", {
-              children: p("Kết quả theo bộ lọc hiện tại")
+              children: profileLanguage === "en" ? "Result under current filters" : "Kết quả theo bộ lọc hiện tại"
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("Quote intraday")
+              children: profileLanguage === "en" ? "Intraday quotes" : "Quote intraday"
             }), O.jsxs("strong", {
               children: [yi, O.jsxs("small", {
                 children: [" / ", il.length]
               })]
             }), O.jsx("small", {
-              children: p("Mã có quote; còn lại dùng EOD")
+              children: profileLanguage === "en" ? "Symbols with quotes; others use EOD" : "Mã có quote; còn lại dùng EOD"
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("Mã cá nhân")
+              children: profileLanguage === "en" ? "Personal symbols" : "Mã cá nhân"
             }), O.jsx("strong", {
               children: sf
             }), O.jsx("small", {
-              children: p("Danh mục hoặc Watchlist")
+              children: profileLanguage === "en" ? "Portfolio or Watchlist" : "Danh mục hoặc Watchlist"
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: p("Quote mới nhất")
+              children: profileLanguage === "en" ? "Latest quote" : "Quote mới nhất"
             }), O.jsx("strong", {
               className: "overview-time",
-              children: yu ? He(yu) : p("Chưa có quote")
+              children: yu ? He(yu) : (profileLanguage === "en" ? "No quote yet" : "Chưa có quote")
             }), O.jsx("small", {
-              children: p("Thời điểm provider ghi nhận")
+              children: profileLanguage === "en" ? "Provider observation time" : "Thời điểm provider ghi nhận"
             })]
           })]
         }), O.jsx(MarketBreadth, {

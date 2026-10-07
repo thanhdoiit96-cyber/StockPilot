@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog phần tóm tắt Tổng quan
+
+- Thẻ hero và bốn metric của Tổng quan giờ dùng ngôn ngữ tài khoản: tiêu đề/phụ chú, hành động đi tới Danh mục/Đề xuất, aria summary, universe, quote intraday, mã cá nhân và quote mới nhất. Market Breadth vẫn giữ catalog và `lang` vùng từ lát cắt trước.
+- Dữ liệu số, mã, quote time và nhãn EOD/intraday không bị biến đổi ngoài nội dung UI; không thêm request. Phần timeline/history/data-quality và Recommendation Workbench chưa dịch.
+- Kiểm chứng: frontend unit/encoding 54/54; production build/bundle integrity đạt với `index-kIm1SpkE.js`, `index-CCqBfcrU.css`. Chưa chạy live backend; browser English Overview riêng còn là việc cần bổ sung cùng test state/filter.
+- Tiếp tục: catalog timeline/data-quality và Recommendation Workbench, sau đó thêm browser test đổi VI/EN trên Overview giữ filter/state. Chưa mở rộng AI Advisor.
+
 ## 2026-10-07 — Bắt đầu catalog Tổng quan
 
 - Market Breadth trong Tổng quan nhận `preferred_language`, khai báo `lang` theo vùng và đã catalog hóa tiêu đề, scope filter sàn/ngành, nhóm tăng/giảm/đứng giá, trạng thái cập nhật và nhãn universe. Việc đổi ngôn ngữ không thêm request; dữ liệu mã, nguồn và quote giữ nguyên.
