@@ -74,6 +74,12 @@
 - Kiểm chứng: frontend unit 58/58, contract 52 mã, build/bundle integrity đạt với `index-Cpkb5MuU.js`.
 - Tiếp tục: thêm lại Portfolio cash-flow mutation smoke sau khi fixture route ổn định, rồi mở rộng English.
 
+## 2026-10-07 — Portfolio cash-flow mutation smoke
+
+- Reintroduce fixture code-specific cho `portfolio_cashflow_create_failed` sau khi sửa App wrapper.
+- Kiểm chứng: smoke tiếng Việt **1/1 pass**, alert dùng đúng catalog và nút submit vẫn retry được.
+- Tiếp tục: thêm cùng fixture cho locale English và các mutation update/delete.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
