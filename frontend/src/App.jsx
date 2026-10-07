@@ -1,3 +1,4 @@
+import { uiText } from "./services/uiCatalog.mjs";
 import { translateDetail } from "./services/detailCatalog.mjs";
 import { formatMoney, formatNumber, formatDateTime } from "./services/userLocale.mjs";
 import AccountPanel from "./components/AccountPanel.jsx";
@@ -728,6 +729,7 @@ function lv() {
     try { return localStorage.getItem("stockpilot-language") === "en" ? "en" : "vi"; } catch { return "vi"; }
   });
   const profileLanguage = ue?.user?.preferred_language || authLanguage;
+  const uiTextValue = text => uiText(profileLanguage, text);
   const profileTimezone = ue?.user?.timezone || "Asia/Ho_Chi_Minh";
   const tr = (key, values) => translate(profileLanguage, key, values);
   const detailText = text => translateDetail(profileLanguage, text);
@@ -736,7 +738,7 @@ function lv() {
   const detailTime = value => formatDateTime(value, profileLanguage, profileTimezone, { timeStyle: 'medium' });
   const detailPercent = value => value == null ? "—" : `${Number(value) >= 0 ? "+" : ""}${detailNumber(value)}%`;
   D.useEffect(() => {
-    document.documentElement.lang = "vi";
+    document.documentElement.lang = profileLanguage;
     document.documentElement.dataset.locale = profileLanguage;
     document.documentElement.dataset.timezone = profileTimezone;
     try { localStorage.setItem("stockpilot-language", profileLanguage); } catch {}
@@ -763,13 +765,13 @@ function lv() {
     Bt(null);
   };
   D.useEffect(() => {
-    const handleSessionExpired = d => endSession(d.detail?.message || "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.");
+    const handleSessionExpired = d => endSession(d.detail?.message || uiTextValue("Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại."));
     window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
   D.useEffect(() => {
     const applyCookieEvent = type => {
-      if (type === "logout") return endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      if (type === "logout") return endSession("", uiTextValue("Phiên đăng nhập đã kết thúc ở một tab khác."));
       $r.current = null;
       Bn([]);
       mt(null);
@@ -778,12 +780,12 @@ function lv() {
     };
     const handleAuthStorage = event => {
       if (event.key !== AUTH_STORAGE_KEY) return;
-      if (event.newValue === null) return endSession("", "Phiên đăng nhập đã kết thúc ở một tab khác.");
+      if (event.newValue === null) return endSession("", uiTextValue("Phiên đăng nhập đã kết thúc ở một tab khác."));
       let nextAuth;
       try {
         nextAuth = authFromStorageValue(event.newValue);
       } catch {
-        return endSession("Dữ liệu phiên từ tab khác không hợp lệ. Vui lòng đăng nhập lại.");
+        return endSession(uiTextValue("Dữ liệu phiên từ tab khác không hợp lệ. Vui lòng đăng nhập lại."));
       }
       if (nextAuth.event) {
         return applyCookieEvent(nextAuth.event);
@@ -892,7 +894,7 @@ function lv() {
     const S = new AbortController();
     typeof ue.token === "string" && localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(ue));
     const $ = A => {
-      d || A.status !== 401 && Dr("Không tải được danh mục. Vui lòng thử lại.");
+      d || A.status !== 401 && Dr(uiTextValue("Không tải được danh mục. Vui lòng thử lại."));
     };
     return Fr(true), Dr(""), je("/api/watchlist", {
       token: ue.token,
@@ -1084,7 +1086,7 @@ function lv() {
             recommendation_entries: [...(Z.recommendation_entries || []), de]
           };
         }
-        mt($.data), on(p("Ghi nhận giao dịch"));
+        mt($.data), on(p(uiTextValue("Ghi nhận giao dịch")));
         setPortfolioTab("overview");
       } catch (S) {
         on(S.message);
@@ -1244,7 +1246,7 @@ function lv() {
       status: "verifying",
       message: ""
     }),
-    onSignIn: () => endSession("", "Vui lòng đăng nhập lại để tiếp tục."),
+    onSignIn: () => endSession("", uiTextValue("Vui lòng đăng nhập lại để tiếp tục.")),
     t: tr,
     language: profileLanguage
   });
@@ -1433,14 +1435,14 @@ function lv() {
         user: ue?.user,
         onSave: async profile => {
           const response = await je("/api/auth/profile", { method: "PATCH", token: ue?.token, body: profile });
-          if (!response.user || typeof response.user.email !== "string") throw new Error("Không thể lưu thông tin. Vui lòng thử lại.");
+          if (!response.user || typeof response.user.email !== "string") throw new Error(uiTextValue("Không thể lưu thông tin. Vui lòng thử lại."));
           Bt(current => current ? { ...current, user: response.user } : current);
           return response.user;
         },
         onPasswordChange: async body => {
           await je("/api/auth/password", { method: "POST", token: ue?.token, body });
           broadcastAuthEvent("logout");
-          endSession("", "Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.");
+          endSession("", uiTextValue("Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới."));
         },
         onLoadSessions: cursor => je("/api/auth/sessions" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), { token: ue?.token }),
         onRenameSession: (sessionId, label) => je("/api/auth/sessions/label", { method: "PATCH", token: ue?.token, body: { session_id: sessionId, label } }),
@@ -1450,7 +1452,7 @@ function lv() {
         onLogout: async () => {
           await je("/api/auth/logout", { method: "POST", token: ue?.token });
           broadcastAuthEvent("logout");
-          endSession("", "Bạn đã đăng xuất an toàn.");
+          endSession("", uiTextValue("Bạn đã đăng xuất an toàn."));
         }
       })]
     }), O.jsxs("main", {
@@ -1467,7 +1469,7 @@ function lv() {
         }), O.jsxs("div", {
           className: "topbar-actions topbar-actions-empty",
           role: "group",
-          "aria-label": "Thông tin và thao tác tài khoản",
+          "aria-label": uiTextValue("Thông tin và thao tác tài khoản"),
           children: [O.jsx("span", {
             className: "topbar-user-email",
             title: ue.user?.email || "",
@@ -1475,23 +1477,23 @@ function lv() {
             children: ue.user?.email || ""
           }), O.jsx("span", {
             className: "topbar-user-role",
-            children: ue.user?.role === "admin" ? p("Quản trị viên") : p("Nhà đầu tư")
+            children: ue.user?.role === "admin" ? p(uiTextValue("Quản trị viên")) : p(uiTextValue("Nhà đầu tư"))
           }), O.jsx("button", {
             className: "ghost-btn",
-            "aria-label": "Đăng xuất khỏi tài khoản",
-            title: "Đăng xuất khỏi tài khoản",
+            "aria-label": uiTextValue("Đăng xuất khỏi tài khoản"),
+            title: uiTextValue("Đăng xuất khỏi tài khoản"),
             onClick: async () => {
               try {
                 await je("/api/auth/logout", { method: "POST", token: ue.token });
               } catch {}
-              broadcastAuthEvent("logout"), endSession("", "Bạn đã đăng xuất an toàn.");
+              broadcastAuthEvent("logout"), endSession("", uiTextValue("Bạn đã đăng xuất an toàn."));
             },
-            children: p("Đăng xuất")
+            children: p(uiTextValue("Đăng xuất"))
           })]
         })]
       }), (re === "overview" && cu || re === "portfolio" && ci.loading || re === "detail" && (Ee.status === "loading" || fi.loading) || re === "recommendations" && (su.status === "loading" || uu.status === "loading")) && O.jsx(PageLoadingOverlay, {
         active: true,
-        label: re === "detail" ? p("Đang tải dữ liệu Chi tiết mã mới nhất...") : re === "recommendations" ? p("Đang cập nhật dữ liệu Đề xuất mới nhất...") : re === "portfolio" ? p("Đang cập nhật dữ liệu Danh mục mới nhất...") : p("Đang cập nhật dữ liệu Thị trường mới nhất...")
+        label: re === "detail" ? p(uiTextValue("Đang tải dữ liệu Chi tiết mã mới nhất...")) : re === "recommendations" ? p(uiTextValue("Đang cập nhật dữ liệu Đề xuất mới nhất...")) : re === "portfolio" ? p(uiTextValue("Đang cập nhật dữ liệu Danh mục mới nhất...")) : p(uiTextValue("Đang cập nhật dữ liệu Thị trường mới nhất..."))
       }), re !== "market-board" && (wt.error || ai.error) && O.jsxs("section", {
         className: "api-panel diagnostics-panel",
         children: [wt.error && O.jsxs("p", {
@@ -1499,14 +1501,14 @@ function lv() {
           children: [wt.error, " ", O.jsx("button", {
             className: "ghost-btn small-btn",
             onClick: wt.retry,
-            children: p("Thử lại health")
+            children: p(uiTextValue("Thử lại health"))
           })]
         }), ai.error && O.jsxs("p", {
           role: "alert",
           children: [ai.error, " ", O.jsx("button", {
             className: "ghost-btn small-btn",
             onClick: ai.retry,
-            children: p("Thử lại cache")
+            children: p(uiTextValue("Thử lại cache"))
           })]
         })]
       }), O.jsx(MarketBoardPage, {
@@ -1531,9 +1533,9 @@ function lv() {
               className: "eyebrow accent",
               children: tr("page.overview")
             }), O.jsx("h2", {
-              children: profileLanguage === "en" ? "Track prices and the symbols you care about." : "Theo dõi giá và các mã quan tâm của bạn."
+              children: profileLanguage === "en" ? "Track prices and the symbols you care about." : uiTextValue("Theo dõi giá và các mã quan tâm của bạn.")
             }), O.jsx("p", {
-              children: profileLanguage === "en" ? "Intraday prices are used when a quote is available; other symbols keep their EOD price." : "Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD."
+              children: profileLanguage === "en" ? "Intraday prices are used when a quote is available; other symbols keep their EOD price." : uiTextValue("Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD.")
             })]
           }), O.jsxs("div", {
             className: "overview-hero-actions",
@@ -1541,25 +1543,25 @@ function lv() {
               className: "primary-btn",
               type: "button",
               onClick: () => Xe("portfolio"),
-              children: profileLanguage === "en" ? "Personal portfolio symbols" : "Mã danh mục cá nhân"
+              children: profileLanguage === "en" ? "Personal portfolio symbols" : uiTextValue("Mã danh mục cá nhân")
             }), O.jsx("button", {
               className: "ghost-btn",
               type: "button",
               onClick: () => Xe("recommendations"),
-              children: profileLanguage === "en" ? "Open Ideas" : "Đến tab đề xuất"
+              children: profileLanguage === "en" ? "Open Ideas" : uiTextValue("Đến tab đề xuất")
             })]
           })]
         }), O.jsxs("section", {
           className: "overview-metrics",
-          "aria-label": profileLanguage === "en" ? "Market summary" : "Tóm tắt thị trường",
+          "aria-label": profileLanguage === "en" ? "Market summary" : uiTextValue("Tóm tắt thị trường"),
           children: [O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: profileLanguage === "en" ? "Symbols in data universe" : "Mã trong vũ trụ dữ liệu"
+              children: profileLanguage === "en" ? "Symbols in data universe" : uiTextValue("Mã trong vũ trụ dữ liệu")
             }), O.jsx("strong", {
               children: vu
             }), O.jsx("small", {
-              children: profileLanguage === "en" ? "Result under current filters" : "Kết quả theo bộ lọc hiện tại"
+              children: profileLanguage === "en" ? "Result under current filters" : uiTextValue("Kết quả theo bộ lọc hiện tại")
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
@@ -1570,26 +1572,26 @@ function lv() {
                 children: [" / ", il.length]
               })]
             }), O.jsx("small", {
-              children: profileLanguage === "en" ? "Symbols with quotes; others use EOD" : "Mã có quote; còn lại dùng EOD"
+              children: profileLanguage === "en" ? "Symbols with quotes; others use EOD" : uiTextValue("Mã có quote; còn lại dùng EOD")
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: profileLanguage === "en" ? "Personal symbols" : "Mã cá nhân"
+              children: profileLanguage === "en" ? "Personal symbols" : uiTextValue("Mã cá nhân")
             }), O.jsx("strong", {
               children: sf
             }), O.jsx("small", {
-              children: profileLanguage === "en" ? "Portfolio or Watchlist" : "Danh mục hoặc Watchlist"
+              children: profileLanguage === "en" ? "Portfolio or Watchlist" : uiTextValue("Danh mục hoặc Watchlist")
             })]
           }), O.jsxs("article", {
             className: "panel overview-metric",
             children: [O.jsx("span", {
-              children: profileLanguage === "en" ? "Latest quote" : "Quote mới nhất"
+              children: profileLanguage === "en" ? "Latest quote" : uiTextValue("Quote mới nhất")
             }), O.jsx("strong", {
               className: "overview-time",
               children: yu ? He(yu) : (profileLanguage === "en" ? "No quote yet" : "Chưa có quote")
             }), O.jsx("small", {
-              children: profileLanguage === "en" ? "Provider observation time" : "Thời điểm provider ghi nhận"
+              children: profileLanguage === "en" ? "Provider observation time" : uiTextValue("Thời điểm provider ghi nhận")
             })]
           })]
         }), O.jsx(MarketBreadth, {
@@ -1603,7 +1605,7 @@ function lv() {
           children: [O.jsxs("div", {
             className: "panel-header",
             children: [O.jsx("h3", {
-              children: p("Danh sách cổ phiếu")
+              children: p(uiTextValue("Danh sách cổ phiếu"))
             }), O.jsxs("div", {
               className: "table-tools",
               children: [O.jsxs("div", {
@@ -1611,60 +1613,60 @@ function lv() {
                 children: [O.jsx("button", {
                   className: "tab-btn active",
                   type: "button",
-                  children: p("Tất cả")
+                  children: p(uiTextValue("Tất cả"))
                 }), O.jsxs("select", {
                   className: "sector-select",
-                  "aria-label": p("Nhóm ngành"),
+                  "aria-label": p(uiTextValue("Nhóm ngành")),
                   value: Qt,
                   onChange: d => Ze(() => {
                     En(1), ii(d.target.value);
                   }),
                   children: [O.jsx("option", {
                     value: "",
-                    children: p("Nhóm ngành")
+                    children: p(uiTextValue("Nhóm ngành"))
                   }), O.jsx("option", {
                     value: "technology",
-                    children: p("Công nghệ")
+                    children: p(uiTextValue("Công nghệ"))
                   }), O.jsx("option", {
                     value: "banking_finance",
-                    children: p("Ngành ngân hàng và tài chính")
+                    children: p(uiTextValue("Ngành ngân hàng và tài chính"))
                   }), O.jsx("option", {
                     value: "securities",
-                    children: p("Chứng khoán")
+                    children: p(uiTextValue("Chứng khoán"))
                   }), O.jsx("option", {
                     value: "real_estate",
-                    children: p("Bất động sản")
+                    children: p(uiTextValue("Bất động sản"))
                   }), O.jsx("option", {
                     value: "energy_resources",
-                    children: p("Tài nguyên & năng lượng")
+                    children: p(uiTextValue("Tài nguyên & năng lượng"))
                   }), O.jsx("option", {
                     value: "manufacturing",
-                    children: p("Sản xuất công nghiệp")
+                    children: p(uiTextValue("Sản xuất công nghiệp"))
                   }), O.jsx("option", {
                     value: "consumer_retail",
-                    children: p("Tiêu dùng & bán lẻ")
+                    children: p(uiTextValue("Tiêu dùng & bán lẻ"))
                   }), O.jsx("option", {
                     value: "construction_infrastructure",
-                    children: p("Xây dựng & hạ tầng")
+                    children: p(uiTextValue("Xây dựng & hạ tầng"))
                   }), O.jsx("option", {
                     value: "other",
-                    children: p("Khác / chưa phân loại")
+                    children: p(uiTextValue("Khác / chưa phân loại"))
                   })]
                 })]
               }), O.jsx("input", {
                 className: "table-search app-search-input",
-                "aria-label": p("Tìm cổ phiếu"),
-                placeholder: p("Tìm mã hoặc tên công ty"),
+                "aria-label": p(uiTextValue("Tìm cổ phiếu")),
+                placeholder: p(uiTextValue("Tìm mã hoặc tên công ty")),
                 value: ft,
                 onChange: d => Ze(() => {
                   En(1), ri(d.target.value);
                 })
               }), O.jsxs("span", {
                 className: "muted-text",
-                children: [p("Hiển thị"), " ", al.length, "/", vu, " ", p("mã")]
+                children: [p(uiTextValue("Hiển thị")), " ", al.length, "/", vu, " ", p(uiTextValue("mã"))]
               }), O.jsxs("label", {
                 className: "page-size-control",
-                children: [p("Số mã /trang"), O.jsxs("select", {
+                children: [p(uiTextValue("Số mã /trang")), O.jsxs("select", {
                   value: Ht,
                   onChange: d => ef(d.target.value),
                   children: [O.jsx("option", {
@@ -1688,32 +1690,32 @@ function lv() {
             role: "status",
             children: [cu && O.jsx("span", {
               className: "realtime-loading",
-              children: "Đang cập nhật intraday..."
+              children: uiTextValue("Đang cập nhật intraday...")
             }), ol.error && O.jsx("span", {
               children: ol.error
             }), (ui == null ? void 0 : ui.status) === "circuit_open" && O.jsx("span", {
               className: "data-time",
-              children: "Provider circuit open; giữ dữ liệu gần nhất và sẽ tự thử lại."
+              children: uiTextValue("Provider circuit open; giữ dữ liệu gần nhất và sẽ tự thử lại.")
             }), (ui == null ? void 0 : ui.status) === "degraded" && O.jsx("span", {
               className: "data-time",
-              children: "Provider degraded; dữ liệu sẽ tiếp tục tự cập nhật."
+              children: uiTextValue("Provider degraded; dữ liệu sẽ tiếp tục tự cập nhật.")
             }), O.jsx("span", {
               className: yi ? "status-dot is-live" : "status-dot"
-            }), p(yi ? "Có dữ liệu intraday" : "Đang dùng dữ liệu EOD"), "  ", p("Quote có thể trễ; số liệu phụ thuộc provider.")]
+            }), p(yi ? uiTextValue("Có dữ liệu intraday") : uiTextValue("Đang dùng dữ liệu EOD")), "  ", p(uiTextValue("Quote có thể trễ; số liệu phụ thuộc provider."))]
           }), O.jsxs("div", {
             className: "overview-source-summary",
             role: "note",
             children: [O.jsx("strong", {
-              children: "Nguồn dữ liệu"
+              children: uiTextValue("Nguồn dữ liệu")
             }), gu && O.jsx($i, {
               url: gu,
-              children: "Giấy phép dữ liệu"
+              children: uiTextValue("Giấy phép dữ liệu")
             }), O.jsxs("span", {
-              children: [yi, "/", si.length, " mã có Intraday từ VCI; mã còn lại giữ EOD gần nhất."]
+              children: [yi, "/", si.length, uiTextValue(" mã có Intraday từ VCI; mã còn lại giữ EOD gần nhất.")]
             }), O.jsx("span", {
               className: "overview-source-help",
-              title: "Khối lượng Intraday là khối lượng giao dịch ghi nhận; EOD là dữ liệu phiên gần nhất.",
-              "aria-label": "Giải thích nguồn dữ liệu",
+              title: uiTextValue("Khối lượng Intraday là khối lượng giao dịch ghi nhận; EOD là dữ liệu phiên gần nhất."),
+              "aria-label": uiTextValue("Giải thích nguồn dữ liệu"),
               children: "i"
             })]
           }), O.jsx("div", {
@@ -1721,7 +1723,7 @@ function lv() {
             children: O.jsxs("table", {
               children: [O.jsx("thead", {
                 children: O.jsxs("tr", {
-                  children: [[["symbol", "Mã", "Kí hiệu giao dịch"], ["name", "Tên", "Tên doanh nghiệp"], ["price", "Giá", "Giá gần nhất"], ["change", "Biến động", "Mức tăng giảm"], ["volume", "Khối lượng", "Khối lượng giao dịch"]].map(([d, S, $]) => O.jsx("th", {
+                  children: [[["symbol", uiTextValue("Mã"), uiTextValue("Kí hiệu giao dịch")], ["name", uiTextValue("Tên"), uiTextValue("Tên doanh nghiệp")], ["price", uiTextValue("Giá"), uiTextValue("Giá gần nhất")], ["change", uiTextValue("Biến động"), uiTextValue("Mức tăng giảm")], ["volume", uiTextValue("Khối lượng"), uiTextValue("Khối lượng giao dịch")]].map(([d, S, $]) => O.jsx("th", {
                     children: O.jsxs("button", {
                       className: "table-sort-btn",
                       type: "button",
@@ -1730,11 +1732,11 @@ function lv() {
                       children: [p(S), be.key === d ? (be.direction, " ") : ""]
                     })
                   }, d)), O.jsx("th", {
-                    children: p("Nguồn dữ liệu")
+                    children: p(uiTextValue("Nguồn dữ liệu"))
                   }), O.jsx("th", {
-                    children: p("Nhận định")
+                    children: p(uiTextValue("Nhận định"))
                   }), O.jsx("th", {
-                    children: "Thao tác"
+                    children: uiTextValue("Thao tác")
                   })]
                 })
               }), O.jsx("tbody", {
@@ -1751,14 +1753,14 @@ function lv() {
                         className: "pin-labels",
                         children: [gt.has(d.symbol) && O.jsx("small", {
                           className: "pin-badge",
-                          children: "Danh mục"
+                          children: uiTextValue("Danh mục")
                         }), yt.has(d.symbol) && O.jsx("small", {
                           className: "pin-badge",
                           children: "Watchlist"
                         }), d.listingStatus === "delisted" ? O.jsx("small", {
                           className: "listing-badge delisted",
                           title: d.listingCheckedAt || "Historical symbol",
-                          children: " Đã hủy niêm yết"
+                          children: uiTextValue(" Đã hủy niêm yết")
                         }) : d.listingStatus === "listed" && d.exchange ? O.jsx("small", {
                           className: "listing-badge listed",
                           title: d.listingCheckedAt || d.exchange,
@@ -1778,8 +1780,8 @@ function lv() {
                     }), O.jsxs("td", {
                       children: [Et(d.volume), O.jsx("small", {
                         className: "volume-context",
-                        title: ((S = d.liveQuote) == null ? void 0 : S.interval) === "intraday" ? "Khối lượng giao dịch Intraday từ quote mới nhất." : "Khối lượng EOD của phiên gần nhất.",
-                        "aria-label": (($ = d.liveQuote) == null ? void 0 : $.interval) === "intraday" ? "Khối lượng Intraday" : "Khối lượng EOD",
+                        title: ((S = d.liveQuote) == null ? void 0 : S.interval) === "intraday" ? uiTextValue("Khối lượng giao dịch Intraday từ quote mới nhất.") : uiTextValue("Khối lượng EOD của phiên gần nhất."),
+                        "aria-label": (($ = d.liveQuote) == null ? void 0 : $.interval) === "intraday" ? uiTextValue("Khối lượng Intraday") : uiTextValue("Khối lượng EOD"),
                         children: "i"
                       })]
                     }), O.jsx("td", {
@@ -1805,7 +1807,7 @@ function lv() {
                               } catch {}
                               Xe("detail");
                             },
-                            children: "Phân tích chuyên sâu"
+                            children: uiTextValue("Phân tích chuyên sâu")
                           })]
                         });
                       })()
@@ -1825,7 +1827,7 @@ function lv() {
                           "aria-hidden": "true",
                           children: "+"
                         }), O.jsx("span", {
-                          children: "Thêm"
+                          children: uiTextValue("Thêm")
                         })]
                       }), O.jsx(QuickWatchlistButton, {
                         symbol: d.symbol,
@@ -1838,7 +1840,7 @@ function lv() {
                 }) : O.jsx("tr", {
                   children: O.jsx("td", {
                     colSpan: "8",
-                    children: p("Chưa có cổ phiếu trong dữ liệu")
+                    children: p(uiTextValue("Chưa có cổ phiếu trong dữ liệu"))
                   })
                 })
               })]
@@ -1850,7 +1852,7 @@ function lv() {
               type: "button",
               disabled: xn <= 1,
               onClick: () => fu(xn - 1),
-              children: p("Trước")
+              children: p(uiTextValue("Trước"))
             }), O.jsxs("span", {
               className: "muted-text",
               children: [p("Trang"), " ", gi.page, "/", gi.totalPages]
@@ -1865,20 +1867,20 @@ function lv() {
             className: "error-banner",
             role: "alert",
             children: [O.jsxs("p", {
-              children: [p("Không thể tải danh sách cổ phiếu"), ". ", Nt.error]
+              children: [p(uiTextValue("Không thể tải danh sách cổ phiếu")), ". ", Nt.error]
             }), O.jsx("button", {
               className: "ghost-btn",
               onClick: Nt.retry,
-              children: p("Thử lại danh sách")
+              children: p(uiTextValue("Thử lại danh sách"))
             })]
           })]
         }), O.jsxs("section", {
           className: "overview-next panel",
           children: [O.jsxs("div", {
             children: [O.jsx("h3", {
-              children: p("Tiếp tục từ đây")
+              children: p(uiTextValue("Tiếp tục từ đây"))
             }), O.jsx("p", {
-              children: p("Mở một mã để xem biểu đồ và phân tích; quản lý vị thế trong danh mục cá nhân.")
+              children: p(uiTextValue("Mở một mã để xem biểu đồ và phân tích; quản lý vị thế trong danh mục cá nhân."))
             })]
           }), O.jsxs("div", {
             children: [O.jsx("button", {
@@ -1888,12 +1890,12 @@ function lv() {
                 me && (ht(me.id), Xe("detail"));
               },
               disabled: !me,
-              children: p("Chi tiết mã đang chọn")
+              children: p(uiTextValue("Chi tiết mã đang chọn"))
             }), O.jsx("button", {
               className: "ghost-btn",
               type: "button",
               onClick: () => Xe("recommendations"),
-              children: p("Xem nhận định đề xuất")
+              children: p(uiTextValue("Xem nhận định đề xuất"))
             })]
           })]
         })]
@@ -2069,17 +2071,17 @@ function lv() {
         }), Ee.status === "loading" ? O.jsx("div", {
           className: "loading-shell",
           children: O.jsx("p", {
-            children: detailText("Đang tải chi tiết cổ phiếu")
+            children: detailText(uiTextValue("Đang tải chi tiết cổ phiếu"))
           })
         }) : Ee.error ? O.jsxs("div", {
           className: "error-banner",
           role: "alert",
           children: [O.jsxs("p", {
-            children: [detailText("Không thể tải chi tiết cổ phiếu"), ". ", Ee.error]
+            children: [detailText(uiTextValue("Không thể tải chi tiết cổ phiếu")), ". ", Ee.error]
           }), O.jsx("button", {
             className: "ghost-btn",
             onClick: Ee.retry,
-            children: detailText("Thử lại chi tiết")
+            children: detailText(uiTextValue("Thử lại chi tiết"))
           })]
         }) : Ee.data && O.jsxs(i.Fragment, {
           children: [O.jsx(DetailSectionNav, { translate: detailText }), O.jsx("div", {
@@ -2123,18 +2125,18 @@ function lv() {
               children: [O.jsxs("div", {
                 className: "panel-header",
                 children: [O.jsx("h3", {
-                  children: detailText("Lịch sử giá")
+                  children: detailText(uiTextValue("Lịch sử giá"))
                 }), O.jsx("span", {
                   className: `chip ${Te ? "success" : "neutral"}`,
-                  children: detailText(Te ? "Intraday + EOD" : "Dữ liệu EOD")
+                  children: detailText(Te ? uiTextValue("Intraday + EOD") : uiTextValue("Dữ liệu EOD"))
                 }), O.jsxs("p", {
                   className: "chart-volume-note",
                   children: [O.jsxs("span", {
                     className: "volume-note rising",
-                    children: ["↑ ", detailText("Khối lượng phiên tăng")]
+                    children: ["↑ ", detailText(uiTextValue("Khối lượng phiên tăng"))]
                   }), O.jsxs("span", {
                     className: "volume-note falling",
-                    children: ["↓ ", detailText("Khối lượng phiên giảm")]
+                    children: ["↓ ", detailText(uiTextValue("Khối lượng phiên giảm"))]
                   })]
                 })]
               }), O.jsx(DetailPriceVolumeChart, {
@@ -2151,26 +2153,26 @@ function lv() {
             }), O.jsxs("article", {
               className: "panel summary-panel",
               children: [O.jsx("h3", {
-                children: detailText("AI nhận định")
+                children: detailText(uiTextValue("AI nhận định"))
               }), O.jsxs("ul", {
                 className: "summary-list",
                 children: [O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: detailText("Tín hiệu")
+                    children: detailText(uiTextValue("Tín hiệu"))
                   }), O.jsx("strong", {
-                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || detailText("Chưa có nhận định")
+                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || detailText(uiTextValue("Chưa có nhận định"))
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: detailText("RSI14")
+                    children: detailText(uiTextValue("RSI14"))
                   }), O.jsx("strong", {
                     children: ((Hr = (Vr = T.data) == null ? void 0 : Vr.indicators) == null ? void 0 : Hr.rsi14) ?? detailText(Xn)
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: detailText("Quan sát")
+                    children: detailText(uiTextValue("Quan sát"))
                   }), O.jsxs("strong", {
-                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", detailText("phiên")]
+                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", detailText(uiTextValue("phiên"))]
                   })]
                 })]
               })]
@@ -2183,10 +2185,10 @@ function lv() {
               analysis: T,
               translate: detailText
             }), T.data && O.jsxs("p", {
-              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || detailText("Chưa có nhận định"), " · ", detailText("Chất lượng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
+              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || detailText(uiTextValue("Chưa có nhận định")), " · ", detailText(uiTextValue("Chất lượng")), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
             }), T.data && O.jsx("p", {
               className: "data-time",
-              children: [detailText("Cập nhật phân tích:") + " ", detailTime((t = T.data.insight) == null ? void 0 : t.generated_at)]
+              children: [detailText(uiTextValue("Cập nhật phân tích:")) + " ", detailTime((t = T.data.insight) == null ? void 0 : t.generated_at)]
             }), ((r = T.data) == null ? void 0 : r.evaluation_factors) && O.jsx("div", {
               className: "evaluation-factors-grid",
               children: T.data.evaluation_factors.map(d => O.jsxs("div", {
@@ -2196,7 +2198,7 @@ function lv() {
                     children: d.label
                   }), O.jsx("span", {
                     className: `chip ${d.status === "verified" || d.status === "available" ? "success" : "neutral"}`,
-                    children: d.score == null ? detailText("Chưa có điểm") : `${d.score}/100`
+                    children: d.score == null ? detailText(uiTextValue("Chưa có điểm")) : `${d.score}/100`
                   })]
                 }), O.jsx("p", {
                   children: d.detail
@@ -2234,6 +2236,7 @@ function lv() {
           })]
         })]
       }), re === "advisor" && O.jsx(AdvisorWorkspace, {
+        language: profileLanguage,
         token: ue.token,
         aiEnabled: (Xr = au.data) == null ? void 0 : Xr.enabled,
         selectedStock: me,

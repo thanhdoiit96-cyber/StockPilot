@@ -2,6 +2,10 @@
 
 ## Mục tiêu và quyết định
 
+### Hoàn thiện giao diện hiện có — 2026-10-08
+
+Phạm vi nghiệm thu gồm nhãn, trợ giúp, validation, loading/empty/error/success, aria-label và ngày/số trong các màn hình hiện có. Tài khoản, bảo mật và quản lý phiên phải dùng cùng locale đã lưu; đổi ngôn ngữ không xóa bản nháp. Giữ catalog tĩnh thay vì tải thư viện/dịch vụ dịch runtime: không phát sinh request dịch thuật, không dịch nội dung người dùng hoặc narrative từ provider. Bổ sung catalog source-key cho các component còn dùng chuỗi trực tiếp, tương tự adapter Detail, với migration nguồn tường minh (không thay DOM). Browser regression phải kiểm tra chuyển ngôn ngữ, reload, mobile, bàn phím và mutation errors; chỉ đánh dấu hoàn tất sau khi các phần trong phạm vi được kiểm chứng.
+
 Ứng dụng dùng catalog key tĩnh `vi`/`en`, tiếng Việt là fallback. Lựa chọn này phù hợp với quy mô hiện tại, không thêm dependency/runtime request và cho phép kiểm tra parity trực tiếp. Mã cổ phiếu, tên nguồn dữ liệu và dữ liệu do người dùng nhập không được dịch.
 
 Ngôn ngữ trước đăng nhập lưu tại `stockpilot-language` để màn hình auth không đổi lại sau reload. Sau đăng nhập, `user.preferred_language` là nguồn chính và được đồng bộ về local preference để giữ ngôn ngữ khi đăng xuất. Chỉ container đã dịch mới nhận thuộc tính `lang`; `html[lang]` tiếp tục là `vi` cho đến khi toàn bộ nội dung đang hiển thị có catalog English, tránh cung cấp metadata accessibility sai.

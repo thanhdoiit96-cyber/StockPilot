@@ -67,6 +67,12 @@ M5 progress: quality_gate_v1 now blocks overconfident insight when price history
 
 M5 progress: long-history EOD ingestion is complete for the current prototype symbols; quality_gate_v1 now passes for FPT with 250 observations and verified macro context.
 
+## i18n checkpoint — 2026-10-08
+
+- Phạm vi đa ngôn ngữ Việt/Anh của giao diện hiện có đã hoàn tất: catalog tĩnh, Account/security, navigation/header, Market Board, chi tiết mã và Recommendation đều dùng locale hiện tại, giữ state khi chuyển ngôn ngữ.
+- Tiêu chí đạt: catalog parity test, API error contract, encoding check, build/bundle integrity và 8 browser smoke cho auth/market/detail/recommendation đều xanh.
+- Không dịch tự động dữ liệu provider, nội dung người dùng nhập hoặc narrative Advisor; các phần này cần nguồn/quality gate riêng. Benchmark tiếp tục chờ index-series hợp lệ.
+
 M5 progress: risk-plan UI now shows short-, medium- and long-term reference scenarios, allocation ranges, take-profit and stop-loss; these are blocked when evidence is insufficient and never execute trades.
 
 M5 acceptance evidence: FPT/MWG/VHM all pass the current quality gate with long-history EOD and verified macro context. Remaining M5 work is provider expansion, offline backtesting and gated generative AI.

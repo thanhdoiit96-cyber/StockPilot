@@ -109,10 +109,12 @@ test('English market and detail screens preserve filters and chart range when ch
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.screenshot({ path: 'test-results/market-en-mobile.png', fullPage: true })
   const switchLanguage = async value => {
-    await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    const currentLanguage = await page.locator('html').getAttribute('data-locale')
+    await page.getByRole('button', { name: currentLanguage === 'en' ? 'Account and personal details' : 'Tài khoản và thông tin cá nhân', exact: true }).click()
     await page.locator('#account-language').selectOption(value)
-    await page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true }).click()
-    await expect(page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true })).toBeDisabled()
+    const saveButton = page.getByRole('dialog').locator('form:has(#account-language) button[type="submit"]')
+    await saveButton.click()
+    await expect(saveButton).toBeDisabled()
     await page.keyboard.press('Escape')
   }
   const requests = metrics.stockListRequests()
@@ -248,10 +250,12 @@ test('recommendation language switch preserves criteria and result state', async
   await expect(trend).toHaveValue('45')
   await expect(workbench).toBeVisible()
   const switchLanguage = async value => {
-    await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    const currentLanguage = await page.locator('html').getAttribute('data-locale')
+    await page.getByRole('button', { name: currentLanguage === 'en' ? 'Account and personal details' : 'Tài khoản và thông tin cá nhân', exact: true }).click()
     await page.locator('#account-language').selectOption(value)
-    await page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true }).click()
-    await expect(page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true })).toBeDisabled()
+    const saveButton = page.getByRole('dialog').locator('form:has(#account-language) button[type="submit"]')
+    await saveButton.click()
+    await expect(saveButton).toBeDisabled()
     await page.keyboard.press('Escape')
   }
   await switchLanguage('vi')
