@@ -43,6 +43,12 @@
 - Kiểm chứng: 2/2 browser tests pass; test không phụ thuộc live provider/auth và chỉ xác nhận rendering/error contract ở UI.
 - Tiếp tục: mở rộng smoke tương tự cho Portfolio/Recommendation mutation errors khi có fixture ổn định.
 
+## 2026-10-07 — Hoàn thiện smoke Market Board hai ngôn ngữ
+
+- Smoke đã ổn định sau khi chuyển từ dashboard sang Market Board và định vị đúng alert của bảng; cả fixture Việt/Anh đều pass.
+- Kiểm chứng cuối: 2/2 test `localized market list` pass.
+- Portfolio đã có smoke mutation/watchlist nền tảng; Recommendation mutation smoke vẫn chờ fixture lỗi có mã code ổn định để tránh kiểm tra message thô.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
