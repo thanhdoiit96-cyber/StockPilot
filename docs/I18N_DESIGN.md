@@ -19,4 +19,6 @@ Mỗi lát cắt phải giữ key parity giữa hai catalog, fallback về tiế
 
 Bảng giá dùng key ngữ nghĩa trong `i18n.mjs`; Chi tiết dùng adapter tĩnh `detailCatalog.mjs` cho contract `translate` có sẵn, không dò/thay DOM. Đổi ngôn ngữ không thay query hoặc reset range biểu đồ. Tooltip thời điểm intraday giữ độ chính xác đến giây. CSV trang hiện tại dịch header; CSV toàn bộ kết quả từ server giữ contract hiện có. Nội dung phân tích, tin tức và lỗi thô do backend/provider trả về giữ nguyên ngôn ngữ nguồn; chưa xem đó là nội dung đã dịch. Mapping error code và narrative có cấu trúc là công việc tiếp theo, không dịch suy đoán dữ liệu tài chính.
 
+Catalog lỗi API hiện dùng object tĩnh `vi`/`en`, tra cứu bằng `error.code`, không phát sinh request runtime. Mã chưa có bản dịch giữ `error.message` từ server để không che khuất thông tin chẩn đoán. Market Board list đã được nối catalog; các màn hình Auth, Portfolio và Recommendation sẽ được nối ở lát cắt kế tiếp.
+
 Catalog được bundle cùng frontend; lookup là truy cập object đồng bộ và không làm tăng số request. Key mới phải có ở cả `vi` và `en`. Khi catalog lớn đủ để ảnh hưởng bundle đo được, mới tách theo route; chưa lazy-load sớm vì sẽ làm auth phụ thuộc thêm một request và tăng trạng thái lỗi.

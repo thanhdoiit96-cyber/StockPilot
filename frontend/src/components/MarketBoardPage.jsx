@@ -5,6 +5,7 @@ import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
 import { SECTOR_OPTIONS } from '../constants/sectorOptions.mjs'
 import { translate } from '../services/i18n.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 import {
   MARKET_COLUMN_DEFINITIONS,
   MARKET_COLUMN_PRESETS,
@@ -128,7 +129,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         setPagination(list.pagination || { page, pageSize, total: list.length, totalPages: 1 })
         setListState({ loading: false, error: '' })
       })
-      .catch(error => { if (!controller.signal.aborted) setListState({ loading: false, error: error.message }) })
+      .catch(error => { if (!controller.signal.aborted) setListState({ loading: false, error: localizeApiError(error, language) }) })
     return () => controller.abort()
   }, [active, page, pageSize, query, sector, sort.key, sort.direction, pinnedKey, listAttempt, overviewStocks, overviewTotal])
 
