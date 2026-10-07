@@ -10,7 +10,7 @@ Ngôn ngữ trước đăng nhập lưu tại `stockpilot-language` để màn h
 
 1. Đăng nhập, xác minh phiên, điều hướng và tiêu đề trang.
 2. Danh mục, Watchlist, giao dịch, dòng tiền và trạng thái hiệu suất — đã triển khai.
-3. Bảng giá và phần giao diện Chi tiết mã — đã triển khai; Tổng quan đã phủ hero/metric/Market Breadth, lịch sử A/D và banner data-quality dùng chung; Đề xuất đã phủ khung và tiêu chí, còn kết quả/provenance.
+3. Bảng giá và phần giao diện Chi tiết mã — đã triển khai; Tổng quan đã phủ hero/metric/Market Breadth, lịch sử A/D và banner data-quality dùng chung; Đề xuất đã phủ khung, tiêu chí và provenance, còn learning/history/result states.
 4. Chuỗi validation/backend phổ biến, email hệ thống và rà soát accessibility/layout mobile.
 
 Mỗi lát cắt phải giữ key parity giữa hai catalog, fallback về tiếng Việt khi key thiếu, không dịch bằng cách dò/thay nội dung DOM và không tải catalog qua mạng. Nghiệm thu gồm unit test parity/fallback, browser test đổi ngôn ngữ + reload + đăng nhập và kiểm tra layout ở desktop/mobile.

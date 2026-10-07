@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog kết quả và provenance Đề xuất
+
+- Recommendation Evidence hỗ trợ `language`/`lang`; dịch summary provenance, model/price source/time, input sessions, factor table, verified external sources và disclaimer. Snapshot Comparison dịch empty state và phần mô tả so sánh.
+- Recommendation Workbench truyền preference xuống evidence/snapshot; rationale, factor values, source names, citations và backend error text vẫn giữ nguyên nội dung nguồn. Không đổi scoring, persistence, API hay local state.
+- Kiểm chứng: unit/encoding 54/54; browser Recommendation Workbench 2/2; production build/bundle integrity đạt với `index-CpYLUjkZ.js`, `index-CCqBfcrU.css`. Preview cần reload theo bundle mới.
+- Tiếp tục: dịch phần learning/history, result empty states và nhãn hành động còn lại; thêm browser test English đổi ngôn ngữ nhưng giữ criteria/snapshot selection.
+
 ## 2026-10-07 — Catalog Recommendation Workbench giai đoạn đầu
 
 - Recommendation Workbench nhận `language`/`lang`; catalog khung tiêu đề, mô tả, mô hình, cảnh báo tập trung và tiêu chí điều chỉnh (nhãn, mô tả, slider aria). QuickWatchlistButton nhận preference ngôn ngữ để trạng thái Theo dõi/Đã theo dõi đồng bộ.
