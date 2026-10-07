@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Rà soát mobile/accessibility Đề xuất
+
+- Thêm browser coverage cho Recommendation Workbench ở viewport 390px: không tràn ngang, slider có focus outline, nút thu gọn tiêu chí thao tác được bằng bàn phím và trạng thái form chuyển đúng sang rỗng/ẩn. Đồng thời catalog hóa nhãn Tùy chỉnh, tổng trọng số và Open/Collapse criteria.
+- Kiểm chứng: test mobile/keyboard đạt 1/1 trên bundle mới `index-wWnruuS4.js`; production build/bundle integrity đạt. Test dùng API fixture, chưa phải live auth.
+- Tiếp tục: rà soát các controls saved proposal/learning còn nhãn tiếng Việt, rồi chuẩn hóa error-code catalog backend. Không thêm virtualization/polling và không mở rộng AI Advisor.
+
 ## 2026-10-07 — Kiểm chứng đổi ngôn ngữ Đề xuất giữ state
 
 - Thêm browser case chuyển EN → VI → EN trong Recommendation Workbench; slider “Price trend/Xu hướng giá” giữ giá trị 45 và vùng Workbench đổi `lang` đúng. Không phát sinh request dịch hay reset criteria state.
