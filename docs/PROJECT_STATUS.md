@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Bắt đầu contract error-code cho API
+
+- `requestJson` giữ `error.code` từ response cùng `status` và message, cho phép frontend catalog theo mã mà không mất message nguồn. Thêm regression kiểm tra `quote_provider_unavailable`; frontend unit/encoding đạt 55/55.
+- Backend chuẩn hóa thêm `quote_realtime_disabled` cho các nhánh realtime quote bị tắt; các mã đã có như `quote_unavailable` và `quote_provider_unavailable` được giữ tương thích. Thêm helper `httpError` làm điểm chung cho các controller tiếp theo, chưa migrate hàng loạt response để tránh thay đổi contract ngoài phạm vi.
+- Kiểm chứng syntax `stockController.js`, production build/bundle integrity đạt với `index-CtsfJrKa.js`, `index-CCqBfcrU.css`. Chưa chạy full backend/PostgreSQL hoặc live smoke trong lượt này.
+- Tiếp tục: lập bảng mã lỗi theo domain (auth/portfolio/recommendation/market), migrate từng controller kèm test contract, rồi nối catalog vi/en cho notification UI.
+
 ## 2026-10-07 — Catalog controls learning/saved của Đề xuất
 
 - Đã catalog hóa saved ideas: chọn snapshot, Load, Delete, Restore defaults, Create personal ideas, locale ngày giờ và số mã. Learning panel bổ sung nhãn thống kê measured runs/hit rate/symbols, trạng thái calibration, mô tả feedback và calibration samples.

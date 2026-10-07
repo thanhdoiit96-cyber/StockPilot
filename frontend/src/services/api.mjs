@@ -2,7 +2,7 @@ import { notifySessionExpired } from './authSession.mjs'
 import { sessionFetch } from './cookieSession.mjs'
 
 export class ApiError extends Error {
-  constructor(message, status = null) { super(message); this.name = 'ApiError'; this.status = status }
+  constructor(message, status = null, code = null) { super(message); this.name = 'ApiError'; this.status = status; this.code = code }
 }
 
 export async function requestJson(url, { signal, method = 'GET', body, token, timeoutMs = 15000 } = {}) {
@@ -16,11 +16,11 @@ export async function requestJson(url, { signal, method = 'GET', body, token, ti
     throw new ApiError('Không thể kết nối máy chủ. Vui lòng thử lại.')
   }
   if (!response.ok) {
-    let serverMessage = ''
-    try { serverMessage = (await response.clone().json()).message || '' } catch (_) {}
+    let serverMessage = ''; let serverCode = null
+    try { const payload = await response.clone().json(); serverMessage = payload.message || ''; serverCode = typeof payload.code === 'string' ? payload.code : null } catch (_) {}
     const message = (response.status === 401 && /Invalid or expired token/i.test(serverMessage)) ? 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.' : serverMessage || (response.status === 404 ? 'Không tìm thấy dữ liệu được yêu cầu.' : response.status === 429 ? 'Có quá nhiều yêu cầu. Vui lòng chờ một chút rồi thử lại.' : 'Máy chủ không thể xử lý yêu cầu. Vui lòng thử lại.')
     if (response.status === 401 && token) notifySessionExpired(message)
-    throw new ApiError(`${message} (HTTP ${response.status})`, response.status)
+    throw new ApiError(`${message} (HTTP ${response.status})`, response.status, serverCode)
   }
   if (response.status === 204) return { success: true, data: null }
   let payload
