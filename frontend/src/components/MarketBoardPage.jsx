@@ -204,7 +204,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           ? t('market.exportTruncated', { count: Number.isFinite(exportedCount) ? exportedCount : exportLimit, limit: exportLimit })
           : t('market.exportDone', { count: Number.isFinite(exportedCount) ? exportedCount : t('market.exportAllDone') }))
       } catch (error) {
-        setExportError(error.name === 'TimeoutError' ? t('market.exportTimeout') : error.message)
+        setExportError(error.name === 'TimeoutError' ? t('market.exportTimeout') : localizeApiError(error, language))
       } finally {
         setExporting(false)
       }

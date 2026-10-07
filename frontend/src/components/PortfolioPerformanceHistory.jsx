@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
 import { formatDateOnly, formatMoney, formatNumber } from '../services/userLocale.mjs'
 import { translate } from '../services/i18n.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 
 
 function describeMwr(mwr, percent, t) {
@@ -69,7 +70,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
     setState(previous => ({ status: 'loading', data: previous.data, error: '' }))
     requestJson(`/api/portfolio/performance/history?sessions=${sessions}`, { token, signal: controller.signal })
       .then(response => { if (mounted) setState({ status: 'success', data: response.data, error: '' }) })
-      .catch(error => { if (mounted && !controller.signal.aborted && error.status !== 401) setState(previous => ({ status: 'error', data: previous.data, error: error.message })) })
+      .catch(error => { if (mounted && !controller.signal.aborted && error.status !== 401) setState(previous => ({ status: 'error', data: previous.data, error: localizeApiError(error, language) })) })
     return () => { mounted = false; controller.abort() }
   }, [active, token, refreshKey, sessions, retry])
 

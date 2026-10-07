@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 
 const RANGES = [1, 5, 20]
 const WIDTH = 640
@@ -65,7 +66,7 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
         setState({ status: 'success', data, error: null })
       })
       .catch(error => {
-        if (!controller.signal.aborted) setState({ status: 'error', data: null, error: error.message })
+        if (!controller.signal.aborted) setState({ status: 'error', data: null, error: localizeApiError(error, language) })
       })
     return () => controller.abort()
   }, [range, exchange, sector, attempt])
