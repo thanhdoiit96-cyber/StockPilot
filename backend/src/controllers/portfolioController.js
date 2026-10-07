@@ -9,6 +9,7 @@ const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../servi
 const { normalizeSessionLimit, buildDailyValuationSeries } = require('../services/portfolioValuation');
 const { normalizePortfolioEventInput, presentPortfolioEvent } = require('../services/portfolioEvent');
 const { reconcilePortfolioEvent } = require('../services/portfolioEventReconciliation');
+const { httpError } = require('../utils/httpError');
 const router = express.Router();
 router.use(requireAuth);
 
@@ -128,7 +129,7 @@ router.get('/', async (req, res) => {
   } });
   } catch (error) {
     console.error('[Portfolio] Load failed:', error.message);
-    res.status(500).json({ success: false, message: 'Không tải được danh mục. Vui lòng thử lại.' });
+    httpError(res, 500, 'portfolio_load_failed', 'Không tải được danh mục. Vui lòng thử lại.');
   }
 });
 
@@ -148,7 +149,7 @@ router.get('/performance/history', async (req, res) => {
     return res.json({ success: true, data: buildDailyValuationSeries({ transactions, cashFlows, portfolioEvents, priceRows, sessionDates: orderedSessionDates, sessions }) });
   } catch (error) {
     console.error('[Portfolio] Performance history failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể tải lịch sử hiệu suất. Vui lòng thử lại.' });
+    return httpError(res, 500, 'portfolio_performance_failed', 'Không thể tải lịch sử hiệu suất. Vui lòng thử lại.');
   }
 });
 
@@ -163,7 +164,7 @@ router.get('/events', async (req, res) => {
     return res.json({ success: true, data: { events: rows.slice(0, 50).map(presentPortfolioEvent), has_more: rows.length > 50 } });
   } catch (error) {
     console.error('[Portfolio] Load events failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể tải sự kiện danh mục. Vui lòng thử lại.' });
+    return httpError(res, 500, 'portfolio_events_failed', 'Không thể tải sự kiện danh mục. Vui lòng thử lại.');
   }
 });
 
@@ -171,7 +172,7 @@ router.get('/events/:eventId/reconciliation', async (req, res) => {
   try {
     const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
     const event = portfolio ? await PortfolioEvent.findOne({ where: { id: req.params.eventId, portfolio_id: portfolio.id } }) : null;
-    if (!event) return res.status(404).json({ success: false, message: 'Không tìm thấy sự kiện danh mục.' });
+    if (!event) return httpError(res, 404, 'portfolio_event_not_found', 'Không tìm thấy sự kiện danh mục.');
     const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: event.stock_id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
     return res.json({ success: true, data: reconcilePortfolioEvent(event, transactions) });
   } catch (error) {
@@ -194,7 +195,7 @@ router.post('/events', async (req, res) => {
     return res.status(201).json({ success: true, data: { ...presented, reconciliation: reconcilePortfolioEvent(event, transactions) } });
   } catch (error) {
     console.error('[Portfolio] Create event failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể lưu sự kiện danh mục. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_event_create_failed', 'Không thể lưu sự kiện danh mục. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
@@ -212,7 +213,7 @@ router.post('/events/:eventId/confirm', async (req, res) => {
     return res.json({ success: true, data: { ...presentPortfolioEvent(event), reconciliation } });
   } catch (error) {
     console.error('[Portfolio] Confirm event failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể xác nhận sự kiện danh mục.' });
+    return httpError(res, 500, 'portfolio_event_confirm_failed', 'Không thể xác nhận sự kiện danh mục.');
   }
 });
 
@@ -227,7 +228,7 @@ router.post('/events/:eventId/cancel', async (req, res) => {
     return res.json({ success: true, data: presentPortfolioEvent(event) });
   } catch (error) {
     console.error('[Portfolio] Cancel event failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể hủy sự kiện danh mục.' });
+    return httpError(res, 500, 'portfolio_event_cancel_failed', 'Không thể hủy sự kiện danh mục.');
   }
 });
 
@@ -266,7 +267,7 @@ router.post('/cash-flows', async (req, res) => {
     return res.status(201).json({ success: true, data: flow });
   } catch (error) {
     console.error('[Portfolio] Create cash flow failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể lưu dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_cashflow_create_failed', 'Không thể lưu dòng tiền. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
@@ -282,7 +283,7 @@ router.put('/cash-flows/:cashFlowId', async (req, res) => {
     return res.json({ success: true, data: flow });
   } catch (error) {
     console.error('[Portfolio] Update cash flow failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể sửa dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_cashflow_update_failed', 'Không thể sửa dòng tiền. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
@@ -297,7 +298,7 @@ router.delete('/cash-flows/:cashFlowId', async (req, res) => {
     return res.json({ success: true, data: { id: flow.id } });
   } catch (error) {
     console.error('[Portfolio] Delete cash flow failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể xóa dòng tiền. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_cashflow_delete_failed', 'Không thể xóa dòng tiền. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
