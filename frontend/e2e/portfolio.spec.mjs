@@ -37,6 +37,16 @@ test('cash-flow mutation error uses the localized API code and remains retryable
   await expect(page.getByRole('alert')).toContainText('Không thể tạo dòng tiền.')
   await expect(form.locator('button[type="submit"]')).toBeEnabled()
 })
+test('cash-flow mutation error is localized in English', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('stockpilot-language', 'en'))
+  await boot(page, [], [], [], [], null, [], null, { id: 'en', email: 'en@example.com', role: 'admin', preferred_language: 'en' }, 'portfolio_cashflow_create_failed')
+  await page.getByRole('tab', { name: /Cash flows/ }).click()
+  const form = page.locator('.cash-flow-form')
+  await form.getByLabel('Amount (VND)').fill('1000000')
+  await form.locator('button[type="submit"]').click()
+  await expect(page.getByRole('alert')).toContainText('Unable to create the cash flow.')
+  await expect(form.locator('button[type="submit"]')).toBeEnabled()
+})
 test('portfolio tabs preserve drafts and filters with keyboard and mobile navigation', async ({ page }) => {
   const state = await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10 }], [], [], [{ stock_id: 'a', Stock: { id: 'a', code: 'FPT', name: 'FPT Corp' } }])
   const tabs = page.getByRole('tablist', { name: 'Nội dung danh mục' })
