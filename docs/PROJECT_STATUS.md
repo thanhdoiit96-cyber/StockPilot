@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Error-code domain Recommendation
+
+- Migrate `recommendationController` sang mã ổn định: saved list/create/delete, readiness, personalized generation, latest và history đều trả `code` cùng status/message cũ. Các mã hiện tại: `recommendation_saved_list_failed`, `recommendation_saved_create_failed`, `recommendation_saved_not_found`, `recommendation_saved_delete_failed`, `recommendation_readiness_failed`, `recommendation_personalized_failed`, `recommendation_latest_failed`, `recommendation_history_failed`.
+- Dùng helper `httpError` để giữ shape `{ success:false, code, message, data? }`; chưa đổi message hoặc status nên client cũ vẫn hoạt động. `requestJson` đã giữ code cho catalog UI ở commit trước.
+- Kiểm chứng: backend Jest 250/250, syntax controller/helper đạt. Chưa chạy PostgreSQL/live auth cho nhánh lỗi mới; các response được kiểm thử bằng controller mocks hiện có.
+- Tiếp tục: migrate domain auth/portfolio/market theo cùng bảng mã, sau đó thêm catalog code → message Việt/Anh trong UI; không dịch message tự do khi code chưa ổn định.
+
 ## 2026-10-07 — Bắt đầu contract error-code cho API
 
 - `requestJson` giữ `error.code` từ response cùng `status` và message, cho phép frontend catalog theo mã mà không mất message nguồn. Thêm regression kiểm tra `quote_provider_unavailable`; frontend unit/encoding đạt 55/55.

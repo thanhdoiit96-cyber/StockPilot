@@ -11,12 +11,13 @@ const { buildPersonalizedRecommendations, DEFAULT_CRITERIA } = require('../servi
 const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstockBridgeFetcher');
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
+const { httpError } = require('../utils/httpError');
 
 router.get('/saved', requireAuth, async (req, res) => {
   try {
     const rows = await SavedRecommendation.findAll({ where: { user_id: req.user.sub }, order: [['created_at', 'DESC']], limit: 20 });
     return res.json({ success: true, data: rows.map(row => ({ id: row.id, criteria: row.criteria, result: row.result, createdAt: row.created_at })) });
-  } catch (error) { console.error('[Recommendation Controller] Error fetching saved proposals:', error); return res.status(500).json({ success: false, message: 'Error fetching saved recommendations' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error fetching saved proposals:', error); return httpError(res, 500, 'recommendation_saved_list_failed', 'Error fetching saved recommendations'); }
 });
 
 router.post('/saved', requireAuth, async (req, res) => {
@@ -25,15 +26,15 @@ router.post('/saved', requireAuth, async (req, res) => {
     const result = req.body?.result && typeof req.body.result === 'object' ? req.body.result : {};
     const row = await SavedRecommendation.create({ user_id: req.user.sub, criteria, result });
     return res.status(201).json({ success: true, data: { id: row.id, criteria: row.criteria, result: row.result, createdAt: row.created_at } });
-  } catch (error) { console.error('[Recommendation Controller] Error saving proposal:', error); return res.status(500).json({ success: false, message: 'Error saving recommendation' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error saving proposal:', error); return httpError(res, 500, 'recommendation_saved_create_failed', 'Error saving recommendation'); }
 });
 
 router.delete('/saved/:id', requireAuth, async (req, res) => {
   try {
     const deleted = await SavedRecommendation.destroy({ where: { id: req.params.id, user_id: req.user.sub } });
-    if (!deleted) return res.status(404).json({ success: false, message: 'Saved recommendation not found' });
+    if (!deleted) return httpError(res, 404, 'recommendation_saved_not_found', 'Saved recommendation not found');
     return res.status(204).end();
-  } catch (error) { console.error('[Recommendation Controller] Error deleting saved proposal:', error); return res.status(500).json({ success: false, message: 'Error deleting recommendation' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error deleting saved proposal:', error); return httpError(res, 500, 'recommendation_saved_delete_failed', 'Error deleting recommendation'); }
 });
 
 function deriveCalibration(runs) {
@@ -85,7 +86,7 @@ router.get('/readiness', async (req, res) => {
     const coverage = stocks.map(stock => ({ code: stock.code, observations: counts.get(String(stock.id)) || 0, eligible: (counts.get(String(stock.id)) || 0) >= 50 }));
     const eligible = coverage.filter(item => item.eligible);
     return res.json({ success: true, data: { universe_size: stocks.length, price_rows: prices.length, distinct_sessions: sessions.size, minimum_observations: 50, eligible_symbols: eligible.length, ready_for_recommendations: eligible.length > 0, coverage } });
-  } catch (error) { console.error('[Recommendation Controller] Error fetching readiness:', error); return res.status(500).json({ success: false, message: 'Error fetching recommendation readiness' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error fetching readiness:', error); return httpError(res, 500, 'recommendation_readiness_failed', 'Error fetching recommendation readiness'); }
 });
 
 router.post('/personalized', async (req, res) => {
@@ -102,7 +103,7 @@ router.post('/personalized', async (req, res) => {
     try { currentQuotes = await loadRecommendationQuotes(baseline.map(item => item.symbol)); } catch (quoteError) { console.warn(`[Recommendation Controller] intraday reference fallback: ${quoteError.message}`); }
     const recommendations = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, currentQuotes, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays: req.body?.horizon_days || 20 });
     return res.json({ success: true, data: { recommendations, criteria: req.body?.criteria || DEFAULT_CRITERIA, learning, eligible_count: stocks.filter(item => (byStock.get(String(item.id)) || []).length >= 50).length, model: 'personalized_rule_v1', generated_at: new Date().toISOString() } });
-  } catch (error) { console.error('[Recommendation Controller] Error generating personalized recommendations:', error); return res.status(500).json({ success: false, message: 'Không thể tạo đề xuất theo tiêu chí hiện tại' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error generating personalized recommendations:', error); return httpError(res, 500, 'recommendation_personalized_failed', 'Không thể tạo đề xuất theo tiêu chí hiện tại'); }
 });
 
 router.get('/latest', async (req, res) => {
@@ -112,7 +113,7 @@ router.get('/latest', async (req, res) => {
     const calibrationRuns = await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale'] }] });
     const learning = deriveCalibration(calibrationRuns);
     return res.json({ success: true, data: { status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning, recommendations: (run.recommendations || []).map(item => ({ id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock })) } });
-  } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return res.status(500).json({ success: false, message: 'Error fetching recommendations' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return httpError(res, 500, 'recommendation_latest_failed', 'Error fetching recommendations'); }
 });
 
 router.get('/history', async (req, res) => {
@@ -126,7 +127,7 @@ router.get('/history', async (req, res) => {
       const returns = measured.map(item => Number(item.forward_return_pct));
       return { id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, measured_count: measured.length, pending_count: items.filter(item => item.outcome === 'pending' || !item.outcome).length, hit_rate_pct: measured.length ? Number((positive / measured.length * 100).toFixed(2)) : null, average_forward_return_pct: returns.length ? Number((returns.reduce((sum, value) => sum + value, 0) / returns.length).toFixed(4)) : null };
     }) });
-  } catch (error) { console.error('[Recommendation Controller] Error fetching history:', error); return res.status(500).json({ success: false, message: 'Error fetching recommendation history' }); }
+  } catch (error) { console.error('[Recommendation Controller] Error fetching history:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
 });
 
 module.exports = router;
