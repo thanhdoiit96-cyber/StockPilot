@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Kiểm chứng đổi ngôn ngữ Đề xuất giữ state
+
+- Thêm browser case chuyển EN → VI → EN trong Recommendation Workbench; slider “Price trend/Xu hướng giá” giữ giá trị 45 và vùng Workbench đổi `lang` đúng. Không phát sinh request dịch hay reset criteria state.
+- Kiểm chứng: browser locale-state đạt 1/1; build trước đó `index-Cfj2GZwu.js` đạt bundle integrity; test dùng fixture API, chưa phải live auth. Assertion boot được điều chỉnh theo ngôn ngữ để không phụ thuộc chuỗi tiếng Việt.
+- Recommendation còn các nhãn controls/detail learning chưa catalog hết và backend error text chưa map theo code. Bước tiếp theo là rà soát accessibility/mobile và error-code contract; không mở rộng AI Advisor.
+
 ## 2026-10-07 — Catalog learning/history của Đề xuất
 
 - Recommendation Workbench đã dịch kết quả rỗng, nhãn hạng/điểm/giá tham chiếu, observed sessions và phần vòng phản hồi/lịch sử scheduled runs. Bảng lịch sử giữ nguyên số đo, hit rate và return từ backend; trạng thái pending được dịch theo preference.

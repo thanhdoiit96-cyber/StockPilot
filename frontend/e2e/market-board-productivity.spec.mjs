@@ -70,7 +70,7 @@ async function boot(page, count = 4, language = 'vi') {
   await page.goto('/')
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   await expect(page.locator('.table-panel tbody tr .symbol')).toHaveCount(count)
-  await expect(page.locator('.market-breadth-header')).toContainText(`${count} mã`)
+  await expect(page.locator('.market-breadth-header')).toContainText(language === 'en' ? `${count} symbols` : `${count} mã`)
   return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests, stockListRequests: () => stockListRequests }
 }
 
@@ -223,3 +223,27 @@ for (const count of [300, 500]) {
     expect(quoteSettlementMs).toBeLessThan(3000)
   })
 }
+
+test('recommendation language switch preserves criteria and result state', async ({ page }) => {
+  await boot(page, 4, 'en')
+  await page.getByRole('button', { name: 'Ideas', exact: true }).click()
+  const workbench = page.locator('.recommendation-workbench')
+  await expect(workbench).toHaveAttribute('lang', 'en')
+  const trend = workbench.getByRole('slider', { name: 'Weight Price trend' })
+  await trend.fill('45')
+  await expect(trend).toHaveValue('45')
+  await expect(workbench).toBeVisible()
+  const switchLanguage = async value => {
+    await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    await page.locator('#account-language').selectOption(value)
+    await page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true }).click()
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true })).toBeDisabled()
+    await page.keyboard.press('Escape')
+  }
+  await switchLanguage('vi')
+  await expect(workbench).toHaveAttribute('lang', 'vi')
+  await expect(workbench.getByRole('slider', { name: 'Trọng số Xu hướng giá' })).toHaveValue('45')
+  await switchLanguage('en')
+  await expect(workbench).toHaveAttribute('lang', 'en')
+  await expect(workbench.getByRole('slider', { name: 'Weight Price trend' })).toHaveValue('45')
+})
