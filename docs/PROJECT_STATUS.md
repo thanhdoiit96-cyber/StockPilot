@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog learning/history của Đề xuất
+
+- Recommendation Workbench đã dịch kết quả rỗng, nhãn hạng/điểm/giá tham chiếu, observed sessions và phần vòng phản hồi/lịch sử scheduled runs. Bảng lịch sử giữ nguyên số đo, hit rate và return từ backend; trạng thái pending được dịch theo preference.
+- Không dịch rationale text, tên nguồn, factor values hoặc model output tự do; đây là nội dung provenance/dữ liệu nguồn. Các phần saved-proposal controls và một số learning detail vẫn còn nhãn tiếng Việt.
+- Kiểm chứng: unit/encoding 54/54; browser Recommendation Workbench 2/2; production build/bundle integrity đạt với `index-Cfj2GZwu.js`, `index-CCqBfcrU.css`. Preview cần reload theo bundle mới.
+- Tiếp tục: browser test English đổi ngôn ngữ giữ criteria/snapshot state, sau đó rà soát các nhãn learning còn lại và error-code catalog backend.
+
 ## 2026-10-07 — Catalog kết quả và provenance Đề xuất
 
 - Recommendation Evidence hỗ trợ `language`/`lang`; dịch summary provenance, model/price source/time, input sessions, factor table, verified external sources và disclaimer. Snapshot Comparison dịch empty state và phần mô tả so sánh.
