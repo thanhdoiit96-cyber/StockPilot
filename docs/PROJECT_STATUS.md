@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog banner chất lượng dữ liệu
+
+- Overlay runtime `quality-overlay.js` đọc cùng preference `stockpilot-language` và render Việt/Anh cho trạng thái EOD, coverage, thời điểm retry, phase đang chạy, trade-priority và fallback. Locale thời điểm cũng đổi theo preference; React commit sẽ render lại banner sau khi đổi ngôn ngữ.
+- Không thay đổi endpoint, chu kỳ polling, nội dung số liệu hoặc retry semantics. Error từ fetch vẫn giữ hành vi im lặng như trước để không che dashboard; chưa có error-code catalog riêng cho backend.
+- Kiểm chứng: frontend unit/encoding 54/54; browser data-quality 1/1; production build/bundle integrity đạt với `index-EifBsIm4.js`, `quality-overlay.js` 5.14 kB và CSS `index-CCqBfcrU.css`. Preview cần reload theo bundle mới.
+- Tiếp tục: Recommendation Workbench và browser test English Overview/Recommendations giữ filter/state. AI Advisor và benchmark index-series vẫn ngoài phạm vi.
 ## 2026-10-07 — Catalog lịch sử A/D trong Tổng quan
 
 - Market Breadth History nhận `language` và khai báo `lang` theo vùng; đã dịch khoảng 1/5/20 phiên, heading/scope EOD, loading/error/retry, chuỗi phiên không liên tục, tín hiệu volume, chú thích và nhãn accessible của biểu đồ. Filter exchange/sector và range state giữ nguyên; không thêm request dịch.
