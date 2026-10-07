@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog controls learning/saved của Đề xuất
+
+- Đã catalog hóa saved ideas: chọn snapshot, Load, Delete, Restore defaults, Create personal ideas, locale ngày giờ và số mã. Learning panel bổ sung nhãn thống kê measured runs/hit rate/symbols, trạng thái calibration, mô tả feedback và calibration samples.
+- Không đổi persistence local/server, criteria values, scoring hay evaluation semantics. Backend result/rationale tự do vẫn giữ nguyên ngôn ngữ nguồn.
+- Kiểm chứng: unit/encoding 54/54; browser locale-state + mobile keyboard 2/2; production build/bundle integrity đạt với `index-ibcm5Xj0.js`, `index-CCqBfcrU.css`. Preview cần reload theo bundle mới.
+- Tiếp tục: chuẩn hóa error-code catalog backend và rà soát toàn bộ notification/error copy còn lại; không mở rộng AI Advisor.
+
 ## 2026-10-07 — Rà soát mobile/accessibility Đề xuất
 
 - Thêm browser coverage cho Recommendation Workbench ở viewport 390px: không tràn ngang, slider có focus outline, nút thu gọn tiêu chí thao tác được bằng bàn phím và trạng thái form chuyển đúng sang rỗng/ẩn. Đồng thời catalog hóa nhãn Tùy chỉnh, tổng trọng số và Open/Collapse criteria.
