@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Error-code domain Auth
+
+- Migrate các lỗi Auth chính sang mã ổn định: `auth_register_invalid_input`, `auth_email_already_registered`, `auth_invalid_credentials`, `auth_user_missing`, `auth_profile_invalid_input`, `auth_password_rate_limited`, `auth_password_invalid_input`, `auth_password_current_invalid`. Giữ nguyên status/message và cookie/session semantics.
+- Rate-limit password response cũng có `code`; frontend `requestJson` đã giữ mã để bước sau map sang catalog Việt/Anh. Các lỗi session rotation vốn đã có mã tiếp tục giữ nguyên.
+- Kiểm chứng: backend Jest 250/250. Chưa chạy live auth smoke và chưa migrate toàn bộ lỗi session management/profile downstream; đây là migration theo domain từng lát.
+- Tiếp tục: migrate Portfolio rồi Market, bổ sung contract assertions kiểm tra code cho Auth/Recommendation và catalog notification UI.
+
 ## 2026-10-07 — Error-code domain Recommendation
 
 - Migrate `recommendationController` sang mã ổn định: saved list/create/delete, readiness, personalized generation, latest và history đều trả `code` cùng status/message cũ. Các mã hiện tại: `recommendation_saved_list_failed`, `recommendation_saved_create_failed`, `recommendation_saved_not_found`, `recommendation_saved_delete_failed`, `recommendation_readiness_failed`, `recommendation_personalized_failed`, `recommendation_latest_failed`, `recommendation_history_failed`.

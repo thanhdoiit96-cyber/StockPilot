@@ -9,6 +9,7 @@ const { User, AuthSession, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { cookieNames, parseCookies, setSessionCookies, clearSessionCookies } = require('../auth/cookies');
 const { AuthSessionError, sameHash, sessionService } = require('../services/authSessionService');
+const { httpError } = require('../utils/httpError');
 
 const router = express.Router();
 const { profileDetails } = require('../services/profileDetails');
@@ -37,13 +38,13 @@ async function cookieResponse(res, user, status = 200) {
 router.post('/register', async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   const password = String(req.body?.password || '');
-  if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return res.status(400).json({ success: false, message: 'Email hợp lệ và mật khẩu tối thiểu 8 ký tự' });
+  if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return httpError(res, 400, 'auth_register_invalid_input', 'Email hợp lệ và mật khẩu tối thiểu 8 ký tự');
   try {
     const user = await User.create({ email, password_hash: await bcrypt.hash(password, 12) });
     if (wantsCookieSession(req)) return cookieResponse(res, user, 201);
     return res.status(201).json({ success: true, user: publicUser(user), token: issue(user) });
   } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError') return res.status(409).json({ success: false, message: 'Email đã được đăng ký' });
+    if (error.name === 'SequelizeUniqueConstraintError') return httpError(res, 409, 'auth_email_already_registered', 'Email đã được đăng ký');
     throw error;
   }
 });
@@ -59,7 +60,7 @@ router.post('/login', async (req, res, next) => {
       return { user, created, token: created ? null : issue(user) };
     };
     const result = sequelize?.transaction ? await sequelize.transaction(authenticate) : await authenticate(null);
-    if (!result) return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
+    if (!result) return httpError(res, 401, 'auth_invalid_credentials', 'Email hoặc mật khẩu không đúng');
     if (result.created) {
       setSessionCookies(res, { accessToken: issueAccess(result.user, result.created.session.id), refreshToken: result.created.refreshToken, csrfToken: result.created.csrfToken });
       return res.json({ success: true, user: publicUser(result.user) });
@@ -101,17 +102,17 @@ router.post('/logout', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   const user = await User.findByPk(req.user.sub);
-  if (!user) return res.status(401).json({ success: false, message: 'User không tồn tại' });
+  if (!user) return httpError(res, 401, 'auth_user_missing', 'User không tồn tại');
   return res.json({ success: true, user: publicUser(user) });
 });
 
 router.patch('/profile', requireAuth, async (req, res, next) => {
   let changes;
   try { changes = profileDetails(req.body); }
-  catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+  catch (error) { return httpError(res, 400, 'auth_profile_invalid_input', error.message); }
   try {
   const user = await User.findByPk(req.user.sub);
-  if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+  if (!user) return httpError(res, 404, 'auth_user_missing', 'User không tồn tại');
   await user.update({ ...changes, updated_at: new Date() });
   return res.json({ success: true, user: publicUser(user) });
   } catch (error) { next(error); }
@@ -120,13 +121,13 @@ router.patch('/profile', requireAuth, async (req, res, next) => {
 const passwordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false,
   keyGenerator: req => String(req.user.sub),
-  message: { success: false, message: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau 15 phút.' }
+    message: { success: false, code: 'auth_password_rate_limited', message: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau 15 phút.' }
 });
 router.post('/password', requireAuth, passwordLimiter, async (req, res, next) => {
   const { current_password: current, new_password: password } = req.body || {};
   if (typeof current !== 'string' || !current ||
       typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password) > 72 || password === current) {
-    return res.status(400).json({ success: false, message: 'Mật khẩu mới cần ít nhất 12 ký tự, tối đa 72 byte và khác mật khẩu hiện tại.' });
+    return httpError(res, 400, 'auth_password_invalid_input', 'Mật khẩu mới cần ít nhất 12 ký tự, tối đa 72 byte và khác mật khẩu hiện tại.');
   }
   try {
     const changed = await sequelize.transaction(async transaction => {
@@ -136,7 +137,7 @@ router.post('/password', requireAuth, passwordLimiter, async (req, res, next) =>
       await AuthSession.update({ revoked_at: new Date(), revoke_reason: 'password_changed' }, { where: { user_id: user.id, revoked_at: null }, transaction });
       return true;
     });
-    if (!changed) return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không đúng.' });
+    if (!changed) return httpError(res, 400, 'auth_password_current_invalid', 'Mật khẩu hiện tại không đúng.');
     clearSessionCookies(res);
     return res.json({ success: true });
   } catch (error) { return next(error); }
