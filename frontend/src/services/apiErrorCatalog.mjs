@@ -4,6 +4,7 @@ const messages = {
     auth_email_already_registered: 'Email đã được đăng ký.',
     auth_password_rate_limited: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau 15 phút.',
     auth_user_missing: 'Tài khoản không còn tồn tại. Vui lòng đăng nhập lại.',
+    AUTH_USER_MISSING: 'Tài khoản không còn tồn tại. Vui lòng đăng nhập lại.',
     auth_register_invalid_input: 'Thông tin đăng ký chưa hợp lệ.',
     auth_profile_invalid_input: 'Thông tin cá nhân chưa hợp lệ.',
     auth_password_invalid_input: 'Mật khẩu mới chưa hợp lệ.',
@@ -47,6 +48,7 @@ const messages = {
     market_cache_stats_failed: 'Không tải được thống kê bộ nhớ đệm.',
     market_cache_clear_failed: 'Không thể xoá bộ nhớ đệm.',
     market_quote_unavailable: 'Chưa có quote intraday cho mã này.',
+    quote_unavailable: 'Chưa có quote intraday cho mã này.',
     quote_provider_unavailable: 'Nguồn quote tạm thời không khả dụng.',
     quote_realtime_disabled: 'Quote realtime hiện đang tắt.',
     market_export_failed: 'Không thể xuất dữ liệu. Vui lòng thử lại.'
@@ -56,6 +58,7 @@ const messages = {
     auth_email_already_registered: 'This email is already registered.',
     auth_password_rate_limited: 'Too many attempts. Try again in 15 minutes.',
     auth_user_missing: 'This account no longer exists. Sign in again.',
+    AUTH_USER_MISSING: 'This account no longer exists. Sign in again.',
     auth_register_invalid_input: 'The registration details are invalid.',
     auth_profile_invalid_input: 'The profile details are invalid.',
     auth_password_invalid_input: 'The new password is invalid.',
@@ -99,6 +102,7 @@ const messages = {
     market_cache_stats_failed: 'Unable to load cache statistics.',
     market_cache_clear_failed: 'Unable to clear the cache.',
     market_quote_unavailable: 'No intraday quote is available for this symbol.',
+    quote_unavailable: 'No intraday quote is available for this symbol.',
     quote_provider_unavailable: 'The quote provider is temporarily unavailable.',
     quote_realtime_disabled: 'Realtime quotes are currently disabled.',
     market_export_failed: 'Unable to export data. Please try again.'

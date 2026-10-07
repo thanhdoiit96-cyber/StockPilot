@@ -15,6 +15,13 @@
 - Chưa chạy live auth smoke hoặc mutation trên PostgreSQL trong lát cắt này; Preview 4173 cần xác nhận bundle sau build.
 - Tiếp tục: bổ sung contract assertions backend–frontend tự động và rà soát các resource hook còn hiển thị raw error.
 
+## 2026-10-07 — Contract assertion mã lỗi frontend/backend
+
+- Thêm regression assertion yêu cầu catalog có đủ các mã Auth, Recommendation, Portfolio và Market đã migrate, gồm cả mã quote tương thích và `AUTH_USER_MISSING` legacy.
+- Phát hiện và bổ sung thiếu `quote_unavailable`; parity Việt/Anh vẫn được khóa bằng test.
+- Kiểm chứng: frontend unit 58/58, encoding check 82 file, build/bundle integrity đạt với `index-CZ4fXYO6.js`.
+- Tiếp tục: đồng bộ assertion với nguồn mã backend tự sinh hoặc script kiểm tra chéo để tránh danh sách thủ công bị lệch khi thêm domain mới.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
