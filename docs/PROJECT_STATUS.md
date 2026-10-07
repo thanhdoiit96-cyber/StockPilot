@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog Recommendation Workbench giai đoạn đầu
+
+- Recommendation Workbench nhận `language`/`lang`; catalog khung tiêu đề, mô tả, mô hình, cảnh báo tập trung và tiêu chí điều chỉnh (nhãn, mô tả, slider aria). QuickWatchlistButton nhận preference ngôn ngữ để trạng thái Theo dõi/Đã theo dõi đồng bộ.
+- Rationale, score parts, citation/provenance và thông báo lỗi thô từ backend chưa dịch để không làm sai nội dung tài chính; các bảng lịch sử, snapshot comparison và trạng thái học còn tiếng Việt.
+- Kiểm chứng: unit/encoding 54/54; browser Recommendation Workbench đạt 2/2; production build/bundle integrity đạt với `index-BAs6esWH.js`, `index-CCqBfcrU.css`. Chưa chạy live auth; fixture browser là mock.
+- Tiếp tục: dịch kết quả/lịch sử/provenance và thêm browser case English đổi ngôn ngữ giữ criteria/state; sau đó rà soát thông báo backend có error code ổn định.
+
 ## 2026-10-07 — Catalog banner chất lượng dữ liệu
 
 - Overlay runtime `quality-overlay.js` đọc cùng preference `stockpilot-language` và render Việt/Anh cho trạng thái EOD, coverage, thời điểm retry, phase đang chạy, trade-priority và fallback. Locale thời điểm cũng đổi theo preference; React commit sẽ render lại banner sau khi đổi ngôn ngữ.

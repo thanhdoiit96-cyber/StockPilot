@@ -1904,7 +1904,8 @@ function lv() {
         onAddToPortfolio: Ao,
         onOpenDetail: openLinkedStock,
         watchlistSymbols: [...yt],
-        onAddToWatchlist: addToWatchlist
+        onAddToWatchlist: addToWatchlist,
+        language: profileLanguage
       }), re === "portfolio" && O.jsxs("section", {
         className: "personal-page",
         children: [Ir && O.jsx("p", {
