@@ -689,7 +689,7 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 - Đã triển khai baseline metrics in-process tại `/api/ops/metrics` (admin-only), gồm request/status/error/auth/CORS counters và latency trung bình; collector tập trung và metrics worker chi tiết vẫn là bước vận hành tiếp theo.
 ## Checkpoint error-code catalog — 2026-10-07
 
-Backend đã chuẩn hóa error code cho các luồng Auth, Recommendation, Portfolio và Market; frontend đã nối catalog Việt/Anh vào Market Board, Account, Portfolio cash flow/ledger và Recommendation workbench. Contract check hiện tự động đọc controller + middleware và yêu cầu catalog phủ đủ mã; các resource error chính đã được map. Browser smoke Market Board, Recommendation mutation và Portfolio cash-flow mutation đã xác nhận lỗi ở cả Việt/Anh; bước tiếp theo là update/delete và transaction/import errors.
+Backend đã chuẩn hóa error code cho các luồng Auth, Recommendation, Portfolio và Market; frontend đã nối catalog Việt/Anh vào Market Board, Account, Portfolio cash flow/ledger và Recommendation workbench. Contract check hiện tự động đọc controller + middleware và yêu cầu catalog phủ đủ mã; các resource error chính đã được map. Browser smoke Market Board, Recommendation mutation và Portfolio cash-flow create/update đã xác nhận lỗi; bước tiếp theo là delete và transaction/import errors.
 
 ## Cập nhật tài khoản — 2026-10-05
 

@@ -86,6 +86,12 @@
 - Kiểm chứng: **2/2 browser tests pass**.
 - Tiếp tục: mở rộng cùng fixture cho mutation update/delete và transaction/import errors.
 
+## 2026-10-07 — Portfolio cash-flow update mutation smoke
+
+- Fixture đã mô phỏng `portfolio_cashflow_update_failed`; dialog sửa giữ nguyên và submit được retry.
+- Kiểm chứng: smoke update **1/1 pass**.
+- Delete mutation và transaction/import code-specific smoke tiếp tục là lát cắt kế tiếp.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.

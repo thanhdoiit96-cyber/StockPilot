@@ -47,6 +47,16 @@ test('cash-flow mutation error is localized in English', async ({ page }) => {
   await expect(page.getByRole('alert')).toContainText('Unable to create the cash flow.')
   await expect(form.locator('button[type="submit"]')).toBeEnabled()
 })
+test('cash-flow update and delete errors keep the mutation dialog retryable', async ({ page }) => {
+  await boot(page, [], [], [], [], null, [{ id: 'cf-error', type: 'DEPOSIT', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: '' }], null, { id: 'vi', email: 'vi@example.com', role: 'admin' }, 'portfolio_cashflow_update_failed')
+  await page.getByRole('tab', { name: /Dòng tiền/ }).click()
+  const panel = page.locator('.cash-flow-panel')
+  await panel.locator('.cash-flow-table').getByRole('button', { name: 'Sửa', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.locator('button[type="submit"]').click()
+  await expect(dialog.getByRole('alert')).toContainText('Không thể cập nhật dòng tiền.')
+  await expect(dialog.locator('button[type="submit"]')).toBeEnabled()
+})
 test('portfolio tabs preserve drafts and filters with keyboard and mobile navigation', async ({ page }) => {
   const state = await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10 }], [], [], [{ stock_id: 'a', Stock: { id: 'a', code: 'FPT', name: 'FPT Corp' } }])
   const tabs = page.getByRole('tablist', { name: 'Nội dung danh mục' })
@@ -172,8 +182,8 @@ async function boot(page,initialPositions=[],initialTransactions=[],initialClose
     else if(path==='/api/portfolio/performance/history'&&req.method()==='GET'){performanceHistoryRequests.push(req.url());payload={success:true,data:initialPerformanceHistory||{status:'empty',methodology:'daily_close_twr_v1',timezone:'Asia/Ho_Chi_Minh',cash_flow_timing:'beginning_of_session',requested_sessions:30,coverage:{sessions:0,complete_sessions:0,incomplete_sessions:0},twr_available:false,cumulative_twr_pct:null,mwr:{status:'unavailable',reason:'insufficient_sign_change',annualized_mwr_pct:null},points:[],limitations:[]}}}
     else if(path==='/api/portfolio'&&req.method()==='GET')payload={success:true,data:{positions,closed_positions:closedPositions,position_counts:{open:positions.length,closed:closedPositions.length},transactions,performance:initialPerformance,cash_flows:cashFlows}}
     else if(path==='/api/portfolio/cash-flows'&&req.method()==='POST'){if(mutationErrorCode)return route.fulfill({status:503,json:{success:false,code:mutationErrorCode,message:'backend cash flow failure'}});const body=JSON.parse(req.postData()||'{}');const entry={id:`cf-${cashFlows.length+1}`,...body,amount:Number(body.amount),created_at:'2026-10-06T03:00:00Z'};cashFlows=[...cashFlows,entry];mutations.push({method:'POST',body});payload={success:true,data:entry}}
-    else if(path.startsWith('/api/portfolio/cash-flows/')&&req.method()==='PUT'){const id=decodeURIComponent(path.split('/').at(-1));const body=JSON.parse(req.postData()||'{}');cashFlows=cashFlows.map(item=>item.id===id?{...item,...body,amount:Number(body.amount)}:item);mutations.push({method:'PUT',id,body});payload={success:true,data:cashFlows.find(item=>item.id===id)}}
-    else if(path.startsWith('/api/portfolio/cash-flows/')&&req.method()==='DELETE'){const id=decodeURIComponent(path.split('/').at(-1));const body=JSON.parse(req.postData()||'{}');cashFlows=cashFlows.filter(item=>item.id!==id);mutations.push({method:'DELETE',id,body});payload={success:true,data:{id}}}
+    else if(path.startsWith('/api/portfolio/cash-flows/')&&req.method()==='PUT'){if(mutationErrorCode==='portfolio_cashflow_update_failed')return route.fulfill({status:503,json:{success:false,code:mutationErrorCode,message:'backend cash flow failure'}});const id=decodeURIComponent(path.split('/').at(-1));const body=JSON.parse(req.postData()||'{}');cashFlows=cashFlows.map(item=>item.id===id?{...item,...body,amount:Number(body.amount)}:item);mutations.push({method:'PUT',id,body});payload={success:true,data:cashFlows.find(item=>item.id===id)}}
+    else if(path.startsWith('/api/portfolio/cash-flows/')&&req.method()==='DELETE'){if(mutationErrorCode==='portfolio_cashflow_delete_failed')return route.fulfill({status:503,json:{success:false,code:mutationErrorCode,message:'backend cash flow failure'}});const id=decodeURIComponent(path.split('/').at(-1));const body=JSON.parse(req.postData()||'{}');cashFlows=cashFlows.filter(item=>item.id!==id);mutations.push({method:'DELETE',id,body});payload={success:true,data:{id}}}
     else if(path==='/api/portfolio/transactions/import'){
       const body=JSON.parse(req.postData()||'{}');imports.push(body)
       if(!body.dry_run){const rows=body.rows||[];transactions=[...transactions,...rows.map((row,index)=>({id:`import-${index}`,stock_id:'a',symbol:row.symbol,name:'FPT Corp',side:row.side,quantity:Number(row.quantity),price:Number(row.price),fees:Number(row.fees||0),traded_at:row.traded_at,source:'manual'}))];positions=[{stock_id:'a',symbol:'FPT',quantity:10,market_price:120000,avg_cost:120000,unrealized_pnl:0}]}
