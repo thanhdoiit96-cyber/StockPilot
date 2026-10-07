@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Bắt đầu catalog Tổng quan
+
+- Market Breadth trong Tổng quan nhận `preferred_language`, khai báo `lang` theo vùng và đã catalog hóa tiêu đề, scope filter sàn/ngành, nhóm tăng/giảm/đứng giá, trạng thái cập nhật và nhãn universe. Việc đổi ngôn ngữ không thêm request; dữ liệu mã, nguồn và quote giữ nguyên.
+- Kiểm chứng: frontend unit/encoding 54/54, production build/bundle integrity đạt với `index-B0IcQL_o.js` và `index-CCqBfcrU.css`. Chưa chạy browser case riêng cho English Overview; phần còn lại của Tổng quan, Đề xuất và nội dung backend narrative chưa dịch.
+- Tiếp tục: catalog phần còn lại của Overview (quote snapshot, timeline/history, data-quality) và Recommendation Workbench theo cùng adapter; thêm browser test giữ filter/state khi đổi ngôn ngữ.
+
 ## 2026-10-07 — Điều hướng mobile/tablet không che nội dung
 
 - Yêu cầu: người dùng màn hình nhỏ phải đọc và focus được form/biểu đồ mà không bị sidebar đè; giữ trạng thái thu gọn desktop khi resize và không thêm request/render listener.
