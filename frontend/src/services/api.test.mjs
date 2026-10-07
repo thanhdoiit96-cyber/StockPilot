@@ -87,6 +87,11 @@ test('analysis payload requires quality gate and risk plan before rendering', ()
   assert.deepEqual(stockAnalysis(payload), payload.data)
 })
 
+test('HTTP error codes are preserved for locale-aware presentation', async () => {
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: false, code: 'quote_provider_unavailable', message: 'Realtime quote provider unavailable' }), { status: 503 })
+  await assert.rejects(requestJson('/api/stocks/a/quote'), error => error.status === 503 && error.code === 'quote_provider_unavailable' && /Realtime quote provider unavailable/.test(error.message))
+})
+
 test('AI gate status requires an explicit boolean decision and reasons', () => {
   const payload = { success: true, data: { enabled: false, reasons: ['provider_display_rights_not_verified'], evaluated_at: '2026-09-20T10:00:00.000Z' } }
   assert.deepEqual(aiGateStatus(payload), payload.data)

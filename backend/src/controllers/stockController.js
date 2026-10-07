@@ -386,7 +386,7 @@ module.exports = function(cacheService) {
       const stock = await Stock.findByPk(req.params.id);
       if (!stock) return res.status(404).json({ success: false, message: 'Stock not found' });
       if (String(process.env.REALTIME_QUOTES_ENABLED || 'true').toLowerCase() === 'false') {
-        return res.status(503).json({ success: false, message: 'Realtime quotes are disabled' });
+        return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
       const quote = (await loadQuotes([stock.code]))[stock.code];
       if (!quote) return res.status(503).json({ success: false, message: 'No intraday quote available', code: 'quote_unavailable' });
@@ -401,7 +401,7 @@ module.exports = function(cacheService) {
   router.get('/quotes', async (req, res) => {
     try {
       if (String(process.env.REALTIME_QUOTES_ENABLED || 'true').toLowerCase() === 'false') {
-        return res.status(503).json({ success: false, message: 'Realtime quotes are disabled' });
+        return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
       const symbols = String(req.query.symbols || '').split(',').map(item => item.trim().toUpperCase()).filter(symbol => /^[A-Z0-9]{1,10}$/.test(symbol)).slice(0, 200);
       if (!symbols.length) return res.status(400).json({ success: false, message: 'At least one symbol is required' });
@@ -417,7 +417,7 @@ module.exports = function(cacheService) {
   router.get('/quotes/status', async (req, res) => {
     try {
       if (String(process.env.REALTIME_QUOTES_ENABLED || 'true').toLowerCase() === 'false') {
-        return res.status(503).json({ success: false, message: 'Realtime quotes are disabled' });
+        return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
       res.set('Cache-Control', 'no-store');
       return res.json({ success: true, data: liveQuoteService.health() });
