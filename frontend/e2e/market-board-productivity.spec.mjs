@@ -14,7 +14,7 @@ const buildStocks = count => Array.from({ length: count }, (_, index) => {
   }
 })
 
-async function boot(page, count = 4, language = 'vi') {
+async function boot(page, count = 4, language = 'vi', listError = false) {
   const stocks = buildStocks(count)
   let user = { id: 'audit', email: 'audit@example.com', role: 'user', preferred_language: language }
   let boardRefreshRequests = 0
@@ -32,6 +32,7 @@ async function boot(page, count = 4, language = 'vi') {
       })
     } else if (path === '/api/stocks') {
       stockListRequests += 1
+      if (listError) return route.fulfill({ status: 503, json: { success: false, code: 'market_list_failed', message: 'backend list failure' } })
       payload = { success: true, data: stocks, pagination: { page: 1, pageSize: count, total: count, totalPages: 1 } }
     }
     else if (path === '/api/stocks/quotes') {
@@ -69,10 +70,23 @@ async function boot(page, count = 4, language = 'vi') {
   const startedAt = Date.now()
   await page.goto('/')
   await expect(page.locator('.dashboard-shell')).toBeVisible()
+  if (listError) return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests, stockListRequests: () => stockListRequests }
   await expect(page.locator('.table-panel tbody tr .symbol')).toHaveCount(count)
   await expect(page.locator('.market-breadth-header')).toContainText(language === 'en' ? `${count} symbols` : `${count} mã`)
   return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests, stockListRequests: () => stockListRequests }
 }
+
+test('localized market list errors render safely in Vietnamese and English', async ({ page }) => {
+  await boot(page, 4, 'vi', true)
+  await page.locator('.nav-item').filter({ hasText: 'Bảng giá' }).click()
+  await expect(page.locator('.table-panel p.error-text')).toContainText('Không tải được danh sách thị trường.')
+})
+
+test('localized market list errors render safely in English', async ({ page }) => {
+  await boot(page, 4, 'en', true)
+  await page.getByRole('button', { name: 'Market Board', exact: true }).click()
+  await expect(page.locator('.table-panel p.error-text')).toContainText('Unable to load the market list.')
+})
 
 test('English market and detail screens preserve filters and chart range when changing language', async ({ page }) => {
   const metrics = await boot(page, 4, 'en')

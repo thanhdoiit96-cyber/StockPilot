@@ -37,6 +37,12 @@
 - Giới hạn: các lỗi validation nội dung dòng import và Advisor workspace vẫn giữ message nghiệp vụ/raw có chủ đích; chưa chạy live auth smoke.
 - Tiếp tục: rà soát route/middleware khác nếu phát sinh error code mới và bổ sung browser smoke cho trạng thái lỗi Việt/Anh.
 
+## 2026-10-07 — Browser smoke lỗi Market Board theo locale
+
+- Thêm Playwright smoke với backend mock trả `market_list_failed`, kiểm tra thông báo tiếng Việt và tiếng Anh trên Market Board.
+- Kiểm chứng: 2/2 browser tests pass; test không phụ thuộc live provider/auth và chỉ xác nhận rendering/error contract ở UI.
+- Tiếp tục: mở rộng smoke tương tự cho Portfolio/Recommendation mutation errors khi có fixture ổn định.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
