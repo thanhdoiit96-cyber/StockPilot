@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Hoàn tất error-code thao tác Portfolio
+
+- Transaction/import codes bổ sung: `portfolio_transaction_context_invalid`, `portfolio_transaction_invalid`, `portfolio_stock_not_found`, `portfolio_transaction_sell_exceeds_position`, `portfolio_transaction_not_found`, `portfolio_transaction_update_failed`, `portfolio_transaction_delete_failed`, `portfolio_transaction_import_failed`.
+- Validation, chống bán vượt vị thế, timeline/import semantics và message/status cũ không đổi; frontend cũ vẫn nhận message như trước. Portfolio domain hiện đã có mã cho các luồng tải, cash flow, corporate event và transaction chính.
+- Kiểm chứng: backend Jest 250/250. Chưa chạy live PostgreSQL cho lỗi mới; test controller dùng mocks hiện có.
+- Tiếp tục: migrate Market errors (list/detail/quote/breadth/export), thêm contract assertions theo bảng mã, rồi nối mapping notification/error Việt/Anh.
+
 ## 2026-10-07 — Error-code domain Portfolio
 
 - Migrate các lỗi tải và mutation chính của Portfolio sang mã ổn định: `portfolio_load_failed`, `portfolio_performance_failed`, `portfolio_events_failed`, `portfolio_event_not_found`, `portfolio_event_create_failed`, `portfolio_event_confirm_failed`, `portfolio_event_cancel_failed`, `portfolio_cashflow_create_failed`, `portfolio_cashflow_update_failed`, `portfolio_cashflow_delete_failed`.
