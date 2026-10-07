@@ -22,6 +22,13 @@
 - Kiểm chứng: frontend unit 58/58, encoding check 82 file, build/bundle integrity đạt với `index-CZ4fXYO6.js`.
 - Tiếp tục: đồng bộ assertion với nguồn mã backend tự sinh hoặc script kiểm tra chéo để tránh danh sách thủ công bị lệch khi thêm domain mới.
 
+## 2026-10-07 — Tự động kiểm tra chéo error code từ backend
+
+- Thêm `frontend/scripts/check-api-error-contract.mjs`: đọc trực tiếp bốn controller Auth/Recommendation/Portfolio/Market, trích xuất mã từ `httpError` và response `code`, rồi đối chiếu catalog English.
+- Gắn script vào `npm test`; hiện contract phủ **51 backend codes** và test tổng đạt 58/58.
+- Build/bundle integrity đạt với `index-CZ4fXYO6.js`; chưa có live smoke mới trong lát cắt này.
+- Tiếp tục: mở rộng parser sang middleware/routes nếu các mã ngoài controller được chuẩn hóa.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
