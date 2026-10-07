@@ -29,6 +29,14 @@
 - Build/bundle integrity đạt với `index-CZ4fXYO6.js`; chưa có live smoke mới trong lát cắt này.
 - Tiếp tục: mở rộng parser sang middleware/routes nếu các mã ngoài controller được chuẩn hóa.
 
+## 2026-10-07 — Mở rộng contract sang middleware và resource errors
+
+- Contract checker đọc thêm `requireAuth` và hiện phủ 52 mã backend, gồm `CSRF_INVALID`.
+- Market breadth, portfolio performance và Market export không còn hiển thị raw `error.message`; các lỗi được map theo locale qua catalog.
+- Kiểm chứng: frontend unit 58/58, encoding check 82 file, build/bundle integrity đạt với `index-CEi6c-0S.js`.
+- Giới hạn: các lỗi validation nội dung dòng import và Advisor workspace vẫn giữ message nghiệp vụ/raw có chủ đích; chưa chạy live auth smoke.
+- Tiếp tục: rà soát route/middleware khác nếu phát sinh error code mới và bổ sung browser smoke cho trạng thái lỗi Việt/Anh.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
