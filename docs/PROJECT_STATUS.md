@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Error-code domain Portfolio
+
+- Migrate các lỗi tải và mutation chính của Portfolio sang mã ổn định: `portfolio_load_failed`, `portfolio_performance_failed`, `portfolio_events_failed`, `portfolio_event_not_found`, `portfolio_event_create_failed`, `portfolio_event_confirm_failed`, `portfolio_event_cancel_failed`, `portfolio_cashflow_create_failed`, `portfolio_cashflow_update_failed`, `portfolio_cashflow_delete_failed`.
+- Giữ nguyên status/message/data reconciliation và semantics ledger/cash flow; helper `httpError` chỉ bổ sung field `code`. Một số lỗi validation/transaction/import còn chờ lát migrate tiếp theo.
+- Kiểm chứng: backend Jest 250/250; chưa chạy PostgreSQL/live auth cho response contract mới.
+- Tiếp tục: hoàn tất Portfolio transaction/import codes, rồi migrate Market errors và thêm contract assertions cho các mã domain.
+
 ## 2026-10-07 — Error-code domain Auth
 
 - Migrate các lỗi Auth chính sang mã ổn định: `auth_register_invalid_input`, `auth_email_already_registered`, `auth_invalid_credentials`, `auth_user_missing`, `auth_profile_invalid_input`, `auth_password_rate_limited`, `auth_password_invalid_input`, `auth_password_current_invalid`. Giữ nguyên status/message và cookie/session semantics.
