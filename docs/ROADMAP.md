@@ -703,7 +703,7 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 
 Checkpoint 2026-10-07: đã xử lý sidebar che nội dung mobile/tablet bằng layout trong luồng tại ≤960px; kiểm chứng geometry, keyboard/account và giữ preference desktop tại 390/800/900px. Điểm tiếp tục i18n là Tổng quan và Đề xuất; yêu cầu rà soát sticky sidebar bên dưới đã được xử lý cho breakpoint này, chưa có nghĩa nghiệm thu toàn bộ mobile/i18n.
 
-Checkpoint tiếp theo: Tổng quan đã nhận catalog song ngữ cho hero, metric, Market Breadth, lịch sử A/D và banner data-quality dùng chung. Đề xuất đã phủ khung/tiêu chí/provenance, result empty, learning/history và saved controls; browser đã xác nhận locale state/mobile keyboard usability. Error-code contract đã migrate realtime quote và Recommendation; tiếp theo auth/portfolio/market rồi catalog notification/error copy.
+Checkpoint tiếp theo: Tổng quan đã nhận catalog song ngữ cho hero, metric, Market Breadth, lịch sử A/D và banner data-quality dùng chung. Đề xuất đã phủ khung/tiêu chí/provenance, result empty, learning/history và saved controls; browser đã xác nhận locale state/mobile keyboard usability. Error-code contract đã migrate realtime quote, Recommendation và Auth; tiếp theo Portfolio/Market rồi catalog notification/error copy.
 
 **Cập nhật mục 3:** đã triển khai họ tên/điện thoại/ngày sinh tùy chọn và preference ngôn ngữ/múi giờ có hiệu lực qua migration 026–027, validation, UI responsive và formatter Danh mục; live smoke development đạt. Chưa triển khai challenge xác minh email/điện thoại vì chưa có delivery provider. Phần hồ sơ nền tảng hoàn tất; bước tiếp theo là mục 4, catalog Việt/Anh. Xem [thiết kế hồ sơ](PERSONAL_PROFILE_DESIGN.md).
 
