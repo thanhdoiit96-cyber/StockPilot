@@ -305,11 +305,11 @@ router.delete('/cash-flows/:cashFlowId', async (req, res) => {
 router.post('/transactions', async (req, res) => {
   const side = String(req.body?.side || '').toUpperCase(); const symbol = String(req.body?.symbol || '').trim().toUpperCase(); const quantity = Number(req.body?.quantity); const rawPrice = Number(req.body?.price); const price = normalizeTransactionPrice(rawPrice); const fees = Number(req.body?.fees || 0); const tradedAt = new Date(req.body?.traded_at || Date.now());
   let recommendationContext;
-  try { recommendationContext = normalizeRecommendationContext(req.body?.recommendation_context, symbol); } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
-  if (!['BUY', 'SELL'].includes(side) || !symbol || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(price) || price <= 0 || !Number.isFinite(fees) || fees < 0 || Number.isNaN(tradedAt.getTime()) || (recommendationContext && side !== 'BUY')) return res.status(400).json({ success: false, message: 'Giao dịch không hợp lệ' });
+  try { recommendationContext = normalizeRecommendationContext(req.body?.recommendation_context, symbol); } catch (error) { return httpError(res, 400, 'portfolio_transaction_context_invalid', error.message); }
+  if (!['BUY', 'SELL'].includes(side) || !symbol || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(price) || price <= 0 || !Number.isFinite(fees) || fees < 0 || Number.isNaN(tradedAt.getTime()) || (recommendationContext && side !== 'BUY')) return httpError(res, 400, 'portfolio_transaction_invalid', 'Giao dịch không hợp lệ');
   let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] }); if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
-  const stock = await Stock.findOne({ where: { code: symbol } }); if (!stock) return res.status(404).json({ success: false, message: 'Không tìm thấy mã cổ phiếu' });
-  if (side === 'SELL') { const existing = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] }); const position = summarizePortfolioTransactions(existing, new Map()).find(item => item.stock_id === stock.id); if (!position || position.quantity < quantity) return res.status(400).json({ success: false, message: 'Số lượng bán vượt vị thế hiện có' }); }
+  const stock = await Stock.findOne({ where: { code: symbol } }); if (!stock) return httpError(res, 404, 'portfolio_stock_not_found', 'Không tìm thấy mã cổ phiếu');
+  if (side === 'SELL') { const existing = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] }); const position = summarizePortfolioTransactions(existing, new Map()).find(item => item.stock_id === stock.id); if (!position || position.quantity < quantity) return httpError(res, 400, 'portfolio_transaction_sell_exceeds_position', 'Số lượng bán vượt vị thế hiện có'); }
   const transaction = await PortfolioTransaction.create({ portfolio_id: portfolio.id, stock_id: stock.id, side, quantity, price, fees, traded_at: tradedAt, recommendation_context: recommendationContext });
   res.status(201).json({ success: true, data: transaction });
 });
@@ -326,7 +326,7 @@ function normalizeTransactionMutation(body) {
 
 router.put('/transactions/:transactionId', async (req, res) => {
   const input = normalizeTransactionMutation(req.body);
-  if (!input) return res.status(400).json({ success: false, message: 'Giao dịch không hợp lệ' });
+  if (!input) return httpError(res, 400, 'portfolio_transaction_invalid', 'Giao dịch không hợp lệ');
   try {
     const result = await sequelize.transaction(async transaction => {
       const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']], transaction, lock: true });
@@ -351,12 +351,12 @@ router.put('/transactions/:transactionId', async (req, res) => {
       await target.update(input, { transaction });
       return { status: 'updated', transaction: target };
     });
-    if (result.status === 'not_found') return res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch' });
+    if (result.status === 'not_found') return httpError(res, 404, 'portfolio_transaction_not_found', 'Không tìm thấy giao dịch');
     if (result.status === 'invalid') return res.status(422).json({ success: false, message: result.message, errors: result.errors || [] });
     return res.json({ success: true, data: result.transaction });
   } catch (error) {
     console.error('[Portfolio] Update transaction failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể sửa giao dịch. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_transaction_update_failed', 'Không thể sửa giao dịch. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
@@ -379,12 +379,12 @@ router.delete('/transactions/:transactionId', async (req, res) => {
       await target.destroy({ transaction });
       return { status: 'deleted', id: target.id };
     });
-    if (result.status === 'not_found') return res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch' });
+    if (result.status === 'not_found') return httpError(res, 404, 'portfolio_transaction_not_found', 'Không tìm thấy giao dịch');
     if (result.status === 'invalid') return res.status(422).json({ success: false, message: result.message, errors: result.errors || [] });
     return res.json({ success: true, data: { id: result.id } });
   } catch (error) {
     console.error('[Portfolio] Delete transaction failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể xóa giao dịch. Chưa có dữ liệu nào được thay đổi.' });
+    return httpError(res, 500, 'portfolio_transaction_delete_failed', 'Không thể xóa giao dịch. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 
@@ -429,7 +429,7 @@ router.post('/transactions/import', async (req, res) => {
     return res.status(dryRun ? 200 : 201).json({ success: true, data: result });
   } catch (error) {
     console.error('[Portfolio] Import failed:', error.message);
-    return res.status(500).json({ success: false, message: 'Không thể nhập giao dịch. Chưa có dữ liệu nào được ghi.' });
+    return httpError(res, 500, 'portfolio_transaction_import_failed', 'Không thể nhập giao dịch. Chưa có dữ liệu nào được ghi.');
   }
 });
 
