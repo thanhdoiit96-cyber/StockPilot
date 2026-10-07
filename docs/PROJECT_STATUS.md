@@ -55,6 +55,12 @@
 - Thử nghiệm thêm mutation-error smoke cho thấy fixture bootstrap riêng chưa mở được navigation Recommendation ổn định; không đưa test không đáng tin vào bộ hồi quy.
 - Tiếp tục: tách route/bootstrap fixture dùng chung từ workflow pass hiện tại, rồi thêm nhánh `recommendation_personalized_failed` cho Việt/Anh.
 
+## 2026-10-07 — Recommendation mutation error smoke
+
+- Thêm Playwright smoke với response `recommendation_personalized_failed`; kiểm tra thông báo tiếng Việt và nút tạo đề xuất được mở khóa để thử lại.
+- Kiểm chứng: test mutation error **1/1 pass**; baseline workflow trước đó vẫn pass.
+- Tiếp tục: bổ sung cùng nhánh bằng locale English và mở rộng Portfolio mutation code-specific smoke.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.

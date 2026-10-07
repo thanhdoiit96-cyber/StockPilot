@@ -1,5 +1,26 @@
 import { test, expect } from '@playwright/test'
 
+test('Recommendation mutation error is localized and recoverable', async ({ page }) => {
+  await page.route('**/api/**', async route => {
+    const request = route.request(); const path = new URL(request.url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user', preferred_language: 'vi' } } })
+    if (path === '/api/recommendations/personalized' && request.method() === 'POST') return route.fulfill({ status: 503, json: { success: false, code: 'recommendation_personalized_failed', message: 'backend failure' } })
+    let data = null
+    if (path === '/api/stocks') data = []
+    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [] }
+    else if (path === '/api/watchlist') data = []
+    else if (path === '/api/recommendations/latest') data = { recommendations: [] }
+    else if (path === '/api/recommendations/history' || path === '/api/recommendations/readiness' || path === '/api/recommendations/saved') data = []
+    else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }
+    return route.fulfill({ json: { success: true, data } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
+  await page.getByRole('button', { name: 'Tạo đề xuất cá nhân', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Không thể tạo đề xuất theo tiêu chí hiện tại.')
+  await expect(page.getByRole('button', { name: 'Tạo đề xuất cá nhân', exact: true })).toBeEnabled()
+})
+
 test('recommendation criteria rerank the eligible universe and show historical learning readiness', async ({ page }) => {
   let submitted
   let savedTransaction
