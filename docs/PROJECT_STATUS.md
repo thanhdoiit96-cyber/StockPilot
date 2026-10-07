@@ -1,5 +1,68 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Điều hướng mobile/tablet không che nội dung
+
+- Yêu cầu: người dùng màn hình nhỏ phải đọc và focus được form/biểu đồ mà không bị sidebar đè; giữ trạng thái thu gọn desktop khi resize và không thêm request/render listener.
+- Quyết định: tại ≤960px đặt sidebar trong luồng trang, điều hướng ngang có nhãn và tài khoản phía dưới; ẩn toggle desktop. So với drawer/sticky có đo chiều cao, phương án CSS này ít trạng thái và không cần offset động; đánh đổi là cuộn về đầu khi cần chuyển trang. Desktop tiếp tục sticky/thu gọn như cũ.
+- Sửa dirty comparison của AccountPanel: so sánh với preference mặc định đã chuẩn hóa cho tài khoản cũ thiếu field, tránh cảnh báo chưa lưu ngay khi mở. Thay đổi thực sự vẫn được bảo vệ.
+- Kiểm chứng: unit/encoding 54/54; workflows + market productivity có 24 ca cũ đạt. Ba ca mobile mới phát hiện dirty state lỗi, sau sửa chạy lại đạt 3/3; bổ sung dirty guard thực sự và chạy lại đạt 3/3. Browser dùng API mock. Đã xem ảnh 390px khi cuộn; geometry 390/800/900px đạt không tràn document/không giao nhau sidebar-main, phục hồi focus tài khoản và giữ collapsed khi về desktop.
+- Build/bundle integrity đạt: `index-DT_DvyP3.js`, `index-CCqBfcrU.css`; Preview 4173 phục vụ bundle mới, HTML/assets HTTP 200. CSS tăng khoảng 0,13 kB chưa nén, không thêm listener/request/dependency.
+- Tiếp tục: catalog Tổng quan và Đề xuất, rồi tài khoản/data-quality và thông báo backend có contract. Chưa hoàn tất i18n toàn ứng dụng; benchmark tiếp tục chờ index-series hợp lệ. Chưa commit.
+
+## 2026-10-07 — Catalog Bảng giá và giao diện Chi tiết mã
+
+- Hoàn thiện Việt/Anh cho toolbar, ngành, preset/cột, bảng, phân trang, trạng thái và CSV trang hiện tại của Bảng giá; tìm mã, hero, nút Watchlist, điều hướng, biểu đồ và nhãn khung phân tích Chi tiết mã. Dùng catalog tĩnh và adapter `detailCatalog.mjs`, không thêm dependency hay request dịch. Định dạng thời điểm intraday giữ cả giây.
+- Browser mock kiểm chứng đổi preference ngay trong hồ sơ giữ từ khóa/ngành/preset và range biểu đồ, không tải lại danh sách chỉ vì đổi ngôn ngữ; kiểm tra viewport 390px không tràn ngang document. Đã xem ảnh mobile: thanh điều hướng sticky còn che một phần nội dung, chưa coi nghiệm thu mobile hoàn chỉnh.
+- Kiểm chứng: frontend unit/encoding 54/54; bộ loading + market productivity + workflows đạt 47/48 lần chạy đầu, ca focus còn lại dùng locator `textbox` cũ đã sửa thành `searchbox` và chạy lại đạt 1/1. Không phải live backend/auth smoke. Build/bundle integrity đạt; Preview localhost:4173 trả HTML tham chiếu `index-Cw4itNqO.js`, CSS `index-BfsOFnfY.css`, cả HTML và assets HTTP 200.
+- Giới hạn: narrative/lỗi backend, tin tức và CSV toàn bộ kết quả giữ ngôn ngữ nguồn; tài khoản và banner data-quality còn tiếng Việt. `html[lang=vi]` giữ nguyên; chưa hoàn tất i18n toàn ứng dụng. Timeline Bảng giá hiện có chưa được xác nhận bằng chuỗi intraday thực; không dùng nó như bằng chứng hiệu suất hay dữ liệu giao dịch thật.
+- Tiếp tục: xử lý mobile navigation che nội dung, rồi catalog Tổng quan/Đề xuất và phần dùng chung tài khoản/data-quality; mapping lỗi/narrative theo contract backend sau đó. Benchmark vẫn chờ index-series hợp lệ; không mở rộng AI Advisor. Giữ nguyên thay đổi có sẵn, chưa commit trong lượt này.
+
+## 2026-10-07 — Catalog Việt/Anh phủ toàn bộ Danh mục
+
+- Mở rộng catalog sang toàn bộ page Danh mục: heading/disclaimer, bốn tab, form và nhật ký giao dịch/CSV, theo dõi mã từ Đề xuất, vị thế mở/đóng, phân bổ và data audit, snapshot giá vốn, lịch sử TWR/MWR, dòng tiền cùng dialog sửa/xóa, Watchlist và các trạng thái loading/rỗng/partial/retry. Mã chứng khoán, tên doanh nghiệp, dữ liệu người dùng và tên phương pháp TWR/MWR không bị dịch.
+- Mọi panel nhận `preferred_language`, tự khai báo `lang` đúng và tiếp tục dùng formatter locale/timezone hiện có. Catalog hỗ trợ placeholder có biến cho số phiên, mã, số giao dịch và thông báo mutation; không thêm dependency, request hoặc bản sao component.
+- Nghiệm thu browser kiểm tra tài khoản English xuyên cả Overview → Transactions → Cash flows → Watchlist, đồng thời giữ `html[lang=vi]` vì các page khác chưa dịch xong. Auth + Danh mục đạt 39/39; frontend unit/encoding 54/54; production build/bundle integrity đạt với `index-B4zG9m7a.js`, CSS không đổi `index-BfsOFnfY.css`. Preview 4173 phục vụ đúng bundle mới và asset trả HTTP 200.
+- Tiếp tục: catalog hóa Bảng giá và Chi tiết mã, ưu tiên toolbar/filter/table/empty-error/loading cùng accessible names; sau đó Đề xuất và mapping thông báo backend phổ biến. Chỉ đổi `html[lang]` động khi toàn bộ page đang hiển thị đã được dịch.
+
+## 2026-10-07 — Catalog Việt/Anh giai đoạn 1 và tinh chỉnh biểu đồ hiệu suất
+
+- Tạo catalog `vi/en` có parity/fallback và triển khai lát cắt đầu cho đăng nhập, xác minh phiên, điều hướng chính, nút thu gọn/mở rộng và tiêu đề trang. Khách chưa đăng nhập chọn VI/EN và giữ qua reload; sau đăng nhập, `preferred_language` của tài khoản là nguồn chính và được giữ lại khi đăng xuất. Các vùng đã dịch có `lang` đúng; toàn trang vẫn `html[lang=vi]` vì nội dung dashboard còn tiếng Việt.
+- Biểu đồ “Giá trị và hiệu suất theo ngày” dùng area gradient nhẹ, lưới nét đứt, đường 1,45px và marker HTML tròn 6px. Marker không còn bị kéo thành ellipse theo tỷ lệ SVG; hover/focus chỉ thêm vòng nhấn, không phóng kích thước hoặc làm rối đường. Nhãn dữ liệu vẫn truy cập được bằng bàn phím/screen reader.
+- Quyết định và thứ tự mở rộng ghi tại [I18N_DESIGN](I18N_DESIGN.md). Không thêm dependency hay request runtime; catalog nằm trong bundle và fallback tiếng Việt.
+- Kiểm chứng: frontend unit/encoding 53/53; browser auth + Danh mục 39/39; ảnh desktop của biểu đồ đã kiểm tra trực quan. Production build và bundle integrity đạt. Preview 4173 phục vụ đúng bundle `index-DMnG2kGq.js`, CSS `index-BfsOFnfY.css`; HTML và hai asset đều HTTP 200.
+- Tiếp tục: dịch trọn cụm Danh mục/Watchlist/Giao dịch/Dòng tiền theo catalog, gồm validation và trạng thái rỗng/lỗi; sau đó Bảng giá và Chi tiết mã. Không đổi `html[lang]` sang English trước khi toàn bộ nội dung page đang hiển thị đã được catalog hóa.
+
+## 2026-10-07 — Preference ngôn ngữ và múi giờ có hiệu lực
+
+- Migration 027 thêm `preferred_language` (`vi|en`, mặc định `vi`) và `timezone` (mặc định `Asia/Ho_Chi_Minh`) vào user. PATCH profile whitelist/validate hai field, không cho null hoặc timezone ngoài danh sách; email/role/verification vẫn được bảo vệ. Login/register/refresh/me trả preference để đồng bộ nhiều tab/thiết bị.
+- AccountPanel thêm nhóm Hiển thị với tiếng Việt/English và Việt Nam/Bangkok/Singapore/UTC. Sau lưu, ứng dụng cập nhật locale/timezone dataset; Danh mục định dạng tiền, số và thời điểm ở Hiệu suất, Phân bổ, Vị thế, Nhật ký, Dòng tiền và biểu đồ theo preference. Date-only của phiên EOD không đổi ngày theo timezone. Nội dung UI và `html[lang]` vẫn tiếng Việt để screen reader không phát âm sai; giới hạn được ghi rõ trong form. Đây là nền tảng cho catalog song ngữ, không phải tuyên bố hoàn tất i18n.
+- Không thêm request, polling hay dependency: preference đi cùng auth/profile payload và render lại từ user state. Formatter có fallback về `vi-VN`/`Asia/Ho_Chi_Minh` cho tài khoản hoặc response cũ.
+- Kiểm chứng: backend 250/250; frontend 51/51; PostgreSQL isolated đạt schema/persistence và dọn schema; migration 027 đã áp dụng development. Account browser mock đạt save/reload state, dirty/reset/mobile và document attributes. Live browser cookie session đạt save sau access expiry, reload persistence, logout; hai tài khoản smoke cô lập mới được giữ qua hai lần kiểm tra, không lưu credential. Danh mục hồi quy 27/27 trước khi thêm case locale; case locale English + Singapore riêng đạt 1/1. Build/bundle integrity đạt, Preview 4173 phục vụ bundle `index-DxscosFH.js`, CSS `index-CCIpz6H_.css`.
+- Tiếp tục: mốc 4 — tạo catalog `vi/en`, thay hàm dịch passthrough, key parity và triển khai theo lát auth/navigation trước rồi Danh mục/Bảng giá/Chi tiết. Không dịch mã cổ phiếu/tên nguồn; giữ fallback tiếng Việt khi thiếu key.
+
+## 2026-10-07 — Sửa biểu đồ giá trị và hiệu suất theo ngày
+
+- Kết quả điều tra PostgreSQL development trước khi sửa: dữ liệu EOD đủ cho các mã đang nắm giữ, nhưng ba danh mục có giao dịch đều thiếu vốn hợp lệ. Danh mục chính có giao dịch từ 22/09 nhưng khoản nạp duy nhất ở 06/10; hai danh mục còn lại không có dòng tiền. Logic cũ đưa các phiên trước giao dịch vào dưới dạng điểm 0 hoàn chỉnh, nên UI tạo cảm giác có biểu đồ nhưng không thể hiện giá trị.
+- Daily valuation nay bắt đầu từ ngày hoạt động đầu tiên trong ledger (giao dịch, dòng tiền hoặc corporate action), không tạo điểm 0 trước thời điểm đó. Mỗi điểm partial có `incomplete_reasons`: âm tiền, thiếu giá đóng cửa hoặc sự kiện chưa xử lý; không thay đổi hay tự bổ sung dữ liệu tài chính.
+- UI hiển thị nguyên nhân riêng theo số phiên. Khi không có điểm hoàn chỉnh, vùng biểu đồ giải thích hành động cần làm thay vì vẽ đường 0. Khi có dữ liệu, thêm trục VND rút gọn và label đầy đủ cho từng điểm có thể focus bằng bàn phím; đường vẫn ngắt qua phiên partial và TWR vẫn không công bố khi chuỗi thiếu.
+- Kiểm chứng: backend 248/248, frontend 49/49, Danh mục browser mock 27/27; production build/bundle integrity đạt. Đối chiếu read-only sau sửa cho ba danh mục cho kết quả 11/7/3 phiên hoạt động, 0 phiên hoàn chỉnh, toàn bộ do `negative_cash_balance`, 0 phiên thiếu giá/sự kiện. Backend development đã restart. Preview 4173 phục vụ bundle `index-uhJsVw6J.js`, CSS `index-6V6v6AwT.css`, HTML/assets HTTP 200.
+- Để xuất hiện đường giá trị đúng trên dữ liệu hiện tại, người dùng cần ghi nhận vốn nạp trước hoặc cùng ngày mua tương ứng; không backdate tự động. Bước sản phẩm kế tiếp vẫn là preference ngôn ngữ/múi giờ theo backlog sau khi xác nhận dữ liệu dòng tiền thực tế.
+
+## 2026-10-06 — Đồng bộ input Nạp/Rút tiền
+
+- Sửa thiếu sót của lần trước: style mới chỉ phủ form Giao dịch, chưa phủ Dòng tiền. Chọn dùng chung rule CSS thay vì sao chép bộ style; áp dụng cho cả form ghi nhận và hộp thoại sửa dòng tiền. Input/select 44px, font thường, nền tối, padding/border/focus thống nhất, số tabular và mobile font 16px. Không đổi parser, payload, request hay state; không thêm dependency.
+- Tiêu chí: cùng computed style với Giao dịch, focus bàn phím rõ, không tràn form ở 1440/1100/390px, giữ nguyên luồng nạp/rút/sửa/xóa và xử lý lỗi. Test mới đã đạt trên browser mock API, ảnh mobile đã được xem. Build/bundle integrity đạt; Preview 4173 trả HTML/CSS HTTP 200 với bundle `index-CTsaN8Jb.js`, CSS `index-Ci_b0giP.css`.
+- Hồi quy Danh mục đạt 26/26 browser test với API mô phỏng, gồm thêm/sửa/xóa dòng tiền và lỗi/duplicate submit; git diff --check đạt. Không thay đổi lộ trình; tiếp tục preference ngôn ngữ/múi giờ sau sửa UI này.
+
+## 2026-10-06 — Hồ sơ mở rộng giai đoạn 1 và input Giao dịch
+
+- Bổ sung họ tên, điện thoại, ngày sinh tùy chọn trong AccountPanel; dùng chung save/reset/dirty guard, giữ draft khi đổi tab hoặc lỗi API. Email/role không sửa qua profile; điện thoại ghi rõ tự khai, chưa xác minh, không dùng khôi phục tài khoản. Thiết kế tại [PERSONAL_PROFILE_DESIGN](PERSONAL_PROFILE_DESIGN.md).
+- Migration 026 nullable đã áp dụng PostgreSQL development. PATCH hỗ trợ cập nhật một phần/null, normalize điện thoại, validate ngày lịch thực/không tương lai và cập nhật updated_at. Không thêm storage, polling hay request khi nhập. Chưa có audit history độc lập, ngôn ngữ/múi giờ hoặc challenge xác minh.
+- Form Giao dịch đồng bộ input/select 44px, padding, font thường, màu nền/chữ, focus rõ và numeric tabular; mobile font 16px. Giữ parser/payload số, không chèn dấu phân cách vào number input.
+- Kiểm chứng: backend 246/246; frontend 49/49; Danh mục browser 25/25 với mock API; account browser mock đạt lưu/hoàn tác trường mới, lỗi/retry, bảo mật, sidebar thu gọn và mobile (đã xem ảnh 390px). PostgreSQL isolated verifier đạt migration/DATEONLY/null persistence và hồi quy hiện có; schema thử nghiệm đã dọn. Verifier bind addColumn rõ schema để tránh Sequelize tự qualify public.
+- Live browser development tại localhost:4173 đạt lưu ba field sau access-cookie expiry, reload persistence và logout. Hai lần thử bằng 127.0.0.1 bị CORS 403 sau restart; sửa smoke dùng đúng localhost, không nới CORS. Ba tài khoản smoke cô lập được giữ lại, không lưu credential. Backend đã restart; build/bundle integrity đạt. HTML và JS Preview 4173 HTTP 200, bundle `index-DnSvJTEU.js`.
+- Tiếp tục: thiết kế và triển khai ngôn ngữ/múi giờ gắn với định dạng ngày/số và locale thực sự; sau đó hoàn tất catalog Việt/Anh. Mục 3 mới hoàn thành phần thông tin cơ bản. Benchmark/chỉ số vẫn chờ series hợp lệ.
+
 ## 2026-10-06 — Triển khai tab Danh mục cá nhân
 
 - Đã triển khai Tổng quan (mặc định), Giao dịch, Dòng tiền, Watchlist. Tổng quan ưu tiên kết quả, vị thế/phân bổ trước lịch sử TWR/MWR; Giao dịch đặt form và nhật ký trước theo dõi mã từ đề xuất. Các tab có bộ đếm và mô tả ngắn.

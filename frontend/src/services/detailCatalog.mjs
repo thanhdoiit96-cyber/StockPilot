@@ -1,0 +1,40 @@
+// Source keys bridge the existing Detail components' translate prop.
+// Only UI-owned strings belong here; provider narrative is kept in its original language.
+const entries = [
+  ['Tổng quan', 'Overview'], ['Biểu đồ', 'Chart'], ['Phân tích', 'Analysis'],
+  ['Điều hướng nội dung Chi tiết mã', 'Stock detail sections'],
+  ['Mã cổ phiếu', 'Stock symbol'], ['Nhập mã, ví dụ: HPG', 'Enter a symbol, e.g. HPG'], ['Xem mã', 'View stock'],
+  ['Đang tải chi tiết cổ phiếu', 'Loading stock details'], ['Không thể tải chi tiết cổ phiếu', 'Unable to load stock details'], ['Thử lại chi tiết', 'Retry details'],
+  ['Provider tạm ngắt; giá gần nhất vẫn được giữ và sẽ tự thử lại.', 'The provider is temporarily paused. The latest price is retained and will refresh automatically.'],
+  ['Provider đang chậm; hệ thống sẽ tự cập nhật lại.', 'The provider is responding slowly. Prices will refresh automatically.'],
+  ['Chưa cập nhật được intraday; đang giữ giá ghi nhận gần nhất.', 'Intraday update unavailable. Showing the last recorded price.'],
+  ['Chưa lấy được giá intraday; đang hiển thị EOD và sẽ tự thử lại.', 'Intraday price unavailable. Showing EOD prices and retrying automatically.'],
+  ['Giá intraday', 'Intraday price'], ['Cập nhật:', 'Updated:'], ['Giấy phép dữ liệu', 'Data license'], ['Giá đóng cửa EOD', 'EOD closing price'],
+  ['Đang phân tích...', 'Analyzing...'], ['Cập nhật phân tích', 'Refresh analysis'], ['Phân tích chuyên sâu', 'Deep analysis'], ['Thêm vào danh mục', 'Add to portfolio'],
+  ['Phân tích nâng cao đã sẵn sàng', 'Advanced analysis is ready'], ['Điểm kỹ thuật', 'Technical score'],
+  ['Lịch sử giá', 'Price history'], ['Intraday + EOD', 'Intraday + EOD'], ['Dữ liệu EOD', 'EOD data'],
+  ['Khối lượng phiên tăng', 'Volume on rising sessions'], ['Khối lượng phiên giảm', 'Volume on falling sessions'],
+  ['AI nhận định', 'Analysis summary'], ['Tín hiệu', 'Signal'], ['Chưa có nhận định', 'No assessment yet'], ['RSI14', 'RSI14'], ['Quan sát', 'Observations'], ['phiên', 'sessions'], ['Phiên', 'Sessions'],
+  ['Chưa có dữ liệu', 'No data'], ['Chưa đủ dữ liệu', 'Insufficient data'], ['Chất lượng', 'Quality'], ['Cập nhật phân tích:', 'Analysis updated:'], ['Chưa có điểm', 'Not scored'],
+  ['Số phiên hiển thị', 'Displayed sessions'], ['Zoom và dịch biểu đồ', 'Chart zoom and pan'], ['Phóng to biểu đồ', 'Zoom in'], ['Thu nhỏ biểu đồ', 'Zoom out'], ['Cũ hơn', 'Older'], ['Mới hơn', 'Newer'],
+  ['Chưa có lịch sử giá từ nguồn dữ liệu cho mã này.', 'No price history is available for this symbol.'],
+  ['Giá intraday hiện tại', 'Current intraday price'], ['Đóng cửa', 'Close'], ['Mở cửa', 'Open'], ['Cao', 'High'], ['Thấp', 'Low'], ['KL', 'Vol.'],
+  ['Biểu đồ giá đóng cửa', 'Closing price chart'], ['Đường giá đóng cửa theo phiên', 'Closing prices by session'], ['Cập nhật lúc', 'Updated at'],
+  ['Thang đo khối lượng', 'Volume scale'], ['KL cổ phiếu cao nhất', 'Maximum share volume'], ['Khối lượng theo phiên', 'Volume by session'], ['cổ phiếu', 'shares'],
+  ['Chú giải biểu đồ', 'Chart legend'], ['Giá đóng cửa', 'Closing price'], ['Mới nhất', 'Latest'], ['Cao nhất', 'Highest'], ['Thấp nhất', 'Lowest'], ['Khối lượng mới nhất', 'Latest volume'],
+  ['Đã phân tích', 'Analysis ready'], ['Chưa phân tích', 'Not analyzed'], ['Chưa có kết quả phân tích', 'No analysis results yet'], ['Đang tải các chỉ báo kỹ thuật...', 'Loading technical indicators...'],
+  ['Nhấn Phân tích chuyên sâu để xem điểm số, chỉ báo và nhận định theo kỳ hạn.', 'Select Deep analysis to view scores, indicators and assessments by horizon.'],
+  ['Nhận định chuyên gia', 'Expert assessment'], ['Cần theo dõi', 'Watch for'], ['Nên tránh', 'Avoid'], ['Điểm kỹ thuật tổng hợp', 'Combined technical score'],
+  ['Dữ liệu', 'Data'], ['Đến', 'As of'], ['Mây', 'Cloud'], ['Trên mây', 'Above cloud'], ['Dưới mây', 'Below cloud'], ['Trong mây', 'Inside cloud'],
+  ['Tăng', 'Bullish'], ['Giảm', 'Bearish'], ['Trung tính', 'Neutral'], ['Vượt dải trên', 'Above upper band'], ['Dưới dải dưới', 'Below lower band'], ['Nửa trên dải', 'Upper half'], ['Nửa dưới dải', 'Lower half'],
+  ['Nền xu hướng trung hạn', 'Medium-term trend'], ['Động lượng ngắn hạn', 'Short-term momentum'], ['Trên 70: quá mua · dưới 30: quá bán', 'Above 70: overbought · below 30: oversold'], ['Đường MACD và histogram', 'MACD line and histogram'], ['Biên dưới - biên trên', 'Lower - upper band'], ['điểm', 'points'],
+  ['Ngắn hạn', 'Short term'], ['Trung hạn', 'Medium term'], ['Dài hạn', 'Long term'], ['1-20 phiên (~1 tháng)', '1–20 sessions (~1 month)'], ['1-6 tháng', '1–6 months'], ['Trên 6 tháng', 'Over 6 months'],
+  ['Kịch bản tham khảo', 'Reference scenarios'], ['Khung thời gian', 'Time horizon'], ['Kỳ vọng', 'Outlook'], ['Tỷ trọng', 'Allocation'], ['Chốt lời', 'Take profit'], ['Cắt lỗ', 'Stop loss'], ['điều chỉnh theo giá hiện tại', 'adjusted to current price'],
+  ['Yếu tố bên ngoài', 'External factors'], ['Nguồn xác minh', 'Verified sources'], ['Chưa có nguồn xác minh', 'No verified sources'], ['Chưa có dữ liệu tin tức hoặc vĩ mô cho mã này.', 'No news or macroeconomic data is available for this symbol.'], ['Sự kiện không có tiêu đề', 'Untitled event'], ['Nguồn chưa xác nhận', 'Unconfirmed source']
+]
+
+export const detailCatalogs = {
+  vi: Object.fromEntries(entries.map(([vi]) => [vi, vi])),
+  en: Object.fromEntries(entries)
+}
+export const translateDetail = (language, text) => detailCatalogs[language]?.[text] || detailCatalogs.vi[text] || text

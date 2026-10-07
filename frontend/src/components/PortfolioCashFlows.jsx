@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { formatDateTime, formatNumber } from '../services/userLocale.mjs'
+import { translate } from '../services/i18n.mjs'
 
-const money = value => `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(value || 0))} ₫`
 const localDateTime = value => {
   const date = value ? new Date(value) : new Date()
   if (Number.isNaN(date.getTime())) return ''
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
-const displayTime = value => new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value))
 const emptyForm = () => ({ type: 'DEPOSIT', amount: '', occurred_at: localDateTime(), note: '' })
 
-export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, onDelete }) {
+export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, onDelete, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
+  const t = key => translate(language, key)
+  const money = value => `${formatNumber(value, language, { maximumFractionDigits: 0 })} ₫`
+  const displayTime = value => formatDateTime(value, language, timezone)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState({ kind: '', text: '' })
@@ -33,7 +36,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
     try {
       await onCreate({ ...form, occurred_at: new Date(form.occurred_at).toISOString() })
       setForm(emptyForm())
-      setFeedback({ kind: 'success', text: `Đã ghi nhận ${form.type === 'DEPOSIT' ? 'nạp tiền' : 'rút tiền'}.` })
+      setFeedback({ kind: 'success', text: t(form.type === 'DEPOSIT' ? 'portfolio.cash.recordedDeposit' : 'portfolio.cash.recordedWithdrawal') })
     } catch (error) {
       setFeedback({ kind: 'error', text: error.message })
     } finally {
@@ -50,7 +53,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
     try {
       await onUpdate(mutation.entry.id, { ...mutation.form, occurred_at: new Date(mutation.form.occurred_at).toISOString() })
       setMutation(null)
-      setFeedback({ kind: 'success', text: 'Đã cập nhật dòng tiền.' })
+      setFeedback({ kind: 'success', text: t('portfolio.cash.updated') })
     } catch (error) {
       setMutation(value => ({ ...value, status: 'ready', error: error.message }))
     } finally { mutationLock.current = false }
@@ -62,7 +65,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
     try {
       await onDelete(mutation.entry.id)
       setMutation(null)
-      setFeedback({ kind: 'success', text: 'Đã xóa dòng tiền.' })
+      setFeedback({ kind: 'success', text: t('portfolio.cash.deleted') })
     } catch (error) {
       setMutation(value => ({ ...value, status: 'ready', error: error.message }))
     } finally { mutationLock.current = false }
@@ -76,20 +79,20 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
     return () => window.removeEventListener('keydown', close)
   }, [mutation?.kind, mutation?.entry?.id, mutation?.status])
 
-  return <article className="panel cash-flow-panel" aria-labelledby="cash-flow-title">
-    <div className="cash-flow-heading"><div><span className="eyebrow accent">DÒNG TIỀN</span><h3 id="cash-flow-title">Nạp và rút tiền</h3><p className="muted-text">Tách dòng tiền bên ngoài khỏi lãi/lỗ đầu tư để chuẩn bị tính hiệu suất theo thời gian.</p></div><span className="chip neutral">{entries.length} bản ghi</span></div>
-    <dl className="cash-flow-summary"><div><dt>Đã nạp</dt><dd className="positive">{money(totals.deposits)}</dd></div><div><dt>Đã rút</dt><dd>{money(totals.withdrawals)}</dd></div><div><dt>Dòng tiền ròng</dt><dd className={totals.net > 0 ? 'positive' : totals.net < 0 ? 'negative' : ''}>{money(totals.net)}</dd></div></dl>
+  return <article className="panel cash-flow-panel" aria-labelledby="cash-flow-title" lang={language}>
+    <div className="cash-flow-heading"><div><span className="eyebrow accent">{t('portfolio.cash.eyebrow')}</span><h3 id="cash-flow-title">{t('portfolio.cash.title')}</h3><p className="muted-text">{t('portfolio.cash.subtitle')}</p></div><span className="chip neutral">{entries.length} {t('portfolio.cash.records')}</span></div>
+    <dl className="cash-flow-summary"><div><dt>{t('portfolio.cash.deposited')}</dt><dd className="positive">{money(totals.deposits)}</dd></div><div><dt>{t('portfolio.cash.withdrawn')}</dt><dd>{money(totals.withdrawals)}</dd></div><div><dt>{t('portfolio.cash.net')}</dt><dd className={totals.net > 0 ? 'positive' : totals.net < 0 ? 'negative' : ''}>{money(totals.net)}</dd></div></dl>
     <form className="cash-flow-form" onSubmit={submit}>
-      <label>Loại dòng tiền<select name="type" value={form.type} disabled={saving} onChange={updateForm}><option value="DEPOSIT">Nạp tiền</option><option value="WITHDRAWAL">Rút tiền</option></select></label>
-      <label>Số tiền (VND)<input name="amount" type="number" min="1" max="1000000000000000" step="1" required value={form.amount} disabled={saving} onChange={updateForm} placeholder="Ví dụ: 10000000" /></label>
-      <label>Thời điểm<input name="occurred_at" type="datetime-local" required value={form.occurred_at} disabled={saving} onChange={updateForm} /></label>
-      <label className="cash-flow-note">Ghi chú <span>(không bắt buộc)</span><input name="note" maxLength="240" value={form.note} disabled={saving} onChange={updateForm} placeholder="Ví dụ: Vốn đầu tư tháng 10" /></label>
-      <button className="primary-btn" type="submit" disabled={saving || !onCreate}>{saving ? 'Đang lưu…' : 'Ghi nhận'}</button>
+      <label>{t('portfolio.cash.type')}<select name="type" value={form.type} disabled={saving} onChange={updateForm}><option value="DEPOSIT">{t('portfolio.cash.deposit')}</option><option value="WITHDRAWAL">{t('portfolio.cash.withdrawal')}</option></select></label>
+      <label>{t('portfolio.cash.amount')}<input name="amount" type="number" min="1" max="1000000000000000" step="1" required value={form.amount} disabled={saving} onChange={updateForm} placeholder={t('portfolio.cash.amountPlaceholder')} /></label>
+      <label>{t('portfolio.common.time')}<input name="occurred_at" type="datetime-local" required value={form.occurred_at} disabled={saving} onChange={updateForm} /></label>
+      <label className="cash-flow-note">{t('portfolio.common.note')} <span>{t('portfolio.cash.optional')}</span><input name="note" maxLength="240" value={form.note} disabled={saving} onChange={updateForm} placeholder={t('portfolio.cash.notePlaceholder')} /></label>
+      <button className="primary-btn" type="submit" disabled={saving || !onCreate}>{t(saving ? 'portfolio.common.saving' : 'portfolio.cash.record')}</button>
     </form>
     {feedback.text ? <p className={`cash-flow-feedback ${feedback.kind === 'error' ? 'error-text' : 'positive'}`} role={feedback.kind === 'error' ? 'alert' : 'status'}>{feedback.text}</p> : null}
-    {ordered.length ? <div className="table-wrap cash-flow-table"><table aria-label="Lịch sử nạp và rút tiền"><thead><tr><th>Thời điểm</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody>{ordered.map(entry => <tr key={entry.id}><td>{displayTime(entry.occurred_at)}</td><td><span className={`ledger-side ${entry.type === 'DEPOSIT' ? 'buy' : 'sell'}`}>{entry.type === 'DEPOSIT' ? 'Nạp tiền' : 'Rút tiền'}</span></td><td className={entry.type === 'DEPOSIT' ? 'positive' : ''}>{entry.type === 'DEPOSIT' ? '+' : '−'}{money(entry.amount)}</td><td className="cash-flow-row-note">{entry.note || '—'}</td><td><div className="ledger-row-actions"><button className="ghost-btn small-btn" type="button" onClick={() => openEdit(entry)}>Sửa</button><button className="ghost-btn small-btn danger" type="button" onClick={() => setMutation({ kind: 'delete', entry, status: 'ready', error: '' })}>Xóa</button></div></td></tr>)}</tbody></table></div> : <div className="cash-flow-empty"><strong>Chưa có dòng tiền</strong><p>Thêm lần nạp vốn đầu tiên để chuẩn bị dữ liệu tính hiệu suất theo kỳ.</p></div>}
+    {ordered.length ? <div className="table-wrap cash-flow-table"><table aria-label={t('portfolio.cash.history')}><thead><tr><th>{t('portfolio.common.time')}</th><th>{t('portfolio.cash.type')}</th><th>{t('portfolio.cash.amount')}</th><th>{t('portfolio.common.note')}</th><th>{t('portfolio.common.actions')}</th></tr></thead><tbody>{ordered.map(entry => <tr key={entry.id}><td>{displayTime(entry.occurred_at)}</td><td><span className={`ledger-side ${entry.type === 'DEPOSIT' ? 'buy' : 'sell'}`}>{t(entry.type === 'DEPOSIT' ? 'portfolio.cash.deposit' : 'portfolio.cash.withdrawal')}</span></td><td className={entry.type === 'DEPOSIT' ? 'positive' : ''}>{entry.type === 'DEPOSIT' ? '+' : '−'}{money(entry.amount)}</td><td className="cash-flow-row-note">{entry.note || '—'}</td><td><div className="ledger-row-actions"><button className="ghost-btn small-btn" type="button" onClick={() => openEdit(entry)}>{t('portfolio.common.edit')}</button><button className="ghost-btn small-btn danger" type="button" onClick={() => setMutation({ kind: 'delete', entry, status: 'ready', error: '' })}>{t('portfolio.common.delete')}</button></div></td></tr>)}</tbody></table></div> : <div className="cash-flow-empty"><strong>{t('portfolio.cash.empty')}</strong><p>{t('portfolio.cash.emptyText')}</p></div>}
     {mutation ? <div className="ledger-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && mutation.status !== 'saving') setMutation(null) }}><section className="ledger-dialog cash-flow-dialog" role="dialog" aria-modal="true" aria-labelledby="cash-flow-dialog-title" tabIndex="-1" ref={dialogRef}>
-      {mutation.kind === 'edit' ? <form onSubmit={saveEdit}><div className="ledger-dialog-header"><div><span className="eyebrow accent">DÒNG TIỀN</span><h3 id="cash-flow-dialog-title">Sửa bản ghi</h3><p>Thay đổi sẽ cập nhật dữ liệu hiệu suất liên quan.</p></div></div><div className="ledger-edit-grid"><label>Loại<select name="type" value={mutation.form.type} disabled={mutation.status === 'saving'} onChange={mutationField}><option value="DEPOSIT">Nạp tiền</option><option value="WITHDRAWAL">Rút tiền</option></select></label><label>Số tiền (VND)<input name="amount" type="number" min="1" step="1" required value={mutation.form.amount} disabled={mutation.status === 'saving'} onChange={mutationField} /></label><label className="ledger-edit-time">Thời điểm<input name="occurred_at" type="datetime-local" required value={mutation.form.occurred_at} disabled={mutation.status === 'saving'} onChange={mutationField} /></label><label className="ledger-edit-time">Ghi chú<input name="note" maxLength="240" value={mutation.form.note} disabled={mutation.status === 'saving'} onChange={mutationField} /></label></div>{mutation.error ? <p className="error-text ledger-dialog-note" role="alert">{mutation.error}</p> : null}<div className="ledger-dialog-actions"><button className="ghost-btn" type="button" disabled={mutation.status === 'saving'} onClick={() => setMutation(null)}>Hủy</button><button className="primary-btn" type="submit" disabled={mutation.status === 'saving'}>{mutation.status === 'saving' ? 'Đang lưu…' : 'Lưu thay đổi'}</button></div></form> : <><div className="ledger-dialog-header"><div><span className="eyebrow accent">XÁC NHẬN</span><h3 id="cash-flow-dialog-title">Xóa dòng tiền?</h3><p>{mutation.entry.type === 'DEPOSIT' ? 'Nạp tiền' : 'Rút tiền'} · {money(mutation.entry.amount)}</p></div></div><p className="ledger-dialog-note">Dữ liệu hiệu suất tương lai sẽ được tính lại sau khi xóa.</p>{mutation.error ? <p className="error-text ledger-dialog-note" role="alert">{mutation.error}</p> : null}<div className="ledger-dialog-actions"><button className="ghost-btn" type="button" disabled={mutation.status === 'saving'} onClick={() => setMutation(null)}>Hủy</button><button className="danger-btn" type="button" disabled={mutation.status === 'saving'} onClick={remove}>{mutation.status === 'saving' ? 'Đang xóa…' : 'Xác nhận xóa'}</button></div></>}
+      {mutation.kind === 'edit' ? <form onSubmit={saveEdit}><div className="ledger-dialog-header"><div><span className="eyebrow accent">{t('portfolio.cash.eyebrow')}</span><h3 id="cash-flow-dialog-title">{t('portfolio.cash.editTitle')}</h3><p>{t('portfolio.cash.editHelp')}</p></div></div><div className="ledger-edit-grid"><label>{t('portfolio.cash.type')}<select name="type" value={mutation.form.type} disabled={mutation.status === 'saving'} onChange={mutationField}><option value="DEPOSIT">{t('portfolio.cash.deposit')}</option><option value="WITHDRAWAL">{t('portfolio.cash.withdrawal')}</option></select></label><label>{t('portfolio.cash.amount')}<input name="amount" type="number" min="1" step="1" required value={mutation.form.amount} disabled={mutation.status === 'saving'} onChange={mutationField} /></label><label className="ledger-edit-time">{t('portfolio.common.time')}<input name="occurred_at" type="datetime-local" required value={mutation.form.occurred_at} disabled={mutation.status === 'saving'} onChange={mutationField} /></label><label className="ledger-edit-time">{t('portfolio.common.note')}<input name="note" maxLength="240" value={mutation.form.note} disabled={mutation.status === 'saving'} onChange={mutationField} /></label></div>{mutation.error ? <p className="error-text ledger-dialog-note" role="alert">{mutation.error}</p> : null}<div className="ledger-dialog-actions"><button className="ghost-btn" type="button" disabled={mutation.status === 'saving'} onClick={() => setMutation(null)}>{t('portfolio.common.cancel')}</button><button className="primary-btn" type="submit" disabled={mutation.status === 'saving'}>{t(mutation.status === 'saving' ? 'portfolio.common.saving' : 'portfolio.cash.saveChanges')}</button></div></form> : <><div className="ledger-dialog-header"><div><span className="eyebrow accent">{t('portfolio.cash.confirm')}</span><h3 id="cash-flow-dialog-title">{t('portfolio.cash.deleteTitle')}</h3><p>{t(mutation.entry.type === 'DEPOSIT' ? 'portfolio.cash.deposit' : 'portfolio.cash.withdrawal')} · {money(mutation.entry.amount)}</p></div></div><p className="ledger-dialog-note">{t('portfolio.cash.deleteHelp')}</p>{mutation.error ? <p className="error-text ledger-dialog-note" role="alert">{mutation.error}</p> : null}<div className="ledger-dialog-actions"><button className="ghost-btn" type="button" disabled={mutation.status === 'saving'} onClick={() => setMutation(null)}>{t('portfolio.common.cancel')}</button><button className="danger-btn" type="button" disabled={mutation.status === 'saving'} onClick={remove}>{t(mutation.status === 'saving' ? 'portfolio.common.deleting' : 'portfolio.cash.confirmDelete')}</button></div></>}
     </section></div> : null}
   </article>
 }

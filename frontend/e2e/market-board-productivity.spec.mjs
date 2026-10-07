@@ -14,8 +14,9 @@ const buildStocks = count => Array.from({ length: count }, (_, index) => {
   }
 })
 
-async function boot(page, count = 4) {
+async function boot(page, count = 4, language = 'vi') {
   const stocks = buildStocks(count)
+  let user = { id: 'audit', email: 'audit@example.com', role: 'user', preferred_language: language }
   let boardRefreshRequests = 0
   let stockListRequests = 0
   await page.route('**/api/**', async route => {
@@ -59,7 +60,8 @@ async function boot(page, count = 4) {
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: ['Chưa cấu hình nhà cung cấp AI'] }
     else if (path === '/api/recommendations/latest') payload.data = { run: null, recommendations: [], risk: {} }
     else if (path === '/api/recommendations/history' || path === '/api/recommendations/readiness' || path === '/api/recommendations/saved') payload.data = []
-    else if (path === '/api/auth/me') payload = { success: true, user: { id: 'audit', email: 'audit@example.com', role: 'user' } }
+    else if (path === '/api/auth/me') payload = { success: true, user }
+    else if (path === '/api/auth/profile') { user = { ...user, ...request.postDataJSON() }; payload = { success: true, user } }
     else if (path === '/api/watchlist') payload.data = []
     else if (path === '/api/portfolio') payload.data = { positions: [] }
     await route.fulfill({ json: payload })
@@ -71,6 +73,57 @@ async function boot(page, count = 4) {
   await expect(page.locator('.market-breadth-header')).toContainText(`${count} mã`)
   return { firstUsableMs: Date.now() - startedAt, boardRefreshRequests: () => boardRefreshRequests, stockListRequests: () => stockListRequests }
 }
+
+test('English market and detail screens preserve filters and chart range when changing language', async ({ page }) => {
+  const metrics = await boot(page, 4, 'en')
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.getByRole('button', { name: 'Market Board', exact: true }).click()
+  const board = page.locator('[data-react-market-board]')
+  await expect(board).toHaveAttribute('lang', 'en')
+  const filteredResponse = page.waitForResponse(response => {
+    const url = new URL(response.url())
+    return url.pathname === '/api/stocks' && url.searchParams.get('q') === 'FPT' && url.searchParams.get('sector') === 'technology'
+  })
+  await board.getByRole('searchbox', { name: 'Search stocks' }).fill('FPT')
+  await board.getByRole('combobox', { name: 'Sector', exact: true }).selectOption('technology')
+  await board.getByRole('button', { name: 'Watch', exact: true }).click()
+  await filteredResponse
+  await expect(board.locator('.market-board-loading-overlay')).toHaveCount(0)
+  await expect(board.getByRole('button', { name: 'Export CSV (4)' })).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({ path: 'test-results/market-en-mobile.png', fullPage: true })
+  const switchLanguage = async value => {
+    await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    await page.locator('#account-language').selectOption(value)
+    await page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true }).click()
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Lưu thay đổi', exact: true })).toBeDisabled()
+    await page.keyboard.press('Escape')
+  }
+  const requests = metrics.stockListRequests()
+  await switchLanguage('vi')
+  await expect(board.getByRole('searchbox', { name: 'Tìm cổ phiếu' })).toHaveValue('FPT')
+  await expect(board.getByRole('combobox', { name: 'Nhóm ngành', exact: true })).toHaveValue('technology')
+  await expect(board.getByRole('button', { name: 'Theo dõi', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  expect(metrics.stockListRequests()).toBe(requests)
+  await switchLanguage('en')
+  await board.getByRole('button', { name: 'FPT', exact: true }).click()
+  const detail = page.locator('.detail-page')
+  await expect(detail).toHaveAttribute('lang', 'en')
+  await expect(detail.getByRole('button', { name: 'View stock', exact: true })).toBeVisible()
+  await expect(detail.getByRole('button', { name: 'Add to portfolio', exact: true })).toBeVisible()
+  await expect(detail.getByRole('button', { name: 'Add FPT to Watchlist', exact: true })).toBeVisible()
+  await detail.getByRole('button', { name: 'Chart', exact: true }).click()
+  await detail.getByRole('group', { name: 'Displayed sessions' }).getByRole('button', { name: '5', exact: true }).click()
+  await switchLanguage('vi')
+  await expect(detail.getByRole('group', { name: 'Số phiên hiển thị' }).getByRole('button', { name: '5', exact: true })).toHaveClass('active')
+  await switchLanguage('en')
+  await detail.getByRole('button', { name: 'Chart', exact: true }).click()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({ path: 'test-results/detail-en-mobile.png', fullPage: true })
+  expect(errors).toEqual([])
+})
 
 test('market board keeps the symbol visible, saves column preferences and exports the current scope', async ({ page }) => {
   const metrics = await boot(page)

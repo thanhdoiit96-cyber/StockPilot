@@ -20,8 +20,8 @@ export default function DetailRiskPlan({
         </tr></thead>
         <tbody>{Object.values(riskPlan.horizons).map(horizon => {
           const normalized = normalizeRisk(horizon)
-          return <tr key={horizon.label}>
-            <td>{horizon.label}</td>
+          return <tr key={translate(horizon.label)}>
+            <td>{translate(horizon.label)}</td>
             <td>{horizon.expectation_pct ? `${horizon.expectation_pct.min}% - ${horizon.expectation_pct.max}%` : emptyValue}</td>
             <td>{Number(horizon.allocation_pct || 0).toFixed(1)}%</td>
             <td>{normalized.displayTake == null ? emptyValue : formatPrice(normalized.displayTake)}</td>

@@ -1,5 +1,33 @@
 import { test, expect } from '@playwright/test'
 
+test('switches the guest auth catalog to English and keeps English navigation after sign-in', async ({ page }) => {
+  let signedIn = false
+  await page.addInitScript(() => { if (!sessionStorage.getItem('i18n-test-ready')) { localStorage.removeItem('market-auth'); localStorage.removeItem('stockpilot-language'); sessionStorage.setItem('i18n-test-ready', '1') } })
+  await page.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return signedIn ? route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user', preferred_language: 'en', timezone: 'Asia/Ho_Chi_Minh' } } }) : route.fulfill({ status: 401, json: { success: false, message: 'Authentication required' } })
+    if (path === '/api/auth/login') { signedIn = true; return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user', preferred_language: 'en', timezone: 'Asia/Ho_Chi_Minh' } } }) }
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    if (path === '/api/portfolio/performance/history') return route.fulfill({ json: { success: true, data: { status: 'empty', coverage: { sessions: 0, complete_sessions: 0, incomplete_sessions: 0 }, points: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'EN' }).click()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await expect(page.getByLabel('Sign-in email')).toBeVisible()
+  await expect(page.getByLabel('Sign-in password')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await page.getByLabel('Sign-in email').fill('investor@example.com')
+  await page.getByLabel('Sign-in password').fill('password123')
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Market Board', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Portfolio', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Collapse navigation' })).toBeVisible()
+})
+
 test('authentication failure receives focus, keeps input and clears when mode changes', async ({ page }) => {
   let releaseRequest
   let requestCount = 0
@@ -37,13 +65,19 @@ test('authentication failure receives focus, keeps input and clears when mode ch
 
 test('cookie login keeps credentials out of storage and protected requests out of authorization headers', async ({ page }) => {
   const requests = []
+  let signedIn = false
   await page.addInitScript(() => localStorage.removeItem('market-auth'))
   await page.route('**/api/**', route => {
     const request = route.request()
     const path = new URL(request.url()).pathname
     requests.push({ path, headers: request.headers() })
-    if (path === '/api/auth/me') return route.fulfill({ status: 401, json: { success: false, message: 'Authentication required' } })
-    if (path === '/api/auth/login') return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    if (path === '/api/auth/me') return signedIn
+      ? route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+      : route.fulfill({ status: 401, json: { success: false, message: 'Authentication required' } })
+    if (path === '/api/auth/login') {
+      signedIn = true
+      return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user' } } })
+    }
     if (path === '/api/auth/logout') return route.fulfill({ status: 204, body: '' })
     if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
     if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
@@ -56,13 +90,14 @@ test('cookie login keeps credentials out of storage and protected requests out o
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   const login = requests.find(item => item.path === '/api/auth/login')
   expect(login.headers['x-auth-mode']).toBe('cookie-v1')
-  const storedSignal = await page.evaluate(() => JSON.parse(localStorage.getItem('market-auth')))
-  expect(storedSignal).toMatchObject({ type: 'login' })
-  expect(storedSignal.token).toBeUndefined()
-  expect(storedSignal.user).toBeUndefined()
+  const storedSignal = await page.evaluate(() => localStorage.getItem('market-auth'))
+  expect(storedSignal).toBeNull()
   const privateRequest = requests.find(item => item.path === '/api/watchlist')
   expect(privateRequest.headers.authorization).toBeUndefined()
-  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  const confirmLogout = page.getByRole('button', { name: 'Bỏ thay đổi và đăng xuất', exact: true })
+  if (await confirmLogout.isVisible()) await confirmLogout.click()
   await expect.poll(() => requests.some(item => item.path === '/api/auth/logout')).toBe(true)
 })
 
@@ -171,8 +206,11 @@ test('logout in one tab immediately clears private state in another tab', async 
   await Promise.all([page.goto('/'), secondPage.goto('/')])
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   await expect(secondPage.locator('.dashboard-shell')).toBeVisible()
-  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
-  await expect(page.getByRole('status')).toHaveText('Bạn đã đăng xuất an toàn.')
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  const confirmLogout = page.getByRole('button', { name: 'Bỏ thay đổi và đăng xuất', exact: true })
+  if (await confirmLogout.isVisible()) await confirmLogout.click()
+  await expect(page.locator('.auth-page')).toBeVisible()
   await expect(secondPage.locator('.auth-page')).toBeVisible()
   await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
   await expect(secondPage.getByRole('status')).toHaveText('Phiên đăng nhập đã kết thúc ở một tab khác.')
@@ -198,14 +236,14 @@ test('a replacement session from another tab is verified before switching identi
   })
   const secondPage = await context.newPage()
   await Promise.all([page.goto('/'), secondPage.goto('/')])
-  await expect(secondPage.getByText('old@example.com').first()).toBeVisible()
+  await expect(secondPage.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true })).toContainText('old')
   await page.evaluate(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'new-token', user: { email: 'untrusted@example.com', role: 'user' } })))
   await expect(secondPage.getByText('Đang xác minh phiên đăng nhập...')).toBeVisible()
   await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
   await expect.poll(() => typeof releaseReplacement).toBe('function')
   releaseReplacement()
   await expect(secondPage.locator('.dashboard-shell')).toBeVisible()
-  await expect(secondPage.getByText('new@example.com').first()).toBeVisible()
+  await expect(secondPage.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true })).toContainText('new')
   await page.evaluate(() => localStorage.setItem('market-auth', '{invalid-json'))
   await expect(secondPage.locator('.auth-page')).toBeVisible()
   await expect(secondPage.locator('.dashboard-shell')).toHaveCount(0)
