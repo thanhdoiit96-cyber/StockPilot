@@ -21,6 +21,28 @@ test('Recommendation mutation error is localized and recoverable', async ({ page
   await expect(page.getByRole('button', { name: 'Tạo đề xuất cá nhân', exact: true })).toBeEnabled()
 })
 
+test('Recommendation mutation error is localized in English', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('stockpilot-language', 'en'))
+  await page.route('**/api/**', async route => {
+    const request = route.request(); const path = new URL(request.url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user', preferred_language: 'en' } } })
+    if (path === '/api/recommendations/personalized' && request.method() === 'POST') return route.fulfill({ status: 503, json: { success: false, code: 'recommendation_personalized_failed', message: 'backend failure' } })
+    let data = null
+    if (path === '/api/stocks') data = []
+    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [] }
+    else if (path === '/api/watchlist') data = []
+    else if (path === '/api/recommendations/latest') data = { recommendations: [] }
+    else if (path === '/api/recommendations/history' || path === '/api/recommendations/readiness' || path === '/api/recommendations/saved') data = []
+    else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }
+    return route.fulfill({ json: { success: true, data } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Ideas', exact: true }).click()
+  await page.getByRole('button', { name: 'Create personal ideas', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Unable to create recommendations with the current criteria.')
+  await expect(page.getByRole('button', { name: 'Create personal ideas', exact: true })).toBeEnabled()
+})
+
 test('recommendation criteria rerank the eligible universe and show historical learning readiness', async ({ page }) => {
   let submitted
   let savedTransaction

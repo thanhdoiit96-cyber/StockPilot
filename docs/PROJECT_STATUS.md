@@ -61,6 +61,12 @@
 - Kiểm chứng: test mutation error **1/1 pass**; baseline workflow trước đó vẫn pass.
 - Tiếp tục: bổ sung cùng nhánh bằng locale English và mở rộng Portfolio mutation code-specific smoke.
 
+## 2026-10-07 — Recommendation mutation smoke Việt/Anh
+
+- Hoàn tất smoke cho `recommendation_personalized_failed` ở cả catalog tiếng Việt và tiếng Anh; kiểm tra nút retry được mở khóa.
+- Kiểm chứng: **2/2 browser tests pass**.
+- Tiếp tục: mở rộng Portfolio mutation smoke từ message thô sang error code catalog.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
