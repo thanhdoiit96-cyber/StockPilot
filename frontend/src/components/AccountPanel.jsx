@@ -3,10 +3,12 @@ import { createPortal } from "react-dom";
 import "./AccountPanel.css";
 import PasswordChangeForm from "./PasswordChangeForm.jsx";
 import AccountSessions from "./AccountSessions.jsx";
+import { localizeApiError } from "../services/apiErrorCatalog.mjs";
 
 const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh" });
 
 export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession }) {
+  const language = user?.preferred_language === 'en' ? 'en' : 'vi';
   const [sessionDirty, setSessionDirty] = useState(false);
   const [passwordDirty, setPasswordDirty] = useState(false);
   const [tab, setTab] = useState("profile");
@@ -67,7 +69,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
       setDetails(detailsOf(updated));
       setMessage("Đã lưu thông tin cá nhân.");
     } catch (reason) {
-      setError(reason.message || "Không thể lưu thông tin. Vui lòng thử lại.");
+      setError(localizeApiError(reason, language));
     } finally { setBusy(false); }
   }
   async function logout(confirmed = false) {
@@ -76,7 +78,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
     setPendingExit(null);
     setBusy(true); setError(""); setMessage("");
     try { await onLogout(); }
-    catch { setError("Chưa thể đăng xuất. Vui lòng thử lại."); }
+    catch (reason) { setError(localizeApiError(reason, language)); }
     finally { setBusy(false); }
   }
   function selectTab(next) {
@@ -147,8 +149,8 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
       {opened && onPasswordChange && <div id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" className="account-password-section" hidden={tab !== "security"} inert={pendingExit ? "" : undefined}>
         {profileDirty && <div className="account-profile-reminder" role="status">Bạn có thay đổi hồ sơ chưa lưu. <button type="button" className="ghost-btn" onClick={() => selectTab("profile")}>Quay lại Hồ sơ</button></div>}
         {sessionDirty && <p className="account-profile-reminder" role="status">Hãy lưu hoặc hủy tên phiên đang sửa trước khi đổi mật khẩu.</p>}
-        <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty || sessionDirty} />
-        {onLoadSessions && <AccountSessions active={tab === "security"} onLoad={onLoadSessions} onRevoke={onRevokeSessions} onRename={onRenameSession} onDirty={setSessionDirty} disabled={busy} />}
+        <PasswordChangeForm onSubmit={onPasswordChange} onDirty={setPasswordDirty} onBusy={setBusy} disabled={busy || profileDirty || sessionDirty} language={language} />
+        {onLoadSessions && <AccountSessions active={tab === "security"} onLoad={onLoadSessions} onRevoke={onRevokeSessions} onRename={onRenameSession} onDirty={setSessionDirty} disabled={busy} language={language} />}
       </div>}
       <footer className="account-footer" inert={pendingExit ? "" : undefined}><div><strong>Phiên đăng nhập</strong><p>Đăng xuất khỏi tài khoản trên trình duyệt này.</p></div><button type="button" className="ghost-btn account-signout" disabled={busy} onClick={() => logout()}>Đăng xuất</button></footer>
     </dialog>, document.body)}

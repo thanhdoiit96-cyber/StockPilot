@@ -1,5 +1,6 @@
 import { useState } from "react";
-export default function PasswordChangeForm({ onSubmit, onDirty, onBusy, disabled }) {
+import { localizeApiError } from "../services/apiErrorCatalog.mjs";
+export default function PasswordChangeForm({ onSubmit, onDirty, onBusy, disabled, language = 'vi' }) {
   const [values, setValues] = useState({ current: "", password: "", confirmation: "" });
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState("");
@@ -15,7 +16,7 @@ export default function PasswordChangeForm({ onSubmit, onDirty, onBusy, disabled
     if (values.current === values.password) return setError("Mật khẩu mới phải khác mật khẩu hiện tại.");
     onBusy(true); setError("");
     try { await onSubmit({ current_password: values.current, new_password: values.password }); }
-    catch (reason) { setError(reason.message || "Không thể đổi mật khẩu. Vui lòng thử lại."); }
+    catch (reason) { setError(localizeApiError(reason, language)); }
     finally { onBusy(false); }
   }
   return <form className="account-form account-password-form" onSubmit={submit} aria-busy={disabled}>

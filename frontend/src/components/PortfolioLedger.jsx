@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { parsePortfolioLedgerCsv, serializePortfolioLedger } from '../services/portfolioLedgerCsv.mjs'
 import { formatDateTime, formatNumber } from '../services/userLocale.mjs'
 import { translate } from '../services/i18n.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 
 
 function exportCsv(entries, fileName = `stockpilot-ledger-${new Date().toISOString().slice(0, 10)}.csv`) {
@@ -48,7 +49,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       const result = await onImport(rows, true)
       setImportState({ status: 'preview', rows, result, fileName: file.name, error: '' })
     } catch (error) {
-      setImportState({ status: 'error', rows: [], result: null, fileName: file.name, error: error.message })
+      setImportState({ status: 'error', rows: [], result: null, fileName: file.name, error: localizeApiError(error, language) })
     }
   }
   const commitImport = async () => {
@@ -57,7 +58,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       const result = await onImport(importState.rows, false)
       setImportState({ status: 'success', rows: [], result, fileName: importState.fileName, error: '' })
     } catch (error) {
-      setImportState(state => ({ ...state, status: 'error', error: error.message }))
+      setImportState(state => ({ ...state, status: 'error', error: localizeApiError(error, language) }))
     }
   }
   useEffect(() => {
@@ -101,7 +102,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       setFeedback(t('portfolio.ledger.updated'))
       setMutation(null)
     } catch (error) {
-      setMutation(state => ({ ...state, status: 'confirm', error: error.message }))
+      setMutation(state => ({ ...state, status: 'confirm', error: localizeApiError(error, language) }))
     }
   }
   const confirmDelete = async () => {
@@ -111,7 +112,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       setFeedback(t('portfolio.ledger.deleted'))
       setMutation(null)
     } catch (error) {
-      setMutation(state => ({ ...state, status: 'confirm', error: error.message }))
+      setMutation(state => ({ ...state, status: 'confirm', error: localizeApiError(error, language) }))
     }
   }
 

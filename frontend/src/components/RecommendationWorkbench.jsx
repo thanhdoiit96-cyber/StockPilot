@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 import RecommendationEvidence from './RecommendationEvidence.jsx'
 import RecommendationSnapshotComparison from './RecommendationSnapshotComparison.jsx'
 import QuickWatchlistButton from './QuickWatchlistButton.jsx'
@@ -68,7 +69,7 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
         setSavedProposals(current => { const next = [snapshot, ...current].slice(0, 20); localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next)); return next })
         setSelectedProposalId(snapshot.id)
       }
-    } catch (requestError) { setError(requestError.message) } finally { setLoading(false) }
+    } catch (requestError) { setError(localizeApiError(requestError, language)) } finally { setLoading(false) }
   }
 
   function loadProposal(snapshot) {
