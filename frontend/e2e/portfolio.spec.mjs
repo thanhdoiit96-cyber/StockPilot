@@ -57,6 +57,16 @@ test('cash-flow update and delete errors keep the mutation dialog retryable', as
   await expect(dialog.getByRole('alert')).toContainText('Không thể cập nhật dòng tiền.')
   await expect(dialog.locator('button[type="submit"]')).toBeEnabled()
 })
+test('cash-flow delete error keeps the confirmation dialog retryable', async ({ page }) => {
+  await boot(page, [], [], [], [], null, [{ id: 'cf-delete-error', type: 'DEPOSIT', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: '' }], null, { id: 'vi', email: 'vi@example.com', role: 'admin' }, 'portfolio_cashflow_delete_failed')
+  await page.getByRole('tab', { name: /Dòng tiền/ }).click()
+  const panel = page.locator('.cash-flow-panel')
+  await panel.locator('.cash-flow-table').getByRole('button', { name: 'Xóa', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Xác nhận xóa' }).click()
+  await expect(dialog.getByRole('alert')).toContainText('Không thể xoá dòng tiền.')
+  await expect(dialog.getByRole('button', { name: 'Xác nhận xóa' })).toBeEnabled()
+})
 test('portfolio tabs preserve drafts and filters with keyboard and mobile navigation', async ({ page }) => {
   const state = await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10 }], [], [], [{ stock_id: 'a', Stock: { id: 'a', code: 'FPT', name: 'FPT Corp' } }])
   const tabs = page.getByRole('tablist', { name: 'Nội dung danh mục' })
