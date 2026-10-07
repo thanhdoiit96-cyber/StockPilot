@@ -43,7 +43,8 @@ UI quản lý nạp/rút đã triển khai ngày 2026-10-06: tổng nạp/rút/r
 - `GET /api/portfolio/performance/history?sessions=N` dùng `daily_close_twr_v1`, giới hạn 2–260 phiên và múi giờ `Asia/Ho_Chi_Minh`. Endpoint chỉ đọc EOD trong PostgreSQL, không gọi provider.
 - Dòng tiền ngoài được áp dụng đầu phiên (`beginning_of_session`); giao dịch dựng lại holdings và cash. Một điểm chỉ `complete` khi mọi mã đang nắm giữ có giá đúng phiên và cash không âm. Không carry-forward hoặc nội suy qua khoảng trống.
 - TWR chỉ công bố khi toàn bộ chuỗi hoàn chỉnh, có ít nhất hai điểm và có daily return tính được. Ledger cũ thiếu khoản nạp ban đầu được đánh dấu partial thay vì giả định vốn bằng giao dịch mua.
-- UI tải lười tại trang Danh mục, cho chọn 20/30/60/120 phiên. Đường SVG tách segment qua điểm partial; summary và cảnh báo giữ `Chưa đủ dữ liệu` khi TWR không hợp lệ. Không thêm chart dependency hoặc polling.
+- Chuỗi bắt đầu tại hoạt động ledger đầu tiên; các phiên EOD trước giao dịch/dòng tiền/sự kiện đầu tiên không được biểu diễn thành điểm giá trị 0. Điểm partial trả lý do có cấu trúc `negative_cash_balance`, `missing_prices` hoặc `unresolved_event` để UI không gộp mọi lỗi thành “thiếu dữ liệu”.
+- UI tải lười tại trang Danh mục, cho chọn 20/30/60/120 phiên. Đường SVG tách segment qua điểm partial, có trục VND và label bàn phím cho từng điểm. Khi không có điểm hoàn chỉnh, UI nêu nguyên nhân/hành động thay vì vẽ đường 0; TWR giữ `Chưa đủ dữ liệu`. Không thêm chart dependency hoặc polling.
 
 Contract cổ tức/corporate action đã được chốt tại [PORTFOLIO_EVENT_LEDGER_DESIGN.md](PORTFOLIO_EVENT_LEDGER_DESIGN.md): ledger append-only, core columns + payload versioned, entitlement snapshot, provenance và correction chain. Bước triển khai kế tiếp là migration/model/validator/API độc lập với valuation; chỉ sau khi event đã được reconcile và áp dụng vào daily valuation mới đánh giá MWR/XIRR và benchmark.
 

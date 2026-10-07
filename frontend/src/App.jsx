@@ -1,3 +1,5 @@
+import { translateDetail } from "./services/detailCatalog.mjs";
+import { formatMoney, formatNumber, formatDateTime } from "./services/userLocale.mjs";
 import AccountPanel from "./components/AccountPanel.jsx";
 import * as D from "react";
 import * as O from "react/jsx-runtime";
@@ -28,6 +30,7 @@ import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
 import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 import { sessionFetch } from "./services/cookieSession.mjs";
+import { translate } from "./services/i18n.mjs";
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t;
@@ -469,24 +472,29 @@ const xa = e => e == null ? "-" : new Intl.NumberFormat("vi-VN", {
     year: "numeric"
   }).format(new Date(e)) : "-";
 function Jm({
-  entries: e = []
+  entries: e = [],
+  language = "vi"
 }) {
   var n, t, r, l;
+  const translatePortfolio = (key, values) => translate(language, key, values),
+    portfolioMoney = value => value == null ? "-" : new Intl.NumberFormat(language === "en" ? "en-US" : "vi-VN", { maximumFractionDigits: 0 }).format(Number(value)) + " ₫",
+    portfolioDate = value => value ? new Intl.DateTimeFormat(language === "en" ? "en-US" : "vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "-";
   return O.jsxs("section", {
     className: "recommendation-tracking",
     "aria-labelledby": "recommendation-tracking-title",
+    lang: language,
     children: [O.jsxs("div", {
       className: "recommendation-tracking-heading",
       children: [O.jsxs("div", {
         children: [O.jsx("h3", {
           id: "recommendation-tracking-title",
-          children: "Theo dõi mã thêm từ đề xuất"
+          children: translatePortfolio("portfolio.tracking.title")
         }), O.jsx("p", {
-          children: "Mỗi giao dịch được liên kết với điểm, giá tham chiếu và kỳ hạn tại lúc bạn thêm mã."
+          children: translatePortfolio("portfolio.tracking.subtitle")
         })]
       }), O.jsxs("span", {
         className: "chip neutral",
-        children: [e.length, " giao dịch"]
+        children: [e.length, " ", translatePortfolio("portfolio.ledger.transactions")]
       })]
     }), e.length ? O.jsxs(i.Fragment, {
       children: [O.jsx("div", {
@@ -495,15 +503,15 @@ function Jm({
           children: [O.jsx("thead", {
             children: O.jsxs("tr", {
               children: [O.jsx("th", {
-                children: "Mã / đề xuất"
+                children: translatePortfolio("portfolio.tracking.symbolRecommendation")
               }), O.jsx("th", {
-                children: "Giá vào thực tế"
+                children: translatePortfolio("portfolio.tracking.entryPrice")
               }), O.jsx("th", {
-                children: "Giá hiện tại"
+                children: translatePortfolio("portfolio.tracking.currentPrice")
               }), O.jsx("th", {
-                children: "Biến động từ giá vào"
+                children: translatePortfolio("portfolio.tracking.entryChange")
               }), O.jsx("th", {
-                children: "Kết quả dự báo"
+                children: translatePortfolio("portfolio.tracking.forecast")
               })]
             })
           }), O.jsx("tbody", {
@@ -520,27 +528,27 @@ function Jm({
                   children: [O.jsx("strong", {
                     children: o.symbol
                   }), O.jsxs("small", {
-                    children: ["Điểm: ", Number(u.score || 0).toFixed(1), " - ", ja(u.generated_at)]
+                    children: [translatePortfolio("portfolio.tracking.score"), " ", Number(u.score || 0).toFixed(1), " - ", portfolioDate(u.generated_at)]
                   }), O.jsx("small", {
-                    children: o.position_status === "active" ? "Còn vị thế" : "Đúng / không còn vị thế"
+                    children: translatePortfolio(o.position_status === "active" ? "portfolio.tracking.active" : "portfolio.tracking.closed")
                   })]
                 }), O.jsxs("td", {
-                  children: [xa(o.actual_entry_price), O.jsx("small", {
-                    children: ja(o.traded_at)
+                  children: [portfolioMoney(o.actual_entry_price), O.jsx("small", {
+                    children: portfolioDate(o.traded_at)
                   })]
                 }), O.jsxs("td", {
-                  children: [xa(f), O.jsx("small", {
-                    children: c ? `Intraday · ${ja(c.observed_at)}` : "Giá EOD"
+                  children: [portfolioMoney(f), O.jsx("small", {
+                    children: c ? `Intraday · ${portfolioDate(c.observed_at)}` : translatePortfolio("portfolio.positions.eod")
                   })]
                 }), O.jsx("td", {
                   className: j == null ? "" : j >= 0 ? "positive" : "negative",
-                  children: j == null ? "Chưa có giá" : `${j >= 0 ? "+" : ""}${j.toFixed(2)}%`
+                  children: j == null ? translatePortfolio("portfolio.tracking.noPrice") : `${j >= 0 ? "+" : ""}${j.toFixed(2)}%`
                 }), O.jsxs("td", {
                   children: [O.jsx("span", {
                     className: `recommendation-outcome is-${y}`,
-                    children: a.status === "pending" ? `Đang chờ ${a.sessions_observed || 0}/${a.horizon_days || u.horizon_days} phiên` : a.outcome === "positive" ? `Đúng chiều · +${Number(a.forward_return_pct).toFixed(2)}%` : a.outcome === "negative" ? `Ngược chiều · ${Number(a.forward_return_pct).toFixed(2)}%` : `Đi ngang · ${Number(a.forward_return_pct || 0).toFixed(2)}%`
+                    children: a.status === "pending" ? translatePortfolio("portfolio.tracking.pending", { observed: a.sessions_observed || 0, horizon: a.horizon_days || u.horizon_days }) : a.outcome === "positive" ? translatePortfolio("portfolio.tracking.positive", { value: Number(a.forward_return_pct).toFixed(2) }) : a.outcome === "negative" ? translatePortfolio("portfolio.tracking.negative", { value: Number(a.forward_return_pct).toFixed(2) }) : translatePortfolio("portfolio.tracking.flat", { value: Number(a.forward_return_pct || 0).toFixed(2) })
                   }), O.jsxs("small", {
-                    children: ["So giá tham chiếu ", xa(u.expected_entry_price), " sau ", a.horizon_days || u.horizon_days, " phiên"]
+                    children: translatePortfolio("portfolio.tracking.reference", { price: portfolioMoney(u.expected_entry_price), horizon: a.horizon_days || u.horizon_days })
                   })]
                 })]
               }, o.transaction_id);
@@ -549,11 +557,11 @@ function Jm({
         })
       }), O.jsxs("p", {
         className: "recommendation-tracking-note",
-        children: ["“Biến động từ giá vào” so giá hiện tại với giá trên giao dịch đã ghi nhận; đây không phải lãi/lỗ thực hiện. “Kết quả dự báo” so giá EOD ở phiên thứ ", ((t = (n = e[0]) == null ? void 0 : n.evaluation) == null ? void 0 : t.horizon_days) || ((l = (r = e[0]) == null ? void 0 : r.recommendation) == null ? void 0 : l.horizon_days) || 20, " với giá tham chiếu lúc đề xuất. Trạng thái chờ tự cập nhật khi có đủ phiên."]
+        children: translatePortfolio("portfolio.tracking.note", { horizon: ((t = (n = e[0]) == null ? void 0 : n.evaluation) == null ? void 0 : t.horizon_days) || ((l = (r = e[0]) == null ? void 0 : r.recommendation) == null ? void 0 : l.horizon_days) || 20 })
       })]
     }) : O.jsx("p", {
       className: "recommendation-tracking-empty",
-      children: "Mã thêm từ trang đề xuất sẽ xuất hiện ở đây sau khi bạn lưu giao dịch. Những giao dịch cũ không có liên kết nguồn sẽ không được gán ngược thành giao dịch từ đề xuất."
+      children: translatePortfolio("portfolio.tracking.empty")
     })]
   });
 }
@@ -716,6 +724,24 @@ function lv() {
     ll = [...Vn].sort().join(",");
   const currentAuthRef = D.useRef(ue);
   currentAuthRef.current = ue;
+  const [authLanguage, setAuthLanguage] = D.useState(() => {
+    try { return localStorage.getItem("stockpilot-language") === "en" ? "en" : "vi"; } catch { return "vi"; }
+  });
+  const profileLanguage = ue?.user?.preferred_language || authLanguage;
+  const profileTimezone = ue?.user?.timezone || "Asia/Ho_Chi_Minh";
+  const tr = (key, values) => translate(profileLanguage, key, values);
+  const detailText = text => translateDetail(profileLanguage, text);
+  const detailMoney = value => value == null ? detailText("Chưa có dữ liệu") : formatMoney(value, profileLanguage);
+  const detailNumber = value => value == null ? "—" : formatNumber(value, profileLanguage, { maximumFractionDigits: 2 });
+  const detailTime = value => formatDateTime(value, profileLanguage, profileTimezone, { timeStyle: 'medium' });
+  const detailPercent = value => value == null ? "—" : `${Number(value) >= 0 ? "+" : ""}${detailNumber(value)}%`;
+  D.useEffect(() => {
+    document.documentElement.lang = "vi";
+    document.documentElement.dataset.locale = profileLanguage;
+    document.documentElement.dataset.timezone = profileTimezone;
+    try { localStorage.setItem("stockpilot-language", profileLanguage); } catch {}
+    if (authLanguage !== profileLanguage) setAuthLanguage(profileLanguage);
+  }, [authLanguage, profileLanguage, profileTimezone]);
   const endSession = (message = "", notice = "") => {
     clearStoredAuth();
     $r.current = null;
@@ -1146,7 +1172,7 @@ function lv() {
             A = Pc($),
             Z = A.find(de => String(de.code || de.symbol).toUpperCase() === S.toUpperCase()) || A[0];
           if (!Z) {
-            vt(p("Không thấy thư mục này trong danh sách."));
+            vt(tr("detail.symbolMissing", { symbol: S }));
             return;
           }
           ht(Z.id), tl(""), vt(""), Xe("detail");
@@ -1218,13 +1244,16 @@ function lv() {
       status: "verifying",
       message: ""
     }),
-    onSignIn: () => endSession("", "Vui lòng đăng nhập lại để tiếp tục.")
+    onSignIn: () => endSession("", "Vui lòng đăng nhập lại để tiếp tục."),
+    t: tr,
+    language: profileLanguage
   });
   if (!ue) return O.jsx("div", {
     className: "auth-page",
+    lang: profileLanguage,
     children: O.jsxs("section", {
       className: "auth-card panel",
-      children: [O.jsxs("div", {
+      children: [O.jsx("div", { className: "auth-language-switch", role: "group", "aria-label": tr("auth.language"), children: ["vi", "en"].map(language => O.jsx("button", { type: "button", className: profileLanguage === language ? "active" : "", "aria-pressed": profileLanguage === language, onClick: () => setAuthLanguage(language), children: language.toUpperCase() }, language)) }), O.jsxs("div", {
         className: "brand-block",
         children: [O.jsx("div", {
           className: "brand-mark",
@@ -1239,19 +1268,19 @@ function lv() {
         })]
       }), O.jsx("p", {
         className: "eyebrow accent",
-        children: p("Phân tích cá nhân")
+        children: tr("auth.kicker")
       }), O.jsx("h1", {
-        children: p(Un === "login" ? "Đăng nhập" : "Tạo tài khoản")
+        children: tr(Un === "login" ? "auth.loginTitle" : "auth.registerTitle")
       }), O.jsx("p", {
         className: "muted-text",
-        children: p("Đăng nhập để lưu watchlist và danh mục riêng.")
+        children: tr("auth.subtitle")
       }), O.jsxs("form", {
         onSubmit: Yh,
         className: "auth-form",
         "aria-busy": authSubmitting,
         children: [O.jsxs("label", {
-          children: [p("Email"), O.jsx("input", {
-            "aria-label": p("Email đăng nhập"),
+          children: [tr("auth.email"), O.jsx("input", {
+            "aria-label": tr("auth.emailAria"),
             type: "email",
             placeholder: "you@example.com",
             value: bn.email,
@@ -1265,6 +1294,7 @@ function lv() {
         }), O.jsx(AuthPasswordField, {
           value: bn.password,
           mode: Un,
+          t: tr,
           disabled: authSubmitting,
           onChange: d => Vt({
             ...bn,
@@ -1274,7 +1304,7 @@ function lv() {
           className: "primary-btn",
           type: "submit",
           disabled: authSubmitting,
-          children: p(authSubmitting ? Un === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : Un === "login" ? "Đăng nhập" : "Đăng ký")
+          children: tr(authSubmitting ? Un === "login" ? "auth.loggingIn" : "auth.registering" : Un === "login" ? "auth.login" : "auth.register")
         }), O.jsx("button", {
           className: "ghost-btn",
           type: "button",
@@ -1282,16 +1312,17 @@ function lv() {
           onClick: () => {
             ei(Un === "login" ? "register" : "login"), setAuthError(""), setAuthCredentialCleared(false), setAuthNotice(""), on("");
           },
-          children: p(Un === "login" ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")
+          children: tr(Un === "login" ? "auth.switchRegister" : "auth.switchLogin")
         }), authSubmitting && O.jsx("p", {
           className: "auth-submit-status",
           role: "status",
           "aria-live": "polite",
-          children: Un === "login" ? "Đang xác thực thông tin đăng nhập…" : "Đang tạo tài khoản an toàn…"
+          children: tr(Un === "login" ? "auth.loginStatus" : "auth.registerStatus")
         }), O.jsx(AuthErrorMessage, {
           message: authError || dt,
           mode: Un,
-          credentialCleared: authCredentialCleared
+          credentialCleared: authCredentialCleared,
+          t: tr
         }), authNotice && O.jsx("p", {
           className: "auth-session-notice",
           role: "status",
@@ -1316,12 +1347,12 @@ function lv() {
       return Number.isFinite($) && $ > d ? $ : d;
     }, 0);
   const pageTitles = {
-      overview: ["Tổng quan thị trường", "Tổng quan"],
-      "market-board": ["Bảng giá", "Bảng giá"],
-      portfolio: ["Danh mục cá nhân", "Danh mục"],
-      detail: ["Chi tiết mã", "Chi tiết mã"],
-      recommendations: ["Đề xuất", "Đề xuất"],
-      advisor: ["AI Advisor", "AI Advisor"]
+      overview: [tr("page.overview"), tr("nav.overview")],
+      "market-board": [tr("page.market"), tr("nav.market")],
+      portfolio: [tr("page.portfolio"), tr("nav.portfolio")],
+      detail: [tr("page.detail"), tr("nav.detail")],
+      recommendations: [tr("page.recommendations"), tr("nav.recommendations")],
+      advisor: [tr("page.advisor"), tr("nav.advisor")]
     },
     currentPageTitle = pageTitles[re] || pageTitles.overview,
     navigateToPage = view => {
@@ -1367,8 +1398,8 @@ function lv() {
       }), O.jsx("button", {
         type: "button",
         className: "sidebar-toggle",
-        title: yn ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng",
-        "aria-label": yn ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng",
+        title: tr(yn ? "nav.expand" : "nav.collapse"),
+        "aria-label": tr(yn ? "nav.expand" : "nav.collapse"),
         onClick: () => ni(d => !d),
         children: O.jsx("svg", {
           className: "sidebar-toggle-icon",
@@ -1381,7 +1412,8 @@ function lv() {
         })
       }), O.jsx("nav", {
         className: "nav",
-        children: [["overview", "Tổng quan", "-"], ["market-board", "Bảng giá", "-"], ["portfolio", "Danh mục cá nhân", "-"], ["detail", "Chi tiết mã", "-"], ["recommendations", "Đề xuất", "-"], ["advisor", "AI Advisor", "-"]].map(([d, S, $]) => O.jsx("button", {
+        lang: profileLanguage,
+        children: [["overview", "nav.overview"], ["market-board", "nav.market"], ["portfolio", "nav.portfolio"], ["detail", "nav.detail"], ["recommendations", "nav.recommendations"], ["advisor", "nav.advisor"]].map(([d, key]) => { const S = tr(key); return O.jsx("button", {
           className: `nav-item ${d === "market-board" ? "market-board-nav-item " : ""}${re === d ? "active" : ""}`,
           onClick: () => navigateToPage(d),
           title: S,
@@ -1394,13 +1426,13 @@ function lv() {
             })
           }), O.jsx("span", {
             className: "nav-label",
-            children: p(S)
+            children: S
           })]
-        }, d))
+        }, d) })
       }), O.jsx(AccountPanel, {
         user: ue?.user,
-        onSave: async displayName => {
-          const response = await je("/api/auth/profile", { method: "PATCH", token: ue?.token, body: { display_name: displayName } });
+        onSave: async profile => {
+          const response = await je("/api/auth/profile", { method: "PATCH", token: ue?.token, body: profile });
           if (!response.user || typeof response.user.email !== "string") throw new Error("Không thể lưu thông tin. Vui lòng thử lại.");
           Bt(current => current ? { ...current, user: response.user } : current);
           return response.user;
@@ -1484,6 +1516,7 @@ function lv() {
         overviewQuotes: an,
         portfolioSymbols: [...gt],
         watchlistSymbols: [...yt],
+        language: profileLanguage,
         onOpenDetail: openMarketStock,
         onAddToWatchlist: addToWatchlist,
         onAddToPortfolio: stock => Ao({
@@ -1875,23 +1908,24 @@ function lv() {
         className: "personal-page",
         children: [Ir && O.jsx("p", {
           role: "status",
-          children: "Đang tải danh mục..."
+          children: tr("portfolio.loading")
         }), bt && O.jsxs("div", {
           role: "alert",
           children: [bt, O.jsx("button", {
             onClick: () => s(d => d + 1),
-            children: "Thử lại danh mục"
+            children: tr("portfolio.retry")
           })]
         }), O.jsxs("div", {
           className: "page-heading",
           children: [O.jsx("h2", {
-            children: p("Danh mục và theo dõi")
+            children: tr("portfolio.heading")
           }), O.jsx("p", {
-            children: p("Chỉ theo dõi giao dịch bên ngoài, không thực hiện mua bán trong ứng dụng.")
+            children: tr("portfolio.disclaimer")
           })]
         }), O.jsx(PortfolioSectionTabs, {
           active: portfolioTab,
           onChange: setPortfolioTab,
+          language: profileLanguage,
           counts: {
             overview: mi.length,
             transactions: ((pe == null ? void 0 : pe.transactions) || []).length,
@@ -1901,7 +1935,8 @@ function lv() {
         }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioPerformance, {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
-            loading: Ir
+            loading: Ir,
+            language: profileLanguage
           }), O.jsx("article", { className: "panel portfolio-panel", children: O.jsx(PortfolioPositions, {
               positions: mi,
               closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
@@ -1909,26 +1944,31 @@ function lv() {
               error: bt,
               onOpenDetail: openLinkedStock,
               watchlistSymbols: [...yt],
-              onAddToWatchlist: addToWatchlist
+              onAddToWatchlist: addToWatchlist,
+              language: profileLanguage,
+              timezone: profileTimezone
             }) }), O.jsx(PortfolioAllocation, {
             allocations: Wt,
             positions: mi,
             quoteCount: Oo.filter(symbol => di[symbol]).length,
             positionCount: Oo.length,
             quoteError: Qh,
-            providerStatus: hi == null ? void 0 : hi.status
+            providerStatus: hi == null ? void 0 : hi.status,
+            language: profileLanguage
           }), O.jsx(PortfolioPerformanceHistory, {
             token: ue.token,
             active: authVerification.status === "verified" && re === "portfolio",
-            refreshKey: pe
+            refreshKey: pe,
+            language: profileLanguage,
+            timezone: profileTimezone
           })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-transactions", "aria-labelledby": "portfolio-tab-transactions", hidden: portfolioTab !== "transactions", tabIndex: 0, children: [O.jsxs("article", { className: "panel portfolio-panel transaction-entry-panel", children: [O.jsx("h3", {
-              children: p("Ghi nhận giao dịch")
+              children: tr("portfolio.transaction.title")
             }), O.jsxs("form", {
               className: "transaction-form",
               onSubmit: Zh,
               children: [O.jsxs("label", {
-                children: [p("Mã cổ phiếu"), O.jsx("input", {
-                  "aria-label": p("Mã giao dịch"),
+                children: [tr("portfolio.transaction.symbol"), O.jsx("input", {
+                  "aria-label": tr("portfolio.transaction.symbolAria"),
                   value: Ie.symbol,
                   onChange: d => {
                     var S;
@@ -1942,7 +1982,7 @@ function lv() {
                   required: true
                 })]
               }), O.jsxs("label", {
-                children: [p("Loại giao dịch"), O.jsxs("select", {
+                children: [tr("portfolio.transaction.side"), O.jsxs("select", {
                   value: Ie.side,
                   onChange: d => kt({
                     ...Ie,
@@ -1951,14 +1991,14 @@ function lv() {
                   }),
                   children: [O.jsx("option", {
                     value: "BUY",
-                    children: p("Mua")
+                    children: tr("portfolio.transaction.buy")
                   }), O.jsx("option", {
                     value: "SELL",
-                    children: p("Bán")
+                    children: tr("portfolio.transaction.sell")
                   })]
                 })]
               }), O.jsxs("label", {
-                children: [p("Số lượng"), O.jsx("input", {
+                children: [tr("portfolio.transaction.quantity"), O.jsx("input", {
                   ref: xt,
                   type: "number",
                   min: "1",
@@ -1970,7 +2010,7 @@ function lv() {
                   required: true
                 })]
               }), O.jsxs("label", {
-                children: [p("Giá giao dịch (VND/cổ phiếu)"), O.jsx("input", {
+                children: [tr("portfolio.transaction.price"), O.jsx("input", {
                   type: "number",
                   value: Ie.price,
                   onChange: d => kt({
@@ -1984,7 +2024,7 @@ function lv() {
                 type: "submit",
                 disabled: transactionSubmitting,
                 "aria-busy": transactionSubmitting,
-                children: p(transactionSubmitting ? "Đang lưu…" : "Lưu giao dịch")
+                children: tr(transactionSubmitting ? "portfolio.transaction.saving" : "portfolio.transaction.save")
               })]
             }), dt && O.jsx("p", {
               role: "status",
@@ -1993,12 +2033,16 @@ function lv() {
             entries: (pe == null ? void 0 : pe.transactions) || [],
             onImport: importPortfolioTransactions,
             onUpdate: updatePortfolioTransaction,
-            onDelete: deletePortfolioTransaction
-          }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
+            onDelete: deletePortfolioTransaction,
+            language: profileLanguage,
+            timezone: profileTimezone
+          }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf, language: profileLanguage }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
             entries: (pe == null ? void 0 : pe.cash_flows) || [],
             onCreate: createPortfolioCashFlow,
             onUpdate: updatePortfolioCashFlow,
-            onDelete: deletePortfolioCashFlow
+            onDelete: deletePortfolioCashFlow,
+            language: profileLanguage,
+            timezone: profileTimezone
           })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-watchlist", "aria-labelledby": "portfolio-tab-watchlist", hidden: portfolioTab !== "watchlist", tabIndex: 0, children: [O.jsx(WatchlistPanel, {
             entries: pt,
             addValue: Jr,
@@ -2007,45 +2051,50 @@ function lv() {
             onOpenDetail: d => {
               d && (ht(d), Xe("detail"));
             },
-            onRemove: rf
+            onRemove: rf,
+            language: profileLanguage
           })] })]
       }), re === "detail" && O.jsxs("section", {
         className: "detail-page",
+        lang: profileLanguage,
         children: [O.jsx(DetailSymbolSearch, {
           value: nl,
           options: si,
           error: rl,
           onChange: tl,
-          onSubmit: tf
+          onSubmit: tf,
+          translate: detailText
         }), Ee.status === "loading" ? O.jsx("div", {
           className: "loading-shell",
           children: O.jsx("p", {
-            children: p("Đang tải chi tiết cổ phiếu")
+            children: detailText("Đang tải chi tiết cổ phiếu")
           })
         }) : Ee.error ? O.jsxs("div", {
           className: "error-banner",
           role: "alert",
           children: [O.jsxs("p", {
-            children: [p("Không thể tải chi tiết cổ phiếu"), ". ", Ee.error]
+            children: [detailText("Không thể tải chi tiết cổ phiếu"), ". ", Ee.error]
           }), O.jsx("button", {
             className: "ghost-btn",
             onClick: Ee.retry,
-            children: p("Thử lại chi tiết")
+            children: detailText("Thử lại chi tiết")
           })]
         }) : Ee.data && O.jsxs(i.Fragment, {
-          children: [O.jsx(DetailSectionNav, {}), O.jsx("div", {
+          children: [O.jsx(DetailSectionNav, { translate: detailText }), O.jsx("div", {
             id: "detail-overview",
             className: "detail-section-anchor",
             tabIndex: -1,
             children: O.jsx(DetailHero, {
+              language: profileLanguage,
+              translate: detailText,
               symbol: Ee.data.code,
               name: Ee.data.name,
-              price: oe((Te == null ? void 0 : Te.price) ?? Ee.data.price),
+              price: detailMoney((Te == null ? void 0 : Te.price) ?? Ee.data.price),
               quote: Te ? {
                 ...Te,
-                fetchedAt: He(Te.fetched_at)
+                fetchedAt: detailTime(Te.fetched_at)
               } : null,
-              eodFetchedAt: He(Ee.data.data_fetched_at),
+              eodFetchedAt: detailTime(Ee.data.data_fetched_at),
               providerStatus: pi == null ? void 0 : pi.status,
               quoteError: qh,
               analysis: T,
@@ -2072,53 +2121,54 @@ function lv() {
               children: [O.jsxs("div", {
                 className: "panel-header",
                 children: [O.jsx("h3", {
-                  children: p("Lịch sử giá")
+                  children: detailText("Lịch sử giá")
                 }), O.jsx("span", {
                   className: `chip ${Te ? "success" : "neutral"}`,
-                  children: p(Te ? "Intraday + EOD" : "Dữ liệu EOD")
+                  children: detailText(Te ? "Intraday + EOD" : "Dữ liệu EOD")
                 }), O.jsxs("p", {
                   className: "chart-volume-note",
                   children: [O.jsxs("span", {
                     className: "volume-note rising",
-                    children: ["↑ ", p("Khối lượng phiên tăng")]
+                    children: ["↑ ", detailText("Khối lượng phiên tăng")]
                   }), O.jsxs("span", {
                     className: "volume-note falling",
-                    children: ["↓ ", p("Khối lượng phiên giảm")]
+                    children: ["↓ ", detailText("Khối lượng phiên giảm")]
                   })]
                 })]
               }), O.jsx(DetailPriceVolumeChart, {
+                language: profileLanguage,
                 history: ev(Ee.data.price_history || [], Te),
                 marketSessions: Ee.data.market_sessions || [],
                 formatDateKey: cr,
-                formatTime: He,
-                formatPrice: oe,
-                formatVolume: Et,
-                formatPercent: Hh,
-                translate: p
+                formatTime: detailTime,
+                formatPrice: detailMoney,
+                formatVolume: detailNumber,
+                formatPercent: detailPercent,
+                translate: detailText
               })]
             }), O.jsxs("article", {
               className: "panel summary-panel",
               children: [O.jsx("h3", {
-                children: p("AI nhận định")
+                children: detailText("AI nhận định")
               }), O.jsxs("ul", {
                 className: "summary-list",
                 children: [O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: p("Tín hiệu")
+                    children: detailText("Tín hiệu")
                   }), O.jsx("strong", {
-                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || p("Chưa có nhận định")
+                    children: ((Br = (br = T.data) == null ? void 0 : br.insight) == null ? void 0 : Br.label) || detailText("Chưa có nhận định")
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: p("RSI14")
+                    children: detailText("RSI14")
                   }), O.jsx("strong", {
-                    children: ((Hr = (Vr = T.data) == null ? void 0 : Vr.indicators) == null ? void 0 : Hr.rsi14) ?? Xn
+                    children: ((Hr = (Vr = T.data) == null ? void 0 : Vr.indicators) == null ? void 0 : Hr.rsi14) ?? detailText(Xn)
                   })]
                 }), O.jsxs("li", {
                   children: [O.jsx("span", {
-                    children: p("Quan sát")
+                    children: detailText("Quan sát")
                   }), O.jsxs("strong", {
-                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", p("phiên")]
+                    children: [((Qr = T.data) == null ? void 0 : Qr.observations) ?? 0, " ", detailText("phiên")]
                   })]
                 })]
               })]
@@ -2129,12 +2179,12 @@ function lv() {
             tabIndex: -1,
             children: [O.jsx(DetailAnalysisStatus, {
               analysis: T,
-              translate: p
+              translate: detailText
             }), T.data && O.jsxs("p", {
-              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || p("Chưa có nhận định"), " · ", p("Chất lượng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
+              children: [((Kr = T.data.insight) == null ? void 0 : Kr.label) || detailText("Chưa có nhận định"), " · ", detailText("Chất lượng"), ": ", ((Wr = T.data.quality) == null ? void 0 : Wr.score) ?? 0, "/100"]
             }), T.data && O.jsx("p", {
               className: "data-time",
-              children: ["Cập nhật phân tích: ", He((t = T.data.insight) == null ? void 0 : t.generated_at)]
+              children: [detailText("Cập nhật phân tích:") + " ", detailTime((t = T.data.insight) == null ? void 0 : t.generated_at)]
             }), ((r = T.data) == null ? void 0 : r.evaluation_factors) && O.jsx("div", {
               className: "evaluation-factors-grid",
               children: T.data.evaluation_factors.map(d => O.jsxs("div", {
@@ -2144,7 +2194,7 @@ function lv() {
                     children: d.label
                   }), O.jsx("span", {
                     className: `chip ${d.status === "verified" || d.status === "available" ? "success" : "neutral"}`,
-                    children: d.score == null ? "Chưa có điểm" : `${d.score}/100`
+                    children: d.score == null ? detailText("Chưa có điểm") : `${d.score}/100`
                   })]
                 }), O.jsx("p", {
                   children: d.detail
@@ -2166,18 +2216,18 @@ function lv() {
               asOf: T.data?.as_of,
               qualityScore: T.data?.quality?.score,
               indicators: T.data?.indicators,
-              translate: p,
-              formatDate: He
+              translate: detailText,
+              formatDate: detailTime
             }), O.jsx(DetailRiskPlan, {
               riskPlan: T.data?.risk_plan,
               normalizeRisk: Gh,
-              formatPrice: oe,
-              translate: p,
-              emptyValue: Xn
+              formatPrice: detailMoney,
+              translate: detailText,
+              emptyValue: detailText(Xn)
             }), O.jsx(DetailExternalFactors, {
               externalFactors: T.data?.external_factors,
-              translate: p,
-              formatDate: He
+              translate: detailText,
+              formatDate: detailTime
             })]
           })]
         })]

@@ -4,6 +4,7 @@ import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import useLiveQuotes from '../hooks/useLiveQuotes.js'
 import { requestJson, stockList } from '../services/api.mjs'
 import { SECTOR_OPTIONS } from '../constants/sectorOptions.mjs'
+import { translate } from '../services/i18n.mjs'
 import {
   MARKET_COLUMN_DEFINITIONS,
   MARKET_COLUMN_PRESETS,
@@ -16,11 +17,11 @@ import {
 const PAGE_SIZES = [25, 40, 50, 100]
 const SESSION_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
 
-const formatPrice = value => Number.isFinite(Number(value))
-  ? new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(value))
+const formatPrice = (value, language) => Number.isFinite(Number(value))
+  ? new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { maximumFractionDigits: 0 }).format(Number(value))
   : '—'
-const formatVolume = value => Number.isFinite(Number(value))
-  ? new Intl.NumberFormat('vi-VN', { notation: Number(value) >= 1_000_000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(Number(value))
+const formatVolume = (value, language) => Number.isFinite(Number(value))
+  ? new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { notation: Number(value) >= 1_000_000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(Number(value))
   : '—'
 const formatChange = value => Number.isFinite(Number(value)) ? `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)}%` : '—'
 const validHttpUrl = value => {
@@ -28,44 +29,45 @@ const validHttpUrl = value => {
 }
 const getSymbol = stock => String(stock.symbol || stock.code || stock.stock_code || '').toUpperCase()
 const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase()] || null
-const observedLabel = quote => quote?.observed_at
-  ? new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(quote.observed_at))
-  : 'EOD gần nhất'
-const todayLabel = () => new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
+const observedLabel = (quote, language, t) => quote?.observed_at
+  ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(quote.observed_at))
+  : t('market.latestEod')
+const todayLabel = language => new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
 
 function loadColumns() {
   try { return normalizeMarketColumns(JSON.parse(localStorage.getItem(MARKET_COLUMNS_KEY) || '{}')) } catch { return normalizeMarketColumns() }
 }
 
-function MarketTimeline({ rows }) {
+function MarketTimeline({ rows, language, t }) {
   const quoted = rows.filter(row => row.quote)
   const averagePrice = quoted.length ? quoted.reduce((sum, row) => sum + Number(row.price || 0), 0) / quoted.length : null
   const totalVolume = quoted.reduce((sum, row) => sum + Number(row.volume || 0), 0)
   const currentHour = new Date().getHours()
   const currentSlot = currentHour >= 13 ? Math.min(5, currentHour - 9) : Math.max(0, currentHour - 9)
-  return <section className="market-session-timeline" aria-label="Biến động giá và khối lượng trong ngày">
+  return <section className="market-session-timeline" aria-label={t('market.timelineAria')}>
     <div className="market-session-timeline-header">
       <div>
-        <div className="market-session-timeline-title"><span aria-hidden="true">⌁</span><strong>Biến động trong ngày · {todayLabel()}</strong></div>
-        <small>Một biểu đồ chung theo trục thời gian, phạm vi danh sách đang hiển thị</small>
-        <span className="market-session-updated">{quoted.length ? `Cập nhật ${observedLabel(quoted[0].quote)}` : 'Chưa có snapshot'}</span>
+        <div className="market-session-timeline-title"><span aria-hidden="true">⌁</span><strong>{t('market.timelineTitle')} · {todayLabel(language)}</strong></div>
+        <small>{t('market.timelineSubtitle')}</small>
+        <span className="market-session-updated">{quoted.length ? `${t('market.updated')} ${observedLabel(quoted[0].quote, language, t)}` : t('market.noSnapshot')}</span>
       </div>
-      <div className="market-session-timeline-legend"><span><i className="price-dot" />Giá</span><span><i className="volume-dot" />Khối lượng</span></div>
+      <div className="market-session-timeline-legend"><span><i className="price-dot" />{t('market.price')}</span><span><i className="volume-dot" />{t('market.volume')}</span></div>
     </div>
     <div className="market-session-timeline-grid">
       {SESSION_SLOTS.map((slot, index) => <article className={`market-session-slot ${index === currentSlot ? 'is-current' : ''}`} key={slot}>
         <strong>{slot}</strong>
         <div className="market-session-bars">
-          <div><i className="price-bar" style={{ height: averagePrice ? `${28 + index * 7}%` : '3px' }} /><span>Giá</span></div>
-          <div><i className="volume-bar" style={{ height: totalVolume ? `${20 + index * 9}%` : '3px' }} /><span>KL</span></div>
+          <div><i className="price-bar" style={{ height: averagePrice ? `${28 + index * 7}%` : '3px' }} /><span>{t('market.priceShort')}</span></div>
+          <div><i className="volume-bar" style={{ height: totalVolume ? `${20 + index * 9}%` : '3px' }} /><span>{t('market.volumeShort')}</span></div>
         </div>
-        <small className={`market-session-value ${quoted.length ? '' : 'market-session-empty'}`}>{quoted.length ? `${quoted.length} mã` : 'Chưa có dữ liệu'}</small>
+        <small className={`market-session-value ${quoted.length ? '' : 'market-session-empty'}`}>{quoted.length ? `${quoted.length} ${t('market.symbols')}` : t('market.noData')}</small>
       </article>)}
     </div>
   </section>
 }
 
-export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio, onAddToWatchlist }) {
+export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio, onAddToWatchlist, language = 'vi' }) {
+  const t = (key, values) => translate(language, key, values)
   const [query, setQuery] = useState('')
   const [queryInput, setQueryInput] = useState('')
   const [sector, setSector] = useState('')
@@ -190,7 +192,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         if (pinnedKey) params.set('pinned', pinnedKey)
         params.set('columns', ['name', 'volume'].filter(key => columns[key] !== false).join(','))
         const response = await fetch(`/api/stocks/export.csv?${params}`, { signal: AbortSignal.timeout(30000), headers: { Accept: 'text/csv' } })
-        if (!response.ok) throw new Error(`Không thể xuất toàn bộ kết quả. Vui lòng thử lại. (HTTP ${response.status})`)
+        if (!response.ok) throw new Error(t('market.exportFailed', { status: response.status }))
         const exportedCount = Number(response.headers.get('X-Export-Count'))
         const exportLimit = Number(response.headers.get('X-Export-Limit'))
         const truncated = response.headers.get('X-Export-Truncated') === 'true'
@@ -198,17 +200,17 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^";]+)"?/i)?.[1] || `stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv`
         downloadBlob(blob, filename)
         setExportNotice(truncated
-          ? `Đã xuất ${Number.isFinite(exportedCount) ? exportedCount : exportLimit} mã EOD; kết quả vượt giới hạn ${exportLimit} dòng. Hãy thu hẹp bộ lọc để lấy phần còn lại.`
-          : `Đã xuất ${Number.isFinite(exportedCount) ? exportedCount : 'toàn bộ'} mã EOD.`)
+          ? t('market.exportTruncated', { count: Number.isFinite(exportedCount) ? exportedCount : exportLimit, limit: exportLimit })
+          : t('market.exportDone', { count: Number.isFinite(exportedCount) ? exportedCount : t('market.exportAllDone') }))
       } catch (error) {
-        setExportError(error.name === 'TimeoutError' ? 'Xuất CSV quá thời gian chờ. Vui lòng thu hẹp bộ lọc và thử lại.' : error.message)
+        setExportError(error.name === 'TimeoutError' ? t('market.exportTimeout') : error.message)
       } finally {
         setExporting(false)
       }
       return
     }
-    const headers = ['Mã', 'Tên', 'Giá', 'Biến động', 'Khối lượng', 'Nguồn dữ liệu', 'Phân tích', 'Thao tác']
-    const csvRows = rows.map(row => [row.symbol, row.stock.name || '', formatPrice(row.price), formatChange(row.change), formatVolume(row.volume), '', '', ''])
+    const headers = ['market.symbol', 'market.name', 'market.price', 'market.change', 'market.volume', 'market.dataSource', 'market.analysis', 'market.actions'].map(key => t(key))
+    const csvRows = rows.map(row => [row.symbol, row.stock.name || '', formatPrice(row.price, language), formatChange(row.change), formatVolume(row.volume, language), '', '', ''])
     const blob = new Blob([serializeMarketBoardCsv({ headers, rows: csvRows, columns })], { type: 'text/csv;charset=utf-8' })
     downloadBlob(blob, `stockpilot-bang-gia-${new Date().toISOString().slice(0, 10)}.csv`)
   }
@@ -224,73 +226,73 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     onOpenDetail?.(stock)
   }
 
-  return <section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label="Bảng giá" data-react-market-board="true">
+  return <section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
     <div className="panel-header">
-      <h3>Danh sách cổ phiếu</h3>
+      <h3>{t('market.list')}</h3>
       <div className="table-tools overview-filter-row">
         <div className="table-tabs">
-          <button className="tab-btn active" type="button">Tất cả</button>
-          <select className="sector-select" aria-label="Nhóm ngành" value={sector} onChange={event => setSector(event.target.value)}>
-            {SECTOR_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+          <button className="tab-btn active" type="button">{t('market.all')}</button>
+          <select className="sector-select" aria-label={t('market.sector')} value={sector} onChange={event => setSector(event.target.value)}>
+            {SECTOR_OPTIONS.map(([value, label]) => <option value={value} key={value}>{t(`market.sector.${value || 'all'}`)}</option>)}
           </select>
         </div>
-        <input className="table-search app-search-input" type="search" aria-label="Tìm cổ phiếu" placeholder="Tìm mã hoặc tên công ty" value={queryInput} onChange={event => setQueryInput(event.target.value)} />
-        <span className="muted-text overview-original-result-count">{pagination.total || rows.length} mã</span>
-        {hasFilters && <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button>}
-        <label className="page-size-control"><span>Số mã / trang</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
+        <input className="table-search app-search-input" type="search" aria-label={t('market.search')} placeholder={t('market.searchPlaceholder')} value={queryInput} onChange={event => setQueryInput(event.target.value)} />
+        <span className="muted-text overview-original-result-count">{pagination.total || rows.length} {t('market.symbols')}</span>
+        {hasFilters && <button type="button" className="ghost-btn small-btn" onClick={clearFilters}>{t('market.clearFilters')}</button>}
+        <label className="page-size-control"><span>{t('market.pageSize')}</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       </div>
     </div>
     <div className="market-board-toolbar">
-      <div className="market-board-presets" role="group" aria-label="Preset cột Bảng giá">
-        <span>Hiển thị</span>
-        {MARKET_COLUMN_PRESETS.map(preset => <button key={preset.key} type="button" className={`market-board-preset${activePreset === preset.key ? ' is-active' : ''}`} aria-pressed={activePreset === preset.key} onClick={() => setColumns(normalizeMarketColumns(preset.columns))}>{preset.label}</button>)}
-        {activePreset === 'custom' && <span className="market-board-custom-state" role="status">Tùy chỉnh</span>}
+      <div className="market-board-presets" role="group" aria-label={t('market.columnPresets')}>
+        <span>{t('market.display')}</span>
+        {MARKET_COLUMN_PRESETS.map(preset => <button key={preset.key} type="button" className={`market-board-preset${activePreset === preset.key ? ' is-active' : ''}`} aria-pressed={activePreset === preset.key} onClick={() => setColumns(normalizeMarketColumns(preset.columns))}>{t(`market.preset.${preset.key}`)}</button>)}
+        {activePreset === 'custom' && <span className="market-board-custom-state" role="status">{t('market.custom')}</span>}
       </div>
       <details className="market-board-column-picker">
-        <summary>Tùy chỉnh cột</summary>
+        <summary>{t('market.customColumns')}</summary>
         <div className="market-board-column-menu">
-          {MARKET_COLUMN_DEFINITIONS.map(column => <label key={column.key}><input type="checkbox" checked={columns[column.key]} onChange={event => setColumns(current => ({ ...current, [column.key]: event.target.checked }))} />{column.label}</label>)}
-          <button type="button" className="ghost-btn small-btn" onClick={() => setColumns(normalizeMarketColumns())}>Khôi phục mặc định</button>
+          {MARKET_COLUMN_DEFINITIONS.map(column => <label key={column.key}><input type="checkbox" checked={columns[column.key]} onChange={event => setColumns(current => ({ ...current, [column.key]: event.target.checked }))} />{t(`market.column.${column.key}`)}</label>)}
+          <button type="button" className="ghost-btn small-btn" onClick={() => setColumns(normalizeMarketColumns())}>{t('market.restore')}</button>
         </div>
       </details>
-      <label className="market-board-export-scope"><span>Phạm vi xuất</span><select className="app-select" aria-label="Phạm vi xuất CSV" value={exportScope} onChange={event => setExportScope(event.target.value)}><option value="page">Trang hiện tại</option><option value="all">Toàn bộ kết quả (EOD)</option></select></label>
-      <button type="button" className="ghost-btn small-btn market-board-export" disabled={exporting} onClick={exportCsv}>{exporting ? 'Đang xuất…' : exportScope === 'all' ? 'Xuất toàn bộ CSV' : `Xuất CSV (${rows.length})`}</button>
+      <label className="market-board-export-scope"><span>{t('market.exportScope')}</span><select className="app-select" aria-label={t('market.exportScopeAria')} value={exportScope} onChange={event => setExportScope(event.target.value)}><option value="page">{t('market.currentPage')}</option><option value="all">{t('market.allResults')}</option></select></label>
+      <button type="button" className="ghost-btn small-btn market-board-export" disabled={exporting} onClick={exportCsv}>{exporting ? t('market.exporting') : exportScope === 'all' ? t('market.exportAll') : t('market.exportCount', { count: rows.length })}</button>
     </div>
     {exportError && <p className="error-text market-board-export-error" role="alert">{exportError}</p>}
     {exportNotice && <p className="market-board-export-notice" role="status">{exportNotice}</p>}
-    <p className="overview-data-status" role="status">{listState.loading && stocks.length ? 'Đang cập nhật danh sách…' : quoteState.error || (quoteState.loading ? 'Đang cập nhật Intraday…' : Object.keys(mergedQuotes).length ? 'Có dữ liệu intraday' : 'Đang dùng dữ liệu EOD')}</p>
-    <p className="overview-source-summary"><span className="overview-source-label">Nguồn dữ liệu</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : 'EOD gần nhất'}</span><span className="overview-source-description">Ưu tiên giá Intraday khi có sẵn; nếu không, dùng giá đóng cửa EOD gần nhất.</span><button className="overview-source-help" type="button" aria-label="Giải thích Intraday, EOD và dữ liệu cũ" title="Intraday: quote của phiên hiện tại. EOD: giá đóng cửa phiên gần nhất. Dữ liệu cũ: chưa có dữ liệu cho phiên chuẩn mới nhất.">?</button></p>
-    <MarketTimeline rows={rows} />
-    {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>Thử lại danh sách</button></p>}
-    <p id="market-board-scroll-hint" className="table-scroll-hint" role="note">Vuốt ngang trong bảng để xem đầy đủ giá, phân tích và thao tác; cột Mã được giữ cố định.</p>
+    <p className="overview-data-status" role="status">{listState.loading && stocks.length ? t('market.updatingList') : quoteState.error || (quoteState.loading ? t('market.updatingIntraday') : Object.keys(mergedQuotes).length ? t('market.hasIntraday') : t('market.usingEod'))}</p>
+    <p className="overview-source-summary"><span className="overview-source-label">{t('market.dataSource')}</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : t('market.latestEod')}</span><span className="overview-source-description">{t('market.sourceDescription')}</span><button className="overview-source-help" type="button" aria-label={t('market.sourceHelpAria')} title={t('market.sourceHelp')}>?</button></p>
+    <MarketTimeline rows={rows} language={language} t={t} />
+    {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>{t('market.retryList')}</button></p>}
+    <p id="market-board-scroll-hint" className="table-scroll-hint" role="note">{t('market.scrollHint')}</p>
     <div className="table-wrap" aria-busy={listState.loading}>
       <table aria-describedby="market-board-scroll-hint">
-        <caption className="sr-only">Bảng giá cổ phiếu, có thể sắp xếp theo mã hoặc khối lượng</caption>
+        <caption className="sr-only">{t('market.caption')}</caption>
         <thead><tr>
-          <th aria-sort={sort.key === 'symbol' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo mã" onClick={() => toggleSort('symbol')}>Mã {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
-          <th>Tên</th><th>Giá</th><th>Biến động</th>
-          <th aria-sort={sort.key === 'volume' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title="Sắp xếp theo khối lượng" onClick={() => toggleSort('volume')}>Khối lượng {sort.key === 'volume' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
-          <th>Nguồn dữ liệu</th><th>Phân tích</th><th>Thao tác</th>
+          <th aria-sort={sort.key === 'symbol' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title={t('market.sortSymbol')} onClick={() => toggleSort('symbol')}>{t('market.symbol')} {sort.key === 'symbol' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
+          <th>{t('market.name')}</th><th>{t('market.price')}</th><th>{t('market.change')}</th>
+          <th aria-sort={sort.key === 'volume' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button className="table-sort-btn" type="button" title={t('market.sortVolume')} onClick={() => toggleSort('volume')}>{t('market.volume')} {sort.key === 'volume' ? (sort.direction === 'asc' ? '↑' : '↓') : ''}</button></th>
+          <th>{t('market.dataSource')}</th><th>{t('market.analysis')}</th><th>{t('market.actions')}</th>
         </tr></thead>
         <tbody>{rows.length ? rows.map(row => <tr className={row.pinned ? 'pinned-stock' : ''} key={row.stock.id} tabIndex="0" onClick={() => onOpenDetail?.(row.stock)} onKeyDown={event => openRowWithKeyboard(event, row.stock)}>
-          <td className="market-symbol-cell"><button className="symbol" type="button" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock) }}>{row.symbol}</button>{row.pinned && <span className="pin-labels" aria-label={`Nhãn cá nhân của ${row.symbol}`}>{row.inPortfolio && <small className="pin-badge portfolio">Danh mục</small>}{row.inWatchlist && <small className="pin-badge watchlist">Watchlist</small>}</span>}</td>
+          <td className="market-symbol-cell"><button className="symbol" type="button" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock) }}>{row.symbol}</button>{row.pinned && <span className="pin-labels" aria-label={`${t('market.personalLabels')} ${row.symbol}`}>{row.inPortfolio && <small className="pin-badge portfolio">{t('market.portfolio')}</small>}{row.inWatchlist && <small className="pin-badge watchlist">Watchlist</small>}</span>}</td>
           <td>{validHttpUrl(row.stock.website_url)
             ? <a href={row.stock.website_url} target="_blank" rel="noreferrer" title={row.stock.website_url} onClick={event => event.stopPropagation()}>{row.stock.name || row.symbol}</a>
             : row.stock.name || row.symbol}</td>
-          <td>{formatPrice(row.price)}</td>
+          <td>{formatPrice(row.price, language)}</td>
           <td className={Number(row.change) > 0 ? 'positive' : Number(row.change) < 0 ? 'negative' : ''}>{formatChange(row.change)}</td>
-          <td><span className="volume-context" title={`Khối lượng giao dịch ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume)}</span></td>
-          <td className="data-time"><span>{observedLabel(row.quote)}</span></td>
-          <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label="Mở phân tích chuyên sâu" onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>Phân tích chuyên sâu</button></td>
-          <td><div className="stock-row-actions"><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={`Thêm ${row.symbol} vào danh mục`} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>Thêm</button><QuickWatchlistButton symbol={row.symbol} watched={row.inWatchlist} onAdd={onAddToWatchlist} /></div></td>
-        </tr>) : listState.error ? null : <tr><td colSpan="8"><div className="empty-state market-board-empty-state" role="status"><strong>{listState.loading ? 'Đang tải danh sách…' : hasFilters ? 'Không tìm thấy mã phù hợp' : 'Chưa có cổ phiếu trong dữ liệu'}</strong>{hasFilters && !listState.loading && <><span>Thử xóa bộ lọc hoặc tìm theo mã khác.</span><button type="button" className="ghost-btn small-btn" onClick={clearFilters}>Xóa bộ lọc</button></>}</div></td></tr>}</tbody>
+          <td><span className="volume-context" title={`${t('market.volume')} ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume, language)}</span></td>
+          <td className="data-time"><span>{observedLabel(row.quote, language, t)}</span></td>
+          <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label={t('market.openAnalysis')} onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>{t('market.deepAnalysis')}</button></td>
+          <td><div className="stock-row-actions"><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={t('market.addPortfolio', { symbol: row.symbol })} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>{t('market.add')}</button><QuickWatchlistButton language={language} symbol={row.symbol} watched={row.inWatchlist} onAdd={onAddToWatchlist} /></div></td>
+        </tr>) : listState.error ? null : <tr><td colSpan="8"><div className="empty-state market-board-empty-state" role="status"><strong>{t(listState.loading ? 'market.loading' : hasFilters ? 'market.noMatch' : 'market.empty')}</strong>{hasFilters && !listState.loading && <><span>{t('market.filterHint')}</span><button type="button" className="ghost-btn small-btn" onClick={clearFilters}>{t('market.clearFilters')}</button></>}</div></td></tr>}</tbody>
       </table>
     </div>
     <div className="table-pagination">
-      <span className="overview-pagination-count">Hiển thị {rows.length}/{pagination.total || rows.length} mã</span>
-      <label className="page-size-control overview-page-size-control"><span>Số mã mỗi trang</span><select className="app-select" value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
-      <div className="pagination-actions" role="navigation" aria-label="Phân trang Bảng giá"><button type="button" className="ghost-btn small-btn" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>Trước</button><span aria-live="polite">Trang {pagination.page || page}/{pagination.totalPages || 1}</span><button type="button" className="ghost-btn small-btn" aria-label="Trang sau" disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>Sau</button></div>
+      <span className="overview-pagination-count">{t('market.showing', { shown: rows.length, total: pagination.total || rows.length })}</span>
+      <label className="page-size-control overview-page-size-control"><span>{t('market.perPage')}</span><select className="app-select" value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
+      <div className="pagination-actions" role="navigation" aria-label={t('market.pagination')}><button type="button" className="ghost-btn small-btn" aria-label={t('market.previousAria')} disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>{t('market.previous')}</button><span aria-live="polite">{t('market.page', { page: pagination.page || page, total: pagination.totalPages || 1 })}</span><button type="button" className="ghost-btn small-btn" aria-label={t('market.nextAria')} disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>{t('market.next')}</button></div>
     </div>
-    <PageLoadingOverlay active={active && (listState.loading || quoteState.loading)} id="market-board-loading-overlay" className="market-board-loading-overlay" label="Đang cập nhật dữ liệu Bảng giá mới nhất…" />
+    <PageLoadingOverlay active={active && (listState.loading || quoteState.loading)} id="market-board-loading-overlay" className="market-board-loading-overlay" label={t('market.overlay')} />
   </section>
 }

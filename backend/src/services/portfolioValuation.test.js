@@ -40,6 +40,27 @@ test('marks legacy portfolios without funding as partial instead of publishing f
   expect(result.points[0]).toMatchObject({ status: 'partial', cash_balance: -100000, portfolio_value: null, daily_return_pct: null });
 });
 
+test('starts history at first portfolio activity and identifies an unfunded purchase', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 10, price: 10000, fees: 0, traded_at: '2026-10-02T02:00:00Z' }],
+    priceRows: prices,
+    sessionDates: ['2026-10-01', '2026-10-02', '2026-10-03']
+  });
+  expect(result.first_activity_date).toBe('2026-10-02');
+  expect(result.points.map(point => point.date)).toEqual(['2026-10-02', '2026-10-03']);
+  expect(result.coverage).toEqual({ sessions: 2, complete_sessions: 0, incomplete_sessions: 2 });
+  expect(result.points[0]).toMatchObject({ status: 'partial', incomplete_reasons: ['negative_cash_balance'] });
+});
+
+test('reports missing prices separately from cash and unresolved events', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [{ stock_id: 's', side: 'BUY', quantity: 1, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],
+    cashFlows: [{ type: 'DEPOSIT', amount: 10000, occurred_at: '2026-10-01T01:00:00Z' }],
+    priceRows: [prices[0]], sessionDates: ['2026-10-01', '2026-10-02']
+  });
+  expect(result.points[1].incomplete_reasons).toEqual(['missing_prices']);
+});
+
 test('requires every held symbol to have an exact session price', () => {
   const result = buildDailyValuationSeries({
     transactions: [{ stock_id: 's', side: 'BUY', quantity: 1, price: 10000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }, { stock_id: 'missing', side: 'BUY', quantity: 1, price: 5000, fees: 0, traded_at: '2026-10-01T02:00:00Z' }],

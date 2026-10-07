@@ -22,7 +22,6 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     if (!existing || observed > existing.observed || (observed === existing.observed && String(row.id || '') > String(existing.id || ''))) pricesByDate.get(date).set(String(row.stock_id), { price, observed, id: row.id });
   }
   const suppliedDates = sessionDates.map(value => String(value?.session_date || value)).filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value));
-  const dates = [...new Set(suppliedDates.length ? suppliedDates : [...pricesByDate.keys()])].sort().slice(-boundedSessions);
   const events = [
     ...transactions.map(row => ({ kind: 'trade', date: vietnamTradingDate(row.traded_at), time: new Date(row.traded_at).getTime(), row: asPlain(row) })),
     ...cashFlows.map(row => ({ kind: 'cash_flow', date: vietnamTradingDate(row.occurred_at), time: new Date(row.occurred_at).getTime(), row: asPlain(row) })),
@@ -31,6 +30,10 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
       return { kind: 'portfolio_event', date: String(actionDate || ''), time: Date.parse(`${actionDate}T00:00:00+07:00`), row };
     })
   ].filter(event => event.date && Number.isFinite(event.time)).sort((a, b) => a.time - b.time || (a.kind === 'cash_flow' ? -1 : 1));
+  const firstActivityDate = events[0]?.date || null;
+  const dates = [...new Set(suppliedDates.length ? suppliedDates : [...pricesByDate.keys()])]
+    .filter(date => !firstActivityDate || date >= firstActivityDate)
+    .sort().slice(-boundedSessions);
   const holdings = new Map();
   const costBasisByStock = new Map();
   let cash = 0; let eventIndex = 0; let previousValue = null; let cumulative = 1; let twrAvailable = true; let unresolvedEvent = false; const unresolvedEventIdsState = new Set();
@@ -96,7 +99,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
       } else twrAvailable = false;
     } else if (points.length && !complete) twrAvailable = false;
     unresolvedEventIds.push(...unresolvedEventIdsState);
-    points.push({ date, status: complete ? 'complete' : 'partial', portfolio_value: portfolioValue, market_value: missing.length ? null : marketValue, cash_balance: cash, total_cost_basis: totalCostBasis, external_cash_flow: externalFlow, dividend_income: dividendIncome, stock_event_adjustments: stockEventAdjustments, open_positions: active.length, priced_positions: active.length - missing.length, missing_stock_ids: missing, unresolved_event_ids: unresolvedEventIds, daily_return_pct: dailyReturnPct, cumulative_twr_pct: cumulativeReturnPct });
+    points.push({ date, status: complete ? 'complete' : 'partial', portfolio_value: portfolioValue, market_value: missing.length ? null : marketValue, cash_balance: cash, total_cost_basis: totalCostBasis, external_cash_flow: externalFlow, dividend_income: dividendIncome, stock_event_adjustments: stockEventAdjustments, open_positions: active.length, priced_positions: active.length - missing.length, missing_stock_ids: missing, unresolved_event_ids: unresolvedEventIds, incomplete_reasons: [...(cashDeficit ? ['negative_cash_balance'] : []), ...(missing.length ? ['missing_prices'] : []), ...(unresolvedEvent ? ['unresolved_event'] : [])], daily_return_pct: dailyReturnPct, cumulative_twr_pct: cumulativeReturnPct });
     previousValue = complete ? portfolioValue : null;
   }
   const completePoints = points.filter(point => point.status === 'complete').length;
@@ -110,6 +113,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     timezone: 'Asia/Ho_Chi_Minh',
     cash_flow_timing: 'beginning_of_session',
     requested_sessions: boundedSessions,
+    first_activity_date: firstActivityDate,
     coverage: { sessions: points.length, complete_sessions: completePoints, incomplete_sessions: points.length - completePoints },
     twr_available: canPublishTwr,
     cumulative_twr_pct: canPublishTwr ? points.at(-1).cumulative_twr_pct : null,

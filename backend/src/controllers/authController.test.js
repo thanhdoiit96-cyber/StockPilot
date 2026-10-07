@@ -29,6 +29,19 @@ const cookieMap = response => Object.fromEntries((response.headers['set-cookie']
 const cookieHeader = cookies => Object.entries(cookies).map(([key, value]) => `${key}=${value}`).join('; ');
 
 describe('cookie auth controller', () => {
+  test('updates only the authenticated profile and round-trips optional details', async () => {
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const send = body => request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send(body);
+    const updated = await send({ full_name: ' Nguyễn An ', phone: '+84 912 345 678', date_of_birth: '2000-02-29', id: 'other', role: 'admin', email_verified_at: new Date() });
+    expect(updated.status).toBe(200);
+    expect(updated.body.user).toMatchObject({ id: 'user-a', full_name: 'Nguyễn An', phone: '+84912345678', date_of_birth: '2000-02-29' });
+    expect(updated.body.user.role).not.toBe('admin');
+    const me = await request(app).get('/api/auth/me').set('Cookie', cookieHeader(cookies));
+    expect(me.body.user.full_name).toBe('Nguyễn An');
+    expect((await send({ phone: null })).body.user).toMatchObject({ full_name: 'Nguyễn An', phone: null });
+    expect(mockUser.findByPk).toHaveBeenLastCalledWith('user-a');
+  });
   test('pages sessions with an immutable creation cursor and rejects malformed cursors', async () => {
     const { Op } = require('sequelize');
     const { readCursor } = require('../services/sessionPagination');
@@ -229,5 +242,13 @@ describe('cookie auth controller', () => {
     expect(update.status).toBe(200);
     expect(update.body.user).toMatchObject({ display_name: 'Nhà đầu tư mẫu', email: 'investor@example.com' });
     expect(mockUser.findByPk.mock.results.at(-1).value).toBeDefined();
+  });
+  test('persists supported language and timezone without changing protected identity fields', async () => {
+    const login = await request(app).post('/api/auth/login').set('X-Auth-Mode', 'cookie-v1').send({ email: 'investor@example.com', password: 'password123' });
+    const cookies = cookieMap(login);
+    const update = await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send({ preferred_language: 'en', timezone: 'Asia/Singapore', role: 'admin' });
+    expect(update.status).toBe(200);
+    expect(update.body.user).toMatchObject({ preferred_language: 'en', timezone: 'Asia/Singapore', role: 'user' });
+    expect((await request(app).patch('/api/auth/profile').set('Cookie', cookieHeader(cookies)).set('X-CSRF-Token', cookies.sp_csrf).send({ timezone: 'Europe/London' })).status).toBe(400);
   });
 });

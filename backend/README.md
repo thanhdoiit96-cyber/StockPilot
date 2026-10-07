@@ -4,6 +4,8 @@ Hướng dẫn cài đặt, khởi chạy và kiểm tra nằm ở [QUICK_START]
 
 ## Thành phần
 
+Hồ sơ: migration 026 bổ sung `full_name`, `phone`, `date_of_birth` nullable; migration 027 bổ sung `preferred_language` và `timezone` có default. `/api/auth/profile` PATCH chỉ cập nhật các field hồ sơ được gửi; null xóa field tùy chọn, email/role không chỉnh sửa. Các response auth user gồm trường mới. Validation/ownership và giới hạn tại [thiết kế hồ sơ](../docs/PERSONAL_PROFILE_DESIGN.md).
+
 | Mã nguồn | Trách nhiệm |
 | --- | --- |
 | [src/app.js](src/app.js) | Khởi tạo Express, middleware, kết nối database, cache và routes; lắng nghe PORT, mặc định 5000 |

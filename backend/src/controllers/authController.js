@@ -11,8 +11,9 @@ const { cookieNames, parseCookies, setSessionCookies, clearSessionCookies } = re
 const { AuthSessionError, sameHash, sessionService } = require('../services/authSessionService');
 
 const router = express.Router();
+const { profileDetails } = require('../services/profileDetails');
 const sessions = sessionService({ AuthSession, sequelize });
-const publicUser = user => ({ id: user.id, email: user.email, role: user.role, display_name: user.display_name || null, email_verified_at: user.email_verified_at || null });
+const publicUser = user => ({ id: user.id, email: user.email, role: user.role, display_name: user.display_name || null, full_name: user.full_name || null, phone: user.phone || null, date_of_birth: user.date_of_birth || null, preferred_language: user.preferred_language || 'vi', timezone: user.timezone || 'Asia/Ho_Chi_Minh', email_verified_at: user.email_verified_at || null });
 const issue = user => jwt.sign({ sub: user.id, email: user.email, role: user.role, pv: user.password_version || 0 }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.JWT_EXPIRES_IN || process.env.JWT_EXPIRATION || '2h' });
 const issueAccess = (user, sid) => jwt.sign({ sub: user.id, sid, email: user.email, role: user.role }, process.env.JWT_SECRET || 'development-only-change-me', { expiresIn: process.env.AUTH_ACCESS_EXPIRES_IN || '15m' });
 const wantsCookieSession = req => req.get('x-auth-mode') === 'cookie-v1';
@@ -104,19 +105,16 @@ router.get('/me', requireAuth, async (req, res) => {
   return res.json({ success: true, user: publicUser(user) });
 });
 
-router.patch('/profile', requireAuth, async (req, res) => {
-  if (!req.body || !Object.prototype.hasOwnProperty.call(req.body, 'display_name') ||
-      (req.body.display_name !== null && typeof req.body.display_name !== 'string')) {
-    return res.status(400).json({ success: false, message: 'Tên hiển thị phải là văn bản; dùng null để xóa tên.' });
-  }
-  const displayName = req.body.display_name === null ? null : req.body.display_name.trim();
-  if (displayName !== null && (!displayName || displayName.length > 120)) {
-    return res.status(400).json({ success: false, message: 'Tên hiển thị phải dài từ 1 đến 120 ký tự' });
-  }
+router.patch('/profile', requireAuth, async (req, res, next) => {
+  let changes;
+  try { changes = profileDetails(req.body); }
+  catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+  try {
   const user = await User.findByPk(req.user.sub);
   if (!user) return res.status(404).json({ success: false, message: 'User không tồn tại' });
-  await user.update({ display_name: displayName });
+  await user.update({ ...changes, updated_at: new Date() });
   return res.json({ success: true, user: publicUser(user) });
+  } catch (error) { next(error); }
 });
 
 const passwordLimiter = rateLimit({

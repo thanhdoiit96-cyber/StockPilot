@@ -32,6 +32,28 @@ async function main() {
       await require(`../src/migrations/${file}`).up(db.getQueryInterface(), Sequelize);
     }
     console.log('PASS: isolated core schema migrations, recommendation provenance, and stock listing metadata migrations');
+    // Sequelize addColumn qualifies string table names as public. Bind these
+    // migration operations explicitly to the disposable schema.
+    const profileInterface = {
+      sequelize: db,
+      addColumn: (table, name, definition, options) => db.getQueryInterface().addColumn({ tableName: table, schema }, name, definition, options)
+    };
+    await require('../src/migrations/021_add_user_profile_details').up(profileInterface, Sequelize);
+    await require('../src/migrations/022_add_password_version').up(profileInterface, Sequelize);
+    await require('../src/migrations/026_expand_personal_profile').up(profileInterface, Sequelize);
+    await require('../src/migrations/027_add_user_locale_preferences').up(profileInterface, Sequelize);
+    const ProfileUser = require('../src/models/User')(db, DataTypes);
+    const profile = await ProfileUser.create({ email: `profile-${randomUUID()}@example.test`, password_hash: 'test-only', full_name: 'Nguyễn An', phone: '+84912345678', date_of_birth: '2000-02-29', preferred_language: 'en', timezone: 'Asia/Bangkok' });
+    await profile.reload();
+    assert.equal(profile.date_of_birth, '2000-02-29');
+    assert.equal(profile.full_name, 'Nguyễn An');
+    assert.equal(profile.preferred_language, 'en');
+    assert.equal(profile.timezone, 'Asia/Bangkok');
+    await profile.update({ phone: null });
+    await profile.reload();
+    assert.equal(profile.phone, null);
+    assert.equal(profile.full_name, 'Nguyễn An');
+    console.log('PASS: personal profile migration and PostgreSQL DATEONLY/nullable persistence');
 
     const Stock = require('../src/models/Stock')(db, DataTypes);
     const StockPrice = require('../src/models/StockPrice')(db, DataTypes);

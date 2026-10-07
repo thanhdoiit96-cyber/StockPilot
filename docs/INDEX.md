@@ -14,6 +14,8 @@ Người mới bắt đầu từ [README](../README.md), chạy ứng dụng the
 | Ưu tiên, mốc phát triển và tiêu chí nghiệm thu | [ROADMAP](ROADMAP.md) |
 | Hợp đồng, adapter và ingestion dữ liệu thị trường | [MARKET_DATA_CONTRACT](MARKET_DATA_CONTRACT.md) |
 | Cấu trúc backend, API và cache hiện có | [Backend README](../backend/README.md) |
+| Contract hồ sơ cá nhân, validation và giới hạn giai đoạn 1 | [PERSONAL_PROFILE_DESIGN](PERSONAL_PROFILE_DESIGN.md) |
+| Quyết định catalog và lộ trình giao diện Việt/Anh | [I18N_DESIGN](I18N_DESIGN.md) |
 | Cấu trúc và hành vi frontend hiện có | [Frontend README](../frontend/README.md) |
 | Nguồn gốc khôi phục source UI | [Source recovery](../frontend/recovery/README.md) |
 

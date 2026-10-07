@@ -2,7 +2,17 @@
 
 Ứng dụng React 18/Vite, viết bằng JavaScript và CSS. Cách chạy và build nằm ở [QUICK_START](../QUICK_START.md); kết quả kiểm tra và công việc tiếp theo nằm ở [PROJECT_STATUS](../docs/PROJECT_STATUS.md).
 
+Điều hướng responsive: trên 960px sidebar sticky và có thể thu gọn; từ 960px trở xuống sidebar nằm trong luồng trang, menu ngang luôn hiện nhãn và ẩn toggle desktop. Tài khoản vẫn truy cập được bằng bàn phím, preference thu gọn được giữ khi trở lại desktop. Trên mobile cần cuộn lên đầu để chuyển trang; không dùng sidebar overlay che form/biểu đồ.
+
 Trang Danh mục cá nhân gồm Tổng quan, Giao dịch, Dòng tiền, Watchlist. Tổng quan hiển thị kết quả, vị thế/phân bổ trước lịch sử TWR/MWR; Giao dịch gồm form, nhật ký CSV và theo dõi đề xuất. Các panel giữ mounted và dùng `hidden`, nên chuyển tab giữ bộ lọc, bản nháp, trạng thái mutation và khoảng lịch sử mà không gọi lại history chỉ vì chuyển tab. State ở bộ nhớ, không phục hồi sau reload hoặc rời trang. Mũi tên trái/phải và Home/End chọn tab; `aria-controls` liên kết từng panel riêng. Mobile dùng hai cột để thấy đủ bốn tab. Nút thêm từ Bảng giá/Đề xuất/Chi tiết mở đúng tab Giao dịch.
+
+AccountPanel cho sửa tên hiển thị, họ tên, điện thoại, ngày sinh, ngôn ngữ định dạng và múi giờ bằng một lần lưu; hoàn tác và dirty guard áp dụng cho toàn bộ hồ sơ. Điện thoại chưa xác minh, không dùng đăng nhập/khôi phục; email chỉ đọc. Preference áp dụng cho formatter Danh mục; `html[lang]` vẫn là `vi` đến khi catalog English hoàn chỉnh, tránh screen reader phát âm sai. Form Giao dịch dùng input/select 44px, focus rõ, font số tabular; không đổi giá trị số bằng dấu phân cách trình bày.
+
+Catalog `src/services/i18n.mjs` hiện phủ đăng nhập, xác minh phiên, điều hướng, tiêu đề và toàn bộ page Danh mục bằng `vi/en`: tab, vị thế/phân bổ, giá vốn, TWR/MWR, giao dịch/CSV, dòng tiền, Watchlist, loading/empty/error cục bộ và dialog mutation. Bảng giá đã dịch toolbar, bộ lọc, cột, xuất CSV trang hiện tại và trạng thái; Chi tiết mã dùng adapter `detailCatalog.mjs` cho nhãn, tìm kiếm, điều hướng, biểu đồ và khung phân tích. Nội dung phân tích/lỗi từ backend và CSV toàn bộ kết quả giữ contract/ngôn ngữ nguồn. Khách chọn ngôn ngữ ngay ở auth và giữ qua reload; tài khoản đã đăng nhập ưu tiên `preferred_language`. Catalog có unit test parity/fallback, hỗ trợ placeholder có biến và không phát sinh request hoặc dependency. Các page dashboard chưa catalog hóa giữ tiếng Việt và `html[lang=vi]`; vùng đã dịch khai báo `lang` tương ứng.
+
+Biểu đồ “Giá trị và hiệu suất theo ngày” dùng area gradient và marker HTML 6px đặt trên SVG để giữ hình tròn khi chart co giãn. Marker có label, focus ring và tooltip nhưng không đổi kích thước khi tương tác; đường dữ liệu vẫn ngắt tại phiên valuation chưa hoàn chỉnh.
+
+Form Giao dịch, form Nạp/Rút tiền và hộp thoại sửa dòng tiền dùng chung style input/select: chiều cao 44px, nền tối, focus rõ và font 16px trên mobile. Giá trị số và payload giữ nguyên.
 
 Hồ sơ có xác nhận bỏ bản nháp trong dialog khi đóng/đăng xuất và cảnh báo trình duyệt khi tải lại trong lúc chưa lưu. Bản nháp chỉ ở bộ nhớ; không được phục hồi sau khi xác nhận rời trang. Escape hủy xác nhận và trả focus về trường tên.
 
@@ -143,4 +153,4 @@ Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/
 [market-board-productivity.spec.mjs](e2e/market-board-productivity.spec.mjs) kiểm tra sticky mã, persistence cấu hình cột, nội dung CSV và budget tương tác fixture 300/500 mã. Số đo này chỉ là regression baseline cục bộ với mock API, không phải SLA production.
 # Daily portfolio performance
 
-The Portfolio page lazily requests `/api/portfolio/performance/history` only while the authenticated portfolio view is active. Users can inspect 20, 30, 60 or 120 stored sessions. The lightweight SVG chart does not connect across partial valuation gaps, and TWR remains explicitly unavailable unless the backend marks the full range complete. Portfolio mutations refresh the portfolio object and therefore the history without polling.
+The Portfolio page lazily requests `/api/portfolio/performance/history` only while the authenticated portfolio view is active. Users can inspect 20, 30, 60 or 120 stored sessions. History starts at the first ledger activity rather than drawing pre-activity zeroes. The lightweight SVG chart has a compact VND axis and keyboard-readable points, does not connect across partial valuation gaps, and explains negative cash, missing prices, or unresolved events separately. TWR remains explicitly unavailable unless the backend marks the full range complete. Portfolio mutations refresh the portfolio object and therefore the history without polling.

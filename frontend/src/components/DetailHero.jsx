@@ -9,7 +9,7 @@ const safeExternalUrl = value => {
   }
 }
 
-export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, providerStatus, quoteError, analysis, onRequestAnalysis, onAddToPortfolio, onAddToWatchlist, watched }) {
+export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, providerStatus, quoteError, analysis, onRequestAnalysis, onAddToPortfolio, onAddToWatchlist, watched, language = 'vi', translate = value => value }) {
   const licenseUrl = safeExternalUrl(quote?.license_url)
   const statusMessage = providerStatus === 'circuit_open'
     ? 'Provider tạm ngắt; giá gần nhất vẫn được giữ và sẽ tự thử lại.'
@@ -23,14 +23,14 @@ export default function DetailHero({ symbol, name, price, quote, eodFetchedAt, p
     <h2>{symbol} {name}</h2>
     <strong>{price}</strong>
     <p>{quote
-      ? <><span className="chip success">Giá intraday</span> Cập nhật: {quote.fetchedAt} ({quote.upstream}) {licenseUrl && <a className="source-link" href={licenseUrl} target="_blank" rel="noopener noreferrer">Giấy phép dữ liệu</a>}</>
-      : <>Giá đóng cửa EOD Cập nhật: {eodFetchedAt}</>}</p>
-    {statusMessage && <p className="data-time">{statusMessage}</p>}
+      ? <><span className="chip success">{translate('Giá intraday')}</span> {translate('Cập nhật:')} {quote.fetchedAt} ({quote.upstream}) {licenseUrl && <a className="source-link" href={licenseUrl} target="_blank" rel="noopener noreferrer">{translate('Giấy phép dữ liệu')}</a>}</>
+      : <>{translate('Giá đóng cửa EOD')} {translate('Cập nhật:')} {eodFetchedAt}</>}</p>
+    {statusMessage && <p className="data-time">{translate(statusMessage)}</p>}
     <div className="detail-actions">
-      <button className="ghost-btn detail-analysis-btn" type="button" onClick={onRequestAnalysis}>{analysis.status === 'loading' ? 'Đang phân tích...' : analysis.data ? 'Cập nhật phân tích' : 'Phân tích chuyên sâu'}</button>
-      <button className="primary-btn detail-add-btn" type="button" onClick={onAddToPortfolio}>Thêm vào danh mục</button>
-      <QuickWatchlistButton symbol={symbol} watched={watched} onAdd={onAddToWatchlist} className="detail-watchlist-btn" />
+      <button className="ghost-btn detail-analysis-btn" type="button" onClick={onRequestAnalysis}>{translate(analysis.status === 'loading' ? 'Đang phân tích...' : analysis.data ? 'Cập nhật phân tích' : 'Phân tích chuyên sâu')}</button>
+      <button className="primary-btn detail-add-btn" type="button" onClick={onAddToPortfolio}>{translate('Thêm vào danh mục')}</button>
+      <QuickWatchlistButton language={language} symbol={symbol} watched={watched} onAdd={onAddToWatchlist} className="detail-watchlist-btn" />
     </div>
-    {analysis.data?.expert_guidance && <div className="detail-analysis-ready"><strong>Phân tích nâng cao đã sẵn sàng</strong><span>Điểm kỹ thuật {analysis.data.expert_guidance.technical_score ?? '-'} /100 · {analysis.data.expert_guidance.stance}</span></div>}
+    {analysis.data?.expert_guidance && <div className="detail-analysis-ready"><strong>{translate('Phân tích nâng cao đã sẵn sàng')}</strong><span>{translate('Điểm kỹ thuật')} {analysis.data.expert_guidance.technical_score ?? '-'} /100 · {analysis.data.expert_guidance.stance}</span></div>}
   </div>
 }

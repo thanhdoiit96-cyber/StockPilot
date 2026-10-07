@@ -26,6 +26,44 @@ async function boot(page, options = {}) {
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
 }
+for (const width of [390, 800, 900]) {
+  test(`mobile navigation stays in flow at ${width}px with a collapsed desktop preference`, async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.setItem('stockpilot-sidebar-collapsed', '1'))
+    await page.setViewportSize({ width, height: 844 })
+    await boot(page)
+    const sidebar = page.locator('.sidebar')
+    await expect(page.locator('.sidebar-toggle')).toBeHidden()
+    await expect(page.locator('.nav-label').first()).toBeVisible()
+    const geometry = () => page.evaluate(() => {
+      const nav = document.querySelector('.sidebar').getBoundingClientRect()
+      const main = document.querySelector('.main-panel').getBoundingClientRect()
+      return { separate: nav.bottom <= main.top + 1, compact: nav.height < 180, fits: document.documentElement.scrollWidth <= innerWidth, top: nav.top }
+    })
+    expect(await geometry()).toMatchObject({ separate: true, compact: true, fits: true })
+    const account = page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true })
+    await account.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(account).toBeFocused()
+    await page.keyboard.press('Enter')
+    await page.locator('#account-display-name').fill('Unsaved name')
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('alert', { name: 'Thay đổi chưa lưu' })).toBeVisible()
+    await page.getByRole('button', { name: 'Bỏ thay đổi và đóng', exact: true }).click()
+    await expect(account).toBeFocused()
+    await page.evaluate(() => window.scrollTo(0, 450))
+    await expect.poll(async () => (await geometry()).top).toBeLessThan(0)
+    expect(await geometry()).toMatchObject({ separate: true, fits: true })
+    await page.screenshot({ path: `test-results/navigation-${width}.png` })
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await expect(page.locator('.sidebar-toggle')).toBeVisible()
+    await expect(page.locator('.dashboard-shell')).toHaveClass(/sidebar-collapsed/)
+    await expect(page.locator('.nav-label').first()).toBeHidden()
+    expect(await sidebar.evaluate(node => getComputedStyle(node).position)).toBe('sticky')
+  })
+}
+
 test('overview keeps search and sector filter on one row', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)
@@ -142,7 +180,7 @@ test('quote requests are coalesced within the short cache window', async ({ page
 test('overview table controls expose keyboard focus states', async ({ page }) => {
   await boot(page)
   await expect(page.locator('tbody tr')).toHaveCount(2)
-  const search = page.getByRole('textbox', { name: 'Tìm cổ phiếu' })
+  const search = page.getByRole('searchbox', { name: 'Tìm cổ phiếu' })
   const sector = page.getByRole('combobox', { name: 'Nhóm ngành' })
   const sort = page.locator('.table-sort-btn').first()
   await search.focus()
