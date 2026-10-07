@@ -687,6 +687,10 @@ Tạm thời không mở rộng AI Advisor. Thứ tự ưu tiên mới:
 - Ưu tiên kế tiếp: trace trên runner phù hợp, tối ưu theo số liệu, bổ sung metrics request/worker và hoàn thiện E2E auth lifecycle.
 
 - Đã triển khai baseline metrics in-process tại `/api/ops/metrics` (admin-only), gồm request/status/error/auth/CORS counters và latency trung bình; collector tập trung và metrics worker chi tiết vẫn là bước vận hành tiếp theo.
+## Checkpoint error-code catalog — 2026-10-07
+
+Backend đã chuẩn hóa error code cho các luồng Auth, Recommendation, Portfolio và Market; frontend đã bắt đầu catalog Việt/Anh và nối Market Board list. Bước tiếp theo là nối catalog vào toàn bộ notification/error surface, sau đó thêm contract assertions.
+
 ## Cập nhật tài khoản — 2026-10-05
 
 - Tên phiên tùy chọn đã có migration/API/UI và live persistence smoke; không suy diễn tên thiết bị. Nhãn là nội dung người dùng đặt, không phải bằng chứng danh tính thiết bị.

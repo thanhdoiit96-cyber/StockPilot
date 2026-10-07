@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog lỗi API Việt/Anh cho frontend
+
+- Thêm catalog tĩnh `apiErrorCatalog` theo mã lỗi backend, phủ các mã Auth, Portfolio, Recommendation và Market đã chuẩn hóa; giữ fallback về message server khi mã chưa biết.
+- Nối `MarketBoardPage` với catalog theo ngôn ngữ hiện tại để lỗi tải danh sách hiển thị nhất quán.
+- Kiểm chứng: frontend unit 57/57, encoding check 82 file, build và bundle integrity đạt; Preview 4173 cần xác nhận sau build.
+- Giới hạn: các notification/error surface còn lại vẫn hiển thị message thô; chưa chạy live auth/backend smoke trong lát cắt này.
+- Tiếp tục: áp dụng mapper cho Auth/Portfolio/Recommendation và bổ sung contract assertion để khóa parity mã lỗi backend–frontend.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
