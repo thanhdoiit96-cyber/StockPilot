@@ -67,6 +67,13 @@
 - Kiểm chứng: **2/2 browser tests pass**.
 - Tiếp tục: mở rộng Portfolio mutation smoke từ message thô sang error code catalog.
 
+## 2026-10-07 — Bảo toàn error code trong App request wrapper
+
+- Phát hiện `App.jsx` dùng wrapper `je` riêng, constructor `ApiError` không lưu `code`, khiến Portfolio mutation mất mã trước khi tới catalog.
+- Sửa wrapper để đọc `payload.code` và truyền vào `ApiError`; các domain dùng wrapper giờ giữ được contract như `requestJson`.
+- Kiểm chứng: frontend unit 58/58, contract 52 mã, build/bundle integrity đạt với `index-Cpkb5MuU.js`.
+- Tiếp tục: thêm lại Portfolio cash-flow mutation smoke sau khi fixture route ổn định, rồi mở rộng English.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.

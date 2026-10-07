@@ -33,7 +33,7 @@ import { sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
 class ur extends Error {
   constructor(n, t = null) {
-    super(n), this.name = "ApiError", this.status = t;
+    super(n), this.name = "ApiError", this.status = t, this.code = arguments[2] || null;
   }
 }
 async function je(e, {
@@ -67,13 +67,13 @@ async function je(e, {
     throw n != null && n.aborted || f.name === "AbortError" ? f : new ur("Không thể kết nối máy chủ. Vui lòng thử lại.");
   }
   if (!u.ok) {
-    let f = "";
+    let f = "", code = null;
     try {
-      f = (await u.clone().json()).message || "";
+      const payload = await u.clone().json(); f = payload.message || ""; code = typeof payload.code === "string" ? payload.code : null;
     } catch {}
     const k = u.status === 401 && /Invalid or expired token/i.test(f) ? "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại." : f || (u.status === 404 ? "Không tìm thấy dữ liệu được yêu cầu." : u.status === 429 ? "Có quá nhiều yêu cầu. Vui lòng chờ một chút rồi thử lại." : "Máy chủ không thể xử lý yêu cầu. Vui lòng thử lại.");
     u.status === 401 && l && notifySessionExpired(k);
-    throw new ur(`${k} (HTTP ${u.status})`, u.status);
+    throw new ur(`${k} (HTTP ${u.status})`, u.status, code);
   }
   if (u.status === 204) return {
     success: true,
