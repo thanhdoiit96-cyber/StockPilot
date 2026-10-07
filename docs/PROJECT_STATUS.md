@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Error-code domain Market
+
+- Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
+- Giữ nguyên status/message/data và các mã quote đã có; helper `httpError` chỉ thêm code. Một số lỗi validation admin/update còn chưa migrate vì không nằm trong luồng người dùng chính.
+- Kiểm chứng: backend Jest 250/250. Chưa chạy live provider; mã lỗi không thay đổi request/polling.
+- Tiếp tục: thêm contract assertions cho bảng mã, migrate các lỗi admin/update còn lại nếu cần, rồi nối mapping code → thông báo Việt/Anh trong frontend.
+
 ## 2026-10-07 — Hoàn tất error-code thao tác Portfolio
 
 - Transaction/import codes bổ sung: `portfolio_transaction_context_invalid`, `portfolio_transaction_invalid`, `portfolio_stock_not_found`, `portfolio_transaction_sell_exceeds_position`, `portfolio_transaction_not_found`, `portfolio_transaction_update_failed`, `portfolio_transaction_delete_failed`, `portfolio_transaction_import_failed`.

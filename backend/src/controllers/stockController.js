@@ -12,6 +12,7 @@ const { getEodRetryStatus } = require('../jobs/vnstockEodJob');
 const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const { serializeStockCsv } = require('../services/stockCsv');
+const { httpError } = require('../utils/httpError');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -135,7 +136,7 @@ module.exports = function(cacheService) {
       } });
     } catch (error) {
       console.error('[Stock Controller] Error checking market data quality:', error);
-      return res.status(500).json({ success: false, message: 'Unable to inspect market data quality' });
+      return httpError(res, 500, 'market_quality_failed', 'Unable to inspect market data quality');
     }
   });
 
@@ -212,7 +213,7 @@ module.exports = function(cacheService) {
       return res.json({ success: true, data, source: 'database' });
     } catch (error) {
       console.error('[Stock Controller] Error fetching market breadth history:', error);
-      return res.status(500).json({ success: false, message: 'Unable to fetch market breadth history' });
+      return httpError(res, 500, 'market_breadth_history_failed', 'Unable to fetch market breadth history');
     }
   });
 
@@ -303,7 +304,7 @@ module.exports = function(cacheService) {
       return res.send(csv);
     } catch (error) {
       console.error('[Stock Controller] Error exporting stocks:', error);
-      return res.status(500).json({ success: false, message: 'Error exporting stocks' });
+      return httpError(res, 500, 'market_export_failed', 'Error exporting stocks');
     }
   });
 
@@ -357,14 +358,14 @@ module.exports = function(cacheService) {
       res.json({ success: true, data: payload, pagination, source: 'database' });
     } catch (error) {
       console.error('[Stock Controller] Error fetching stocks:', error);
-      res.status(500).json({ success: false, message: 'Error fetching stocks' });
+      httpError(res, 500, 'market_list_failed', 'Error fetching stocks');
     }
   });
 
   router.get('/:id/analysis', async (req, res) => {
     try {
       const stock = await Stock.findByPk(req.params.id, { include: [{ association: 'prices', separate: true, where: { observed_at: { [Op.not]: null } }, order: [['observed_at', 'ASC NULLS LAST'], ['updated_at', 'ASC NULLS LAST'], ['id', 'ASC']], limit: 250 }] });
-      if (!stock) return res.status(404).json({ success: false, message: 'Stock not found' });
+      if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
       const rows = (stock.prices || []).map(entry => ({ close: entry.close ?? entry.price, price: entry.price, observed_at: entry.observed_at || entry.updated_at, fetched_at: entry.fetched_at || entry.updated_at || null, provider: entry.provider || null }));
       const analysisCacheKey = `v1:stock-analysis:${stock.id}:${rows.at(-1)?.observed_at || 'none'}:${rows.length}`;
       const cachedAnalysis = await cacheService.get(analysisCacheKey);
@@ -378,13 +379,13 @@ module.exports = function(cacheService) {
       const data = { symbol: stock.code, ...analysis, insight, quality, risk_plan: riskPlan, evaluation_factors: buildEvaluationFactors(analysis, externalFactors), horizon_advice: buildHorizonAdvice(analysis, riskPlan), expert_guidance: buildExpertGuidance(analysis, riskPlan), external_factors: buildExternalFactorSummary(externalFactors), source: rows[0]?.provider || null, fetched_at: rows.at(-1)?.fetched_at || null };
       await cacheService.set(analysisCacheKey, { data }, 5, 'stock_analysis');
       return res.json({ success: true, data, source: 'database' });
-    } catch (error) { console.error('[Stock Controller] Error analyzing stock:', error); return res.status(500).json({ success: false, message: 'Error analyzing stock' }); }
+    } catch (error) { console.error('[Stock Controller] Error analyzing stock:', error); return httpError(res, 500, 'market_analysis_failed', 'Error analyzing stock'); }
   });
 
   router.get('/:id/quote', async (req, res) => {
     try {
       const stock = await Stock.findByPk(req.params.id);
-      if (!stock) return res.status(404).json({ success: false, message: 'Stock not found' });
+      if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
       if (String(process.env.REALTIME_QUOTES_ENABLED || 'true').toLowerCase() === 'false') {
         return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
@@ -404,7 +405,7 @@ module.exports = function(cacheService) {
         return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
       const symbols = String(req.query.symbols || '').split(',').map(item => item.trim().toUpperCase()).filter(symbol => /^[A-Z0-9]{1,10}$/.test(symbol)).slice(0, 200);
-      if (!symbols.length) return res.status(400).json({ success: false, message: 'At least one symbol is required' });
+      if (!symbols.length) return httpError(res, 400, 'market_quote_symbols_required', 'At least one symbol is required');
       const quotes = await loadQuotes(symbols);
       res.set('Cache-Control', 'no-store');
       return res.json({ success: true, data: quotes, requested: symbols.length, returned: Object.keys(quotes).length });
@@ -423,17 +424,17 @@ module.exports = function(cacheService) {
       return res.json({ success: true, data: liveQuoteService.health() });
     } catch (error) {
       console.error('[Stock Controller] Error fetching intraday provider status:', error);
-      return res.status(500).json({ success: false, message: 'Unable to inspect realtime quote provider' });
+      return httpError(res, 500, 'market_quote_health_failed', 'Unable to inspect realtime quote provider');
     }
   });
 
   router.get('/:id/external-factors', async (req, res) => {
     try {
       const stock = await Stock.findByPk(req.params.id);
-      if (!stock) return res.status(404).json({ success: false, message: 'Stock not found' });
+      if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
       const factors = await ExternalFactor.findAll({ where: { [Op.or]: [{ symbol: stock.code }, { symbol: null }] }, order: [['published_at', 'DESC']], limit: 50 });
       return res.json({ success: true, data: factors.map(item => item.toJSON()), verified: factors.filter(item => item.status === 'verified').length });
-    } catch (error) { console.error('[Stock Controller] Error fetching external factors:', error); return res.status(500).json({ success: false, message: 'Error fetching external factors' }); }
+    } catch (error) { console.error('[Stock Controller] Error fetching external factors:', error); return httpError(res, 500, 'market_external_factors_failed', 'Error fetching external factors'); }
   });
 
   router.get('/:id', async (req, res) => {
@@ -453,7 +454,7 @@ module.exports = function(cacheService) {
       });
 
       if (!stock) {
-        return res.status(404).json({ success: false, message: 'Stock not found' });
+        return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
       }
 
       const [marketSessionRows] = await Stock.sequelize.query(`
@@ -496,7 +497,7 @@ module.exports = function(cacheService) {
       res.json({ success: true, data: payload, source: 'database' });
     } catch (error) {
       console.error('[Stock Controller] Error fetching stock:', error);
-      res.status(500).json({ success: false, message: 'Error fetching stock' });
+      httpError(res, 500, 'market_detail_failed', 'Error fetching stock');
     }
   });
 
@@ -512,7 +513,7 @@ module.exports = function(cacheService) {
 
       const stock = await Stock.findByPk(id);
       if (!stock) {
-        return res.status(404).json({ success: false, message: 'Stock not found' });
+        return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
       }
 
       const price = await StockPrice.findOne({
@@ -531,7 +532,7 @@ module.exports = function(cacheService) {
       res.json({ success: true, data: priceData, source: 'database' });
     } catch (error) {
       console.error('[Stock Controller] Error fetching price:', error);
-      res.status(500).json({ success: false, message: 'Error fetching price' });
+      httpError(res, 500, 'market_price_history_failed', 'Error fetching price');
     }
   });
 
@@ -569,7 +570,7 @@ module.exports = function(cacheService) {
       res.json({ success: true, data: stats });
     } catch (error) {
       console.error('[Stock Controller] Error fetching cache stats:', error);
-      res.status(500).json({ success: false, message: 'Error fetching cache stats' });
+      httpError(res, 500, 'market_cache_stats_failed', 'Error fetching cache stats');
     }
   });
 
@@ -579,7 +580,7 @@ module.exports = function(cacheService) {
       res.json({ success: true, message: 'Cache cleared' });
     } catch (error) {
       console.error('[Stock Controller] Error clearing cache:', error);
-      res.status(500).json({ success: false, message: 'Error clearing cache' });
+      httpError(res, 500, 'market_cache_clear_failed', 'Error clearing cache');
     }
   });
 
