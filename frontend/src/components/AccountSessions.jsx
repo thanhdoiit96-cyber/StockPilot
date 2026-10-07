@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { localizeApiError } from "../services/apiErrorCatalog.mjs";
 
 const dateLabel = value => {
   const date = new Date(value);
   return value && Number.isFinite(date.getTime()) ? date.toLocaleString("vi-VN") : "Chưa có thông tin";
 };
-export default function AccountSessions({ active, onLoad, onRevoke, onRename, onDirty, disabled }) {
+export default function AccountSessions({ active, onLoad, onRevoke, onRename, onDirty, disabled, language = 'vi' }) {
   const [editing, setEditing] = useState(null);
   const labelInput = useRef(null);
   useEffect(() => { if (editing) labelInput.current?.focus(); }, [editing?.id]);
@@ -31,7 +32,7 @@ export default function AccountSessions({ active, onLoad, onRevoke, onRename, on
         response.data.sessions.forEach(session => merged.set(session.id, session));
         return { ...response.data, sessions: [...merged.values()] };
       });
-    } catch (reason) { if (version.current === request) setError(reason.message || "Không thể tải phiên đăng nhập."); }
+    } catch (reason) { if (version.current === request) setError(localizeApiError(reason, language)); }
     finally { if (version.current === request) setLoading(false); }
   }
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function AccountSessions({ active, onLoad, onRevoke, onRename, on
       setNotice(sessionId ? "Đã đăng xuất phiên đã chọn. Các phiên khác vẫn được giữ." : "Đã đăng xuất các phiên khác. Phiên hiện tại vẫn được giữ.");
       await load();
       heading.current?.focus();
-    } catch (reason) { setError(reason.message || "Chưa thể đăng xuất các phiên khác."); }
+    } catch (reason) { setError(localizeApiError(reason, language)); }
     finally { setRevoking(false); }
   }
   async function rename(event) {
@@ -60,7 +61,7 @@ export default function AccountSessions({ active, onLoad, onRevoke, onRename, on
       setData(current => ({ ...current, sessions: current.sessions.map(session => session.id === editing.id ? { ...session, label: response.data.label } : session) }));
       setEditing(null); onDirty?.(false); setNotice("Đã lưu tên phiên đăng nhập.");
       heading.current?.focus();
-    } catch (reason) { setError(reason.message || "Không thể lưu tên phiên."); }
+    } catch (reason) { setError(localizeApiError(reason, language)); }
     finally { setRevoking(false); }
   }
   const locked = disabled || loading || revoking;

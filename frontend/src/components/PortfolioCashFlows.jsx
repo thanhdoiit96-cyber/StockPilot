@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatDateTime, formatNumber } from '../services/userLocale.mjs'
 import { translate } from '../services/i18n.mjs'
+import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 
 const localDateTime = value => {
   const date = value ? new Date(value) : new Date()
@@ -38,7 +39,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
       setForm(emptyForm())
       setFeedback({ kind: 'success', text: t(form.type === 'DEPOSIT' ? 'portfolio.cash.recordedDeposit' : 'portfolio.cash.recordedWithdrawal') })
     } catch (error) {
-      setFeedback({ kind: 'error', text: error.message })
+      setFeedback({ kind: 'error', text: localizeApiError(error, language) })
     } finally {
       mutationLock.current = false
       setSaving(false)
@@ -55,7 +56,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
       setMutation(null)
       setFeedback({ kind: 'success', text: t('portfolio.cash.updated') })
     } catch (error) {
-      setMutation(value => ({ ...value, status: 'ready', error: error.message }))
+      setMutation(value => ({ ...value, status: 'ready', error: localizeApiError(error, language) }))
     } finally { mutationLock.current = false }
   }
   const remove = async () => {
@@ -67,7 +68,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
       setMutation(null)
       setFeedback({ kind: 'success', text: t('portfolio.cash.deleted') })
     } catch (error) {
-      setMutation(value => ({ ...value, status: 'ready', error: error.message }))
+      setMutation(value => ({ ...value, status: 'ready', error: localizeApiError(error, language) }))
     } finally { mutationLock.current = false }
   }
   const mutationField = event => setMutation(value => ({ ...value, form: { ...value.form, [event.target.name]: event.target.value }, error: '' }))

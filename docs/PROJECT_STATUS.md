@@ -8,6 +8,13 @@
 - Giới hạn: các notification/error surface còn lại vẫn hiển thị message thô; chưa chạy live auth/backend smoke trong lát cắt này.
 - Tiếp tục: áp dụng mapper cho Auth/Portfolio/Recommendation và bổ sung contract assertion để khóa parity mã lỗi backend–frontend.
 
+## 2026-10-07 — Nối catalog vào bề mặt lỗi người dùng
+
+- Account profile/password/sessions, Portfolio cash flow/ledger và Recommendation workbench đã dùng `localizeApiError` theo ngôn ngữ hiện tại; lỗi unknown vẫn giữ message server.
+- Kiểm chứng: frontend unit 57/57, encoding check 82 file, build/bundle integrity đạt với `index-BPzO9r8K.js`.
+- Chưa chạy live auth smoke hoặc mutation trên PostgreSQL trong lát cắt này; Preview 4173 cần xác nhận bundle sau build.
+- Tiếp tục: bổ sung contract assertions backend–frontend tự động và rà soát các resource hook còn hiển thị raw error.
+
 ## 2026-10-07 — Error-code domain Market
 
 - Migrate Market errors cho quality, breadth history, export, list/detail/analysis, stock not found, quote symbol validation/health, external factors, price history và cache operations. Các mã chính gồm `market_quality_failed`, `market_breadth_history_failed`, `market_export_failed`, `market_list_failed`, `market_detail_failed`, `market_analysis_failed`, `market_stock_not_found`, `market_quote_symbols_required`, `market_quote_health_failed`, `market_external_factors_failed`, `market_price_history_failed`, `market_cache_stats_failed`, `market_cache_clear_failed`.
