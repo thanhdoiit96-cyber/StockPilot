@@ -44,7 +44,9 @@ function plotVolume(points) {
   })
 }
 
-export default function MarketBreadthHistory({ exchange = '', sector = '', sectorLabel = null }) {
+export default function MarketBreadthHistory({ exchange = '', sector = '', sectorLabel = null, language = 'vi' }) {
+  const en = language === 'en'
+  const text = (vi, english) => en ? english : vi
   const [range, setRange] = useState(5)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', data: null, error: null })
@@ -74,26 +76,27 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
   const continuous = state.data?.continuity?.status === 'continuous'
   const volumeObserved = volumeBars.filter(point => point.volumeNetPct != null).length
   const volumeSignal = VOLUME_SIGNALS[latest?.volume?.signal] || VOLUME_SIGNALS.unavailable
+  const signalLabel = signal => ({ confirmation: text('Đồng thuận', 'Confirmed'), negative_divergence: text('Phân kỳ giảm', 'Negative divergence'), positive_divergence: text('Phân kỳ tăng', 'Positive divergence'), neutral: text('Trung tính', 'Neutral'), unavailable: text('Chưa đủ volume', 'Insufficient volume') }[signal] || text('Chưa đủ volume', 'Insufficient volume'))
 
-  return <section className="breadth-history" aria-labelledby="breadth-history-heading">
+  return <section className="breadth-history" aria-labelledby="breadth-history-heading" lang={language}>
     <div className="breadth-history-header">
-      <div><strong id="breadth-history-heading">Lịch sử A/D</strong><small>{exchange || 'Tất cả sàn'} · {sectorLabel || 'Tất cả ngành'} · EOD theo phiên</small></div>
-      <div className="breadth-history-ranges" aria-label="Khoảng lịch sử độ rộng">
+      <div><strong id="breadth-history-heading">{text('Lịch sử A/D', 'A/D history')}</strong><small>{exchange || text('Tất cả sàn', 'All exchanges')} · {sectorLabel || text('Tất cả ngành', 'All sectors')} · {text('EOD theo phiên', 'Session EOD')}</small></div>
+      <div className="breadth-history-ranges" aria-label={text('Khoảng lịch sử độ rộng', 'Breadth history range')}>
         {RANGES.map(value => <button type="button" key={value} aria-pressed={range === value} className={range === value ? 'active' : ''} onClick={() => setRange(value)}>{value}D</button>)}
       </div>
     </div>
-    {state.status === 'loading' && <p className="muted-text" role="status">Đang tải lịch sử độ rộng…</p>}
-    {state.status === 'error' && <div className="breadth-history-state" role="alert"><span>{state.error}</span><button type="button" onClick={() => setAttempt(value => value + 1)}>Thử lại</button></div>}
-    {state.status === 'success' && !continuous && <div className="breadth-history-state" role="status"><strong>Chưa đủ chuỗi phiên liên tục</strong><span>Đã có {state.data.returned_sessions}/{state.data.requested_sessions} phiên · trạng thái {state.data.continuity.status}. Biểu đồ không nối các điểm thiếu.</span></div>}
+    {state.status === 'loading' && <p className="muted-text" role="status">{text('Đang tải lịch sử độ rộng…', 'Loading breadth history…')}</p>}
+    {state.status === 'error' && <div className="breadth-history-state" role="alert"><span>{state.error}</span><button type="button" onClick={() => setAttempt(value => value + 1)}>{text('Thử lại', 'Retry')}</button></div>}
+    {state.status === 'success' && !continuous && <div className="breadth-history-state" role="status"><strong>{text('Chưa đủ chuỗi phiên liên tục', 'Continuous session series unavailable')}</strong><span>{text('Đã có', 'Received')} {state.data.returned_sessions}/{state.data.requested_sessions} {text('phiên · trạng thái', 'sessions · status')} {state.data.continuity.status}. {text('Biểu đồ không nối các điểm thiếu.', 'The chart does not connect missing points.')}</span></div>}
     {state.status === 'success' && continuous && latest && <>
       <div className="breadth-history-summary">
         <span>A/D <b>{latest.ad_ratio == null ? '—' : Number(latest.ad_ratio).toFixed(2)}</b></span>
         <span>Tích lũy A−D <b className={latest.cumulative >= 0 ? 'positive' : 'negative'}>{latest.cumulative > 0 ? '+' : ''}{latest.cumulative}</b></span>
-        <span>Coverage <b>{latest.coverage_pct == null ? '—' : `${latest.coverage_pct}%`}</b></span>
+        <span>{text('Coverage', 'Coverage')} <b>{latest.coverage_pct == null ? '—' : `${latest.coverage_pct}%`}</b></span>
         <span>Volume A/D <b>{latest.volume?.ad_ratio == null ? '—' : Number(latest.volume.ad_ratio).toFixed(2)}</b></span>
         <span>Khối lượng tăng <b>{latest.volume?.advancing_pct == null ? '—' : `${latest.volume.advancing_pct}%`}</b></span>
         <span>Volume coverage <b>{latest.volume?.observations == null ? '—' : `${latest.volume.observations}/${latest.classified}`}</b></span>
-        <span>Tín hiệu <b className={volumeSignal.tone}>{volumeSignal.label}</b></span>
+        <span>{text('Tín hiệu', 'Signal')} <b className={volumeSignal.tone}>{signalLabel(latest?.volume?.signal)}</b></span>
       </div>
       <svg className="breadth-history-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={`Đường A/D tích lũy ${range} phiên, từ ${formatDate(plotted[0].session_date)} đến ${formatDate(latest.session_date)}`}>
         <line x1={PADDING} y1={HEIGHT / 2} x2={WIDTH - PADDING} y2={HEIGHT / 2} className="breadth-history-zero" />
@@ -102,12 +105,12 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
       </svg>
       <p className="breadth-history-caption">{formatDate(plotted[0].session_date)} → {formatDate(latest.session_date)} · {plotted.length} phiên liên tục · không nội suy dữ liệu thiếu</p>
       {volumeObserved > 0 && <>
-        <div className="breadth-volume-history-heading"><strong>Độ rộng khối lượng EOD</strong><span>Net volume nhóm tăng − nhóm giảm</span></div>
+        <div className="breadth-volume-history-heading"><strong>{text('Độ rộng khối lượng EOD', 'EOD volume breadth')}</strong><span>{text('Net volume nhóm tăng − nhóm giảm', 'Net volume: gainers − decliners')}</span></div>
         <svg className="breadth-volume-history-chart" viewBox={`0 0 ${WIDTH} ${VOLUME_HEIGHT}`} role="img" aria-label={`Độ rộng khối lượng ${volumeObserved}/${plotted.length} phiên có quan sát`}>
           <line x1={PADDING} y1={VOLUME_HEIGHT / 2} x2={WIDTH - PADDING} y2={VOLUME_HEIGHT / 2} className="breadth-history-zero" />
-          {volumeBars.filter(point => point.volumeNetPct != null).map(point => <rect key={point.session_date} x={point.x} y={point.y} width={point.width} height={point.height} className={`breadth-volume-history-bar ${point.volumeNetPct > 0 ? 'positive' : point.volumeNetPct < 0 ? 'negative' : 'neutral'}`}><title>{`${point.session_date}: net volume ${point.volumeNetPct > 0 ? '+' : ''}${point.volumeNetPct}%, tín hiệu ${VOLUME_SIGNALS[point.volume?.signal]?.label || 'Chưa đủ volume'}`}</title></rect>)}
+          {volumeBars.filter(point => point.volumeNetPct != null).map(point => <rect key={point.session_date} x={point.x} y={point.y} width={point.width} height={point.height} className={`breadth-volume-history-bar ${point.volumeNetPct > 0 ? 'positive' : point.volumeNetPct < 0 ? 'negative' : 'neutral'}`}><title>{`${point.session_date}: net volume ${point.volumeNetPct > 0 ? '+' : ''}${point.volumeNetPct}%, ${signalLabel(point.volume?.signal)}`}</title></rect>)}
         </svg>
-        <p className={`breadth-volume-history-caption ${volumeSignal.tone}`}><strong>{volumeSignal.label}:</strong> {volumeSignal.note} {volumeObserved}/{plotted.length} phiên có volume; đây là volume theo hướng biến động giá, không phải khối lượng mua/bán chủ động.</p>
+        <p className={`breadth-volume-history-caption ${volumeSignal.tone}`}><strong>{signalLabel(latest?.volume?.signal)}:</strong> {text(volumeSignal.note, volumeSignal.note === VOLUME_SIGNALS.confirmation.note ? 'Symbols and volume lean in the same direction.' : volumeSignal.note === VOLUME_SIGNALS.negative_divergence.note ? 'Gainers lead by count, but volume leans toward decliners.' : volumeSignal.note === VOLUME_SIGNALS.positive_divergence.note ? 'Decliners lead by count, but volume leans toward gainers.' : 'Not enough EOD volume observations to assess.')} {volumeObserved}/{plotted.length} {text('phiên có volume; đây là volume theo hướng biến động giá, không phải khối lượng mua/bán chủ động.', 'sessions have volume; this follows price direction and is not active buy/sell volume.')}</p>
       </>}
     </>}
   </section>
