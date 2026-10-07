@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-07 — Catalog lịch sử A/D trong Tổng quan
+
+- Market Breadth History nhận `language` và khai báo `lang` theo vùng; đã dịch khoảng 1/5/20 phiên, heading/scope EOD, loading/error/retry, chuỗi phiên không liên tục, tín hiệu volume, chú thích và nhãn accessible của biểu đồ. Filter exchange/sector và range state giữ nguyên; không thêm request dịch.
+- Các số liệu A/D, coverage, session date và lỗi provider giữ nguyên dữ liệu nguồn. Error message thô từ backend vẫn chưa map theo error code; chưa dịch toàn bộ data-quality banner và Recommendation Workbench.
+- Kiểm chứng: unit/encoding 54/54; browser Market Breadth + data-quality đạt 3/3; production build/bundle integrity đạt với `index-TkadEFTW.js`, `index-CCqBfcrU.css`. Preview cần reload theo bundle mới.
+- Tiếp tục: catalog banner data-quality dùng chung và Recommendation Workbench, sau đó thêm browser test English Overview giữ range/filter state.
+
 ## 2026-10-07 — Catalog phần tóm tắt Tổng quan
 
 - Thẻ hero và bốn metric của Tổng quan giờ dùng ngôn ngữ tài khoản: tiêu đề/phụ chú, hành động đi tới Danh mục/Đề xuất, aria summary, universe, quote intraday, mã cá nhân và quote mới nhất. Market Breadth vẫn giữ catalog và `lang` vùng từ lát cắt trước.
