@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hoàn tất catalog giao diện Việt/Anh hiện có
+
+- Thêm catalog tĩnh có parity Việt/Anh cho giao diện dùng chung, Account, sessions, đổi mật khẩu, Market Board, chi tiết mã và Recommendation; giữ fallback an toàn cho nội dung chưa có mapping.
+- Cập nhật `html lang`, navigation/header và form tài khoản để đổi ngôn ngữ mà không mất state; bổ sung smoke kiểm tra English market/detail và Recommendation.
+- Kiểm chứng: frontend unit **60/60**, encoding **85 files**, API error contract **52 codes**; Playwright i18n/auth **8/8**; build và bundle integrity đạt (`index-B_F55W2q.js`).
+- Preview `http://localhost:4173/` đã được build lại từ bundle mới. Nội dung do provider/người dùng nhập và narrative Advisor chuyên môn không tự dịch; chỉ nhãn UI hiện có được catalog hóa.
+- Tiếp theo: duy trì parity test khi thêm màn hình/mã lỗi; không mở rộng benchmark đến khi có index-series hợp lệ.
+
 ## 2026-10-07 — Catalog lỗi API Việt/Anh cho frontend
 
 - Thêm catalog tĩnh `apiErrorCatalog` theo mã lỗi backend, phủ các mã Auth, Portfolio, Recommendation và Market đã chuẩn hóa; giữ fallback về message server khi mã chưa biết.

@@ -1,3 +1,4 @@
+import { uiText } from "../services/uiCatalog.mjs";
 import { useEffect, useMemo, useState } from 'react'
 import { compareRecommendationSnapshots } from '../services/recommendationSnapshotComparison.mjs'
 
@@ -9,6 +10,8 @@ const snapshotLabel = snapshot => `${new Date(snapshot.createdAt).toLocaleString
 const signed = (value, digits = 0) => value == null ? '—' : `${value > 0 ? '+' : ''}${Number(value).toFixed(digits)}`
 
 export default function RecommendationSnapshotComparison({ snapshots = [], language = 'vi' }) {
+  const ui = text => uiText(language, text)
+  const snapshotLabel = snapshot => `${new Date(snapshot.createdAt).toLocaleString(language === 'en' ? 'en-US' : 'vi-VN')} · ${snapshot.result?.recommendations?.length || 0} ${ui('mã')}`
   const en = language === 'en'
   const text = (vi, english) => en ? english : vi
   const [baseId, setBaseId] = useState('')
@@ -32,13 +35,13 @@ export default function RecommendationSnapshotComparison({ snapshots = [], langu
   return <section className="panel snapshot-comparison" aria-labelledby="snapshot-comparison-title" lang={language}>
     <div className="recommendation-section-heading"><div><span className="eyebrow accent">{text('Bằng chứng thay đổi', 'Change evidence')}</span><h3 id="snapshot-comparison-title">{text('So sánh snapshot', 'Snapshot comparison')}</h3><p className="muted-text">{text('Đối chiếu hai lần xếp hạng đã lưu; không chạy lại mô hình và không thay đổi dữ liệu.', 'Compare two saved rankings without rerunning the model or changing data.')}</p></div></div>
     <div className="snapshot-comparison-controls">
-      <label>Snapshot gốc<select className="app-select" value={baseId} onChange={event => setBaseId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === targetId}>{snapshotLabel(snapshot)}</option>)}</select></label>
-      <label>Snapshot đối chiếu<select className="app-select" value={targetId} onChange={event => setTargetId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === baseId}>{snapshotLabel(snapshot)}</option>)}</select></label>
+      <label>{ui("Snapshot gốc")}<select className="app-select" value={baseId} onChange={event => setBaseId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === targetId}>{snapshotLabel(snapshot)}</option>)}</select></label>
+      <label>{ui("Snapshot đối chiếu")}<select className="app-select" value={targetId} onChange={event => setTargetId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === baseId}>{snapshotLabel(snapshot)}</option>)}</select></label>
     </div>
     {comparison ? <>
-      <div className="snapshot-comparison-summary" aria-label="Tóm tắt so sánh snapshot"><span className="chip success">Thêm {comparison.added}</span><span className="chip neutral">Giữ {comparison.retained}</span><span className="chip danger">Bớt {comparison.removed}</span></div>
-      <p className="snapshot-criteria-delta">{comparison.criteria.length ? comparison.criteria.map(item => `${CRITERIA_LABELS[item.key] || item.key} ${signed(item.delta)}`).join(' · ') : 'Trọng số tiêu chí không thay đổi.'}</p>
-      <div className="table-wrap snapshot-comparison-table"><table aria-label="Thay đổi giữa hai snapshot đề xuất"><thead><tr><th>Mã</th><th>Trạng thái</th><th>Hạng gốc</th><th>Hạng mới</th><th>Đổi hạng</th><th>Đổi điểm</th></tr></thead><tbody>{comparison.rows.map(row => <tr key={row.symbol}><td><strong className="symbol">{row.symbol}</strong></td><td><span className={`snapshot-change is-${row.status}`}>{row.status === 'added' ? 'Thêm' : row.status === 'removed' ? 'Bớt' : 'Giữ'}</span></td><td>{row.baseRank ?? '—'}</td><td>{row.targetRank ?? '—'}</td><td className={row.rankDelta > 0 ? 'positive' : row.rankDelta < 0 ? 'negative' : ''}>{signed(row.rankDelta)}</td><td className={row.scoreDelta > 0 ? 'positive' : row.scoreDelta < 0 ? 'negative' : ''}>{signed(row.scoreDelta, 1)}</td></tr>)}</tbody></table></div>
-    </> : <p className="muted-text">Chọn hai snapshot khác nhau để so sánh.</p>}
+      <div className="snapshot-comparison-summary" aria-label={ui("Tóm tắt so sánh snapshot")}><span className="chip success">{ui("Thêm")} {comparison.added}</span><span className="chip neutral">{ui("Giữ")} {comparison.retained}</span><span className="chip danger">{ui("Bớt")} {comparison.removed}</span></div>
+      <p className="snapshot-criteria-delta">{comparison.criteria.length ? comparison.criteria.map(item => `${CRITERIA_LABELS[item.key] || item.key} ${signed(item.delta)}`).join(' · ') : ui("Trọng số tiêu chí không thay đổi.")}</p>
+      <div className="table-wrap snapshot-comparison-table"><table aria-label={ui("Thay đổi giữa hai snapshot đề xuất")}><thead><tr><th>{ui("Mã")}</th><th>{ui("Trạng thái")}</th><th>{ui("Hạng gốc")}</th><th>{ui("Hạng mới")}</th><th>{ui("Đổi hạng")}</th><th>{ui("Đổi điểm")}</th></tr></thead><tbody>{comparison.rows.map(row => <tr key={row.symbol}><td><strong className="symbol">{row.symbol}</strong></td><td><span className={`snapshot-change is-${row.status}`}>{row.status === 'added' ? ui("Thêm") : row.status === 'removed' ? ui("Bớt") : ui("Giữ")}</span></td><td>{row.baseRank ?? '—'}</td><td>{row.targetRank ?? '—'}</td><td className={row.rankDelta > 0 ? 'positive' : row.rankDelta < 0 ? 'negative' : ''}>{signed(row.rankDelta)}</td><td className={row.scoreDelta > 0 ? 'positive' : row.scoreDelta < 0 ? 'negative' : ''}>{signed(row.scoreDelta, 1)}</td></tr>)}</tbody></table></div>
+    </> : <p className="muted-text">{ui("Chọn hai snapshot khác nhau để so sánh.")}</p>}
   </section>
 }

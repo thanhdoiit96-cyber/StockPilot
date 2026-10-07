@@ -1,9 +1,11 @@
+import { uiText } from "../services/uiCatalog.mjs";
 import { recommendationEvidence } from '../services/recommendationEvidence.mjs'
 
 const number = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(value)
 const dateTime = value => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value)) : 'Chưa có thời điểm'
 
 export default function RecommendationEvidence({ item, criteria = [], language = 'vi' }) {
+  const ui = text => uiText(language, text)
   const en = language === 'en'
   const text = (vi, english) => en ? english : vi
   const evidence = recommendationEvidence(item, criteria)
@@ -14,8 +16,8 @@ export default function RecommendationEvidence({ item, criteria = [], language =
         <div><dt>{text('Mô hình', 'Model')}</dt><dd>{evidence.model || text('Chưa công bố', 'Not disclosed')}</dd></div><div><dt>{text('Nguồn giá', 'Price source')}</dt><dd>{evidence.priceSource || text('Chưa xác định', 'Unknown')}</dd></div>
         <div><dt>{text('Thời điểm giá', 'Price time')}</dt><dd>{dateTime(evidence.observedAt)}</dd></div><div><dt>{text('Số phiên đầu vào', 'Input sessions')}</dt><dd>{evidence.observations ?? text('Chưa công bố', 'Not disclosed')}</dd></div>
       </dl>
-      <div className="recommendation-indicator-evidence" aria-label="Chỉ báo đầu vào">
-        <span>Xu hướng <b>{evidence.trend || 'Chưa có'}</b></span><span>RSI14 <b>{number(evidence.rsi14)}</b></span><span>Momentum 10 phiên <b>{number(evidence.momentum10)}</b></span>
+      <div className="recommendation-indicator-evidence" aria-label={ui("Chỉ báo đầu vào")}>
+        <span>Xu hướng <b>{evidence.trend || 'Chưa có'}</b></span><span>{ui("RSI14")} <b>{number(evidence.rsi14)}</b></span><span>Momentum 10 phiên <b>{number(evidence.momentum10)}</b></span>
         <span>Biến động ngày <b>{evidence.volatilityPct == null ? '—' : `${number(evidence.volatilityPct)}%`}</b></span><span>Khối lượng TB <b>{evidence.averageVolume == null ? '—' : new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(evidence.averageVolume)}</b></span>
       </div>
       {evidence.factors.length ? <div className="recommendation-factor-table table-wrap"><table><thead><tr><th>{text('Tiêu chí', 'Criterion')}</th><th>{text('Điểm', 'Score')}</th><th>{text('Trọng số', 'Weight')}</th><th>{text('Hiệu chỉnh', 'Calibration')}</th></tr></thead><tbody>{evidence.factors.map(factor => <tr key={factor.key}><td>{factor.label}</td><td>{number(factor.score)}/100</td><td>{factor.weight == null ? text('Theo snapshot', 'From snapshot') : number(factor.weight)}</td><td>{factor.calibration == null ? '1,00×' : `${number(factor.calibration)}×`}</td></tr>)}</tbody></table></div> : <p className="muted-text">{text('Snapshot này chưa lưu chi tiết điểm từng tiêu chí.', 'This snapshot has no per-criterion score detail.')}</p>}
