@@ -77,5 +77,6 @@ describe('saved recommendation API', () => {
       expect.objectContaining({ industry: 'Technology', model: 'short_term_rule_v2', measured_count: 2, hit_rate_pct: 50, status: 'insufficient_samples' }),
     ]));
     expect(response.body.data.sector_taxonomy).toEqual(expect.objectContaining({ source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: 2 }));
+    expect(response.body.data.pending_integrity).toEqual(expect.objectContaining({ pending_runs: 1, blocked_runs: 1 }));
   });
 });
