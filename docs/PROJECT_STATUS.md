@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Opt-in fixture trên Preview
+
+- Card index synthetic nay hiển thị khi `import.meta.env.DEV` hoặc build có `VITE_SHOW_INDEX_FIXTURE=true`; production mặc định vẫn tắt.
+- Tài liệu hiệu suất đã ghi rõ lệnh bật fixture, nhãn provenance bắt buộc và giới hạn không dùng cho benchmark thật.
+- Tiếp theo: chỉ dùng cờ này trên Preview nội bộ trong khi chờ provider/license index-series.
+
 ## 2026-10-08 — Production gate cho fixture index card
 
 - Thêm smoke xác nhận preview production không render card synthetic; fixture chỉ tồn tại ở Vite development mode.

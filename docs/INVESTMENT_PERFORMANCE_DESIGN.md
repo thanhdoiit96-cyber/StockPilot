@@ -2,6 +2,10 @@
 
 ## Contract index-series cho Benchmark (chuẩn bị triển khai)
 
+### Development fixture preview
+
+UI có thể hiển thị chuỗi synthetic đã gắn nhãn bằng cờ build `VITE_SHOW_INDEX_FIXTURE=true`. Cờ này chỉ dành cho development/preview có kiểm soát; production public phải để mặc định tắt. Card luôn hiển thị provenance `Dữ liệu mô phỏng (development)` và không được dùng để công bố benchmark hay hiệu suất thật.
+
 Benchmark chỉ được mở khi provider trả về chuỗi chỉ số có provenance và license rõ ràng. Contract tối thiểu:
 
 - `symbol`, `provider`, `license`, `return_type` (`price_return` hoặc `total_return`), `currency`.
