@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Persistence thứ tự index fixture
+
+- Hồi quy Preview xác nhận sau khi đưa VN30 lên đầu rồi reload, thứ tự VN30 → VNINDEX được khôi phục từ session.
+- Targeted E2E **1/1** đạt; selector, giới hạn 4 card, provenance và production gate giữ nguyên.
+- Tiếp theo: fixture UI contract hoàn chỉnh; không mở rộng benchmark thật khi thiếu provider/license.
+
 ## 2026-10-08 — Sắp xếp card index fixture
 
 - Mỗi card fixture có nút trái/phải với nhãn truy cập được; nút đầu/cuối tự khóa theo vị trí. Thứ tự render và `sessionStorage` cập nhật cùng nhau.
