@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { filterPositions } from '../services/positionSearch.mjs'
 import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import StockDetailLink from './StockDetailLink.jsx'
@@ -39,9 +39,10 @@ function ClosedPositionRow({ position, onOpenDetail, watched, onAddToWatchlist, 
 
 export default function PortfolioPositions({ positions = [], closedPositions = [], loading = false, error = '', onOpenDetail, watchlistSymbols = [], onAddToWatchlist, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = key => translate(language, key)
-  const [filter, setFilter] = useState('open')
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState('symbol')
+  const [filter, setFilter] = useState(() => { try { return sessionStorage.getItem('stockpilot-portfolio-position-filter') === 'closed' ? 'closed' : 'open' } catch { return 'open' } })
+  const [query, setQuery] = useState(() => { try { return sessionStorage.getItem('stockpilot-portfolio-position-query') || '' } catch { return '' } })
+  const [sort, setSort] = useState(() => { try { return ['symbol', 'value', 'pnl'].includes(sessionStorage.getItem('stockpilot-portfolio-position-sort')) ? sessionStorage.getItem('stockpilot-portfolio-position-sort') : 'symbol' } catch { return 'symbol' } })
+  useEffect(() => { try { sessionStorage.setItem('stockpilot-portfolio-position-filter', filter); sessionStorage.setItem('stockpilot-portfolio-position-query', query); sessionStorage.setItem('stockpilot-portfolio-position-sort', sort) } catch {} }, [filter, query, sort])
   const closed = filter === 'closed'
   const sourceRows = closed ? closedPositions : positions
   const rows = sortPositions(filterPositions(sourceRows, query), sort, language)
