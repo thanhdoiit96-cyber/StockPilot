@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Ghi nhớ bộ lọc Vị thế
+
+- Bộ lọc Mở/Đã đóng, từ khóa tìm kiếm và cách sắp xếp Vị thế được lưu trong `sessionStorage`; khi chuyển tab hoặc reload trong cùng phiên, người dùng trở lại đúng ngữ cảnh đang xem.
+- Không lưu dữ liệu tài chính nhạy cảm; nút xóa tìm kiếm vẫn đưa focus về input và state chỉ áp dụng trong phiên trình duyệt hiện tại.
+- Build production đạt; targeted Portfolio E2E **3/3** (tab/mobile, tìm kiếm, sắp xếp) đạt.
+- Tiếp theo: cân nhắc persistence tương tự cho Watchlist nếu không làm tăng trạng thái khó đoán trên các thiết bị dùng chung.
+
 ## 2026-10-08 — Hoàn tất smoke loading/error/partial resource
 
 - Bổ sung response trì hoãn để xác nhận Ledger hiển thị loading spinner với `role=status` trong lúc snapshot portfolio pending, sau đó chuyển đúng sang empty state khi request hoàn tất.
