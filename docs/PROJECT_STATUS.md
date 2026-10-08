@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Fixture index-series development có nhãn provenance
+
+- Thêm fixture index-series chỉ dùng development/test, gắn `provider=fixture`, `return_type=price_return`, timezone phiên và nhãn nhỏ gọn `Dữ liệu mô phỏng (development)` để UI có thể dùng làm tooltip/hover.
+- Fixture không được nối vào production API, không được dùng kết luận benchmark; test kiểm tra nhãn và giới hạn 4 điểm synthetic.
+- Frontend unit **66/66**, encoding/API-error contract đạt.
+- Tiếp theo: chỉ đưa fixture vào UI dev-only sau khi chốt vị trí card/tooltip; provider thật vẫn cần license và contract continuity trước production.
+
 ## 2026-10-08 — Chốt contract chuẩn bị cho index-series
 
 - Bổ sung thiết kế contract Benchmark: return semantics, session/timezone, continuity/gap, provenance và license gate.
