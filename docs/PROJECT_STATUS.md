@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Performance gate Watchlist: đo scale trước pagination
+
+- Thêm `backend/scripts/measure-watchlist-scale.cjs` và lệnh `npm run measure:watchlist`; truy vấn chỉ trả aggregate ẩn danh theo user, không xuất email, id hay nội dung ghi chú. Development hiện có **2 items / 1 user**, `max=2`, `p50=2`, `p95=2`.
+- Thêm stress E2E với **500 mã tổng hợp**: lượt đo đạt **render 207ms, filter 78ms** (lượt trước 216/86ms), dưới ngân sách nghiệm thu `3s/1s`. Full Portfolio Playwright **36/36** đạt, gồm test scale; không có dấu hiệu cần pagination/windowing ở quy mô hiện tại.
+- Quyết định: giữ render client-side và chưa thêm bulk action/pagination; chỉ mở lại gate khi p95 danh sách hoặc filter vượt ngân sách, hoặc dữ liệu production cho thấy phân bố khác development. Đây là số đo fixture tổng hợp + aggregate development, không suy diễn production scale.
+- Điểm tiếp tục: quay lại cải thiện UX Danh mục hoặc chờ index-series hợp lệ cho benchmark; tiếp tục thu thập scale aggregate định kỳ, không tối ưu trước bằng chứng.
+
 ## 2026-10-08 — Watchlist: thời điểm cập nhật và reset bộ lọc
 
 - Mỗi mã đã chỉnh metadata nay hiển thị `metadata_updated_at` theo locale/timezone tài khoản bằng thẻ `time`; mã chưa từng chỉnh không nhận timestamp giả. Điều này làm rõ cơ sở của cách sắp xếp “Mới cập nhật”.
