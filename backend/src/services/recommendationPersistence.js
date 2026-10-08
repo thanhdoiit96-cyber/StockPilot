@@ -48,18 +48,36 @@ function groupExternalFactorsByStock(stocks, factors) {
   return byStock;
 }
 
-async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFactor, RecommendationRun, Recommendation, provider = 'vnstock', limit = 5, horizonDays = 20, useIntradayReference = false } = {}) {
+function vietnamSessionDate(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function latestEodSession(rows = []) {
+  return rows.reduce((latest, row) => {
+    const value = row?.observed_at || row?.date;
+    if (!value || Number.isNaN(Date.parse(value))) return latest;
+    const date = new Date(value).toISOString().slice(0, 10);
+    return !latest || date > latest ? date : latest;
+  }, null);
+}
+
+async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFactor, RecommendationRun, Recommendation, provider = 'vnstock', limit = 5, horizonDays = 20, useIntradayReference = false, now = new Date() } = {}) {
   const stocks = await Stock.findAll({ order: [['code', 'ASC']] });
   const priceRowsByStock = await loadPriceRows({ StockPrice, stocks });
+  const priceRows = [...priceRowsByStock.values()].flat();
+  const expectedSession = vietnamSessionDate(now);
+  const latestSession = latestEodSession(priceRows);
+  if (latestSession !== expectedSession) return { status: 'eod_not_ready', expected_session: expectedSession, latest_eod_session: latestSession, universe_size: stocks.length };
   const stockData = stocks.map(item => item.toJSON());
   const externalFactors = await loadVerifiedExternalFactors({ ExternalFactor });
   const factorsByStock = groupExternalFactorsByStock(stockData, externalFactors);
-  const baseline = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays });
+  const baseline = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
   let currentQuotes = {};
   if (useIntradayReference) { try { currentQuotes = await loadSnapshotQuotes(baseline.map(item => item.symbol)); } catch (error) { console.warn(`[Recommendation Persistence] intraday reference fallback: ${error.message}`); } }
-  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays });
-  const asOf = recommendations[0]?.as_of || new Date();
-  const asOfDate = new Date(asOf).toISOString().slice(0, 10);
+  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
+  const asOfDate = latestSession;
   const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2' }, order: [['created_at', 'DESC']] });
   if (existing) return { status: 'snapshot_exists', run_id: existing.id, as_of: asOfDate, universe_size: existing.universe_size, selected_count: existing.selected_count, model: existing.model, snapshot_sha256: existing.snapshot_sha256 || null };
   const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
@@ -96,7 +114,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, vietnamSessionDate, latestEodSession };
 
 
 

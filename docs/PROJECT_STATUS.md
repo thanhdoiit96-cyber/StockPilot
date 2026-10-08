@@ -4453,6 +4453,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Smoke generator sau guard — 2026-10-08
 
+## EOD freshness gate cho snapshot Đề xuất — 2026-10-08
+
+- Generator nay xác định `as_of` từ phiên EOD mới nhất và chỉ tạo snapshot khi phiên đó đúng ngày `Asia/Ho_Chi_Minh` đang chạy. Nếu chưa có EOD cùng phiên, trả `eod_not_ready` trước khi đọc/tạo run.
+- Gate ngăn snapshot bị gắn ngày hiện tại nhưng dựa trên giá phiên cũ; kết hợp với guard trùng phiên bảo vệ cohort khỏi stale/duplicate run.
+- Kiểm chứng: Recommendation persistence **6/6** đạt. Chưa chạy generate mutation mới vì snapshot ngày 2026-10-08 hợp lệ đã tồn tại.
+
 - Đã chạy `npm run generate:recommendations` trên PostgreSQL development. Generator trả `snapshot_exists` cho run `8d6dc1e7-8ae5-417d-aef7-153e2a8f3cff` ngày 2026-10-08, universe 624 và 5 mã chọn; không tạo run/recommendation mới.
 - Run này là legacy (`snapshot_sha256: null`), nên vẫn đúng là không vào evaluator hash-backed. Hành động kế tiếp bị ràng buộc bởi phiên EOD mới, không phải thiếu implementation.
 

@@ -43,7 +43,7 @@ test('generates a v2 snapshot with verified external evidence', async () => {
       { type: 'news', status: 'verified', source: 'Wire', source_url: 'https://wire.example/fpt', title: 'FPT update', published_at: '2026-01-02', symbol: 'FPT', impact: 'positive', toJSON() { return this; } },
       { type: 'news', status: 'unverified', source: 'Blog', published_at: '2026-01-03', symbol: 'FPT', impact: 'negative', toJSON() { return this; } }
     ] },
-    RecommendationRun: { findOne: async () => null, create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] },
+    RecommendationRun: { findOne: async () => null, create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] }, now: new Date('2026-01-31T10:00:00.000Z'),
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
@@ -57,13 +57,22 @@ test('does not create a duplicate scheduled snapshot for the same session contra
   const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
   let created = false;
   const result = await generateRecommendationSnapshot({
-    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] },
+    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] }, now: new Date('2026-01-31T10:00:00.000Z'),
     RecommendationRun: { findOne: async () => ({ id: 'existing-run', universe_size: 1, selected_count: 1, model: 'short_term_rule_v2', snapshot_sha256: null }), create: async () => { created = true; } },
     Recommendation: { bulkCreate: async () => { throw new Error('must not write recommendations'); } },
   });
   expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'existing-run' });
-  expect(result.as_of).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(result.as_of).toBe('2026-01-31');
   expect(created).toBe(false);
+});
+
+test('does not create a snapshot before the current Vietnam EOD session is present', async () => {
+  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
+  const result = await generateRecommendationSnapshot({
+    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => [{ stock_id: 'stock-1', observed_at: '2026-03-10T00:00:00.000Z', close: 100, toJSON() { return this; } }] },
+    RecommendationRun: { findOne: async () => { throw new Error('must not query runs before EOD is ready'); } }, now: new Date('2026-03-11T10:00:00.000Z'),
+  });
+  expect(result).toEqual(expect.objectContaining({ status: 'eod_not_ready', expected_session: '2026-03-11', latest_eod_session: '2026-03-10' }));
 });
 
 test('evaluates every pending integrity-verified run without overwriting completed outcomes', async () => {
