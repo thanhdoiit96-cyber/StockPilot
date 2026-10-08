@@ -83,7 +83,16 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
   const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
   if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations);
-  const snapshot_sha256 = recommendationSnapshotHash({ ...run, recommendations: storedRecommendations });
+  // Hash the persisted representation, including joined stock codes and JSONB
+  // key ordering. Spreading a Sequelize instance loses its attribute getters.
+  const persisted = await RecommendationRun.findOne({
+    where: { id: run.id },
+    include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }],
+  });
+  if (!persisted || persisted.recommendations?.length !== storedRecommendations.length) {
+    throw new Error('Cannot seal incomplete recommendation snapshot');
+  }
+  const snapshot_sha256 = recommendationSnapshotHash(persisted);
   await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id } });
   return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
 }
