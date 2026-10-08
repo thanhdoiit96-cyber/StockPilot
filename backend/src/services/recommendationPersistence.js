@@ -59,7 +59,10 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   if (useIntradayReference) { try { currentQuotes = await loadSnapshotQuotes(baseline.map(item => item.symbol)); } catch (error) { console.warn(`[Recommendation Persistence] intraday reference fallback: ${error.message}`); } }
   const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays });
   const asOf = recommendations[0]?.as_of || new Date();
-  const run = await RecommendationRun.create({ as_of: new Date(asOf).toISOString().slice(0, 10), horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
+  const asOfDate = new Date(asOf).toISOString().slice(0, 10);
+  const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2' }, order: [['created_at', 'DESC']] });
+  if (existing) return { status: 'snapshot_exists', run_id: existing.id, as_of: asOfDate, universe_size: existing.universe_size, selected_count: existing.selected_count, model: existing.model, snapshot_sha256: existing.snapshot_sha256 || null };
+  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
   const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
   if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations);
   const snapshot_sha256 = recommendationSnapshotHash({ ...run, recommendations: storedRecommendations });

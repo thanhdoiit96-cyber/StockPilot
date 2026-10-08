@@ -4449,6 +4449,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Kiểm tra vận hành evaluator — 2026-10-08
 
+## Guard chống snapshot Đề xuất trùng phiên — 2026-10-08
+
+- Generator kiểm tra contract `as_of`/model/provider/horizon trước khi ghi. Nếu snapshot cùng phiên đã tồn tại, trả `snapshot_exists` và không tạo recommendation/run mới.
+- Guard giữ cohort không bị nhân đôi khi script hoặc scheduler chạy lặp sau EOD; không sửa, backfill hash hay đánh giá snapshot legacy.
+- Kiểm chứng: Recommendation persistence **5/5** đạt. Snapshot hash-backed đầu tiên sẽ được tạo vào phiên EOD kế tiếp thay vì tạo bản trùng ngày 2026-10-08.
+
 - Đã chạy `npm run evaluate:recommendations`: 18 run pending legacy đều bị chặn `snapshot_integrity_failed`; không có outcome nào được ghi/cập nhật. Đây là hành vi an toàn đúng kỳ vọng sau khi không backfill hash.
 - Readiness hiện có 624 mã, 124 mã đủ tối thiểu 50 quan sát và EOD mới nhất ngày 2026-10-08. Run mới nhất cùng ngày được tạo trước migration 031 nên `snapshot_sha256` là `null`.
 - Không tạo thêm snapshot trùng phiên chỉ để vượt integrity gate vì sẽ nhân bản cohort/outcome. Snapshot được tạo sau phiên EOD kế tiếp sẽ mang hash database và vào evaluator toàn bộ pending.
