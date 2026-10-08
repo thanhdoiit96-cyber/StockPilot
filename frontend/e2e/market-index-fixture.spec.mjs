@@ -18,4 +18,7 @@ test('shows a clearly labeled synthetic index card in opt-in preview', async ({ 
   await expect(card.first()).toContainText('1,275')
   await expect(card.first()).toContainText('+11 (+0.87%)')
   await expect(card.first()).toHaveAttribute('title', /Asia\/Ho_Chi_Minh/)
+  await page.getByRole('button', { name: 'Đưa VN30 sang trái' }).click()
+  await expect(card.first()).toContainText('VN30')
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('stockpilot-index-fixtures'))).toBe('["VN30","VNINDEX"]')
 })

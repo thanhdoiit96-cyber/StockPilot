@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Sắp xếp card index fixture
+
+- Mỗi card fixture có nút trái/phải với nhãn truy cập được; nút đầu/cuối tự khóa theo vị trí. Thứ tự render và `sessionStorage` cập nhật cùng nhau.
+- Targeted Preview E2E **1/1** xác nhận VN30 chuyển lên đầu và state được lưu; build opt-in đạt (`index-Dqxfvanc.js`).
+- Tiếp theo: giữ fixture scope ở Preview; provider thật sẽ thay dữ liệu nhưng giữ interaction contract này.
+
 ## 2026-10-08 — Selector 4 chỉ số synthetic trên Preview
 
 - Fixture contract mở rộng thành VNINDEX, VN30, HNXINDEX và HNX30; Market Board cho bật/tắt tối đa 4 card, mặc định VNINDEX + VN30.
