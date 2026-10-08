@@ -2089,7 +2089,8 @@ function lv() {
             },
             onRemove: rf,
             onUpdateMetadata: updateWatchlistMetadata,
-            language: profileLanguage
+            language: profileLanguage,
+            timezone: profileTimezone
           })] })]
       }), re === "detail" && O.jsxs("section", {
         className: "detail-page",

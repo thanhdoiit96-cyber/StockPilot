@@ -568,9 +568,11 @@ button, input { font: inherit; }
 .watchlist-view-controls { display:flex; flex-wrap:wrap; gap:10px; margin:-4px 0 16px; padding:10px; border:1px solid var(--border); border-radius:11px; background:var(--panel-soft); }
 .watchlist-view-controls label { display:grid; gap:5px; flex:1 1 190px; color:var(--muted); font-size:12px; font-weight:700; }
 .watchlist-view-controls select { width:100%; min-height:40px; padding:8px 34px 8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface-control); color:var(--text); font:inherit; color-scheme:dark; }
+.watchlist-filter-reset { align-self:end; min-height:40px; flex:0 0 auto; }
 :root[data-theme="light"] .watchlist-view-controls select { color-scheme:light; }
 .watchlist-company > div { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .watchlist-company p { margin:6px 0 0; max-width:54ch; color:var(--muted); font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+.watchlist-company time { display:block; margin-top:6px; color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
 .watchlist-status { display:inline-flex; padding:3px 7px; border-radius:999px; background:var(--surface-control); border:1px solid var(--border); color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; }
 .watchlist-status.status-researching { color:var(--text-warning); }
 .watchlist-status.status-paused { opacity:.72; }
