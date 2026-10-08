@@ -12,12 +12,25 @@ export default function RecommendationHistoryReport({ history = [], token, langu
   const [report, setReport] = useState(null)
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
+  const [cohortState, setCohortState] = useState('loading')
+  const [cohorts, setCohorts] = useState([])
 
   useEffect(() => {
     if (selectedId && !history.some(item => item.id === selectedId)) {
       setSelectedId(''); setReport(null); setState('idle')
     }
   }, [history, selectedId])
+
+  useEffect(() => {
+    let active = true
+    setCohortState('loading')
+    requestJson('/api/recommendations/history/summary', { token }).then(response => {
+      if (!active) return
+      setCohorts(Array.isArray(response.data?.cohorts) ? response.data.cohorts : [])
+      setCohortState('success')
+    }).catch(() => { if (active) setCohortState('error') })
+    return () => { active = false }
+  }, [token])
 
   async function openReport(id) {
     setSelectedId(id); setState('loading'); setError(''); setReport(null)
@@ -46,6 +59,7 @@ export default function RecommendationHistoryReport({ history = [], token, langu
       {report && <button type="button" className="ghost-btn small-btn recommendation-export-btn" onClick={exportReport}>{copy('Xuất CSV báo cáo', 'Export report CSV')}</button>}
     </div>
     {history.length ? <div className="table-wrap recommendation-history-table"><table><thead><tr><th>{copy('Ngày', 'Date')}</th><th>{copy('Đã đo / chọn', 'Measured / selected')}</th><th>{copy('Tỷ lệ dương', 'Positive rate')}</th><th>{copy('Lợi nhuận TB', 'Average return')}</th><th><span className="sr-only">{copy('Thao tác', 'Action')}</span></th></tr></thead><tbody>{history.slice(0, 8).map(run => <tr key={run.id} className={selectedId === run.id ? 'is-selected' : ''}><td>{run.as_of}</td><td>{run.measured_count}/{run.selected_count}<small>{run.pending_count ? ` · ${run.pending_count} ${copy('chờ', 'pending')}` : ''}</small></td><td>{percentage(run.hit_rate_pct)}</td><td>{percentage(run.average_forward_return_pct)}</td><td><button type="button" className="ghost-btn small-btn" onClick={() => openReport(run.id)} disabled={state === 'loading' && selectedId === run.id}>{state === 'loading' && selectedId === run.id ? copy('Đang tải…', 'Loading…') : copy('Xem báo cáo', 'View report')}</button></td></tr>)}</tbody></table></div> : <p className="muted-text">{copy('Chưa có snapshot đề xuất để lập báo cáo.', 'There are no recommendation snapshots to report yet.')}</p>}
+    <div className="cohort-summary" aria-live="polite"><div><h4>{copy('So sánh cohort theo mô hình và kỳ theo dõi', 'Cohorts by model and observation horizon')}</h4><p className="muted-text">{copy('Chỉ cohort đủ mẫu mới được đặt ở trạng thái sẵn sàng so sánh. Đây là kết quả out-of-sample đã lưu, không phải dự báo hay cam kết lợi nhuận.', 'Only cohorts with enough samples are marked ready to compare. These are stored out-of-sample outcomes, not forecasts or return promises.')}</p></div>{cohortState === 'loading' ? <p className="muted-text">{copy('Đang tải cohort…', 'Loading cohorts…')}</p> : cohorts.length ? <div className="cohort-grid">{cohorts.map(cohort => <article key={`${cohort.model}-${cohort.horizon_days}`} className="cohort-card"><div><strong>{cohort.model}</strong><span>{cohort.horizon_days || '—'} {copy('phiên', 'sessions')}</span></div><dl><div><dt>{copy('Đã đo', 'Measured')}</dt><dd>{cohort.measured_count}/{cohort.selected_count}</dd></div><div><dt>{copy('Tỷ lệ dương', 'Positive rate')}</dt><dd>{percentage(cohort.hit_rate_pct)}</dd></div><div><dt>{copy('Trung vị', 'Median')}</dt><dd>{percentage(cohort.return_distribution?.median_pct)}</dd></div><div><dt>{copy('P25 – P75', 'P25 – P75')}</dt><dd>{cohort.return_distribution ? `${percentage(cohort.return_distribution.p25_pct)} – ${percentage(cohort.return_distribution.p75_pct)}` : '—'}</dd></div></dl><p className={`cohort-status ${cohort.status === 'ready_for_comparison' ? 'is-ready' : ''}`}>{cohort.status === 'ready_for_comparison' ? copy('Đủ mẫu để so sánh', 'Enough samples to compare') : `${cohort.measured_count}/${cohort.minimum_samples} ${copy('mẫu cần thiết', 'samples required')}`}</p></article>)}</div> : <p className="muted-text">{copy('Chưa có kết quả đã đo để lập cohort.', 'There are no measured outcomes to form cohorts yet.')}</p>}</div>
     {error && <p role="alert" className="error-text">{error}</p>}
     {report && <div className="snapshot-report-detail" aria-live="polite">
       <div className="snapshot-report-heading"><div><h4>{copy('Snapshot', 'Snapshot')} · {report.as_of}</h4><p className="muted-text">{report.model || '—'} · {report.horizon_days} {copy('phiên theo dõi', 'sessions')}</p></div><span className="chip neutral">{report.provider || '—'}</span></div>
