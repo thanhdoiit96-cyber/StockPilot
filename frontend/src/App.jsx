@@ -655,6 +655,7 @@ function lv() {
   var e, n, t, r, l, o, a, u, c, f, k, j, y, C, E, M, b, m, h, v, w, z, x, _, P, g, I, B, K, ie, ye, mn, se, Ye, L, R, U, W, X, vn, Ae, _n, Ue, gn, Er, Tr, Pr, zr, Mr, Lr;
   const [Ir, Fr] = D.useState(false),
     [bt, Dr] = D.useState(""),
+    [portfolioRetry, retryPortfolio] = D.useState(0),
     [Jl, s] = D.useState(0),
     $r = D.useRef(null);
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
@@ -931,7 +932,7 @@ function lv() {
     }), () => {
       d = true, S.abort();
     };
-  }, [ue, Jl, authVerification.status]);
+  }, [ue, Jl, authVerification.status, portfolioRetry]);
   const wt = Pn("/api/health"),
     ai = Pn("/api/cache/stats"),
     au = Pn("/api/ai-gate", Bm),
@@ -2072,6 +2073,7 @@ function lv() {
             onDelete: deletePortfolioTransaction,
             loading: Ir,
             error: bt,
+            onRetry: () => retryPortfolio(value => value + 1),
             language: profileLanguage,
             timezone: profileTimezone
           }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf, language: profileLanguage }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
@@ -2081,6 +2083,7 @@ function lv() {
             onDelete: deletePortfolioCashFlow,
             loading: Ir,
             error: bt,
+            onRetry: () => retryPortfolio(value => value + 1),
             language: profileLanguage,
             timezone: profileTimezone
           })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-watchlist", "aria-labelledby": "portfolio-tab-watchlist", hidden: portfolioTab !== "watchlist", tabIndex: 0, children: [O.jsx(WatchlistPanel, {

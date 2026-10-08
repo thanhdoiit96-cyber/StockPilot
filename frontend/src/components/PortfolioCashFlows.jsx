@@ -10,7 +10,7 @@ const localDateTime = value => {
 }
 const emptyForm = () => ({ type: 'DEPOSIT', amount: '', occurred_at: localDateTime(), note: '' })
 
-export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, onDelete, loading = false, error = '', language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
+export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, onDelete, onRetry, loading = false, error = '', language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = key => translate(language, key)
   const money = value => `${formatNumber(value, language, { maximumFractionDigits: 0 })} ₫`
   const displayTime = value => formatDateTime(value, language, timezone)
@@ -83,7 +83,7 @@ export default function PortfolioCashFlows({ entries = [], onCreate, onUpdate, o
   return <article className={`panel cash-flow-panel${loading ? ' is-loading' : ''}${!loading && error ? ' has-error' : ''}`} aria-labelledby="cash-flow-title" lang={language} aria-busy={loading}>
     <div className="cash-flow-heading"><div><span className="eyebrow accent">{t('portfolio.cash.eyebrow')}</span><h3 id="cash-flow-title">{t('portfolio.cash.title')}</h3><p className="muted-text">{t('portfolio.cash.subtitle')}</p></div><span className="chip neutral">{entries.length} {t('portfolio.cash.records')}</span></div>
     {loading ? <div className="portfolio-resource-state loading" role="status"><span className="state-spinner" aria-hidden="true" />{t('portfolio.cash.loading')}</div> : null}
-    {!loading && error ? <div className="portfolio-resource-state error" role="alert"><strong>{t('portfolio.cash.errorTitle')}</strong><span>{error}</span></div> : null}
+    {!loading && error ? <div className="portfolio-resource-state error" role="alert"><strong>{t('portfolio.cash.errorTitle')}</strong><span>{error}</span>{onRetry ? <button className="ghost-btn small-btn" type="button" onClick={onRetry}>{language === 'en' ? 'Retry' : 'Thử lại'}</button> : null}</div> : null}
     {!loading && !error ? <dl className="cash-flow-summary"><div><dt>{t('portfolio.cash.deposited')}</dt><dd className="positive">{money(totals.deposits)}</dd></div><div><dt>{t('portfolio.cash.withdrawn')}</dt><dd>{money(totals.withdrawals)}</dd></div><div><dt>{t('portfolio.cash.net')}</dt><dd className={totals.net > 0 ? 'positive' : totals.net < 0 ? 'negative' : ''}>{money(totals.net)}</dd></div></dl> : null}
     {!loading && !error ? <form className="cash-flow-form" onSubmit={submit}>
       <label>{t('portfolio.cash.type')}<select name="type" value={form.type} disabled={saving} onChange={updateForm}><option value="DEPOSIT">{t('portfolio.cash.deposit')}</option><option value="WITHDRAWAL">{t('portfolio.cash.withdrawal')}</option></select></label>
