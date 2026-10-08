@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Production gate cho fixture index card
+
+- Thêm smoke xác nhận preview production không render card synthetic; fixture chỉ tồn tại ở Vite development mode.
+- Market Board fixture gate đạt **1/1**, ngăn dữ liệu mô phỏng lọt vào bundle UI production behavior.
+- Tiếp theo: chỉ thêm dev-server visual smoke khi cần kiểm tra presentation; provider thật vẫn là điều kiện để mở benchmark production.
+
 ## 2026-10-08 — Card index fixture development-only
 
 - Market Board hiển thị card fixture compact gồm điểm gần nhất, thay đổi phiên và ngày quan sát; hover/title vẫn công bố `Dữ liệu mô phỏng (development)` cùng timezone.
