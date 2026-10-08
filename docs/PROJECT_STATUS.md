@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hiển thị nhãn fixture index-series dev-only
+
+- Market Board hiển thị badge nhỏ gọn chỉ trong Vite development mode; hover/title cung cấp nhãn `Dữ liệu mô phỏng (development)` và timezone.
+- Production build không render badge và không coi fixture là nguồn dữ liệu thị trường; bundle integrity đạt với `index-EbH4gtU-.js`.
+- Frontend unit **66/66**; tiếp theo chỉ nối fixture vào card/overlay dev-only khi có UI contract cụ thể, không mở production benchmark trước provider/license thật.
+
 ## 2026-10-08 — Fixture index-series development có nhãn provenance
 
 - Thêm fixture index-series chỉ dùng development/test, gắn `provider=fixture`, `return_type=price_return`, timezone phiên và nhãn nhỏ gọn `Dữ liệu mô phỏng (development)` để UI có thể dùng làm tooltip/hover.

@@ -14,6 +14,7 @@ import {
   normalizeMarketColumns,
   serializeMarketBoardCsv
 } from '../runtime/market-board-tools-core.mjs'
+import { INDEX_SERIES_FIXTURE, indexSeriesFixtureLabel } from '../services/indexSeriesFixture.mjs'
 
 const PAGE_SIZES = [25, 40, 50, 100]
 const SESSION_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
@@ -243,6 +244,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         <label className="page-size-control"><span>{t('market.pageSize')}</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       </div>
     </div>
+    {import.meta.env.DEV && <div className="market-index-fixture" title={`${indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)} · ${INDEX_SERIES_FIXTURE.session_timezone}`} aria-label={indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)}><span className="market-index-fixture-dot" aria-hidden="true" />{INDEX_SERIES_FIXTURE.symbol || 'INDEX'} <small>{indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)}</small></div>}
     <div className="market-board-toolbar">
       <div className="market-board-presets" role="group" aria-label={t('market.columnPresets')}>
         <span>{t('market.display')}</span>
