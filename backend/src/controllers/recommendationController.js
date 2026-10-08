@@ -122,6 +122,31 @@ function buildEvaluationCohorts(runs = [], minimumSamples = 15) {
   }).sort((left, right) => right.measured_count - left.measured_count || String(left.model).localeCompare(String(right.model)));
 }
 
+function buildSectorEvaluationCohorts(runs = [], minimumSamples = 15) {
+  const buckets = new Map();
+  let excludedWithoutSnapshotTaxonomy = 0;
+  runs.forEach((run, runIndex) => (run.recommendations || []).forEach(item => {
+    const industry = typeof item.rationale?.snapshot_taxonomy?.industry === 'string' ? item.rationale.snapshot_taxonomy.industry.trim() : '';
+    if (!industry) { excludedWithoutSnapshotTaxonomy += 1; return; }
+    const model = run.model || 'unknown';
+    const horizonDays = Number(run.horizon_days) || null;
+    const key = `${model}::${horizonDays || 'unknown'}::${industry}`;
+    if (!buckets.has(key)) buckets.set(key, { model, horizon_days: horizonDays, industry, run_keys: new Set(), items: [] });
+    const bucket = buckets.get(key);
+    bucket.run_keys.add(run.id || `run-${runIndex}`);
+    bucket.items.push(item);
+  }));
+  const cohorts = [...buckets.values()].map(bucket => {
+    const summary = buildHistorySummary(bucket.items);
+    return {
+      model: bucket.model, horizon_days: bucket.horizon_days, industry: bucket.industry, runs_count: bucket.run_keys.size,
+      selected_count: bucket.items.length, ...summary, minimum_samples: minimumSamples,
+      status: summary.measured_count >= minimumSamples ? 'ready_for_comparison' : 'insufficient_samples',
+    };
+  }).sort((left, right) => right.measured_count - left.measured_count || left.industry.localeCompare(right.industry));
+  return { cohorts, excluded_without_snapshot_taxonomy: excludedWithoutSnapshotTaxonomy };
+}
+
 function readSnapshotRisk(runId) {
   const evidencePath = path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json');
   try {
@@ -193,10 +218,11 @@ router.get('/history/summary', async (req, res) => {
     const runs = await RecommendationRun.findAll({
       limit: 250,
       order: [['created_at', 'DESC']],
-      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct'] }],
+      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale'] }],
     });
     const minimumSamples = 15;
-    return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples) } });
+    const sector = buildSectorEvaluationCohorts(runs, minimumSamples);
+    return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples), sector_cohorts: sector.cohorts, sector_taxonomy: { source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: sector.excluded_without_snapshot_taxonomy } } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching history summary:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
 });
 
@@ -229,3 +255,4 @@ module.exports = router;
 module.exports.deriveCalibration = deriveCalibration;
 module.exports.buildHistorySummary = buildHistorySummary;
 module.exports.buildEvaluationCohorts = buildEvaluationCohorts;
+module.exports.buildSectorEvaluationCohorts = buildSectorEvaluationCohorts;

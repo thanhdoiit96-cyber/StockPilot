@@ -4,12 +4,13 @@ const { analyzePrices } = require('./technicalAnalysis');
 function rows(start = 100) { return Array.from({ length: 70 }, (_, index) => { const date = new Date(Date.UTC(2026, 0, index + 1)).toISOString().slice(0, 10); return { observed_at: date, close: start + index, price: start + index }; }); }
 
 test('ranks short-term candidates and caps the result set', () => {
-  const selected = buildShortTermRecommendations({ stocks: [{ id: 'a', code: 'AAA', name: 'A' }, { id: 'b', code: 'BBB', name: 'B' }], priceRowsByStock: new Map([['a', rows()], ['b', rows(80)]]), limit: 1 });
+  const selected = buildShortTermRecommendations({ stocks: [{ id: 'a', code: 'AAA', name: 'A', industry: 'Technology' }, { id: 'b', code: 'BBB', name: 'B' }], priceRowsByStock: new Map([['a', rows()], ['b', rows(80)]]), limit: 1, asOf: '2026-03-11T00:00:00.000Z' });
   expect(selected).toHaveLength(1);
   expect(selected[0]).toMatchObject({ rank: 1, symbol: 'AAA', horizon_days: 20 });
   expect(selected[0].rationale.reference_plan).toMatchObject({ buy_price: 169, sell_price: 177.45, horizon_days: 20 });
   expect(selected[0].rationale.technical_confirmation).toHaveProperty('ichimoku');
   expect(selected[0].rationale.technical_confirmation).toHaveProperty('macd');
+  expect(selected[0].rationale.snapshot_taxonomy).toEqual({ industry: 'Technology', source: 'stocks.industry', captured_at: '2026-03-11T00:00:00.000Z' });
 });
 
 test('personalized ranking responds to user criterion weights and returns explainable score parts', () => {

@@ -63,8 +63,8 @@ describe('saved recommendation API', () => {
 
   test('groups completed outcomes by immutable model and horizon with a sample gate', async () => {
     RecommendationRun.findAll.mockResolvedValue([
-      { model: 'short_term_rule_v2', horizon_days: 20, selected_count: 2, recommendations: [{ outcome: 'positive', forward_return_pct: '4' }, { outcome: 'negative', forward_return_pct: '-2' }] },
-      { model: 'short_term_rule_v2', horizon_days: 20, selected_count: 1, recommendations: [{ outcome: 'pending', forward_return_pct: null }] },
+      { id: 'run-1', model: 'short_term_rule_v2', horizon_days: 20, selected_count: 2, recommendations: [{ outcome: 'positive', forward_return_pct: '4', rationale: { snapshot_taxonomy: { industry: 'Technology' } } }, { outcome: 'negative', forward_return_pct: '-2', rationale: { snapshot_taxonomy: { industry: 'Technology' } } }] },
+      { id: 'run-2', model: 'short_term_rule_v2', horizon_days: 20, selected_count: 1, recommendations: [{ outcome: 'pending', forward_return_pct: null, rationale: {} }] },
       { model: 'short_term_rule_v3', horizon_days: 40, selected_count: 1, recommendations: [{ outcome: 'positive', forward_return_pct: '1.5' }] },
     ]);
     const response = await request(app).get('/api/recommendations/history/summary');
@@ -73,5 +73,9 @@ describe('saved recommendation API', () => {
     expect(response.body.data.cohorts).toEqual(expect.arrayContaining([
       expect.objectContaining({ model: 'short_term_rule_v2', horizon_days: 20, runs_count: 2, measured_count: 2, pending_count: 1, hit_rate_pct: 50, status: 'insufficient_samples', return_distribution: expect.objectContaining({ minimum_pct: -2, median_pct: 1, maximum_pct: 4 }) }),
     ]));
+    expect(response.body.data.sector_cohorts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ industry: 'Technology', model: 'short_term_rule_v2', measured_count: 2, hit_rate_pct: 50, status: 'insufficient_samples' }),
+    ]));
+    expect(response.body.data.sector_taxonomy).toEqual(expect.objectContaining({ source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: 2 }));
   });
 });

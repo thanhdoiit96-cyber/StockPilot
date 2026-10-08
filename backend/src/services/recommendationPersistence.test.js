@@ -32,7 +32,7 @@ test('blocks evaluation when snapshot evidence has been changed', () => {
 });
 
 test('generates a v2 snapshot with verified external evidence', async () => {
-  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
+  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', industry: 'Technology', toJSON() { return this; } };
   const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
   const stored = [];
   const result = await generateRecommendationSnapshot({
@@ -49,4 +49,5 @@ test('generates a v2 snapshot with verified external evidence', async () => {
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
   expect(stored[0].rationale.evidence).toMatchObject({ macro: { status: 'available', verified_count: 1 }, news: { positive_count: 1, negative_count: 0 } });
   expect(stored[0].rationale.evidence.sources).toHaveLength(2);
+  expect(stored[0].rationale.snapshot_taxonomy).toMatchObject({ industry: 'Technology', source: 'stocks.industry' });
 });

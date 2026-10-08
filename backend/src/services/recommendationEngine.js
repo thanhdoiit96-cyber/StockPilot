@@ -50,6 +50,11 @@ function buildReferencePlan(rows, analysis, horizonDays) {
   return { buy_price: Number(latest.toFixed(2)), sell_price: sellPrice, horizon_days: horizonDays, valid_until_sessions: horizonDays, methodology: 'latest_close_plus_5pct_or_20_session_high', disclaimer: 'Giá tham khảo để nghiên cứu; không phải lệnh giao dịch.' };
 }
 
+function snapshotTaxonomy(stock, asOf) {
+  const industry = typeof stock?.industry === 'string' && stock.industry.trim() ? stock.industry.trim().slice(0, 120) : null;
+  return { industry, source: 'stocks.industry', captured_at: new Date(asOf).toISOString() };
+}
+
 function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map(), externalFactorsByStock = new Map(), sentimentByStock = new Map(), userContextByStock = new Map(), currentQuotes = new Map(), limit = 5, horizonDays = 20, asOf = new Date() } = {}) {
   const candidates = [];
   const criterionScores = new Map(buildPersonalizedRecommendations({ stocks, priceRowsByStock, criteria: DEFAULT_CRITERIA, limit: 30 }).map(item => [item.stock_id, item.rationale.score_parts]));
@@ -72,6 +77,8 @@ function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map
     if (referencePlan) { referencePlan.buy_price = entryPrice; referencePlan.price_source = Number.isFinite(intradayPrice) && intradayPrice > 0 ? 'intraday' : 'eod'; referencePlan.observed_at = quote?.observed_at || latest?.observed_at || latest?.date || null; }
     candidates.push({ stock_id: stock.id, symbol: stock.code, name: stock.name, rank: 0, score, horizon_days: horizonDays, entry_price: entryPrice, rationale: { reference_plan: referencePlan, model: 'short_term_rule_v2', trend: analysis.trend, indicators: analysis.indicators, technical_score: score, technical_confirmation: { ichimoku: analysis.indicators.ichimoku?.cloud || "insufficient_data", macd: analysis.indicators.macd?.state || "insufficient_data", bollinger: analysis.indicators.bollinger?.position || "insufficient_data" }, score_parts: criterionScores.get(stock.id) || null, evidence, factors: ['Lịch sử giá đủ dài', 'Động lượng và xu hướng được kiểm tra', 'Vĩ mô/tin tức/tâm lý chưa được cộng điểm khi thiếu nguồn xác minh', 'Điểm xếp hạng không phải khuyến nghị mua bán'] }, as_of: asOf });
   }
+  const stockById = new Map(stocks.map(stock => [String(stock.id), stock]));
+  for (const candidate of candidates) candidate.rationale.snapshot_taxonomy = snapshotTaxonomy(stockById.get(String(candidate.stock_id)), asOf);
   return candidates.sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol)).slice(0, limit).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 

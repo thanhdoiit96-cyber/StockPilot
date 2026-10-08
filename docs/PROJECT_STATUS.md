@@ -4441,6 +4441,13 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Cohort out-of-sample cho Đề xuất — 2026-10-08
 
+## Cohort ngành có taxonomy snapshot — 2026-10-08
+
+- Snapshot đề xuất mới lưu `snapshot_taxonomy.industry`, nguồn `stocks.industry` và thời điểm capture ngay trong rationale bất biến. Không migration schema vì trường provenance thuộc JSON snapshot đã có và được băm kiểm tra integrity.
+- Summary tách cohort ngành theo model/kỳ/ngành chỉ từ taxonomy đã capture. Snapshot lịch sử không có taxonomy bị loại có chủ ý và UI thông báo số mã bị loại; hệ thống không dùng ngành hiện tại để viết lại lịch sử.
+- Ngưỡng 15 outcome tiếp tục áp dụng cho từng cohort ngành. UI chỉ trình bày dữ liệu quan sát, không tự calibration hay đưa khuyến nghị đầu tư.
+- Kiểm chứng: Recommendation engine/persistence/controller **15/15**, frontend unit/contract **71/71**, production build/bundle integrity đạt (`index-v587503S.js`).
+
 - Bổ sung `GET /api/recommendations/history/summary`, nhóm các outcome bất biến theo model và horizon. Mỗi cohort có số run/mã được chọn, mã đã đo/chờ, tỷ lệ dương và phân phối return min/P25/median/P75/max.
 - Cohort chỉ có trạng thái `ready_for_comparison` từ 15 outcome đã đo; dưới ngưỡng luôn hiển thị thiếu mẫu. Endpoint và UI chỉ quan sát kết quả đã lưu, không sửa trọng số hay kích hoạt giao dịch.
 - UI report lịch sử hiển thị cohort cạnh snapshot drill-down, nêu rõ đây không phải dự báo/cam kết lợi nhuận.
