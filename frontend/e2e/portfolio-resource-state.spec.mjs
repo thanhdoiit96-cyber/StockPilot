@@ -24,3 +24,25 @@ test('keeps ledger and cash failures distinct from empty state on mobile', async
   expect(await ledger.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
   expect(await cash.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 })
+
+test('keeps available positions visible when ledger and cash resources are empty', async ({ page }) => {
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { id: 'partial-state', email: 'partial@example.com', role: 'admin' } } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [{ stock_id: 'a', symbol: 'FPT', quantity: 10, market_price: 120000, avg_cost: 100000, unrealized_pnl: 200000 }], closed_positions: [], position_counts: { open: 1, closed: 0 }, transactions: [], cash_flows: [] } } })
+    if (path === '/api/stocks') return route.fulfill({ json: { success: true, data: [{ id: 'a', code: 'FPT', name: 'FPT Corp', price: 120000, industry: 'technology', volume: 1000 }], pagination: { page: 1, pageSize: 25, total: 1, totalPages: 1 } } })
+    if (path === '/api/stocks/quotes') return route.fulfill({ json: { success: true, data: { FPT: { price: 120000, volume: 1000, change: 0, volume_type: 'session', observed_at: '2026-10-08T10:00:00+07:00' } } } })
+    return route.fulfill({ json: { success: true, data: [] } })
+  })
+  await page.goto('/')
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Nội dung danh mục' })
+  await expect(page.locator('.portfolio-positions')).toContainText('FPT')
+  await tabs.getByRole('tab', { name: /Giao dịch/ }).click()
+  await expect(page.locator('.portfolio-ledger-empty')).toBeVisible()
+  await expect(page.locator('.portfolio-ledger-panel')).toContainText('Chưa có giao dịch nào')
+  await tabs.getByRole('tab', { name: /Dòng tiền/ }).click()
+  await expect(page.locator('.cash-flow-empty')).toBeVisible()
+  await expect(page.locator('.cash-flow-panel')).toContainText('Chưa có dòng tiền')
+})
