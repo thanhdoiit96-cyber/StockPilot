@@ -56,27 +56,6 @@ function loadColumns() {
   try { return normalizeMarketColumns(JSON.parse(localStorage.getItem(MARKET_COLUMNS_KEY) || '{}')) } catch { return normalizeMarketColumns() }
 }
 
-function TargetedMarketBoard({ rows, language, onOpenDetail, active }) {
-  const copy = language === 'en'
-    ? { title: 'Targeted Market Board', subtitle: 'Priority symbols and the strongest current moves.', empty: 'No current market observations.', volume: 'Volume', source: 'Source' }
-    : { title: 'Mã trọng tâm', subtitle: 'Mã ưu tiên và các biến động nổi bật theo dữ liệu hiện tại.', empty: 'Chưa có quan sát thị trường hiện tại.', volume: 'Khối lượng', source: 'Nguồn' }
-  const selected = [...rows].sort((left, right) => Number(right.pinned) - Number(left.pinned) || Math.abs(Number(right.change || 0)) - Math.abs(Number(left.change || 0)) || Number(right.volume || 0) - Number(left.volume || 0)).slice(0, 4)
-  const ceiling = Math.max(...selected.map(row => Math.abs(Number(row.change || 0))), 1)
-  return <section className="targeted-market-board" hidden={!active} aria-labelledby="targeted-market-title">
-    <div className="targeted-market-heading"><div><span className="eyebrow accent">TARGETED</span><h2 id="targeted-market-title">{copy.title}</h2><p>{copy.subtitle}</p></div></div>
-    {selected.length ? <div className="targeted-market-grid">{selected.map(row => {
-      const change = Number(row.change || 0)
-      const width = Math.max(6, Math.abs(change) / ceiling * 50)
-      const source = row.quote?.upstream || row.quote?.provider || 'EOD'
-      return <button className="targeted-market-card" type="button" key={row.symbol} onClick={() => onOpenDetail?.(row.stock)} aria-label={`${row.symbol} ${formatChange(change)}`}>
-        <div><strong>{row.symbol}</strong>{row.pinned ? <small className="pin-badge portfolio">★</small> : null}</div><span className="targeted-market-price">{formatPrice(row.price, language)}</span><span className={change >= 0 ? 'positive' : 'negative'}>{formatChange(change)}</span>
-        <span className="targeted-market-chart" role="img" aria-label={`${row.symbol} ${formatChange(change)}`}><i className={change >= 0 ? 'positive' : 'negative'} style={{ width: `${width}%`, marginLeft: change >= 0 ? '50%' : `${50 - width}%` }} /></span>
-        <small>{copy.volume}: {formatVolume(row.volume, language)} · {copy.source}: {source}</small>
-      </button>
-    })}</div> : <p className="muted-text targeted-market-empty">{copy.empty}</p>}
-  </section>
-}
-
 function MarketIndexFixtureSection({ fixtureSymbols, selectedFixtureSeries, setFixtureSymbols, moveFixture, range, setRange, language }) {
   const copy = language === 'en'
     ? { title: 'Market indices', subtitle: 'Development preview — synthetic data only.', choose: 'Choose simulated indices', range: 'Intraday chart range', morning: 'Morning', afternoon: 'Afternoon', day: 'Day' }
@@ -271,7 +250,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     onOpenDetail?.(stock)
   }
 
-  return <><div className="market-board-context-grid">{active && (import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && <MarketIndexFixtureSection fixtureSymbols={fixtureSymbols} selectedFixtureSeries={selectedFixtureSeries} setFixtureSymbols={setFixtureSymbols} moveFixture={moveFixture} range={fixtureRange} setRange={setFixtureRange} language={language} />}{active && <TargetedMarketBoard rows={rows} language={language} onOpenDetail={onOpenDetail} active={active} />}</div><section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
+  return <><div className="market-board-market-context">{active && (import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && <MarketIndexFixtureSection fixtureSymbols={fixtureSymbols} selectedFixtureSeries={selectedFixtureSeries} setFixtureSymbols={setFixtureSymbols} moveFixture={moveFixture} range={fixtureRange} setRange={setFixtureRange} language={language} />}</div><section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
     <div className="panel-header">
       <h3>{t('market.list')}</h3>
       <div className="table-tools overview-filter-row">
