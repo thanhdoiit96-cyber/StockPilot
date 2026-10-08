@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Sửa theme Light bị trả về Dark
+
+- Nguyên nhân runtime: backend cổng 5000 vẫn là process cũ khởi động trước khi có `theme_preference`, nên response hồ sơ không giữ lựa chọn Light và frontend fallback về Dark. Backend đã được khởi động lại, health HTTP 200 với process mới.
+- Cải thiện UX: chọn `Sáng/Tối/Theo hệ thống` nay preview ngay trong Account; local storage và hồ sơ chỉ persist sau khi bấm Lưu. Hoàn tác hoặc bỏ thay đổi trả về theme đã lưu, tránh lựa chọn thử nghiệm làm đổi theme ở lần tải sau.
+- Regression xác nhận theme đổi ngay trước submit, local preference vẫn giữ giá trị cũ cho tới khi save, sau save/reload giữ đúng lựa chọn. Frontend unit **62/62**, backend auth/profile **37/37**, auth Playwright **12/12**, build đạt (`index-BTwnnwNk.js`).
+- Preview 4173 đã phục vụ bundle mới; backend 5000 health 200. Tiếp theo: người dùng có thể chọn **Sáng** trong Tài khoản và bấm **Lưu thay đổi** để xác nhận live session thực tế.
+
 ## 2026-10-08 — Hoàn tất Dark/Light và full UI regression
 
 - Chuẩn hóa token theo theme cho SVG/chart grid/point, chart summary/legend, tooltip, initial/page loading overlay, focus-visible, disabled và error surfaces. Light/Dark dùng chung component tree và semantic token.

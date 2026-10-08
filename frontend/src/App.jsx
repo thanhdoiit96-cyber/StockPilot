@@ -733,7 +733,9 @@ function lv() {
   const profileLanguage = ue?.user?.preferred_language || authLanguage;
   const uiTextValue = text => uiText(profileLanguage, text);
   const profileTimezone = ue?.user?.timezone || "Asia/Ho_Chi_Minh";
-  const profileTheme = themePreference(ue?.user?.theme_preference || (() => { try { return localStorage.getItem(THEME_STORAGE_KEY) || 'dark'; } catch { return 'dark'; } })());
+  const savedProfileTheme = themePreference(ue?.user?.theme_preference || (() => { try { return localStorage.getItem(THEME_STORAGE_KEY) || 'dark'; } catch { return 'dark'; } })());
+  const [themePreview, setThemePreview] = D.useState(null);
+  const profileTheme = themePreference(themePreview || savedProfileTheme);
   const tr = (key, values) => translate(profileLanguage, key, values);
   const detailText = text => translateDetail(profileLanguage, text);
   const detailMoney = value => value == null ? detailText("Chưa có dữ liệu") : formatMoney(value, profileLanguage);
@@ -751,10 +753,12 @@ function lv() {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const syncTheme = () => applyTheme(profileTheme, document.documentElement, media.matches);
     syncTheme();
-    try { localStorage.setItem(THEME_STORAGE_KEY, profileTheme); } catch {}
     media.addEventListener?.('change', syncTheme);
     return () => media.removeEventListener?.('change', syncTheme);
   }, [profileTheme]);
+  D.useEffect(() => {
+    try { localStorage.setItem(THEME_STORAGE_KEY, savedProfileTheme); } catch {}
+  }, [savedProfileTheme]);
   const endSession = (message = "", notice = "") => {
     clearStoredAuth();
     $r.current = null;
@@ -1447,10 +1451,12 @@ function lv() {
         }, d) })
       }), O.jsx(AccountPanel, {
         user: ue?.user,
+        onThemePreview: setThemePreview,
         onSave: async profile => {
           const response = await je("/api/auth/profile", { method: "PATCH", token: ue?.token, body: profile });
           if (!response.user || typeof response.user.email !== "string") throw new Error(uiTextValue("Không thể lưu thông tin. Vui lòng thử lại."));
           Bt(current => current ? { ...current, user: response.user } : current);
+          setThemePreview(null);
           return response.user;
         },
         onPasswordChange: async body => {
