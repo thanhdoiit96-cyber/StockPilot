@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Sửa chốt outcome trước kỳ hạn
+
+- Evaluator bỏ fallback lấy giá cuối khi chưa đủ horizon. Outcome giữ pending cho tới quan sát thứ N sau as_of; giá vào/ra phải hữu hạn và lớn hơn 0.
+- Regression engine/persistence 19/19 đạt: thiếu kỳ hạn, đúng kỳ hạn khi có thêm giá muộn hơn, reference price không hợp lệ.
+- Không cập nhật outcome cũ trong database. Điểm tiếp tục: audit dữ liệu trùng phiên/gap và các outcome legacy trước khi diễn giải cohort; bộ đếm hiện vẫn dựa trên price rows, chưa chứng minh lịch phiên đầy đủ.
+
 ## 2026-10-08 — Boundary backend cho index provider
 
 - Bổ sung `marketIndexSeriesService`: adapter chưa được cấu hình trả `market_index_provider_unavailable`; lỗi adapter trả `market_index_provider_failed`; payload không đúng contract trả `market_index_contract_invalid` mà không được sửa/hiển thị.

@@ -35,6 +35,19 @@ test('evaluates realized forward return without inventing missing data', () => {
   expect(result[0]).toMatchObject({ outcome: 'positive', forward_return_pct: 5 });
 });
 
+test('waits for the full horizon and selects that observation even when later prices exist', () => {
+  const recommendation = { stock_id: 'a', entry_price: 100, horizon_days: 2 };
+  const prices = [{ observed_at: '2026-01-02', close: 101 }, { observed_at: '2026-01-05', close: 105 }, { observed_at: '2026-01-06', close: 120 }];
+  const evaluate = rows => evaluateRecommendations({ recommendations: [recommendation], asOf: '2026-01-01', priceRowsByStock: new Map([['a', rows]]) })[0];
+  expect(evaluate(prices.slice(0, 1))).toMatchObject({ outcome: 'pending', evaluated_at: null, forward_return_pct: null });
+  expect(evaluate(prices)).toMatchObject({ outcome: 'positive', evaluated_at: '2026-01-05', forward_return_pct: 5 });
+});
+
+test.each([0, -1, null, 'invalid', Infinity])('rejects invalid reference price %s', entry_price => {
+  const result = evaluateRecommendations({ recommendations: [{ stock_id: 'a', entry_price, horizon_days: 1 }], asOf: '2026-01-01', priceRowsByStock: new Map([['a', [{ observed_at: '2026-01-02', close: 100 }]]]) });
+  expect(result[0]).toMatchObject({ outcome: 'pending', forward_return_pct: null });
+});
+
 test('keeps objective, subjective, sentiment and news evidence explicit', () => {
   const profile = buildEvidenceProfile({ analysis: { observations: 60, indicators: {} }, externalFactors: [{ status: 'verified', source: 'World Bank', published_at: '2026-01-01' }], news: [{ status: 'verified', sentiment: 'positive' }, { status: 'unverified', sentiment: 'negative' }] });
   expect(profile).toMatchObject({ objective: { status: 'available' }, macro: { status: 'available', verified_count: 1 }, news: { status: 'available', positive_count: 1, negative_count: 0 }, sentiment: { status: 'unavailable' }, subjective: { status: 'unavailable' } });
