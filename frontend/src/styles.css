@@ -2006,6 +2006,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) input::placeholder { color:#94a3b8; opacity:1; }
 :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) input:focus-visible,
 :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) select:focus-visible { outline:2px solid var(--primary,#5eead4); outline-offset:2px; border-color:var(--primary,#5eead4); }
+:is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) select option { background:var(--surface-control,#0d1727); color:var(--text,#e2e8f0); font:inherit; }
 :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) button { min-height:44px; }
 @media(max-width:600px) { :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) input,:is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) select { font-size:16px; } }
 @media (max-width: 700px) { .advisor-conversation-toolbar { grid-template-columns: 1fr 1fr; } .advisor-conversation-toolbar label, .advisor-conversation-toolbar select, .advisor-conversation-toolbar small { grid-column: 1 / -1; } }
