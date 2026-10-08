@@ -778,5 +778,7 @@ Checkpoint cohort 2026-10-08: aggregation theo model/horizon, return distributio
 
 Checkpoint sector cohort 2026-10-08: taxonomy ngành đã được capture cùng snapshot mới và cohort ngành từ provenance bất biến đã có. Không backfill/lấy phân loại ngành hiện tại cho run cũ. Điểm tiếp tục là chờ outcome out-of-sample thật tích lũy; chỉ review model thủ công khi cohort model/horizon/ngành đồng thời đủ mẫu và có phạm vi so sánh rõ ràng.
 
+Checkpoint evaluator pending 2026-10-08: scheduler/script đã chuyển từ latest-only sang toàn bộ snapshot pending có integrity hash. Mọi run mới lưu hash tại database; run legacy thiếu hash không được tự đánh giá. Tiếp theo là vận hành EOD/evaluation bình thường và quan sát coverage/skipped integrity, không thêm calibration tự động.
+
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.

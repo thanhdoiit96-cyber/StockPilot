@@ -4443,6 +4443,13 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Cohort ngành có taxonomy snapshot — 2026-10-08
 
+## Đánh giá toàn bộ snapshot pending có integrity — 2026-10-08
+
+- Migration `031_add_recommendation_run_snapshot_hash` đã áp dụng PostgreSQL development. Snapshot mới lưu SHA-256 trên `recommendation_runs`; hash vẫn bao phủ các recommendation/rationale bất biến.
+- `evaluate:recommendations` và scheduler nay quét mọi run còn pending, tải giá một lần, chỉ cập nhật item vừa đo được với điều kiện DB vẫn là `pending`. Outcome đã xác nhận không bị ghi đè.
+- Run cũ không có hash chỉ qua được evidence monitor legacy nếu đúng cùng run/hash; nếu không, evaluator bỏ qua và báo lý do. Không tự backfill hash hoặc đánh giá snapshot không kiểm chứng.
+- Kiểm chứng: migration development thành công; backend regression **262/262** đạt. Điểm tiếp tục là để EOD/outcome thật tích lũy, theo dõi report skipped integrity và review thủ công khi cohort đủ mẫu.
+
 - Snapshot đề xuất mới lưu `snapshot_taxonomy.industry`, nguồn `stocks.industry` và thời điểm capture ngay trong rationale bất biến. Không migration schema vì trường provenance thuộc JSON snapshot đã có và được băm kiểm tra integrity.
 - Summary tách cohort ngành theo model/kỳ/ngành chỉ từ taxonomy đã capture. Snapshot lịch sử không có taxonomy bị loại có chủ ý và UI thông báo số mã bị loại; hệ thống không dùng ngành hiện tại để viết lại lịch sử.
 - Ngưỡng 15 outcome tiếp tục áp dụng cho từng cohort ngành. UI chỉ trình bày dữ liệu quan sát, không tự calibration hay đưa khuyến nghị đầu tư.

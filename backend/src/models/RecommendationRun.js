@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
     model: { type: DataTypes.STRING(80), allowNull: false },
     universe_size: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     selected_count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    snapshot_sha256: { type: DataTypes.STRING(64), allowNull: true },
     status: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'completed' },
     created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, { tableName: 'recommendation_runs', underscored: true, timestamps: false });
