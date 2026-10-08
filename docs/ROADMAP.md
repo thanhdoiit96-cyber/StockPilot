@@ -749,4 +749,6 @@ Checkpoint Market Board UX 2026-10-08: `Mã trọng tâm` là section độc l�
 
 Checkpoint hierarchy Bảng giá 2026-10-08: `Chỉ số thị trường` (fixture được gate development) tách thành section độc lập, đứng trước `Mã trọng tâm` và Danh sách cổ phiếu. `Mã trọng tâm` chỉ thuộc Bảng giá để tránh nhân bản insight hành động vào Tổng quan. Thay fixture bằng dữ liệu thật vẫn bị chặn bởi license/provenance index-series.
 
-Checkpoint compact index context 2026-10-08: `Chỉ số thị trường` và `Mã trọng tâm` đã ở lưới hai cột desktop, responsive về một cột. Fixture card có mini-chart SVG với range 2/4 phiên; headline luôn biểu diễn thay đổi phiên gần nhất, không đổi theo range. Các range kiểu 1D/1W/1M/YTD chỉ mở khi series provider hợp lệ có độ dài và semantics tương ứng.
+Checkpoint compact index context 2026-10-08: `Chỉ số thị trường` và `Mã trọng tâm` đã ở lưới hai cột desktop, responsive về một cột. Fixture card có mini-chart SVG; headline luôn biểu diễn thay đổi phiên gần nhất, không đổi theo cửa sổ chart. Các range kiểu 1D/1W/1M/YTD chỉ mở khi series provider hợp lệ có độ dài và semantics tương ứng.
+
+Checkpoint intraday fixture 2026-10-08: chart fixture đã dùng timestamp 09:15–14:45 và các range Buổi sáng/Buổi chiều/Cả ngày; headline biến động phiên tách khỏi cửa sổ chart. Đây chỉ là Preview development có nhãn synthetic. Endpoint/provider production bắt buộc có license, timezone, session boundary, continuity và stale semantics trước khi công bố chart intraday.

@@ -7,4 +7,6 @@ test('fixture index series is explicitly labeled and bounded to development data
   assert.equal(INDEX_SERIES_FIXTURE.return_type, 'price_return')
   assert.equal(indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE), 'Dữ liệu mô phỏng (development)')
   assert.equal(INDEX_SERIES_FIXTURE.points.length, 4)
+  assert.equal(INDEX_SERIES_FIXTURE.intraday_points.length, 6)
+  assert.match(INDEX_SERIES_FIXTURE.intraday_points.at(-1).observed_at, /T14:45:00\+07:00$/)
 })

@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Intraday fixture cho chart Chỉ số thị trường
+
+- Cụm `Chỉ số thị trường`/`Mã trọng tâm` tiếp tục thu hẹp về tối đa 980px, cột index tối thiểu 250px và cột mã trọng tâm tối thiểu 320px; breakpoint mobile giữ một cột.
+- Chart index chuyển từ điểm đóng cửa theo phiên sang các mốc intraday 09:15–14:45, chọn Buổi sáng/Buổi chiều/Cả ngày. Giá và % headline vẫn là thay đổi phiên gần nhất, tách khỏi cửa sổ chart.
+- Các điểm intraday mới là fixture synthetic chỉ dùng development/Preview và tiếp tục mang nhãn provenance; đây không phải xác nhận dữ liệu intraday production.
+- Frontend unit **66/66**, browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-DQGIm3JK.js`).
+- Tiếp theo: thay `intraday_points` bằng endpoint/provider có license, timestamp/timezone, session boundary, continuity và stale semantics trước khi mở production.
+
 ## 2026-10-08 — Compact market context và mini-chart chỉ số
 
 - `Chỉ số thị trường` và `Mã trọng tâm` nằm chung một hàng desktop theo tỷ lệ phù hợp, giảm padding/độ rộng; tại tablet/mobile tự chuyển một cột để không nén card.
