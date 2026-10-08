@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Smoke opt-in index fixture trên Preview
+
+- E2E trên production Preview đã build bằng `VITE_SHOW_INDEX_FIXTURE=true` xác nhận card hiển thị `INDEX fixture`, mức 1.275, thay đổi `+11 (+0,87%)` và timezone trong title/hover.
+- Smoke opt-in **1/1 đạt**; đây là Preview nội bộ có nhãn synthetic, không phải xác nhận provider/benchmark production.
+- Tiếp theo: phát triển selector tối đa 3–4 chỉ số trên fixture contract, vẫn giữ feature flag và provenance trên từng card.
+
 ## 2026-10-08 — Opt-in fixture trên Preview
 
 - Card index synthetic nay hiển thị khi `import.meta.env.DEV` hoặc build có `VITE_SHOW_INDEX_FIXTURE=true`; production mặc định vẫn tắt.
