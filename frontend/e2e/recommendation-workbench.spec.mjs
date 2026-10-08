@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 
 test('Recommendation mutation error is localized and recoverable', async ({ page }) => {
   await page.route('**/api/**', async route => {
@@ -91,6 +92,15 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()
   await expect(page.locator('.personalized-list')).toContainText('FPT')
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Xuất CSV đề xuất', exact: true }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/^stockpilot-recommendations-2026-09-22\.csv$/)
+  const csv = await readFile(await download.path(), 'utf8')
+  expect(csv).toContain('Mã')
+  expect(csv).toContain('FPT')
+  expect(csv).toContain('Verified Wire')
+  expect(csv).not.toContain('Unsafe')
   const criteriaToggle = page.getByRole('button', { name: 'Mở tiêu chí' })
   await expect(criteriaToggle).toHaveAttribute('aria-expanded', 'false')
   await expect(page.locator('#recommendation-criteria-form')).toBeHidden()

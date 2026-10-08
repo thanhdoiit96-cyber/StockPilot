@@ -1723,6 +1723,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .recommendation-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .recommendation-section-heading h3 { margin: 4px 0 6px; }
 .recommendation-section-heading p { margin: 0; }
+.recommendation-result-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.recommendation-export-btn { white-space: nowrap; }
 .criteria-total { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .criteria-total strong { color: var(--text); font-size: 19px; margin-left: 6px; }
 .criteria-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
@@ -1809,7 +1811,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 @media (max-width: 900px) { .personalized-results { grid-template-columns: 1fr; } }
 @media (max-width: 1400px) { .recommendation-grid.personalized-results { grid-template-columns: minmax(0, 1fr); } }
 .recommendation-grid.personalized-results > * { min-width: 0; }
-@media (max-width: 650px) { .criteria-grid { grid-template-columns: 1fr; } .criteria-actions, .recommendation-section-heading { align-items: stretch; flex-direction: column; } .criteria-actions > div { flex-direction: column-reverse; } .criteria-actions button { width: 100%; } .score-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); } .learning-stat-grid { grid-template-columns: 1fr; } .personalized-list > li { padding: 14px 11px; } .recommendation-add-btn { width: 100%; margin: 6px 0 0; } .recommendation-result-footer { align-items: stretch; } .recommendation-data-chips { gap: 6px; } }
+@media (max-width: 650px) { .criteria-grid { grid-template-columns: 1fr; } .criteria-actions, .recommendation-section-heading { align-items: stretch; flex-direction: column; } .criteria-actions > div { flex-direction: column-reverse; } .criteria-actions button { width: 100%; } .recommendation-result-actions { justify-content: space-between; } .recommendation-result-actions .recommendation-export-btn { width: auto; } .score-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); } .learning-stat-grid { grid-template-columns: 1fr; } .personalized-list > li { padding: 14px 11px; } .recommendation-add-btn { width: 100%; margin: 6px 0 0; } .recommendation-result-footer { align-items: stretch; } .recommendation-data-chips { gap: 6px; } }
 
 /* Keep restored controls visually consistent with the dark StockPilot surface. */
 .table-search,

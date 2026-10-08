@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Xuất CSV danh sách đề xuất
+
+- Trang Đề xuất có nút `Xuất CSV đề xuất` cạnh số mã kết quả, không tạo thêm request và chỉ hiện khi có dữ liệu để xuất.
+- File có BOM UTF-8 để mở ổn định trong Excel; gồm hạng, mã/doanh nghiệp, điểm, giá tham chiếu, horizon, chỉ báo có provenance, luận điểm, snapshot và tiêu chí cá nhân khi đó là một lần xếp hạng tùy chỉnh.
+- CSV chỉ tổng hợp nguồn ngoài hệ thống đã qua kiểm tra HTTP/ngày xuất bản; không xuất URL nguy hiểm hay dữ liệu nội bộ. Mọi ô bắt đầu bằng ký tự công thức được neutralize trước khi tải.
+- Frontend unit **67/67**, Playwright Đề xuất **3/3**, production Preview build đạt (`index-OjNvWvnD.js`).
+- Tiếp theo: chỉ mở rộng xuất lịch sử/đánh giá đề xuất khi định nghĩa report, phạm vi người dùng và dữ liệu outcome được chốt; không trộn snapshot bất biến với dữ liệu đang chạy.
+
 ## 2026-10-08 — Khả năng khám phá dải chỉ số trên mobile
 
 - Dải card chỉ số có `scroll-snap`, focus outline và nhãn vùng truy cập được; mobile hiển thị gợi ý “Vuốt hoặc cuộn ngang để xem thêm chỉ số”.

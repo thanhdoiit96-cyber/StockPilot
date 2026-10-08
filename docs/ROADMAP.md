@@ -762,3 +762,5 @@ Checkpoint horizontal index cards 2026-10-08: card chỉ số luôn ở một h�
 Checkpoint full-width compact indices 2026-10-08: section Chỉ số thị trường đã mở full chiều ngang vùng nội dung và nén chiều cao (chart 28px, padding/gap/typography phụ giảm) nhưng giữ baseline và trục giờ. Điều này chỉ là presentation; không đổi contract fixture hay gate provider.
 
 Checkpoint mobile index discoverability 2026-10-08: dải index dùng scroll-snap, focus outline, region label và hint cuộn ngang chỉ trên mobile; regression tại 390px xác nhận overflow là chủ ý và card vẫn một hàng trên desktop. Provider index-series thật tiếp tục là blocker production.
+
+Checkpoint Recommendation export 2026-10-08: người dùng có thể xuất danh sách kết quả hiện tại ra CSV từ trang Đề xuất. Export giữ provenance cần thiết cho việc đối chiếu (giá/thời điểm/nguồn, chỉ báo, luận điểm, snapshot và tiêu chí tùy chỉnh), dùng UTF-8 BOM và neutralize công thức spreadsheet. Chỉ nguồn HTTP có ngày xuất bản đã được validation mới xuất hiện; không đưa URL nguy hiểm, dữ liệu nội bộ hay suy diễn hiệu suất vào file. Mở rộng sang báo cáo lịch sử chỉ sau khi chốt rõ report scope và semantics của outcome.
