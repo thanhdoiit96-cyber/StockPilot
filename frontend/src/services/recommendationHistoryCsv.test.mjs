@@ -16,3 +16,19 @@ test('history CSV retains snapshot provenance and leaves pending forward return 
   assert.match(csv, /"run-1"/)
   assert.match(csv, /"pending","",""/)
 })
+
+test('excluded returns stay out of the verified return column with bilingual reasons', () => {
+  const report = { id: 'run', recommendations: [{ outcome: 'positive', forward_return_pct: 99, measurement_status: 'excluded', statistics_eligible: false, exclusion_reasons: ['snapshot_unverified', 'insufficient_observed_sessions'] }] }
+  const csv = serializeRecommendationHistoryCsv({ report, language: 'en' })
+  assert.match(csv, /"excluded",""/)
+  assert.match(csv, /Excluded from statistics/)
+  assert.match(csv, /Original snapshot not verified; Insufficient observed price sessions/)
+  assert.match(csv, /"positive","99"/)
+  assert.match(serializeRecommendationHistoryCsv({ report }), /Không tính thống kê/)
+})
+
+test('eligible return is exported normally', () => {
+  const csv = serializeRecommendationHistoryCsv({ report: { recommendations: [{ outcome: 'positive', forward_return_pct: 5, statistics_eligible: true, measurement_status: 'eligible' }] }, language: 'en' })
+  assert.match(csv, /"positive","5"/)
+  assert.match(csv, /"Eligible"/)
+})

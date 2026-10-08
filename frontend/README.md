@@ -151,6 +151,10 @@ Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/
 [page-audit.spec.mjs](e2e/page-audit.spec.mjs) kiểm tra Đăng nhập, Tổng quan, Bảng giá, Danh mục cá nhân, Chi tiết mã, Đề xuất và AI Advisor ở desktop/mobile. Fixture của test không xác nhận provider thật. Phân tích và lộ trình chi tiết nằm trong [UI_UX_AUDIT](../docs/UI_UX_AUDIT.md).
 
 [market-board-productivity.spec.mjs](e2e/market-board-productivity.spec.mjs) kiểm tra sticky mã, persistence cấu hình cột, nội dung CSV và budget tương tác fixture 300/500 mã. Số đo này chỉ là regression baseline cục bộ với mock API, không phải SLA production.
-# Daily portfolio performance
+## Báo cáo lịch sử Đề xuất
+
+Trang Đề xuất có một bảng **Đánh giá từng snapshot đề xuất** duy nhất cho lịch sử chung, báo cáo và CSV; learning panel liên kết tới bảng thay vì lặp dữ liệu. Tải tối đa 50 run gần nhất và mở thêm 8 dòng/lần. Dòng bị loại hiển thị lý do Việt/Anh, không hiển thị return chưa xác minh ở cột chính; CSV giữ raw return trong cột riêng có nhãn. Xem contract eligibility tại [thiết kế Đề xuất](../docs/RECOMMENDATIONS_DESIGN.md). Các bản đề xuất cá nhân đã lưu và so sánh tiêu chí vẫn là chức năng riêng.
+
+## Daily portfolio performance
 
 The Portfolio page lazily requests `/api/portfolio/performance/history` only while the authenticated portfolio view is active. Users can inspect 20, 30, 60 or 120 stored sessions. History starts at the first ledger activity rather than drawing pre-activity zeroes. The lightweight SVG chart has a compact VND axis and keyboard-readable points, does not connect across partial valuation gaps, and explains negative cash, missing prices, or unresolved events separately. TWR remains explicitly unavailable unless the backend marks the full range complete. Portfolio mutations refresh the portfolio object and therefore the history without polling.

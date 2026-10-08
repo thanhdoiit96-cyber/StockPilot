@@ -31,6 +31,14 @@ Model `short_term_rule_v2` hiện chỉ tính nhóm technical/objective đã ki�
 
 ## Ranh giới an toàn
 
+### Đã triển khai: eligibility của báo cáo lịch sử
+
+API list/detail/cohort và hiệu chỉnh tiêu chí dùng cùng read-time guard. Chỉ kết quả `statistics_eligible=true` tham gia hit-rate, mean và distribution. `measurement_status=excluded` khác với `pending`: kết quả đã lưu nhưng chưa đủ bằng chứng, được giữ nguyên để truy xuất. `exclusion_reasons` giải thích hash chưa xác minh, thiếu ngày quan sát, sai ngày đánh giá, evidence giá không tương thích, giá trùng mâu thuẫn hoặc return/sign không khớp. Không có mẫu hợp lệ thì tỷ lệ trả null.
+
+Guard hiện kiểm hash persisted, N ngày giá EOD khác nhau theo Asia/Ho_Chi_Minh của cùng provider, VND_PER_SHARE/VND/unadjusted, giá hữu hạn dương và return làm tròn 4 chữ số. Đây là điều kiện tối thiểu theo quan sát, chưa chứng minh lịch phiên sàn hoàn chỉnh. Bằng chứng giá được đọc tại thời điểm báo cáo; versioned immutable evaluation evidence còn là bước đề xuất tiếp theo, chưa có schema lưu riêng.
+
+UI dùng một section lịch sử chung để chọn run, xem trạng thái và xuất CSV; learning panel chỉ giữ hiệu chỉnh tiêu chí và liên kết đến lịch sử. Bản đề xuất cá nhân đã lưu/so sánh vẫn riêng vì phục vụ so sánh cấu hình, không phải đo forward return. Lịch sử tải tối đa 50 run gần nhất, mở rộng 8 dòng/lần. CSV để trống return chính của dòng bị loại và giữ raw outcome/return ở cột riêng ghi rõ chưa xác minh, cùng lý do Việt/Anh. Không backfill/hash hoặc sửa outcome cũ tự động.
+
 Điểm là bộ lọc nghiên cứu, không phải lệnh mua bán. Không dùng thông tin chủ quan để thay đổi điểm bằng chứng thị trường. Không hiển thị tin chưa xác minh như evidence. Generative AI và execution vẫn bị khóa.
 
 
