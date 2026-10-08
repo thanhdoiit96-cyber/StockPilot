@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Contract index-series trước provider thật
+
+- Đã chốt và kiểm thử validator cho series chỉ số: bắt buộc provider khác fixture, định danh license, URL HTTPS provenance, timezone `Asia/Ho_Chi_Minh`, semantics `price_return`/`total_return`, previous close, freshness và daily/intraday points tăng chặt.
+- Validator không fetch, không nội suy gap, không phê duyệt license và không bật fixture ở production. Tài liệu đề xuất ghi rõ boundary backend adapter, điều kiện smoke và điều kiện mở selector/benchmark.
+- Frontend unit **70/70**, build/bundle integrity đạt (`index-CcBcgYAj.js`). Provider có quyền hiển thị vẫn là blocker thực tế.
+- Tiếp theo: chỉ nối backend adapter sau khi có provider/license; adapter phải trả `fresh`/`stale`/`error` cùng payload đạt contract trước khi bật chỉ số thật hoặc benchmark.
+
 ## 2026-10-08 — Thao tác bảng Danh mục luôn trong tầm với trên mobile
 
 - Cột thao tác của Nhật ký giao dịch và Dòng tiền được ghim bên phải khi bảng cuộn ngang ở mobile; người dùng có thể Sửa/Xóa mà không cần cuộn đến cuối bảng rồi quay lại ngữ cảnh dòng.
