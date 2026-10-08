@@ -2070,6 +2070,8 @@ function lv() {
             onImport: importPortfolioTransactions,
             onUpdate: updatePortfolioTransaction,
             onDelete: deletePortfolioTransaction,
+            loading: Ir,
+            error: bt,
             language: profileLanguage,
             timezone: profileTimezone
           }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf, language: profileLanguage }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
@@ -2077,6 +2079,8 @@ function lv() {
             onCreate: createPortfolioCashFlow,
             onUpdate: updatePortfolioCashFlow,
             onDelete: deletePortfolioCashFlow,
+            loading: Ir,
+            error: bt,
             language: profileLanguage,
             timezone: profileTimezone
           })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-watchlist", "aria-labelledby": "portfolio-tab-watchlist", hidden: portfolioTab !== "watchlist", tabIndex: 0, children: [O.jsx(WatchlistPanel, {

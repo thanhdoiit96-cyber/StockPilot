@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — UX Danh mục: phân biệt loading/error cho Ledger và Dòng tiền
+
+- Nhật ký giao dịch và Dòng tiền nhận `aria-busy`, hiển thị loading/error state riêng và không còn hiển thị danh sách rỗng khi portfolio request đang tải hoặc thất bại.
+- Khi lỗi, form cash flow và thao tác import ledger được khóa; state dùng catalog Anh/Việt.
+- Kiểm chứng: frontend unit **65/65**, encoding/API-error contract đạt, production build và bundle integrity đạt (`index-0hg1hw_r.js`).
+- Tiếp theo: bổ sung smoke loading/error/partial cho ledger và cash flow trên Playwright, sau đó audit mobile dialog và nhập liệu; benchmark vẫn chờ index-series hợp lệ.
+
 ## 2026-10-08 — UX Danh mục: loading/error state rõ ràng cho Vị thế
 
 - Vị thế nay công bố `aria-busy` khi đang tải, hiển thị state loading riêng có spinner, và state error riêng có tiêu đề + message. Khi request lỗi, bảng không còn render như danh mục rỗng; retry vẫn do luồng parent giữ nguyên.

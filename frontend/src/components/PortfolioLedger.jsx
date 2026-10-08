@@ -23,7 +23,7 @@ const editDateTime = value => {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
 
-export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDelete, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
+export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDelete, loading = false, error = '', language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = (key, values) => translate(language, key, values)
   const number = value => formatNumber(value, language, { maximumFractionDigits: 4 })
   const money = value => `${formatNumber(value, language, { maximumFractionDigits: 0 })} ₫`
@@ -116,7 +116,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
     }
   }
 
-  return <article className="panel portfolio-ledger-panel" lang={language}>
+  return <article className="panel portfolio-ledger-panel" lang={language} aria-busy={loading}>
     <div className="portfolio-ledger-heading">
       <div>
         <h3>{t('portfolio.ledger.title')}</h3>
@@ -125,13 +125,15 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       <div className="portfolio-ledger-actions">
         <span className="chip neutral">{ordered.length} {t('portfolio.ledger.transactions')}</span>
         <button className="ghost-btn" type="button" onClick={() => exportCsv([], 'stockpilot-ledger-template.csv')}>{t('portfolio.ledger.template')}</button>
-        <label className={`ghost-btn portfolio-import-button${importState.status === 'loading' || importState.status === 'committing' ? ' disabled' : ''}`}>
+        <label className={`ghost-btn portfolio-import-button${importState.status === 'loading' || importState.status === 'committing' || loading || error ? ' disabled' : ''}`}>
           {t('portfolio.ledger.import')}
-          <input type="file" accept=".csv,text/csv" disabled={!onImport || importState.status === 'loading' || importState.status === 'committing'} onChange={previewFile} />
+          <input type="file" accept=".csv,text/csv" disabled={!onImport || loading || error || importState.status === 'loading' || importState.status === 'committing'} onChange={previewFile} />
         </label>
         <button className="ghost-btn" type="button" disabled={!ordered.length} onClick={() => exportCsv(ordered)}>{t('portfolio.ledger.export')}</button>
       </div>
     </div>
+    {loading ? <div className="portfolio-resource-state loading" role="status"><span className="state-spinner" aria-hidden="true" />{t('portfolio.ledger.loading')}</div> : null}
+    {!loading && error ? <div className="portfolio-resource-state error" role="alert"><strong>{t('portfolio.ledger.errorTitle')}</strong><span>{error}</span></div> : null}
     {feedback ? <p className="portfolio-ledger-feedback positive" role="status">{feedback}</p> : null}
     {importState.status !== 'idle' ? <div className="portfolio-import-status" role="status" aria-live="polite">
       {(importState.status === 'loading' || importState.status === 'committing') && <p>{t(importState.status === 'loading' ? 'portfolio.ledger.checking' : 'portfolio.ledger.importing')}</p>}
@@ -146,7 +148,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
         </div>
       </>}
     </div> : null}
-    {ordered.length ? <>
+    {!loading && !error && ordered.length ? <>
       <div className="table-wrap portfolio-ledger-table">
         <table aria-label={t('portfolio.ledger.table')}>
           <thead><tr><th>{t('portfolio.common.time')}</th><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.transaction.side')}</th><th>{t('portfolio.transaction.quantity')}</th><th>{t('portfolio.ledger.price')}</th><th>{t('portfolio.ledger.fees')}</th><th>{t('portfolio.ledger.source')}</th><th>{t('portfolio.common.actions')}</th></tr></thead>
@@ -169,7 +171,8 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
         </table>
       </div>
       {ordered.length > 10 ? <button className="ghost-btn portfolio-ledger-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? t('portfolio.ledger.collapse') : t('portfolio.ledger.showAll', { count: ordered.length })}</button> : null}
-    </> : <p className="muted-text portfolio-ledger-empty">{t('portfolio.ledger.empty')}</p>}
+    </> : null}
+    {!loading && !error && !ordered.length ? <p className="muted-text portfolio-ledger-empty">{t('portfolio.ledger.empty')}</p> : null}
     {mutation ? <div className="ledger-dialog-backdrop" onMouseDown={event => {
       if (event.target === event.currentTarget && mutation.status !== 'saving') setMutation(null)
     }}>
