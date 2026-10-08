@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Rút gọn Bảng giá về Chỉ số thị trường
+
+- Đã đánh giá và **loại bỏ Mã trọng tâm**, không chuyển sang Tổng quan. Tiêu chí xếp hạng trước đây không phải cấu hình do người dùng sở hữu và không đủ rõ để tạo một insight độc lập.
+- Bảng giá hiện gồm khối `Chỉ số thị trường` độc lập, cân giữa tối đa 900px với gradient nhẹ/card cân đối, sau đó là Danh sách cổ phiếu. Tổng quan không nhận thêm bảng mã trùng lặp.
+- Frontend unit **66/66**, browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-DOhmEX-S.js`).
+- Tiếp theo: chỉ thay fixture index bằng provider hợp lệ; mọi shortlist/insight mã riêng chỉ mở lại khi có tiêu chí minh bạch và cấu hình người dùng rõ ràng.
+
 ## 2026-10-08 — Baseline phiên trước và trục giờ đầy đủ
 
 - Cụm market context tối đa 900px, căn giữa với hai cột 240px/310px tối thiểu; khoảng trống được phân bố đều thay vì dồn về bên phải.

@@ -149,7 +149,7 @@ test('market breadth leader symbols open stock detail', async ({ page }) => {
   await symbol.click()
   await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
 })
-test('price board separates a targeted board from the stock list and navigation icon', async ({ page }) => {
+test('price board presents balanced market indices separately from the stock list', async ({ page }) => {
   await boot(page)
   await expect(page.locator('.market-board-nav-item .nav-icon')).toBeVisible()
   const indexSection = page.locator('.market-index-fixture-section')
@@ -162,13 +162,8 @@ test('price board separates a targeted board from the stock list and navigation 
   await expect(indexSection.locator('.market-index-fixture-times').first()).toContainText('15:00')
   await indexSection.getByRole('button', { name: 'Buổi sáng' }).click()
   await expect(indexSection.getByRole('button', { name: 'Buổi sáng' })).toHaveAttribute('aria-pressed', 'true')
-  const targetedBoard = page.locator('.targeted-market-board')
-  await expect(targetedBoard).toBeVisible()
-  await expect(targetedBoard.getByRole('heading', { name: 'Mã trọng tâm' })).toBeVisible()
-  expect(await targetedBoard.locator('.targeted-market-card').count()).toBeGreaterThan(0)
+  await expect(page.locator('.targeted-market-board')).toHaveCount(0)
   await expect(page.locator('.market-session-timeline')).toHaveCount(0)
-  await targetedBoard.locator('.targeted-market-card').first().click()
-  await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
 })
 test('price board remains selected after refresh', async ({ page }) => {
   await boot(page)
