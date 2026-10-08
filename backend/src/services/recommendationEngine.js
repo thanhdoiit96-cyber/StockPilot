@@ -85,9 +85,12 @@ function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map
 function evaluateRecommendations({ recommendations = [], priceRowsByStock = new Map(), asOf = new Date() } = {}) {
   return recommendations.map(item => {
     const rows = (priceRowsByStock.get(item.stock_id) || []).filter(row => new Date(row.observed_at || row.date) > new Date(asOf)).sort((a, b) => new Date(a.observed_at || a.date) - new Date(b.observed_at || b.date));
-    const target = rows[item.horizon_days - 1] || rows.at(-1);
-    if (!target || item.entry_price == null) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
+    const horizon = Number(item.horizon_days);
+    const target = Number.isInteger(horizon) && horizon > 0 ? rows[horizon - 1] : null;
+    const entry = Number(item.entry_price);
+    if (!target || !Number.isFinite(entry) || entry <= 0) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
     const exit = Number(target.close ?? target.price);
+    if (!Number.isFinite(exit) || exit <= 0) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
     const forwardReturn = Number((((exit / Number(item.entry_price)) - 1) * 100).toFixed(4));
     return { ...item, outcome: forwardReturn > 0 ? 'positive' : forwardReturn < 0 ? 'negative' : 'flat', evaluated_at: target.observed_at || target.date, forward_return_pct: forwardReturn };
   });

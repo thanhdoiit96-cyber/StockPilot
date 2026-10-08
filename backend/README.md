@@ -192,3 +192,6 @@ POST /api/auth/sessions/revoke-others yêu cầu cookie session và CSRF; revoke
 Đổi mật khẩu: POST /api/auth/password nhận current_password/new_password, requireAuth và CSRF khi dùng cookie. Mật khẩu mới tối thiểu 12 ký tự, tối đa 72 byte và khác mật khẩu cũ; giới hạn 5 request/15 phút/user trong bộ nhớ process. Migration 022 bắt buộc trước khi chạy mã mới. Hash/version và thu hồi sessions được commit cùng transaction; Bearer kiểm tra password_version mỗi request. Các token legacy thiếu pv chỉ hợp lệ ở version 0. Production nhiều instance cần shared rate-limit store.
 
 `PATCH /api/auth/profile` yêu cầu đăng nhập và CSRF cho cookie auth. Payload phải có `display_name`: chuỗi sau trim dài 1–120 ký tự hoặc `null` để xóa. Thiếu trường, số, boolean, object, array và chuỗi trống trả 400 mà không sửa hồ sơ. Chỉ tên hiển thị được cập nhật; email, role và trạng thái xác thực không nhận từ payload.
+### Recommendation outcome horizon
+
+Evaluation remains pending until the configured Nth price observation after `as_of` exists. Entry and target prices must be finite and positive. The evaluator no longer substitutes the latest available price for an incomplete horizon. Existing stored outcomes are not rewritten by this change. Observation counting still requires a separate duplicate/session-gap audit before it can establish complete trading-session coverage.

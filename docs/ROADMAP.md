@@ -774,6 +774,8 @@ Checkpoint index-series contract 2026-10-08: validator + design contract đã đ
 Checkpoint index provider boundary 2026-10-08: backend service đã chuẩn bị status boundary cho adapter thật (`fresh`/`stale`/`error`) và lỗi phân biệt adapter thiếu, adapter thất bại, payload sai contract. Không route/API key/provider giả được thêm. Còn cần authority/provider, persistence provenance và controller read-only trước khi UI production sử dụng series.
 ## Recommendation evaluation loop — checkpoint 2026-10-08
 
+Correction 2026-10-08: evaluator trước đây dùng giá cuối khi thiếu horizon, có thể chốt outcome sớm. Đã bỏ fallback và kiểm giá hữu hạn/dương. Trước checkpoint lifecycle, cần audit duplicate/gap của price rows và outcome legacy; không xem chờ EOD mới là dependency duy nhất còn lại.
+
 Checkpoint cohort 2026-10-08: aggregation theo model/horizon, return distribution và minimum-sample guard đã có trên API/UI. Bước tiếp theo trong feedback loop chỉ là quan sát cohort sau khi có đủ outcome mới; không tự động calibration/trọng số khi cohort đạt ngưỡng. Mở phân tách theo sector chỉ khi taxonomy snapshot bất biến và cỡ mẫu đủ để tránh kết luận giả.
 
 Checkpoint sector cohort 2026-10-08: taxonomy ngành đã được capture cùng snapshot mới và cohort ngành từ provenance bất biến đã có. Không backfill/lấy phân loại ngành hiện tại cho run cũ. Điểm tiếp tục là chờ outcome out-of-sample thật tích lũy; chỉ review model thủ công khi cohort model/horizon/ngành đồng thời đủ mẫu và có phạm vi so sánh rõ ràng.
