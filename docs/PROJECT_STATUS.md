@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Card index fixture development-only
+
+- Market Board hiển thị card fixture compact gồm điểm gần nhất, thay đổi phiên và ngày quan sát; hover/title vẫn công bố `Dữ liệu mô phỏng (development)` cùng timezone.
+- Card được gate bằng `import.meta.env.DEV`, production bundle không render UI fixture và không đưa dữ liệu vào API benchmark.
+- Build/bundle integrity đạt (`index-D9XaWEFr.js`); tiếp theo chỉ thay adapter fixture bằng provider thật sau khi license và continuity contract được duyệt.
+
 ## 2026-10-08 — Hiển thị nhãn fixture index-series dev-only
 
 - Market Board hiển thị badge nhỏ gọn chỉ trong Vite development mode; hover/title cung cấp nhãn `Dữ liệu mô phỏng (development)` và timezone.

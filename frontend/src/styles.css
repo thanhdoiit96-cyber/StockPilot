@@ -618,6 +618,9 @@ button, input { font: inherit; }
 .watchlist-actions { flex: 0 0 auto; }
 .watchlist-confirm { justify-content: flex-end; flex-wrap: wrap; }
 .market-index-fixture { display:inline-flex; align-items:center; gap:7px; width:max-content; max-width:100%; margin:0 0 10px; padding:4px 8px; border:1px dashed rgba(251,191,36,.45); border-radius:7px; color:#fbbf24; font-size:10px; letter-spacing:.02em; cursor:help; }
+.market-index-fixture strong { color:var(--text); font-size:11px; }
+.market-index-fixture .positive { color:#34d399; }
+.market-index-fixture .negative { color:#f87171; }
 .market-index-fixture small { overflow:hidden; color:var(--muted); text-overflow:ellipsis; white-space:nowrap; }
 .market-index-fixture-dot { width:6px; height:6px; border-radius:50%; background:#fbbf24; box-shadow:0 0 8px rgba(251,191,36,.55); }
 .watchlist-confirm span { color: var(--muted); font-size: 13px; }
