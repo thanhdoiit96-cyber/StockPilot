@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Xóa stale filter khi logout
+
+- Khi phiên xác thực bị thu hồi, App xóa toàn bộ view-state Vị thế/Watchlist khỏi `sessionStorage`; login lại không thừa hưởng query, ngành, trạng thái hay sort của phiên cũ.
+- Không ảnh hưởng dữ liệu server hoặc credential; logout cross-tab vẫn dùng lifecycle auth hiện có.
+- Build production đạt; auth logout regression **1/1** đạt.
+- Tiếp theo: bổ sung smoke trực tiếp cho chuỗi set filter → logout → login để khóa hành vi persistence xuyên lifecycle.
+
 ## 2026-10-08 — Ghi nhớ bộ lọc Watchlist trong phiên
 
 - Watchlist lưu query, ngành, trạng thái và cách sắp xếp trong `sessionStorage` của tab hiện tại; không lưu mã, ghi chú hay payload danh mục.
