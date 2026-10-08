@@ -621,6 +621,9 @@ button, input { font: inherit; }
 .market-index-fixture strong { color:var(--text); font-size:11px; }
 .market-index-fixture .positive { color:#34d399; }
 .market-index-fixture .negative { color:#f87171; }
+.market-index-fixture-order { display:inline-flex; gap:2px; }
+.market-index-fixture-order button { width:20px; height:20px; padding:0; border:1px solid var(--border); border-radius:5px; background:var(--surface-control); color:var(--text); font:inherit; cursor:pointer; }
+.market-index-fixture-order button:disabled { opacity:.38; cursor:not-allowed; }
 .market-index-fixture small { overflow:hidden; color:var(--muted); text-overflow:ellipsis; white-space:nowrap; }
 .market-index-fixture-dot { width:6px; height:6px; border-radius:50%; background:#fbbf24; box-shadow:0 0 8px rgba(251,191,36,.55); }
 .market-index-fixture-section { display:grid; gap:8px; margin-bottom:10px; }
