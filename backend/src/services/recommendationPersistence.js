@@ -15,12 +15,13 @@ function recommendationSnapshotHash(run) {
 
 function verifyRecommendationSnapshot(run, evidencePath = process.env.RECOMMENDATION_MONITOR_EVIDENCE || path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json')) {
   if (process.env.RECOMMENDATION_SNAPSHOT_VERIFY === 'false') return { valid: true, skipped: true };
+  const actual = recommendationSnapshotHash(run);
+  if (run.snapshot_sha256) return { valid: run.snapshot_sha256 === actual, expected: run.snapshot_sha256, actual, source: 'recommendation_runs.snapshot_sha256' };
   if (!fs.existsSync(evidencePath)) return { valid: false, reason: 'snapshot_monitor_evidence_missing', evidencePath };
   try {
     const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
     const expected = evidence.run?.id === run.id ? evidence.run.snapshot_sha256 : null;
-    const actual = recommendationSnapshotHash(run);
-    return { valid: Boolean(expected && expected === actual), expected, actual, evidencePath };
+    return { valid: Boolean(expected && expected === actual), expected, actual, evidencePath, source: 'legacy_monitor_evidence' };
   } catch (error) {
     return { valid: false, reason: 'snapshot_monitor_evidence_invalid', error: error.message, evidencePath };
   }
@@ -59,24 +60,40 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays });
   const asOf = recommendations[0]?.as_of || new Date();
   const run = await RecommendationRun.create({ as_of: new Date(asOf).toISOString().slice(0, 10), horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
-  if (recommendations.length) await Recommendation.bulkCreate(recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' })));
-  return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2' };
+  const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
+  if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations);
+  const snapshot_sha256 = recommendationSnapshotHash({ ...run, recommendations: storedRecommendations });
+  await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id } });
+  return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
 }
 
-async function evaluateLatestRecommendations({ StockPrice, RecommendationRun, Recommendation } = {}) {
-  const run = await RecommendationRun.findOne({ order: [['created_at', 'DESC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
-  if (!run || !run.recommendations?.length) return { status: 'no_recommendations', evaluated: 0 };
-  const integrity = verifyRecommendationSnapshot(run);
-  if (!integrity.valid) return { status: 'snapshot_integrity_failed', run_id: run.id, evaluated: 0, integrity };
+async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation } = {}) {
+  const runs = await RecommendationRun.findAll({ order: [['created_at', 'ASC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
+  const pendingRuns = runs.filter(run => (run.recommendations || []).some(item => !item.outcome || item.outcome === 'pending'));
+  if (!pendingRuns.length) return { status: 'no_pending_recommendations', evaluated: 0, measured: 0, runs_considered: 0, runs_skipped_integrity: 0 };
   const priceRowsByStock = await loadPriceRows({ StockPrice });
-  const evaluated = evaluateRecommendations({ recommendations: run.recommendations.map(item => item.toJSON()), priceRowsByStock, asOf: run.as_of });
-  for (const item of evaluated) await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome }, { where: { id: item.id } });
-  const measured = evaluated.filter(item => item.outcome !== 'pending');
-  const positive = measured.filter(item => item.outcome === 'positive').length;
-  return { run_id: run.id, evaluated: evaluated.length, measured: measured.length, positive, hit_rate_pct: measured.length ? Number((positive / measured.length * 100).toFixed(2)) : null };
+  const report = { status: 'completed', evaluated: 0, measured: 0, positive: 0, runs_considered: pendingRuns.length, runs_evaluated: 0, runs_skipped_integrity: 0, skipped: [] };
+  for (const run of pendingRuns) {
+    const integrity = verifyRecommendationSnapshot(run);
+    if (!integrity.valid) { report.runs_skipped_integrity += 1; report.skipped.push({ run_id: run.id, reason: integrity.reason || 'snapshot_integrity_failed' }); continue; }
+    const pending = run.recommendations.filter(item => !item.outcome || item.outcome === 'pending').map(item => item.toJSON ? item.toJSON() : item);
+    const evaluated = evaluateRecommendations({ recommendations: pending, priceRowsByStock, asOf: run.as_of });
+    report.runs_evaluated += 1;
+    report.evaluated += evaluated.length;
+    for (const item of evaluated) {
+      if (item.outcome === 'pending') continue;
+      await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome }, { where: { id: item.id, outcome: 'pending' } });
+      report.measured += 1;
+      if (item.outcome === 'positive') report.positive += 1;
+    }
+  }
+  report.hit_rate_pct = report.measured ? Number((report.positive / report.measured * 100).toFixed(2)) : null;
+  return report;
 }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot };
+async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
+
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot };
 
 
 

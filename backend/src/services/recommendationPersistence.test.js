@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, verifyRecommendationSnapshot, generateRecommendationSnapshot } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, verifyRecommendationSnapshot, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
 
 function sampleRun() {
   return {
@@ -43,11 +43,32 @@ test('generates a v2 snapshot with verified external evidence', async () => {
       { type: 'news', status: 'verified', source: 'Wire', source_url: 'https://wire.example/fpt', title: 'FPT update', published_at: '2026-01-02', symbol: 'FPT', impact: 'positive', toJSON() { return this; } },
       { type: 'news', status: 'unverified', source: 'Blog', published_at: '2026-01-03', symbol: 'FPT', impact: 'negative', toJSON() { return this; } }
     ] },
-    RecommendationRun: { create: async payload => ({ id: 'run-v2', ...payload }) },
+    RecommendationRun: { create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] },
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
   expect(stored[0].rationale.evidence).toMatchObject({ macro: { status: 'available', verified_count: 1 }, news: { positive_count: 1, negative_count: 0 } });
   expect(stored[0].rationale.evidence.sources).toHaveLength(2);
   expect(stored[0].rationale.snapshot_taxonomy).toMatchObject({ industry: 'Technology', source: 'stocks.industry' });
+});
+
+test('evaluates every pending integrity-verified run without overwriting completed outcomes', async () => {
+  const pending = (id, stockId, code, asOf) => ({ id, stock_id: stockId, entry_price: 100, horizon_days: 1, outcome: 'pending', rationale: {}, stock: { code }, toJSON() { return this; } });
+  const first = { id: 'run-1', as_of: '2026-01-01', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-1', 'stock-1', 'AAA', '2026-01-01')] };
+  const second = { id: 'run-2', as_of: '2026-01-02', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-2', 'stock-2', 'BBB', '2026-01-02')] };
+  first.snapshot_sha256 = recommendationSnapshotHash(first);
+  second.snapshot_sha256 = recommendationSnapshotHash(second);
+  const updates = [];
+  const report = await evaluatePendingRecommendations({
+    RecommendationRun: { findAll: async () => [first, second] },
+    StockPrice: { findAll: async () => [
+      { stock_id: 'stock-1', observed_at: '2026-01-02', close: 110, toJSON() { return this; } },
+      { stock_id: 'stock-2', observed_at: '2026-01-03', close: 90, toJSON() { return this; } },
+    ] },
+    Recommendation: { update: async (values, options) => updates.push({ values, options }) },
+  });
+  expect(report).toMatchObject({ runs_considered: 2, runs_evaluated: 2, runs_skipped_integrity: 0, measured: 2, positive: 1, hit_rate_pct: 50 });
+  expect(updates).toHaveLength(2);
+  expect(updates.map(item => item.options.where.id)).toEqual(['rec-1', 'rec-2']);
+  expect(updates.every(item => item.options.where.outcome === 'pending')).toBe(true);
 });
