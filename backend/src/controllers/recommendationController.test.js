@@ -8,7 +8,7 @@ jest.mock('../models', () => ({
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { SavedRecommendation } = require('../models');
+const { SavedRecommendation, RecommendationRun } = require('../models');
 const createRouter = require('./recommendationController');
 
 describe('saved recommendation API', () => {
@@ -36,5 +36,28 @@ describe('saved recommendation API', () => {
     SavedRecommendation.destroy.mockResolvedValue(1);
     expect((await request(app).delete('/api/recommendations/saved/snapshot-1').set('Authorization', `Bearer ${token}`)).status).toBe(204);
     expect(SavedRecommendation.destroy).toHaveBeenCalledWith({ where: { id: 'snapshot-1', user_id: 'user-1' } });
+  });
+
+  test('returns one immutable historical snapshot with measured and pending outcomes separated', async () => {
+    RecommendationRun.findOne.mockResolvedValue({
+      id: 'run-1', as_of: '2026-09-01', created_at: '2026-09-01T08:00:00.000Z', horizon_days: 20,
+      provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed',
+      recommendations: [
+        { id: 'rec-1', rank: 1, score: '84.5', horizon_days: 20, entry_price: '120000', outcome: 'positive', forward_return_pct: '3.25', evaluated_at: '2026-09-29T08:00:00.000Z', rationale: { reference_plan: { price_source: 'eod' } }, stock: { id: 'stock-1', code: 'FPT', name: 'FPT', industry: 'Technology' } },
+        { id: 'rec-2', rank: 2, score: '80', horizon_days: 20, entry_price: '80000', outcome: 'pending', forward_return_pct: null, evaluated_at: null, rationale: {}, stock: { id: 'stock-2', code: 'MWG', name: 'MWG', industry: 'Retail' } },
+      ],
+    });
+    const response = await request(app).get('/api/recommendations/history/run-1');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(expect.objectContaining({ id: 'run-1', summary: expect.objectContaining({ measured_count: 1, pending_count: 1, positive_count: 1, hit_rate_pct: 100, average_forward_return_pct: 3.25 }) }));
+    expect(response.body.data.recommendations[1]).toEqual(expect.objectContaining({ outcome: 'pending', forward_return_pct: null }));
+    expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'run-1' } }));
+  });
+
+  test('returns a distinct not-found response for an unknown history snapshot', async () => {
+    RecommendationRun.findOne.mockResolvedValue(null);
+    const response = await request(app).get('/api/recommendations/history/missing');
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe('recommendation_history_not_found');
   });
 });

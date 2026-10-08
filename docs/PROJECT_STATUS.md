@@ -4437,3 +4437,10 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 - TrÆ°á»ng TÃªn hiá»ƒn thá»‹ Ä‘Ã£ cÃ³ `name=display_name`, `autocomplete=nickname` vÃ  `aria-label`, giÃºp trÃ¬nh duyá»‡t/ password manager nháº­n diá»‡n Ä‘Ãºng vÃ  tá»± Ä‘iá»n khÃ´ng nháº§m email.
 - Kiá»ƒm chá»©ng: production build vÃ  bundle integrity passed; Preview `4173` Ä‘ang phá»¥c vá»¥ bundle `index-D5cqd3NN.js`.
+## Báo cáo lịch sử Đề xuất theo snapshot — 2026-10-08
+
+- Hoàn tất endpoint đọc riêng `GET /api/recommendations/history/:id`. Endpoint chỉ trả recommendation đã lưu cùng snapshot metadata (model, provider, ngày tạo, horizon); không đọc quote hiện tại và không thay đổi snapshot.
+- Báo cáo phân tách rõ mã đã đo với mã chờ: chỉ outcome có forward return hữu hạn mới được dùng cho tỷ lệ dương và lợi nhuận forward trung bình. Mã pending luôn giữ return trống, không bị nội suy.
+- UI Đề xuất có báo cáo từng snapshot, bảng mã đã chọn/trạng thái/return và CSV provenance. CSV có BOM UTF-8, chống công thức spreadsheet, chỉ xuất citation đã xác minh và không đưa giá/live quote vào báo cáo.
+- Kiểm chứng: backend Jest **260/260**, frontend unit/contract **71/71**. Chưa có browser smoke mới trong runner vì giới hạn `spawn EPERM` đã được quyết định tạm bỏ qua.
+- Điểm tiếp tục: khi đã có đủ snapshot hoàn tất, bổ sung phân phối return, cohort theo model/horizon và guard cỡ mẫu trước khi dùng kết quả để điều chỉnh model; không diễn giải tỷ lệ dương là cam kết lợi nhuận.
