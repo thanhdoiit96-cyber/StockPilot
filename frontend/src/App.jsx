@@ -905,6 +905,9 @@ function lv() {
   }, [yn]), D.useEffect(() => {
     if (!ue) {
       Bn([]), mt(null);
+      try {
+        ['stockpilot-portfolio-position-filter', 'stockpilot-portfolio-position-query', 'stockpilot-portfolio-position-sort', 'stockpilot-watchlist-query', 'stockpilot-watchlist-industry', 'stockpilot-watchlist-status', 'stockpilot-watchlist-sort'].forEach(key => sessionStorage.removeItem(key));
+      } catch {}
       return;
     }
     if (authVerification.status !== "verified") return;
