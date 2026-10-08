@@ -152,6 +152,10 @@ test('market breadth leader symbols open stock detail', async ({ page }) => {
 test('price board separates a targeted board from the stock list and navigation icon', async ({ page }) => {
   await boot(page)
   await expect(page.locator('.market-board-nav-item .nav-icon')).toBeVisible()
+  const indexSection = page.locator('.market-index-fixture-section')
+  await expect(indexSection).toBeVisible()
+  await expect(indexSection.getByRole('heading', { name: 'Chỉ số thị trường' })).toBeVisible()
+  await expect(page.locator('.table-panel .market-index-fixture-section')).toHaveCount(0)
   const targetedBoard = page.locator('.targeted-market-board')
   await expect(targetedBoard).toBeVisible()
   await expect(targetedBoard.getByRole('heading', { name: 'Mã trọng tâm' })).toBeVisible()
