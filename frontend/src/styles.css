@@ -1769,6 +1769,18 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .outcome-chip { display: inline-flex; padding: 3px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface-muted); color: var(--muted); white-space: nowrap; }
 .outcome-chip.outcome-positive { background: color-mix(in srgb, var(--positive) 18%, var(--surface)); color: var(--positive); }
 .outcome-chip.outcome-negative { background: color-mix(in srgb, var(--negative) 18%, var(--surface)); color: var(--negative); }
+.cohort-summary { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.cohort-summary h4 { margin: 0 0 5px; }
+.cohort-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; margin-top: 12px; }
+.cohort-card { padding: 13px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+.cohort-card > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.cohort-card > div > span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.cohort-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 13px 0; }
+.cohort-card dl div { display: grid; gap: 2px; }
+.cohort-card dt { color: var(--muted); font-size: 11px; }
+.cohort-card dd { margin: 0; font-size: 14px; font-weight: 700; }
+.cohort-status { margin: 0; color: var(--muted); font-size: 12px; }
+.cohort-status.is-ready { color: var(--positive); font-weight: 700; }
 .learning-definition { display: grid; gap: 5px; margin: 14px 0; padding: 13px 14px; border: 1px solid rgba(255, 190, 80, .3); border-left: 3px solid #f0bf5a; border-radius: 10px; color: var(--muted); background: rgba(227, 168, 49, .075); font-size: 12px; line-height: 1.55; }
 .learning-definition strong { color: #ffd782; font-size: 13px; }
 .learning-definition b { color: var(--text); }

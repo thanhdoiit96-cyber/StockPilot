@@ -83,6 +83,45 @@ function buildHistorySummary(items = []) {
   };
 }
 
+function percentile(sortedValues, probability) {
+  if (!sortedValues.length) return null;
+  const index = (sortedValues.length - 1) * probability;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  const value = lower === upper ? sortedValues[lower] : sortedValues[lower] + (sortedValues[upper] - sortedValues[lower]) * (index - lower);
+  return Number(value.toFixed(4));
+}
+
+function buildEvaluationCohorts(runs = [], minimumSamples = 15) {
+  const buckets = new Map();
+  for (const run of runs) {
+    const model = run.model || 'unknown';
+    const horizonDays = Number(run.horizon_days) || null;
+    const key = `${model}::${horizonDays || 'unknown'}`;
+    if (!buckets.has(key)) buckets.set(key, { model, horizon_days: horizonDays, runs_count: 0, selected_count: 0, items: [] });
+    const bucket = buckets.get(key);
+    bucket.runs_count += 1;
+    bucket.selected_count += Number(run.selected_count || (run.recommendations || []).length || 0);
+    bucket.items.push(...(run.recommendations || []));
+  }
+  return [...buckets.values()].map(bucket => {
+    const summary = buildHistorySummary(bucket.items);
+    const returns = bucket.items.filter(item => item.outcome && item.outcome !== 'pending' && hasForwardReturn(item.forward_return_pct)).map(item => Number(item.forward_return_pct)).sort((a, b) => a - b);
+    return {
+      model: bucket.model,
+      horizon_days: bucket.horizon_days,
+      runs_count: bucket.runs_count,
+      selected_count: bucket.selected_count,
+      ...summary,
+      return_distribution: returns.length ? {
+        minimum_pct: returns[0], p25_pct: percentile(returns, 0.25), median_pct: percentile(returns, 0.5), p75_pct: percentile(returns, 0.75), maximum_pct: returns[returns.length - 1],
+      } : null,
+      minimum_samples: minimumSamples,
+      status: summary.measured_count >= minimumSamples ? 'ready_for_comparison' : 'insufficient_samples',
+    };
+  }).sort((left, right) => right.measured_count - left.measured_count || String(left.model).localeCompare(String(right.model)));
+}
+
 function readSnapshotRisk(runId) {
   const evidencePath = path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json');
   try {
@@ -149,6 +188,18 @@ router.get('/history', async (req, res) => {
   } catch (error) { console.error('[Recommendation Controller] Error fetching history:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
 });
 
+router.get('/history/summary', async (req, res) => {
+  try {
+    const runs = await RecommendationRun.findAll({
+      limit: 250,
+      order: [['created_at', 'DESC']],
+      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct'] }],
+    });
+    const minimumSamples = 15;
+    return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples) } });
+  } catch (error) { console.error('[Recommendation Controller] Error fetching history summary:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
+});
+
 router.get('/history/:id', async (req, res) => {
   try {
     const run = await RecommendationRun.findOne({
@@ -177,3 +228,4 @@ router.get('/history/:id', async (req, res) => {
 module.exports = router;
 module.exports.deriveCalibration = deriveCalibration;
 module.exports.buildHistorySummary = buildHistorySummary;
+module.exports.buildEvaluationCohorts = buildEvaluationCohorts;

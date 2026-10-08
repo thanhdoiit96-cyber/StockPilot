@@ -4439,6 +4439,13 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - Kiá»ƒm chá»©ng: production build vÃ  bundle integrity passed; Preview `4173` Ä‘ang phá»¥c vá»¥ bundle `index-D5cqd3NN.js`.
 ## Báo cáo lịch sử Đề xuất theo snapshot — 2026-10-08
 
+## Cohort out-of-sample cho Đề xuất — 2026-10-08
+
+- Bổ sung `GET /api/recommendations/history/summary`, nhóm các outcome bất biến theo model và horizon. Mỗi cohort có số run/mã được chọn, mã đã đo/chờ, tỷ lệ dương và phân phối return min/P25/median/P75/max.
+- Cohort chỉ có trạng thái `ready_for_comparison` từ 15 outcome đã đo; dưới ngưỡng luôn hiển thị thiếu mẫu. Endpoint và UI chỉ quan sát kết quả đã lưu, không sửa trọng số hay kích hoạt giao dịch.
+- UI report lịch sử hiển thị cohort cạnh snapshot drill-down, nêu rõ đây không phải dự báo/cam kết lợi nhuận.
+- Kiểm chứng: targeted Recommendation controller **5/5**, frontend production build và bundle integrity đạt (`index-BvWQlDpD.js`).
+
 - Hoàn tất endpoint đọc riêng `GET /api/recommendations/history/:id`. Endpoint chỉ trả recommendation đã lưu cùng snapshot metadata (model, provider, ngày tạo, horizon); không đọc quote hiện tại và không thay đổi snapshot.
 - Báo cáo phân tách rõ mã đã đo với mã chờ: chỉ outcome có forward return hữu hạn mới được dùng cho tỷ lệ dương và lợi nhuận forward trung bình. Mã pending luôn giữ return trống, không bị nội suy.
 - UI Đề xuất có báo cáo từng snapshot, bảng mã đã chọn/trạng thái/return và CSV provenance. CSV có BOM UTF-8, chống công thức spreadsheet, chỉ xuất citation đã xác minh và không đưa giá/live quote vào báo cáo.

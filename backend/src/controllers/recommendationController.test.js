@@ -1,6 +1,6 @@
 jest.mock('../models', () => ({
   User: { findByPk: jest.fn(async () => ({ password_version: 0 })) },
-  RecommendationRun: { findOne: jest.fn() },
+  RecommendationRun: { findOne: jest.fn(), findAll: jest.fn() },
   Stock: { findAll: jest.fn() },
   StockPrice: { findAll: jest.fn() },
   SavedRecommendation: { findAll: jest.fn(), create: jest.fn(), destroy: jest.fn() }
@@ -59,5 +59,19 @@ describe('saved recommendation API', () => {
     const response = await request(app).get('/api/recommendations/history/missing');
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('recommendation_history_not_found');
+  });
+
+  test('groups completed outcomes by immutable model and horizon with a sample gate', async () => {
+    RecommendationRun.findAll.mockResolvedValue([
+      { model: 'short_term_rule_v2', horizon_days: 20, selected_count: 2, recommendations: [{ outcome: 'positive', forward_return_pct: '4' }, { outcome: 'negative', forward_return_pct: '-2' }] },
+      { model: 'short_term_rule_v2', horizon_days: 20, selected_count: 1, recommendations: [{ outcome: 'pending', forward_return_pct: null }] },
+      { model: 'short_term_rule_v3', horizon_days: 40, selected_count: 1, recommendations: [{ outcome: 'positive', forward_return_pct: '1.5' }] },
+    ]);
+    const response = await request(app).get('/api/recommendations/history/summary');
+    expect(response.status).toBe(200);
+    expect(response.body.data.minimum_samples).toBe(15);
+    expect(response.body.data.cohorts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ model: 'short_term_rule_v2', horizon_days: 20, runs_count: 2, measured_count: 2, pending_count: 1, hit_rate_pct: 50, status: 'insufficient_samples', return_distribution: expect.objectContaining({ minimum_pct: -2, median_pct: 1, maximum_pct: 4 }) }),
+    ]));
   });
 });
