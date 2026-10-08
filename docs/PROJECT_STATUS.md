@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Tách Targeted Market Board khỏi danh sách cổ phiếu
+
+- Bảng giá nay có section `Mã trọng tâm` riêng, ưu tiên mã trong Danh mục/Watchlist rồi đến biến động tuyệt đối và khối lượng. Mỗi card hiển thị giá, % thay đổi, khối lượng, nguồn quote và thanh biến động hiện tại; bấm card mở Chi tiết mã.
+- Đã loại `Biến động trong ngày`: widget cũ nội suy sáu mốc giờ từ snapshot tổng hợp, không phải chuỗi intraday nên có thể gây hiểu nhầm. Không thay bằng lịch sử giả; chart lịch sử/intraday chỉ mở lại khi có series hợp lệ.
+- Frontend unit **66/66**, browser regression Targeted Market Board **1/1**, Preview build opt-in đạt (`index-BE_jYtau.js`).
+- Tiếp theo: review trực quan desktop/mobile bằng phiên có dữ liệu quote thật; chỉ bổ sung sparkline/lịch sử khi endpoint series có provenance và session-time alignment.
+
 ## 2026-10-08 — Audit mobile toolbar và header Bảng giá
 
 - Sticky table header được giữ trên desktop nhưng tắt ở breakpoint mobile để không phủ title/corner khi bảng cuộn ngang; toolbar đã dùng wrap/overflow chủ động cho preset và export controls.
