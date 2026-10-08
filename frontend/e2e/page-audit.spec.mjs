@@ -61,7 +61,7 @@ async function boot(page) {
 const pages = [
   ['Tổng quan', '.market-breadth-panel', 'Tổng quan'],
   ['Bảng giá', '.table-panel', 'Bảng giá'],
-  ['Danh mục cá nhân', '.personal-page', 'Danh mục'],
+  ['Danh mục cá nhân', '.personal-page', 'Danh mục cá nhân'],
   ['Chi tiết mã', '.detail-page', 'Chi tiết mã'],
   ['Đề xuất', '.recommendations-page', 'Đề xuất'],
   ['AI Advisor', '.advisor-page', 'AI Advisor']
@@ -104,7 +104,8 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       }
       await page.screenshot({ path: `test-results/ui-audit/${viewport.name}-${label.toLowerCase().replaceAll(' ', '-')}.png`, fullPage: true })
     }
-    await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+    await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Đăng xuất', exact: true }).click()
     await expect(page.locator('.auth-page')).toBeVisible()
     await expect(page.getByRole('status')).toHaveText('Bạn đã đăng xuất an toàn.')
     await expect.poll(() => page.evaluate(() => localStorage.getItem('market-auth'))).toBeNull()

@@ -282,7 +282,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
             : row.stock.name || row.symbol}</td>
           <td>{formatPrice(row.price, language)}</td>
           <td className={Number(row.change) > 0 ? 'positive' : Number(row.change) < 0 ? 'negative' : ''}>{formatChange(row.change)}</td>
-          <td><span className="volume-context" title={`${t('market.volume')} ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume, language)}</span></td>
+          <td><span className="volume-context" title={`${t('market.tradingVolume')} ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume, language)}</span></td>
           <td className="data-time"><span>{observedLabel(row.quote, language, t)}</span></td>
           <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label={t('market.openAnalysis')} onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>{t('market.deepAnalysis')}</button></td>
           <td><div className="stock-row-actions"><button type="button" className="ghost-btn small-btn add-portfolio-btn" aria-label={t('market.addPortfolio', { symbol: row.symbol })} onClick={event => { event.stopPropagation(); onAddToPortfolio?.({ ...row.stock, price: row.price }) }}>{t('market.add')}</button><QuickWatchlistButton language={language} symbol={row.symbol} watched={row.inWatchlist} onAdd={onAddToWatchlist} /></div></td>
