@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Light theme audit cho các màn hình chính
+
+- Mở rộng semantic token cho elevated/inset/control/sticky surfaces và màu chữ success/warning/error; loại nền tối hard-code khỏi sticky navigation, Market Board fixed column/menu, Portfolio performance/chart shell, form giao dịch/dòng tiền và card Detail/Recommendation.
+- Light theme giữ cùng component tree với Dark theme. Account smoke nay đo luminance nền/chữ, kiểm tra dialog trắng và xác nhận shell/dialog không tràn ngang ở viewport `390×844`.
+- Kiểm chứng: frontend unit **62/62**, auth/theme Playwright **12/12**, build/bundle integrity đạt (`index-DSUf638M.js`); Preview 4173 phục vụ bundle mới.
+- Lượt chạy song song workflow/market không được dùng làm bằng chứng full regression vì hai Playwright process tranh chấp cùng preview/test state. Các case Market Board đầu lượt vẫn đạt, nhưng cần chạy tuần tự full workflow sau lát cắt chart/overlay tiếp theo.
+- Tiếp theo: chuẩn hóa màu SVG/chart/tooltip/loading overlay và kiểm tra focus/disabled/error bằng screenshot ở cả hai theme; sau đó chạy full E2E tuần tự để đóng P3.
+
 ## 2026-10-08 — Dark/Light, lát cắt nền tảng
 
 - Bắt đầu hạng mục kế tiếp sau i18n: thêm tùy chọn `Theo hệ thống / Tối / Sáng` trong Tài khoản, lưu bằng `users.theme_preference` (migration 028), trả qua auth contract và kiểm tra validation ở backend.

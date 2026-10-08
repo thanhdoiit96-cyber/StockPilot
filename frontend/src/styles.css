@@ -12,12 +12,21 @@
   --warning: #fbbf24;
   --danger: #f87171;
   --shadow: 0 18px 50px rgba(15, 23, 42, 0.35);
+  --surface-elevated:#101a2d;
+  --surface-inset:rgba(8,17,33,.6);
+  --surface-control:#17243a;
+  --surface-sticky:rgba(8,17,33,.94);
+  --text-success:#a7f3d0;
+  --text-warning:#fde68a;
+  --text-danger:#fecaca;
 }
 
 :root[data-theme="light"] {
   --bg:#f3f6fb; --bg-soft:#e8eef7; --panel:rgba(255,255,255,.96); --panel-soft:rgba(248,250,252,.94);
   --border:rgba(51,65,85,.18); --text:#172033; --muted:#5d6b82; --primary:#0f766e; --primary-strong:#0d9488;
   --success:#047857; --warning:#a16207; --danger:#be123c; --shadow:0 16px 42px rgba(51,65,85,.12);
+  --surface-elevated:#fff; --surface-inset:#f3f6fb; --surface-control:#fff; --surface-sticky:rgba(255,255,255,.94);
+  --text-success:#047857; --text-warning:#854d0e; --text-danger:#be123c;
 }
 
 * { box-sizing: border-box; }
@@ -43,6 +52,22 @@ button, input { font: inherit; }
 :root[data-theme="light"] .app-search-input:hover,:root[data-theme="light"] .app-search-input:focus { background-color:#fff; border-color:var(--primary); }
 :root[data-theme="light"] .app-search-input::-webkit-search-cancel-button { filter:none; }
 :root[data-theme="light"] :is(table,thead,tbody,tr,td,th) { border-color:var(--border); }
+:root[data-theme="light"] :is(.analysis-card,.stock-row,.watchlist-row,.advisor-message,.recommendation-card,.recommendation-result-card,.advanced-indicator-grid article,.expert-score-grid article,.expert-guidance-columns>div,.expert-forecast-grid article,.analysis-empty-state,.recommendation-data-chips>span,.recommendation-provenance div,.recommendation-indicator-evidence span) { background:var(--panel-soft); color:var(--text); border-color:var(--border); }
+:root[data-theme="light"] :is(.analysis-card strong,.advanced-indicator-grid b,.expert-forecast-grid article strong) { color:var(--text); }
+:root[data-theme="light"] :is(.detail-section-nav,.portfolio-section-tabs,.sidebar-toggle) { background:var(--surface-sticky) !important; border-color:var(--border) !important; box-shadow:0 10px 24px rgba(51,65,85,.14); }
+:root[data-theme="light"] :is(.performance-panel,.expert-guidance-panel) { background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(255,255,255,.98) 52%,rgba(241,245,249,.96)); }
+:root[data-theme="light"] :is(.performance-history-ranges,.performance-history-summary>div,.cash-flow-summary>div,.performance-hero>div,.portfolio-position-filters,.market-session-timeline) { background:var(--surface-inset); border-color:var(--border); }
+:root[data-theme="light"] :is(.performance-history-summary>.performance-mwr-card,.performance-history-chart-shell) { background:linear-gradient(180deg,rgba(13,148,136,.07),#fff); border-color:rgba(15,118,110,.22); }
+:root[data-theme="light"] :is(.transaction-entry-panel .transaction-form,.cash-flow-form,.cash-flow-dialog .ledger-edit-grid) :is(input,select,textarea) { background:var(--surface-control); color:var(--text); border-color:#b8c4d4; color-scheme:light; }
+:root[data-theme="light"] :is(.table-panel[data-react-market-board] .table-wrap td:first-child,.table-panel[data-react-market-board] .table-wrap th:first-child,.market-board-column-menu) { background:var(--surface-elevated); }
+:root[data-theme="light"] .table-panel[data-react-market-board] tbody tr:hover td:first-child { background:#e8f5f2; }
+:root[data-theme="light"] :is(.chip.success,.delta.up,.trend.up,.watchlist-mutation.success,.detail-analysis-ready strong,.account-success) { color:var(--text-success); }
+:root[data-theme="light"] :is(.chip.warning,.delta.neutral,.performance-history-warning,.analysis-disclaimer) { color:var(--text-warning); }
+:root[data-theme="light"] :is(.trend.down,.watchlist-mutation.error,.performance-history-error,.auth-error-message strong,.auth-error-message span) { color:var(--text-danger); }
+:root[data-theme="light"] .hero-pill { color:#065f46; }
+:root[data-theme="light"] .metric-info { color:#0f766e !important; }
+:root[data-theme="light"] .portfolio-section-tabs button.active,:root[data-theme="light"] .performance-history-ranges button.active { color:#115e59; }
+:root[data-theme="light"] .technical-score-meter:after { background:#fff; box-shadow:0 0 0 2px rgba(51,65,85,.45); }
 
 .dashboard-shell {
   display: grid;
