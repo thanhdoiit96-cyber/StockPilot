@@ -46,7 +46,7 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
   const sourceRows = closed ? closedPositions : positions
   const rows = sortPositions(filterPositions(sourceRows, query), sort, language)
   const watched = new Set(watchlistSymbols.map(symbol => String(symbol).toUpperCase()))
-  return <section className="portfolio-positions" aria-labelledby="portfolio-positions-title" lang={language}>
+  return <section className="portfolio-positions" aria-labelledby="portfolio-positions-title" aria-busy={loading} lang={language}>
     <div className="portfolio-positions-heading">
       <div><h3 id="portfolio-positions-title">{t('portfolio.positions.title')}</h3><p className="muted-text">{t('portfolio.positions.subtitle')}</p></div>
       <div className="portfolio-position-filters" role="group" aria-label={t('portfolio.positions.filterAria')}>
@@ -62,11 +62,13 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
       <label className="position-sort-control">{t('portfolio.positions.sort')}<select value={sort} onChange={event => setSort(event.target.value)}><option value="symbol">{t('portfolio.positions.sortSymbol')}</option><option value="value">{t('portfolio.positions.sortValue')}</option><option value="pnl">{t('portfolio.positions.sortPnl')}</option></select></label>
       {!loading && !error && <span className="search-result-count" role="status">{rows.length}/{sourceRows.length} {t('portfolio.positions.position')} {t(closed ? 'portfolio.positions.closed' : 'portfolio.positions.open').toLowerCase()}</span>}
     </div>
+    {loading && <div className="portfolio-positions-state loading" role="status"><span className="state-spinner" aria-hidden="true" />{t('portfolio.positions.loading')}</div>}
+    {!loading && error && <div className="portfolio-positions-state error" role="alert"><strong>{t('portfolio.positions.errorTitle')}</strong><span>{error}</span></div>}
     {!loading && !error && query.trim() && !rows.length ? <p role="status">{t('portfolio.positions.noMatch')}</p> : null}
-    <div className="table-wrap portfolio-table">
+    {!loading && !error && <div className="table-wrap portfolio-table">
       <table aria-label={t(closed ? 'portfolio.positions.closedTable' : 'portfolio.positions.openTable')}>
         {closed ? <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.positions.status')}</th><th>{t('portfolio.positions.lastClosed')}</th><th>{t('portfolio.positions.realized')}</th></tr></thead><tbody>{rows.map(position => <ClosedPositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="4">{t('portfolio.positions.noClosed')}</td></tr> : null}</tbody></> : <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.transaction.quantity')}</th><th>{t('portfolio.positions.avgCost')}</th><th>{t('portfolio.positions.currentPrice')}</th><th>{t('portfolio.positions.unrealized')}</th><th>{t('portfolio.positions.realized')}</th></tr></thead><tbody>{rows.map(position => <PositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="6">{t('portfolio.positions.noOpen')}</td></tr> : null}</tbody></>}
       </table>
-    </div>
+    </div>}
   </section>
 }

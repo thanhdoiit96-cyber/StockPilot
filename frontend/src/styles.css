@@ -609,6 +609,10 @@ button, input { font: inherit; }
 .position-search-toolbar .position-sort-control { display:grid; gap:6px; flex:0 1 190px; min-width:175px; color:var(--muted); font-size:13px; }
 .position-sort-control select { width:100%; min-height:42px; padding:8px 30px 8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface-control); color:var(--text); font:inherit; color-scheme:dark; }
 :root[data-theme="light"] .position-sort-control select { color-scheme:light; }
+.portfolio-positions-state { display:flex; align-items:center; gap:10px; margin:14px 0; padding:14px 16px; border:1px solid var(--border); border-radius:11px; background:var(--panel-soft); color:var(--muted); }
+.portfolio-positions-state.error { align-items:flex-start; flex-direction:column; gap:4px; color:var(--text-danger); }
+.portfolio-positions-state.error strong { color:var(--text); }
+.state-spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite; }
 .watchlist-company { min-width: 0; }
 .watchlist-actions { flex: 0 0 auto; }
 .watchlist-confirm { justify-content: flex-end; flex-wrap: wrap; }

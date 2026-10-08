@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — UX Danh mục: loading/error state rõ ràng cho Vị thế
+
+- Vị thế nay công bố `aria-busy` khi đang tải, hiển thị state loading riêng có spinner, và state error riêng có tiêu đề + message. Khi request lỗi, bảng không còn render như danh mục rỗng; retry vẫn do luồng parent giữ nguyên.
+- State surface dùng semantic token, không tràn ngang trên mobile; bảng chỉ render khi dữ liệu sẵn sàng, giữ nguyên tìm kiếm/sắp xếp/deep-link/action Watchlist.
+- Kiểm chứng: frontend unit **65/65**, encoding/API-error contract đạt, Portfolio Playwright **38/38**, gồm case lỗi tải và mobile; build/bundle integrity đạt (`index-Ca8ksHwy.js`). Preview 4173 HTTP 200.
+- Tiếp theo: audit tương tự cho transaction ledger/cash flow ở loading/partial/error và kiểm tra khả năng đọc mobile; benchmark vẫn chờ index-series hợp lệ.
+
 ## 2026-10-08 — UX Danh mục: sắp xếp Vị thế theo tác vụ
 
 - Bổ sung bộ sắp xếp client-side cho Vị thế mở/đóng: Mã A–Z, Giá trị cao nhất và Lãi/lỗ chưa thực hiện cao nhất. Tie-break luôn theo mã để thứ tự ổn định; dữ liệu nguồn không bị mutate và deep-link/Watchlist action giữ nguyên.
