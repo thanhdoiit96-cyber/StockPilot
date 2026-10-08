@@ -36,6 +36,7 @@
     ,"monitor:recommendations": "node scripts/monitor-recommendations.cjs"
     ,"verify:recommendation-snapshot": "node scripts/verify-recommendation-snapshot.cjs"
     ,"verify:recommendation-lifecycle": "node scripts/verify-recommendation-lifecycle.cjs"
+    ,"audit:recommendation-prices": "node scripts/audit-recommendation-prices.cjs"
     ,"check:recommendation-scheduler": "node scripts/check-recommendation-scheduler.cjs"
     ,"verify:quote-freshness": "node scripts/verify-quote-freshness.cjs"
     ,"backfill:vnstock-session": "node scripts/backfill-vnstock-session.cjs"

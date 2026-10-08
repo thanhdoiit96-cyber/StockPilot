@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Audit price rows và outcome lịch sử (read-only)
+
+- Thêm `npm run audit:recommendation-prices` trong backend: transaction PostgreSQL REPEATABLE READ + READ ONLY, không gọi evaluator, không sửa outcome. Gom phiên theo Asia/Ho_Chi_Minh; duplicate phân biệt stock/provider/interval/currency/unit/adjustment.
+- Live development: 56.021 price rows, 3 bản ghi thiếu/ngày không hợp lệ, 0 nhóm duplicate cùng provenance; 21 run đều thiếu snapshot hash. Có 5 outcome đã đo của run `1fd9fc7b-1252-4c9e-b85e-6e7a07ae56b5`, mỗi outcome chỉ có 1 ngày quan sát tới evaluated_at so với horizon 20. Không tự sửa lịch sử.
+- Kiểm chứng: regression audit + engine + persistence 23/23 đạt; CLI live thành công. Không thay frontend nên không build Preview.
+- Hạn chế: chưa xác minh hash, compatibility giữa provider hoặc lịch phiên chính thức; số ngày quan sát gộp nguồn chỉ dùng sàng lọc, không chứng minh đủ phiên/gap. CLI nạp toàn bộ dữ liệu, chưa kiểm chứng quy mô production.
+- Tiếp theo: loại outcome không đủ bằng chứng kỳ hạn/provenance khỏi cohort/hit-rate và giải thích trạng thái trên report/export, giữ nguyên bản ghi gốc; bổ sung regression. Sau đó chuẩn hóa evaluator theo phiên/provider và kiểm tra round-trip hash snapshot mới.
+
 ## 2026-10-08 — Sửa chốt outcome trước kỳ hạn
 
 - Evaluator bỏ fallback lấy giá cuối khi chưa đủ horizon. Outcome giữ pending cho tới quan sát thứ N sau as_of; giá vào/ra phải hữu hạn và lớn hơn 0.
