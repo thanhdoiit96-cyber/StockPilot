@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Eligibility thống kê, báo cáo/CSV và sửa live 404
+
+- Read-time guard giữ nguyên database: chỉ outcome có snapshot hash khớp (không chấp nhận bypass), đủ N ngày EOD cùng provider, VND/share unadjusted hợp lệ, không giá trùng mâu thuẫn, ngày kết thúc và return/sign khớp mới được tính. List/detail/cohort/ngành/calibration cùng dùng guard; report trả `statistics_eligible`, `measurement_status`, `exclusion_reasons`, summary thêm `excluded_count`.
+- UI chỉ còn một bảng lịch sử chung có mở report/CSV; bỏ bảng lặp trong learning panel và thay bằng liên kết. Tải tối đa 50 run gần nhất, mở thêm từng 8 dòng. Hiển thị lý do loại Việt/Anh, ẩn return chưa xác minh khỏi cột chính; CSV lưu raw outcome/return riêng với nhãn chưa xác minh.
+- Đã tái hiện live 404 dạng HTML `Cannot GET /api/recommendations/history/<id>`: tiến trình backend cũ chưa nạp route đang có trong source. Restart đúng backend cổng 5000; qua Preview 4173, cả 21/21 báo cáo trả 200. Run legacy có 5 outcome đều bị loại, measured=0, hit-rate/average=null; UUID không tồn tại trả 404 có code `recommendation_history_not_found` đúng contract.
+- Kiểm chứng: backend targeted 42/42; frontend unit 73/73; Playwright fixture 5/5 (report desktop/mobile + workbench); encoding/error-contract/build/bundle đạt. Preview 4173 phục vụ `index-D2zm0uIN.js`. Live smoke đọc API PostgreSQL; browser tests dùng fixture, không phải chứng nhận production/session thật.
+- Hạn chế: eligibility dựa trên ngày giá quan sát, chưa chứng minh lịch phiên chính thức/gap; bằng chứng được đối chiếu lúc đọc, không phải outcome evidence bất biến được ký. Không cập nhật outcome/hash lịch sử. Tiếp theo: chuẩn hóa evaluator theo phiên/provider và kiểm tra round-trip hash snapshot mới; sau đó lưu evidence đánh giá có version để giảm phụ thuộc dữ liệu giá thay đổi.
+
 ## 2026-10-08 — Audit price rows và outcome lịch sử (read-only)
 
 - Thêm `npm run audit:recommendation-prices` trong backend: transaction PostgreSQL REPEATABLE READ + READ ONLY, không gọi evaluator, không sửa outcome. Gom phiên theo Asia/Ho_Chi_Minh; duplicate phân biệt stock/provider/interval/currency/unit/adjustment.

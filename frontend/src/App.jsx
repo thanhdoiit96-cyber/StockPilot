@@ -940,7 +940,7 @@ function lv() {
     ai = Pn("/api/cache/stats"),
     au = Pn("/api/ai-gate", Bm),
     su = Pn("/api/recommendations/latest", Vm),
-    uu = Pn("/api/recommendations/history?limit=5", Hm);
+    uu = Pn("/api/recommendations/history?limit=50", Hm);
   Pn("/api/recommendations/readiness", Qm);
   const Nt = Pn(`/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`, Pc),
     il = D.useMemo(() => (Nt.data || []).map(nv), [Nt.data]),

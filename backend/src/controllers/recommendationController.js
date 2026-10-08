@@ -13,6 +13,8 @@ const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
 const { verifyRecommendationSnapshot } = require('../services/recommendationPersistence');
+const { assessRuns } = require('../services/recommendationEligibility');
+const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
 
 router.get('/saved', requireAuth, async (req, res) => {
   try {
@@ -44,7 +46,7 @@ function deriveCalibration(runs) {
   for (const run of runs) for (const item of run.recommendations || []) {
     const value = Number(item.forward_return_pct);
     const parts = item.rationale?.score_parts;
-    if (item.outcome !== 'pending' && Number.isFinite(value) && parts) observations.push({ value, parts });
+    if (item.statistics_eligible === true && hasForwardReturn(item.forward_return_pct) && parts) observations.push({ value, parts });
   }
   const calibration = Object.fromEntries(keys.map(key => [key, 1]));
   const evidence = Object.fromEntries(keys.map(key => [key, { samples: 0, adjustment: 1 }]));
@@ -68,14 +70,15 @@ function hasForwardReturn(value) {
 }
 
 function buildHistorySummary(items = []) {
-  const measured = items.filter(item => item.outcome && item.outcome !== 'pending' && hasForwardReturn(item.forward_return_pct));
+  const measured = items.filter(item => item.statistics_eligible === true && hasForwardReturn(item.forward_return_pct));
   const returns = measured.map(item => Number(item.forward_return_pct));
   const positive = measured.filter(item => item.outcome === 'positive').length;
   const negative = measured.filter(item => item.outcome === 'negative').length;
   const flat = measured.filter(item => item.outcome === 'flat').length;
   return {
     measured_count: measured.length,
-    pending_count: items.filter(item => !item.outcome || item.outcome === 'pending' || !hasForwardReturn(item.forward_return_pct)).length,
+    excluded_count: items.filter(item => item.measurement_status === 'excluded').length,
+    pending_count: items.filter(item => item.measurement_status !== 'excluded' && item.statistics_eligible !== true).length,
     positive_count: positive,
     negative_count: negative,
     flat_count: flat,
@@ -107,7 +110,7 @@ function buildEvaluationCohorts(runs = [], minimumSamples = 15) {
   }
   return [...buckets.values()].map(bucket => {
     const summary = buildHistorySummary(bucket.items);
-    const returns = bucket.items.filter(item => item.outcome && item.outcome !== 'pending' && hasForwardReturn(item.forward_return_pct)).map(item => Number(item.forward_return_pct)).sort((a, b) => a - b);
+    const returns = bucket.items.filter(item => item.statistics_eligible === true && hasForwardReturn(item.forward_return_pct)).map(item => Number(item.forward_return_pct)).sort((a, b) => a - b);
     return {
       model: bucket.model,
       horizon_days: bucket.horizon_days,
@@ -190,7 +193,7 @@ router.post('/personalized', async (req, res) => {
     const prices = await StockPrice.findAll({ order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000 });
     const byStock = new Map();
     for (const row of prices) { const item = row.toJSON ? row.toJSON() : row; const id = String(item.stock_id); if (!byStock.has(id)) byStock.set(id, []); byStock.get(id).push(item); }
-    const runs = await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale'] }] });
+    const runs = await assessRuns(await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(runs);
     const stockData = stocks.map(item => item.toJSON());
     const baseline = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays: req.body?.horizon_days || 20 });
@@ -205,7 +208,7 @@ router.get('/latest', async (req, res) => {
   try {
     const run = await RecommendationRun.findOne({ order: [['created_at', 'DESC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }] });
     if (!run) return res.json({ success: true, data: { status: 'unavailable', recommendations: [] } });
-    const calibrationRuns = await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale'] }] });
+    const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(calibrationRuns);
     return res.json({ success: true, data: { status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning, recommendations: (run.recommendations || []).map(item => ({ id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock })) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return httpError(res, 500, 'recommendation_latest_failed', 'Error fetching recommendations'); }
@@ -214,7 +217,7 @@ router.get('/latest', async (req, res) => {
 router.get('/history', async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)));
-    const runs = await RecommendationRun.findAll({ limit, order: [['created_at', 'DESC']], include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct'] }] });
+    const runs = await assessRuns(await RecommendationRun.findAll({ limit, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
     return res.json({ success: true, data: runs.map(run => ({
       id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days,
       provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count,
@@ -225,11 +228,11 @@ router.get('/history', async (req, res) => {
 
 router.get('/history/summary', async (req, res) => {
   try {
-    const runs = await RecommendationRun.findAll({
+    const runs = await assessRuns(await RecommendationRun.findAll({
       limit: 250,
       order: [['created_at', 'DESC']],
-      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale', 'rank', 'stock_id', 'entry_price', 'horizon_days'], include: [{ association: 'stock', attributes: ['code'] }] }],
-    });
+      include: historyInclude,
+    }), StockPrice);
     const minimumSamples = 15;
     const sector = buildSectorEvaluationCohorts(runs, minimumSamples);
     return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples), sector_cohorts: sector.cohorts, sector_taxonomy: { source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: sector.excluded_without_snapshot_taxonomy }, pending_integrity: buildPendingIntegrityCoverage(runs) } });
@@ -243,12 +246,15 @@ router.get('/history/:id', async (req, res) => {
       include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }],
     });
     if (!run) return httpError(res, 404, 'recommendation_history_not_found', 'Recommendation snapshot not found');
-    const items = (run.recommendations || []).map(item => {
+    const [assessed] = await assessRuns([run], StockPrice);
+    const items = (assessed.recommendations || []).map(item => {
       const hasReturn = hasForwardReturn(item.forward_return_pct);
       return {
       id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days,
       entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale,
       evaluated_at: item.evaluated_at,
+      statistics_eligible: item.statistics_eligible, measurement_status: item.measurement_status,
+      exclusion_reasons: item.exclusion_reasons, observed_session_count: item.observed_session_count,
       forward_return_pct: hasReturn ? Number(item.forward_return_pct) : null,
       outcome: hasReturn && item.outcome && item.outcome !== 'pending' ? item.outcome : 'pending', stock: item.stock,
     };

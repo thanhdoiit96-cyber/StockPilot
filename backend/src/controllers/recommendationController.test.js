@@ -8,7 +8,7 @@ jest.mock('../models', () => ({
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { SavedRecommendation, RecommendationRun } = require('../models');
+const { SavedRecommendation, RecommendationRun, StockPrice } = require('../models');
 const createRouter = require('./recommendationController');
 
 describe('saved recommendation API', () => {
@@ -16,6 +16,7 @@ describe('saved recommendation API', () => {
   const token = jwt.sign({ sub: 'user-1', email: 'test@example.com', role: 'user' }, 'development-only-change-me');
   beforeEach(() => {
     jest.clearAllMocks();
+    StockPrice.findAll.mockResolvedValue([]);
     app = express();
     app.use(express.json());
     app.use('/api/recommendations', createRouter);
@@ -49,7 +50,8 @@ describe('saved recommendation API', () => {
     });
     const response = await request(app).get('/api/recommendations/history/run-1');
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual(expect.objectContaining({ id: 'run-1', summary: expect.objectContaining({ measured_count: 1, pending_count: 1, positive_count: 1, hit_rate_pct: 100, average_forward_return_pct: 3.25 }) }));
+    expect(response.body.data).toEqual(expect.objectContaining({ id: 'run-1', summary: expect.objectContaining({ measured_count: 0, excluded_count: 1, pending_count: 1, positive_count: 0, hit_rate_pct: null, average_forward_return_pct: null }) }));
+    expect(response.body.data.recommendations[0]).toEqual(expect.objectContaining({ outcome: 'positive', forward_return_pct: 3.25, statistics_eligible: false, measurement_status: 'excluded', exclusion_reasons: expect.arrayContaining(['snapshot_unverified']) }));
     expect(response.body.data.recommendations[1]).toEqual(expect.objectContaining({ outcome: 'pending', forward_return_pct: null }));
     expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'run-1' } }));
   });
@@ -59,6 +61,23 @@ describe('saved recommendation API', () => {
     const response = await request(app).get('/api/recommendations/history/missing');
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('recommendation_history_not_found');
+  });
+
+  test('list, report and cohort consistently count only evidenced outcomes', async () => {
+    const { recommendationSnapshotHash } = require('../services/recommendationPersistence');
+    const eligible = { id: 'verified', as_of: '2026-01-01', model: 'test', provider: 'vnstock', horizon_days: 1, selected_count: 1, recommendations: [{ id: 'rec', stock_id: 's', stock: { code: 'FPT' }, rank: 1, horizon_days: 1, entry_price: 100, evaluated_at: '2026-01-02', forward_return_pct: 5, outcome: 'positive', rationale: { score_parts: { trend: 80 } } }] };
+    eligible.snapshot_sha256 = recommendationSnapshotHash(eligible);
+    const excluded = { ...eligible, id: 'legacy', snapshot_sha256: null };
+    StockPrice.findAll.mockResolvedValue([{ stock_id: 's', observed_at: '2026-01-02', close: 105, interval: '1d', provider: 'vnstock', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false }]);
+    RecommendationRun.findAll.mockResolvedValue([eligible, excluded]);
+    RecommendationRun.findOne.mockResolvedValue(eligible);
+    const list = await request(app).get('/api/recommendations/history');
+    expect(list.body.data[0]).toMatchObject({ measured_count: 1, excluded_count: 0, hit_rate_pct: 100 });
+    expect(list.body.data[1]).toMatchObject({ measured_count: 0, excluded_count: 1, hit_rate_pct: null });
+    const detail = await request(app).get('/api/recommendations/history/verified');
+    expect(detail.body.data.summary).toMatchObject({ measured_count: 1, hit_rate_pct: 100 });
+    const cohort = await request(app).get('/api/recommendations/history/summary');
+    expect(cohort.body.data.cohorts[0]).toMatchObject({ measured_count: 1, excluded_count: 1, hit_rate_pct: 100, average_forward_return_pct: 5 });
   });
 
   test('groups completed outcomes by immutable model and horizon with a sample gate', async () => {
@@ -71,10 +90,10 @@ describe('saved recommendation API', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.minimum_samples).toBe(15);
     expect(response.body.data.cohorts).toEqual(expect.arrayContaining([
-      expect.objectContaining({ model: 'short_term_rule_v2', horizon_days: 20, runs_count: 2, measured_count: 2, pending_count: 1, hit_rate_pct: 50, status: 'insufficient_samples', return_distribution: expect.objectContaining({ minimum_pct: -2, median_pct: 1, maximum_pct: 4 }) }),
+      expect.objectContaining({ model: 'short_term_rule_v2', horizon_days: 20, runs_count: 2, measured_count: 0, excluded_count: 2, pending_count: 1, hit_rate_pct: null, status: 'insufficient_samples', return_distribution: null }),
     ]));
     expect(response.body.data.sector_cohorts).toEqual(expect.arrayContaining([
-      expect.objectContaining({ industry: 'Technology', model: 'short_term_rule_v2', measured_count: 2, hit_rate_pct: 50, status: 'insufficient_samples' }),
+      expect.objectContaining({ industry: 'Technology', model: 'short_term_rule_v2', measured_count: 0, excluded_count: 2, hit_rate_pct: null, status: 'insufficient_samples' }),
     ]));
     expect(response.body.data.sector_taxonomy).toEqual(expect.objectContaining({ source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: 2 }));
     expect(response.body.data.pending_integrity).toEqual(expect.objectContaining({ pending_runs: 1, blocked_runs: 1 }));

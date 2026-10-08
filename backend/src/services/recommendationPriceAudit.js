@@ -1,11 +1,12 @@
 'use strict';
 
 // Diagnostics only: observed dates are not an exchange trading calendar.
+const sessionFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' });
 function sessionDate(value) {
   if (value == null) return null;
   const date = new Date(value);
   return Number.isFinite(date.getTime())
-    ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+    ? sessionFormatter.format(date)
     : null;
 }
 
