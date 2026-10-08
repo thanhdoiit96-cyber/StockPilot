@@ -752,3 +752,5 @@ Checkpoint hierarchy Bảng giá 2026-10-08: `Chỉ số thị trường` (fixtu
 Checkpoint compact index context 2026-10-08: `Chỉ số thị trường` và `Mã trọng tâm` đã ở lưới hai cột desktop, responsive về một cột. Fixture card có mini-chart SVG; headline luôn biểu diễn thay đổi phiên gần nhất, không đổi theo cửa sổ chart. Các range kiểu 1D/1W/1M/YTD chỉ mở khi series provider hợp lệ có độ dài và semantics tương ứng.
 
 Checkpoint intraday fixture 2026-10-08: chart fixture đã dùng timestamp 09:15–14:45 và các range Buổi sáng/Buổi chiều/Cả ngày; headline biến động phiên tách khỏi cửa sổ chart. Đây chỉ là Preview development có nhãn synthetic. Endpoint/provider production bắt buộc có license, timezone, session boundary, continuity và stale semantics trước khi công bố chart intraday.
+
+Checkpoint intraday baseline 2026-10-08: chart Cả ngày hiển thị tick 09:00–15:00, baseline đóng cửa phiên trước nét đứt và segment xanh/đỏ theo vị trí tương đối với baseline. Cụm hai section được căn giữa, tối đa 900px để cân bằng khoảng trống. Contract provider thật phải mang previous-close đã xác minh cùng intraday observations; UI không tự suy diễn baseline.

@@ -617,7 +617,7 @@ button, input { font: inherit; }
 .watchlist-company { min-width: 0; }
 .watchlist-actions { flex: 0 0 auto; }
 .watchlist-confirm { justify-content: flex-end; flex-wrap: wrap; }
-.market-board-context-grid { display:grid; grid-template-columns:minmax(250px,.78fr) minmax(320px,.92fr); align-items:start; width:min(100%,980px); gap:12px; margin-bottom:14px; }
+.market-board-context-grid { display:grid; grid-template-columns:minmax(240px,1fr) minmax(310px,1.15fr); align-items:start; width:min(100%,900px); gap:12px; margin:0 auto 14px; }
 .market-index-fixture { display:grid; gap:7px; min-width:0; padding:10px; border:1px dashed rgba(251,191,36,.45); border-radius:9px; color:#fbbf24; font-size:10px; letter-spacing:.02em; cursor:help; }
 .market-index-fixture strong { color:var(--text); font-size:11px; }
 .market-index-fixture .positive { color:#34d399; }
@@ -641,11 +641,14 @@ button, input { font: inherit; }
 .market-index-fixture-card-heading,.market-index-fixture-value,.market-index-fixture-dates { display:flex; align-items:center; justify-content:space-between; gap:6px; min-width:0; }
 .market-index-fixture-card-heading > strong { margin-right:auto; }
 .market-index-fixture-value > strong { font-size:14px; font-variant-numeric:tabular-nums; }
+.market-index-fixture-reference { color:var(--muted); font-size:9px; }
 .market-index-fixture-chart { width:100%; height:48px; overflow:visible; }
 .market-index-fixture-chart polyline { fill:none; stroke:currentColor; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.market-index-fixture-baseline { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 3; vector-effect:non-scaling-stroke; }
 .market-index-fixture-chart .positive { color:#34d399; }
 .market-index-fixture-chart .negative { color:#f87171; }
-.market-index-fixture-dates { color:var(--muted); font-size:9px; }
+.market-index-fixture-chart .neutral { color:var(--muted); }
+.market-index-fixture-times { display:flex; justify-content:space-between; gap:2px; color:var(--muted); font-size:8px; font-variant-numeric:tabular-nums; }
 .targeted-market-board { display:grid; gap:12px; min-width:0; padding:15px; border:1px solid var(--border); border-radius:14px; background:var(--surface-elevated); box-shadow:0 10px 24px rgba(2,6,23,.10); }
 .targeted-market-heading h2 { margin:2px 0 5px; font-size:20px; }
 .targeted-market-heading p { margin:0; color:var(--muted); font-size:13px; }
