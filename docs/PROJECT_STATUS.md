@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Compact market context và mini-chart chỉ số
+
+- `Chỉ số thị trường` và `Mã trọng tâm` nằm chung một hàng desktop theo tỷ lệ phù hợp, giảm padding/độ rộng; tại tablet/mobile tự chuyển một cột để không nén card.
+- Mỗi index fixture có mini-chart SVG, chọn cửa sổ 2 hoặc 4 phiên, mốc đầu/cuối và thay đổi phiên mới nhất. Đổi range không làm thay đổi headline biến động phiên.
+- Chart dùng duy nhất chuỗi fixture được gắn `Dữ liệu mô phỏng (development)`; không suy diễn intraday hay hiển thị như chỉ số production.
+- Frontend unit **66/66** (trước thay đổi presentation), browser Bảng giá **1/1** và fixture index **1/1**, Preview opt-in build đạt (`index-BnomAfir.js`).
+- Tiếp theo: chỉ mở 1D/1W/1M/YTD khi provider cung cấp series đủ độ dài, session/timezone và quyền hiển thị.
+
 ## 2026-10-08 — Phân tầng thông tin trên Bảng giá
 
 - Giữ `Mã trọng tâm` tại Bảng giá, không nhân bản sang Tổng quan: Bảng giá là ngữ cảnh so sánh/khám phá mã; Tổng quan giữ vai trò bức tranh thị trường và danh mục.

@@ -33,6 +33,13 @@ const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase
 const observedLabel = (quote, language, t) => quote?.observed_at
   ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(quote.observed_at))
   : t('market.latestEod')
+const fixtureChartPoints = points => {
+  const values = points.map(point => Number(point.close))
+  const floor = Math.min(...values)
+  const ceiling = Math.max(...values)
+  const spread = ceiling - floor || 1
+  return points.map((point, index) => `${8 + index * (144 / Math.max(1, points.length - 1))},${44 - ((Number(point.close) - floor) / spread * 34)}`).join(' ')
+}
 
 function loadColumns() {
   try { return normalizeMarketColumns(JSON.parse(localStorage.getItem(MARKET_COLUMNS_KEY) || '{}')) } catch { return normalizeMarketColumns() }
@@ -59,19 +66,21 @@ function TargetedMarketBoard({ rows, language, onOpenDetail, active }) {
   </section>
 }
 
-function MarketIndexFixtureSection({ fixtureSymbols, selectedFixtureSeries, setFixtureSymbols, moveFixture, language }) {
+function MarketIndexFixtureSection({ fixtureSymbols, selectedFixtureSeries, setFixtureSymbols, moveFixture, range, setRange, language }) {
   const copy = language === 'en'
-    ? { title: 'Market indices', subtitle: 'Development preview — synthetic data only.', choose: 'Choose simulated indices' }
-    : { title: 'Chỉ số thị trường', subtitle: 'Preview development — chỉ dùng dữ liệu mô phỏng.', choose: 'Chọn chỉ số mô phỏng' }
+    ? { title: 'Market indices', subtitle: 'Development preview — synthetic data only.', choose: 'Choose simulated indices', range: 'Chart range', sessions: 'sessions' }
+    : { title: 'Chỉ số thị trường', subtitle: 'Preview development — chỉ dùng dữ liệu mô phỏng.', choose: 'Chọn chỉ số mô phỏng', range: 'Khoảng biểu đồ', sessions: 'phiên' }
   return <section className="market-index-fixture-section" aria-labelledby="market-index-fixture-title">
     <div className="market-index-fixture-heading"><div><span className="eyebrow accent">MARKET CONTEXT</span><h2 id="market-index-fixture-title">{copy.title}</h2><p>{copy.subtitle}</p></div></div>
-    <div className="market-index-fixture-selector" role="group" aria-label={copy.choose}>{INDEX_SERIES_FIXTURES.map(series => <label key={series.symbol}><input type="checkbox" checked={fixtureSymbols.includes(series.symbol)} onChange={event => setFixtureSymbols(current => event.target.checked ? [...current, series.symbol].slice(0, 4) : current.filter(symbol => symbol !== series.symbol))} />{series.symbol}</label>)}</div>
+    <div className="market-index-fixture-controls"><div className="market-index-fixture-selector" role="group" aria-label={copy.choose}>{INDEX_SERIES_FIXTURES.map(series => <label key={series.symbol}><input type="checkbox" checked={fixtureSymbols.includes(series.symbol)} onChange={event => setFixtureSymbols(current => event.target.checked ? [...current, series.symbol].slice(0, 4) : current.filter(symbol => symbol !== series.symbol))} />{series.symbol}</label>)}</div><div className="market-index-range" role="group" aria-label={copy.range}>{[2, 4].map(size => <button key={size} type="button" aria-pressed={range === size} className={range === size ? 'is-active' : ''} onClick={() => setRange(size)}>{size} {copy.sessions}</button>)}</div></div>
     <div className="market-index-fixture-grid">{selectedFixtureSeries.map((series, index) => {
-      const latest = series.points.at(-1)
-      const previous = series.points.at(-2)
-      const change = latest.close - previous.close
-      const pct = change / previous.close * 100
-      return <div className="market-index-fixture" key={series.symbol} title={`${indexSeriesFixtureLabel(series)} · ${series.session_timezone}`} aria-label={`${series.symbol}: ${latest.close}, ${latest.session_date}`}><span className="market-index-fixture-dot" aria-hidden="true" /><strong>{series.symbol}</strong><span>{latest.close.toLocaleString('en-US')}</span><span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span><span className="market-index-fixture-order"><button type="button" aria-label={`Đưa ${series.symbol} sang trái`} disabled={index === 0} onClick={() => moveFixture(series.symbol, -1)}>←</button><button type="button" aria-label={`Đưa ${series.symbol} sang phải`} disabled={index === selectedFixtureSeries.length - 1} onClick={() => moveFixture(series.symbol, 1)}>→</button></span><small>{indexSeriesFixtureLabel(series)} · {latest.session_date}</small></div>
+      const points = series.points.slice(-range)
+      const latest = points.at(-1)
+      const previousSession = series.points.at(-2)
+      const first = points[0]
+      const change = latest.close - previousSession.close
+      const pct = change / previousSession.close * 100
+      return <article className="market-index-fixture" key={series.symbol} title={`${indexSeriesFixtureLabel(series)} · ${series.session_timezone}`} aria-label={`${series.symbol}: ${latest.close}, ${latest.session_date}`}><div className="market-index-fixture-card-heading"><span className="market-index-fixture-dot" aria-hidden="true" /><strong>{series.symbol}</strong><span className="market-index-fixture-order"><button type="button" aria-label={`Đưa ${series.symbol} sang trái`} disabled={index === 0} onClick={() => moveFixture(series.symbol, -1)}>←</button><button type="button" aria-label={`Đưa ${series.symbol} sang phải`} disabled={index === selectedFixtureSeries.length - 1} onClick={() => moveFixture(series.symbol, 1)}>→</button></span></div><div className="market-index-fixture-value"><strong>{latest.close.toLocaleString('en-US')}</strong><span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span></div><svg className="market-index-fixture-chart" viewBox="0 0 160 52" role="img" aria-label={`${series.symbol} ${range} ${copy.sessions}: ${formatChange(pct)}`} preserveAspectRatio="none"><polyline points={fixtureChartPoints(points)} className={change >= 0 ? 'positive' : 'negative'} /></svg><div className="market-index-fixture-dates"><span>{first.session_date.slice(5)}</span><span>{latest.session_date.slice(5)}</span></div><small>{indexSeriesFixtureLabel(series)} · {latest.session_date}</small></article>
     })}</div>
   </section>
 }
@@ -95,6 +104,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const [exporting, setExporting] = useState(false)
   const [sharedQuotes, setSharedQuotes] = useState(() => window.__stockpilotRecentQuotes || {})
   const [fixtureSymbols, setFixtureSymbols] = useState(() => { try { const saved = JSON.parse(sessionStorage.getItem('stockpilot-index-fixtures') || '[]'); return Array.isArray(saved) && saved.length ? saved.slice(0, 4) : ['VNINDEX', 'VN30'] } catch { return ['VNINDEX', 'VN30'] } })
+  const [fixtureRange, setFixtureRange] = useState(4)
   const selectedFixtureSeries = fixtureSymbols.map(symbol => INDEX_SERIES_FIXTURES.find(series => series.symbol === symbol)).filter(Boolean)
   const moveFixture = (symbol, direction) => setFixtureSymbols(current => {
     const index = current.indexOf(symbol)
@@ -248,7 +258,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     onOpenDetail?.(stock)
   }
 
-  return <>{active && (import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && <MarketIndexFixtureSection fixtureSymbols={fixtureSymbols} selectedFixtureSeries={selectedFixtureSeries} setFixtureSymbols={setFixtureSymbols} moveFixture={moveFixture} language={language} />}{active && <TargetedMarketBoard rows={rows} language={language} onOpenDetail={onOpenDetail} active={active} />}<section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
+  return <><div className="market-board-context-grid">{active && (import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && <MarketIndexFixtureSection fixtureSymbols={fixtureSymbols} selectedFixtureSeries={selectedFixtureSeries} setFixtureSymbols={setFixtureSymbols} moveFixture={moveFixture} range={fixtureRange} setRange={setFixtureRange} language={language} />}{active && <TargetedMarketBoard rows={rows} language={language} onOpenDetail={onOpenDetail} active={active} />}</div><section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
     <div className="panel-header">
       <h3>{t('market.list')}</h3>
       <div className="table-tools overview-filter-row">
