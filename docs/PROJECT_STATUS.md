@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Watchlist: thời điểm cập nhật và reset bộ lọc
+
+- Mỗi mã đã chỉnh metadata nay hiển thị `metadata_updated_at` theo locale/timezone tài khoản bằng thẻ `time`; mã chưa từng chỉnh không nhận timestamp giả. Điều này làm rõ cơ sở của cách sắp xếp “Mới cập nhật”.
+- Khi tìm kiếm, ngành, trạng thái hoặc cách sắp xếp khác mặc định đang bật, UI xuất hiện một nút `Xóa toàn bộ bộ lọc`; thao tác đưa view về rỗng/rỗng/rỗng/`Mới thêm`, đóng xác nhận xóa và trả focus về ô tìm kiếm. Nút tự ẩn khi không còn điều kiện, tránh thêm nhiễu thường trực.
+- Kiểm chứng: frontend unit **64/64**, encoding/API-error contract đạt, Portfolio Playwright **35/35**, live authenticated Watchlist **1/1** xác nhận timestamp và reset sau reload PostgreSQL; build/bundle integrity đạt (`index-BkPBPez_.js`). Preview 4173 và backend 5000 HTTP 200.
+- Tiếp theo: đo phân bố số mã Watchlist và thời gian render/filter trên dữ liệu development đủ lớn trước khi quyết định pagination/windowing hoặc bulk action. Nếu chưa chạm ngân sách hiệu năng, quay lại lát cắt UX Danh mục thay vì tối ưu suy đoán.
+
 ## 2026-10-08 — Watchlist: tìm ghi chú và tóm tắt hàng đợi
 
 - Tìm kiếm Watchlist nay phủ mã, tên doanh nghiệp và ghi chú cá nhân, tiếp tục dùng so khớp không phân biệt dấu. Tóm tắt `Tất cả / Theo dõi / Đang nghiên cứu / Tạm dừng` hiển thị số lượng toàn Watchlist và đồng thời là nhóm nút lọc nhanh có `aria-pressed`, đồng bộ hai chiều với dropdown trạng thái.
