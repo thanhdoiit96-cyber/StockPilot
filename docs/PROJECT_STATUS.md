@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Khả năng khám phá dải chỉ số trên mobile
+
+- Dải card chỉ số có `scroll-snap`, focus outline và nhãn vùng truy cập được; mobile hiển thị gợi ý “Vuốt hoặc cuộn ngang để xem thêm chỉ số”.
+- Hồi quy xác nhận dải thật sự có overflow cuộn ngang tại 390px, vẫn giữ card cùng hàng trên desktop.
+- Frontend unit **66/66**, browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-LGi_9weq.js`).
+- Tiếp theo: provider index-series thật vẫn là blocker cho dữ liệu production; trong phạm vi UI không bị chặn, ưu tiên audit Danh mục/loading-mobile thay vì dựng thêm dữ liệu thị trường giả.
+
 ## 2026-10-08 — Chỉ số thị trường full-width, compact
 
 - Khối Chỉ số thị trường nay chiếm toàn bộ chiều ngang vùng nội dung thay vì bị giới hạn 900px.

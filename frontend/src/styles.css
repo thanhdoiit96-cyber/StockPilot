@@ -631,8 +631,11 @@ button, input { font: inherit; }
 .market-index-fixture-heading h2 { margin:1px 0 2px; font-size:16px; }
 .market-index-fixture-heading p { margin:0; color:var(--muted); font-size:11px; }
 .market-index-fixture-controls { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.market-index-fixture-grid { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; }
+.market-index-fixture-grid { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; scroll-snap-type:x proximity; }
 .market-index-fixture-grid .market-index-fixture { flex:1 1 0; min-width:0; }
+.market-index-fixture-grid:focus-visible { outline:2px solid var(--primary); outline-offset:3px; border-radius:10px; }
+.market-index-fixture-grid .market-index-fixture { scroll-snap-align:start; }
+.market-index-scroll-hint { display:none; margin:0; color:var(--muted); font-size:10px; }
 .market-index-fixture-selector { display:flex; flex-wrap:wrap; gap:6px; }
 .market-index-fixture-selector label { display:inline-flex; align-items:center; gap:5px; padding:4px 7px; border:1px solid var(--border); border-radius:7px; color:var(--muted); font-size:10px; cursor:pointer; }
 .market-index-fixture-selector input { width:13px; height:13px; margin:0; accent-color:var(--primary); }
@@ -650,7 +653,7 @@ button, input { font: inherit; }
 .market-index-fixture-chart .negative { color:#f87171; }
 .market-index-fixture-chart .neutral { color:var(--muted); }
 .market-index-fixture-times { display:flex; justify-content:space-between; gap:2px; color:var(--muted); font-size:7px; font-variant-numeric:tabular-nums; }
-@media (max-width:700px) { .market-index-fixture-grid .market-index-fixture { flex:0 0 min(78vw,260px); } }
+@media (max-width:700px) { .market-index-fixture-grid .market-index-fixture { flex:0 0 min(78vw,260px); } .market-index-scroll-hint { display:block; } }
 @media (max-width:520px) { .market-index-fixture-section { padding:10px; } .market-index-fixture-controls { flex-direction:column; align-items:stretch; } }
 .watchlist-confirm span { color: var(--muted); font-size: 13px; }
 .watchlist-empty { cursor: default; justify-content: flex-start !important; }

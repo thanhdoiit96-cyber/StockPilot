@@ -760,3 +760,5 @@ Checkpoint simplified Market Board 2026-10-08: đã loại `Mã trọng tâm` th
 Checkpoint horizontal index cards 2026-10-08: card chỉ số luôn ở một hàng ngang để hỗ trợ so sánh; 2 card tự giãn đều, 3–4 card vẫn giữ hàng, mobile cuộn ngang trong section. Browser regression xác nhận các card cùng toạ độ dọc.
 
 Checkpoint full-width compact indices 2026-10-08: section Chỉ số thị trường đã mở full chiều ngang vùng nội dung và nén chiều cao (chart 28px, padding/gap/typography phụ giảm) nhưng giữ baseline và trục giờ. Điều này chỉ là presentation; không đổi contract fixture hay gate provider.
+
+Checkpoint mobile index discoverability 2026-10-08: dải index dùng scroll-snap, focus outline, region label và hint cuộn ngang chỉ trên mobile; regression tại 390px xác nhận overflow là chủ ý và card vẫn một hàng trên desktop. Provider index-series thật tiếp tục là blocker production.
