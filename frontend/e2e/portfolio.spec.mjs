@@ -176,6 +176,23 @@ test('filters and sorts Watchlist for daily review on desktop and mobile', async
   expect(await page.locator('.watchlist-view-controls').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
 
+test('edits user-owned Watchlist status and note without leaving the list', async ({ page }) => {
+  await boot(page, [], [], [], [{ stock_id: 'a', status: 'WATCHING', note: null, Stock: { id: 'a', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } }])
+  await page.getByRole('tab', { name: /Watchlist/ }).click()
+  const panel = page.locator('.watchlist-panel')
+  await expect(panel.getByText('Theo dõi', { exact: true })).toBeVisible()
+  await panel.getByRole('button', { name: 'Chỉnh sửa theo dõi FPT' }).click()
+  const editor = page.getByRole('group', { name: 'Chỉnh sửa theo dõi FPT' })
+  await editor.getByLabel('Trạng thái').selectOption('RESEARCHING')
+  await editor.getByLabel('Ghi chú cá nhân').fill('Kiểm tra tăng trưởng lợi nhuận quý tới')
+  await editor.getByRole('button', { name: 'Lưu' }).click()
+  await expect(panel.getByText('Đang nghiên cứu', { exact: true })).toBeVisible()
+  await expect(panel.getByText('Kiểm tra tăng trưởng lợi nhuận quý tới')).toBeVisible()
+  await expect(panel.locator('.watchlist-mutation')).toContainText('Đã cập nhật FPT.')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await panel.locator('ul.watchlist').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
 test('portfolio exposes shareable detail links and compact Watchlist actions', async ({ page }) => {
   await boot(page, [{ stock_id: 'a', symbol: 'FPT', name: 'Công nghệ FPT', quantity: 10 }])
   const row = page.locator('.portfolio-table tbody tr').filter({ hasText: 'FPT' })
@@ -207,6 +224,7 @@ async function boot(page,initialPositions=[],initialTransactions=[],initialClose
     else if(path==='/api/auth/me')payload={success:true,user:initialUser}
     else if(path==='/api/watchlist'&&req.method()==='GET')payload={success:true,data:watch}
     else if(path==='/api/watchlist'&&req.method()==='POST'){watch=[{stock_id:'a',Stock:{code:'FPT',name:'FPT Corp'}}];payload={success:true,data:watch}}
+    else if(path.startsWith('/api/watchlist/')&&req.method()==='PATCH'){const code=decodeURIComponent(path.split('/').at(-1));const body=JSON.parse(req.postData()||'{}');watch=watch.map(item=>item.Stock?.code===code?{...item,...body,metadata_updated_at:'2026-10-08T03:00:00Z'}:item);payload={success:true,data:watch.find(item=>item.Stock?.code===code)}}
     else if(path.startsWith('/api/watchlist/')&&req.method()==='DELETE'){const code=decodeURIComponent(path.split('/').at(-1));watch=watch.filter(item=>item.Stock?.code!==code);return route.fulfill({status:204})}
     else if(path==='/api/portfolio/performance/history'&&req.method()==='GET'){performanceHistoryRequests.push(req.url());payload={success:true,data:initialPerformanceHistory||{status:'empty',methodology:'daily_close_twr_v1',timezone:'Asia/Ho_Chi_Minh',cash_flow_timing:'beginning_of_session',requested_sessions:30,coverage:{sessions:0,complete_sessions:0,incomplete_sessions:0},twr_available:false,cumulative_twr_pct:null,mwr:{status:'unavailable',reason:'insufficient_sign_change',annualized_mwr_pct:null},points:[],limitations:[]}}}
     else if(path==='/api/portfolio'&&req.method()==='GET')payload={success:true,data:{positions,closed_positions:closedPositions,position_counts:{open:positions.length,closed:closedPositions.length},transactions,performance:initialPerformance,cash_flows:cashFlows}}

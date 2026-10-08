@@ -1214,6 +1214,15 @@ function lv() {
         throw S;
       }
     },
+    updateWatchlistMetadata = async (symbol, metadata) => {
+      const response = await je(`/api/watchlist/${encodeURIComponent(symbol)}`, {
+        method: "PATCH",
+        token: ue.token,
+        body: metadata
+      });
+      Bn(items => items.map(item => item.Stock?.code === symbol ? response.data : item));
+      return response.data;
+    },
     mi = ((pe == null ? void 0 : pe.positions) || []).map(d => {
       var S;
       const $ = di[(S = d.symbol) == null ? void 0 : S.toUpperCase()] || d.current_quote,
@@ -2079,6 +2088,7 @@ function lv() {
               d && (ht(d), Xe("detail"));
             },
             onRemove: rf,
+            onUpdateMetadata: updateWatchlistMetadata,
             language: profileLanguage
           })] })]
       }), re === "detail" && O.jsxs("section", {

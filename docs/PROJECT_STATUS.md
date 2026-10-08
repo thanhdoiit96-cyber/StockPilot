@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Metadata Watchlist do người dùng sở hữu
+
+- Mở rộng `watchlist_items` bằng migration 030 với `status`, ghi chú tối đa 280 ký tự và `metadata_updated_at`. Ba trạng thái trung tính phục vụ tổ chức công việc là `WATCHING`, `RESEARCHING`, `PAUSED`; không lưu giá mục tiêu hoặc suy diễn tín hiệu đầu tư.
+- Thêm `PATCH /api/watchlist/:symbol`: chuẩn hóa input, từ chối trạng thái/độ dài sai và chỉ tìm bản ghi bằng cặp authenticated `user_id + stock_id`. UI cho phép sửa nhanh ngay trong từng dòng, có bộ đếm ký tự, phản hồi loading/error/success và bố cục mobile/Dark/Light.
+- Kiểm chứng: migration PostgreSQL development thành công; backend metadata/controller **4/4**, frontend unit **64/64**, API-error/encoding contract đạt, Portfolio Playwright **35/35**, build/bundle integrity đạt (`index-Du7cOW_g.js`). Backend 5000 đã restart, Preview 4173 phục vụ bundle mới và cả hai health/HTML smoke HTTP 200.
+- Giới hạn: browser test dùng API fixture; chưa mutation bằng session development thật trong lát cắt này. Tiếp theo: thêm lọc nhanh theo trạng thái và thời điểm cập nhật, sau đó chạy live authenticated smoke để xác nhận persistence/reload trên PostgreSQL.
+
 ## 2026-10-08 — Watchlist: lọc và sắp xếp cho tác vụ theo dõi hằng ngày
 
 - Bổ sung bộ lọc theo ngành và ba cách sắp xếp `Mới thêm / Mã A–Z / Tên doanh nghiệp A–Z`; tìm kiếm, lọc và sắp xếp phối hợp trên client nên không phát sinh request mới và không làm mất dữ liệu gốc.
