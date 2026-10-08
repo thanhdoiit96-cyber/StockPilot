@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Smoke resource-state Ledger/Dòng tiền
+
+- Thêm fixture Playwright độc lập mô phỏng `portfolio_load_failed`; xác nhận Ledger và Dòng tiền hiển thị error state riêng, không lộ empty state, không tràn ngang ở mobile.
+- Kiểm chứng smoke mới **1/1 đạt**; hồi quy Portfolio trước đó **38/38 đạt**.
+- Tiếp theo: bổ sung fixture partial response (dữ liệu vị thế có nhưng ledger/cash thiếu) và quyết định contract hiển thị từng resource trước khi mở rộng retry cục bộ.
+
 ## 2026-10-08 — Hồi quy form và responsive Danh mục
 
 - Kiểm tra toàn bộ luồng Danh mục sau khi chuẩn hóa style input/select và resource state: form giao dịch, form Dòng tiền, dialog sửa/xóa, ledger import/export, tab keyboard/mobile và hiệu suất ngày đều giữ hành vi ổn định.
