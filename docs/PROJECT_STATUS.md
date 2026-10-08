@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — UX Danh mục: sắp xếp Vị thế theo tác vụ
+
+- Bổ sung bộ sắp xếp client-side cho Vị thế mở/đóng: Mã A–Z, Giá trị cao nhất và Lãi/lỗ chưa thực hiện cao nhất. Tie-break luôn theo mã để thứ tự ổn định; dữ liệu nguồn không bị mutate và deep-link/Watchlist action giữ nguyên.
+- Control dùng semantic theme token, nằm cùng toolbar tìm kiếm và tự co giãn trên mobile; không tạo request mới hay thay đổi contract định giá.
+- Kiểm chứng: frontend unit **65/65**, encoding/API-error contract đạt, Portfolio Playwright **37/37**, build/bundle integrity đạt (`index-Ds9KqHJC.js`). Preview 4173 HTTP 200.
+- Tiếp theo: tiếp tục rà soát UX Danh mục ở các trạng thái loading/partial/error và khả năng đọc mobile; benchmark vẫn chờ index-series hợp lệ.
+
 ## 2026-10-08 — Performance gate Watchlist: đo scale trước pagination
 
 - Thêm `backend/scripts/measure-watchlist-scale.cjs` và lệnh `npm run measure:watchlist`; truy vấn chỉ trả aggregate ẩn danh theo user, không xuất email, id hay nội dung ghi chú. Development hiện có **2 items / 1 user**, `max=2`, `p50=2`, `p95=2`.

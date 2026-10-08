@@ -4,6 +4,7 @@ import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import StockDetailLink from './StockDetailLink.jsx'
 import { formatDateTime, formatMoney, formatNumber } from '../services/userLocale.mjs'
 import { translate } from '../services/i18n.mjs'
+import { sortPositions } from '../services/positionView.mjs'
 
 const openDetail = (event, position, callback) => {
   if (event && event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return
@@ -40,9 +41,10 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
   const t = key => translate(language, key)
   const [filter, setFilter] = useState('open')
   const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('symbol')
   const closed = filter === 'closed'
   const sourceRows = closed ? closedPositions : positions
-  const rows = filterPositions(sourceRows, query)
+  const rows = sortPositions(filterPositions(sourceRows, query), sort, language)
   const watched = new Set(watchlistSymbols.map(symbol => String(symbol).toUpperCase()))
   return <section className="portfolio-positions" aria-labelledby="portfolio-positions-title" lang={language}>
     <div className="portfolio-positions-heading">
@@ -57,6 +59,7 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
         <input className="app-search-input" id="position-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={t('portfolio.positions.placeholder')} />
       </label>
       {query && <button type="button" className="ghost-btn small-btn search-clear-btn" onClick={() => { setQuery(''); document.getElementById('position-search')?.focus() }}>{t('portfolio.positions.clear')}</button>}
+      <label className="position-sort-control">{t('portfolio.positions.sort')}<select value={sort} onChange={event => setSort(event.target.value)}><option value="symbol">{t('portfolio.positions.sortSymbol')}</option><option value="value">{t('portfolio.positions.sortValue')}</option><option value="pnl">{t('portfolio.positions.sortPnl')}</option></select></label>
       {!loading && !error && <span className="search-result-count" role="status">{rows.length}/{sourceRows.length} {t('portfolio.positions.position')} {t(closed ? 'portfolio.positions.closed' : 'portfolio.positions.open').toLowerCase()}</span>}
     </div>
     {!loading && !error && query.trim() && !rows.length ? <p role="status">{t('portfolio.positions.noMatch')}</p> : null}
