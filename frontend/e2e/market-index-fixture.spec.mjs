@@ -21,4 +21,7 @@ test('shows a clearly labeled synthetic index card in opt-in preview', async ({ 
   await page.getByRole('button', { name: 'Đưa VN30 sang trái' }).click()
   await expect(card.first()).toContainText('VN30')
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('stockpilot-index-fixtures'))).toBe('["VN30","VNINDEX"]')
+  await page.reload()
+  await page.getByRole('button', { name: /Bảng giá/ }).click()
+  await expect(page.locator('.market-index-fixture').first()).toContainText('VN30')
 })
