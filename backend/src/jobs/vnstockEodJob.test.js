@@ -11,16 +11,19 @@ const { completedSessionDate, prioritizeMissingSymbols, findCurrentSessionTraded
 const { ingestVnstockEod } = require('../market-data/vnstockEodIngestion');
 const { eodCoverage } = require('../market-data/eodCoverage');
 const fs = require('node:fs/promises');
+const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
 describe('vnstock EOD scheduler', () => {
   const original = process.env.VNSTOCK_EOD_ENABLED;
   const originalRetryLimit = process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT;
+  const originalRecommendationsAfterIngest = process.env.RECOMMENDATIONS_AFTER_INGEST;
   beforeEach(() => { jest.useFakeTimers({ now: new Date('2026-09-27T10:00:00.000Z') }); });
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
     if (original === undefined) delete process.env.VNSTOCK_EOD_ENABLED; else process.env.VNSTOCK_EOD_ENABLED = original;
     if (originalRetryLimit === undefined) delete process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT; else process.env.VNSTOCK_EOD_GAP_RETRY_LIMIT = originalRetryLimit;
+    if (originalRecommendationsAfterIngest === undefined) delete process.env.RECOMMENDATIONS_AFTER_INGEST; else process.env.RECOMMENDATIONS_AFTER_INGEST = originalRecommendationsAfterIngest;
   });
 
   test('rolls Sunday and configured holidays back to the latest completed weekday', () => {
@@ -78,6 +81,17 @@ describe('vnstock EOD scheduler', () => {
     const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
     expect(saved.complete).toBe(false);
     expect(saved.after.missing_symbols).toEqual(['BCG']);
+  });
+
+  test('does not generate recommendations when the EOD session remains incomplete', async () => {
+    process.env.RECOMMENDATIONS_AFTER_INGEST = 'true';
+    ingestVnstockEod.mockResolvedValue({ received: 1 });
+    eodCoverage.mockResolvedValue({ symbols: 2, covered: 1, missing_symbols: ['BCG'] });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } });
+    await task.callback();
+    expect(generateRecommendationSnapshot).not.toHaveBeenCalled();
+    const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
+    expect(saved.recommendations).toEqual(expect.objectContaining({ status: 'skipped_incomplete_eod_coverage', missing_symbols: 1 }));
   });
 
   test('repeats configured gap retry passes while symbols remain missing', async () => {

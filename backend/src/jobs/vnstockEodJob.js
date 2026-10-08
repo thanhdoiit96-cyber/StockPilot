@@ -153,6 +153,7 @@ function startVnstockEodJob({
         evidence.retries.push({ pass, requested: missingSymbols.length, ingestion: retry, remaining: coverage.missing_symbols.length });
         missingSymbols = coverage.missing_symbols;
       }
+      evidence.after = await eodCoverage(models.sequelize, sessionDate, options.symbols || null);
       // A later run can have no rows yet (weekend, holiday, or a provider
       // outage). Repair the latest persisted session so old gaps do not wait
       // forever for a user to report a stale symbol.
@@ -167,9 +168,13 @@ function startVnstockEodJob({
         }
       }
       logger.info(`[Vnstock EOD] ${JSON.stringify(report)}`);
-      if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {
+      if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true' && evidence.after.symbols > 0 && evidence.after.missing_symbols.length === 0) {
         const snapshot = await generateRecommendationSnapshot({ ...models, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', useIntradayReference: true, limit: Math.min(5, Math.max(3, Number(process.env.RECOMMENDATION_LIMIT || 5))), horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
+        evidence.recommendations = snapshot;
         logger.info(`[Recommendations] ${JSON.stringify(snapshot)}`);
+      } else if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {
+        evidence.recommendations = { status: 'skipped_incomplete_eod_coverage', covered_symbols: evidence.after.symbols, missing_symbols: evidence.after.missing_symbols.length };
+        logger.warn(`[Recommendations] ${JSON.stringify(evidence.recommendations)}`);
       }
     } catch (error) {
       evidence.error = error.message;

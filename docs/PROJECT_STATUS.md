@@ -4457,6 +4457,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Lifecycle verifier cho snapshot hash-backed — 2026-10-08
 
+## Chỉ tạo snapshot sau EOD coverage hoàn chỉnh — 2026-10-08
+
+- Hook `RECOMMENDATIONS_AFTER_INGEST=true` nay chỉ gọi generator sau retry khi EOD coverage có ít nhất một mã và không còn mã thiếu. Coverage partial ghi `skipped_incomplete_eod_coverage` vào evidence thay vì tạo cohort từ dữ liệu thiếu.
+- Điều này kết hợp freshness gate + idempotent guard + snapshot hash: snapshot mới chỉ đại diện cho một phiên EOD hoàn chỉnh, không phải kết quả provider partial.
+- Kiểm chứng: Vnstock EOD scheduler **12/12** đạt, gồm case coverage partial không gọi generator.
+
 - Thêm `npm run verify:recommendation-lifecycle`: tìm run hash-backed mới nhất, kiểm integrity, chạy evaluator theo contract và trả pending/measured/skipped aggregate. Script không tạo snapshot.
 - Đã chạy smoke trên development: trả `waiting_for_hash_backed_snapshot`, phù hợp vì tất cả run hiện tại là legacy. Node syntax check đạt.
 - Sau EOD phiên mới: chạy generate, rồi chạy lifecycle verifier để tạo bằng chứng pending → outcome; nếu hash không khớp script fail rõ thay vì sửa dữ liệu.
