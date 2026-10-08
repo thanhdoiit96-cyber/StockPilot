@@ -23,7 +23,7 @@ const editDateTime = value => {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
 
-export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDelete, loading = false, error = '', language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
+export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDelete, onRetry, loading = false, error = '', language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = (key, values) => translate(language, key, values)
   const number = value => formatNumber(value, language, { maximumFractionDigits: 4 })
   const money = value => `${formatNumber(value, language, { maximumFractionDigits: 0 })} ₫`
@@ -133,7 +133,7 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       </div>
     </div>
     {loading ? <div className="portfolio-resource-state loading" role="status"><span className="state-spinner" aria-hidden="true" />{t('portfolio.ledger.loading')}</div> : null}
-    {!loading && error ? <div className="portfolio-resource-state error" role="alert"><strong>{t('portfolio.ledger.errorTitle')}</strong><span>{error}</span></div> : null}
+    {!loading && error ? <div className="portfolio-resource-state error" role="alert"><strong>{t('portfolio.ledger.errorTitle')}</strong><span>{error}</span>{onRetry ? <button className="ghost-btn small-btn" type="button" onClick={onRetry}>{language === 'en' ? 'Retry' : 'Thử lại'}</button> : null}</div> : null}
     {feedback ? <p className="portfolio-ledger-feedback positive" role="status">{feedback}</p> : null}
     {importState.status !== 'idle' ? <div className="portfolio-import-status" role="status" aria-live="polite">
       {(importState.status === 'loading' || importState.status === 'committing') && <p>{t(importState.status === 'loading' ? 'portfolio.ledger.checking' : 'portfolio.ledger.importing')}</p>}
