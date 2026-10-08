@@ -5,6 +5,7 @@ import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 import { serializeRecommendationCsv } from '../services/recommendationCsv.mjs'
 import RecommendationEvidence from './RecommendationEvidence.jsx'
 import RecommendationSnapshotComparison from './RecommendationSnapshotComparison.jsx'
+import RecommendationHistoryReport from './RecommendationHistoryReport.jsx'
 import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import StockDetailLink from './StockDetailLink.jsx'
 
@@ -132,5 +133,6 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
         <h4>{copy('Lịch sử các đợt đề xuất chung', 'Scheduled recommendation history')}</h4>{history.length ? <div className="table-wrap"><table><thead><tr><th>{copy('Ngày đề xuất', 'Recommendation date')}</th><th>{copy('Số mã đã đo / tổng mã', 'Measured / selected')}</th><th>{copy('Mã dự báo tăng', 'Positive forecasts')}</th><th>{copy('Sinh lời TB các mã', 'Average return')}</th></tr></thead><tbody>{history.slice(0, 8).map(run => <tr key={run.id}><td>{run.as_of}</td><td>{run.measured_count}/{run.selected_count}</td><td>{run.hit_rate_pct == null ? copy('Đang chờ', 'Pending') : `${run.hit_rate_pct}%`}</td><td>{run.average_forward_return_pct == null ? '—' : `${Number(run.average_forward_return_pct).toFixed(2)}%`}</td></tr>)}</tbody></table></div> : <p className="muted-text">{copy('Chưa có kỳ đánh giá đủ dữ liệu.', 'No evaluation period has enough data yet.')}</p>}
       </section>
     </div>
+    <RecommendationHistoryReport history={history} token={token} language={language} />
   </section>
 }

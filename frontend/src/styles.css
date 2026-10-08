@@ -1752,6 +1752,23 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .learning-panel > h3 { margin: 5px 0 8px; }
 .learning-panel > h4 { margin: 22px 0 10px; }
 .learning-panel > p { line-height: 1.55; }
+.recommendation-history-report { padding: 22px; }
+.recommendation-history-table { margin-top: 14px; }
+.recommendation-history-table tr.is-selected td { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.recommendation-history-table td small { display: block; color: var(--muted); margin-top: 3px; }
+.snapshot-report-detail { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+.snapshot-report-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.snapshot-report-heading h4 { margin: 0; }
+.snapshot-report-heading p { margin: 4px 0 0; }
+.snapshot-report-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.snapshot-report-stats > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.snapshot-report-stats small { color: var(--muted); font-size: 11px; }
+.snapshot-report-stats strong { font-size: 17px; }
+.snapshot-report-note, .snapshot-provenance { margin: 12px 0; padding: 10px 12px; border-radius: 9px; background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%); color: var(--muted); font-size: 13px; line-height: 1.5; }
+.snapshot-provenance { font-size: 12px; overflow-wrap: anywhere; }
+.outcome-chip { display: inline-flex; padding: 3px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface-muted); color: var(--muted); white-space: nowrap; }
+.outcome-chip.outcome-positive { background: color-mix(in srgb, var(--positive) 18%, var(--surface)); color: var(--positive); }
+.outcome-chip.outcome-negative { background: color-mix(in srgb, var(--negative) 18%, var(--surface)); color: var(--negative); }
 .learning-definition { display: grid; gap: 5px; margin: 14px 0; padding: 13px 14px; border: 1px solid rgba(255, 190, 80, .3); border-left: 3px solid #f0bf5a; border-radius: 10px; color: var(--muted); background: rgba(227, 168, 49, .075); font-size: 12px; line-height: 1.55; }
 .learning-definition strong { color: #ffd782; font-size: 13px; }
 .learning-definition b { color: var(--text); }
@@ -1812,7 +1829,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 @media (max-width: 900px) { .personalized-results { grid-template-columns: 1fr; } }
 @media (max-width: 1400px) { .recommendation-grid.personalized-results { grid-template-columns: minmax(0, 1fr); } }
 .recommendation-grid.personalized-results > * { min-width: 0; }
-@media (max-width: 650px) { .criteria-grid { grid-template-columns: 1fr; } .criteria-actions, .recommendation-section-heading { align-items: stretch; flex-direction: column; } .criteria-actions > div { flex-direction: column-reverse; } .criteria-actions button { width: 100%; } .recommendation-result-actions { justify-content: space-between; } .recommendation-result-actions .recommendation-export-btn { width: auto; } .score-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); } .learning-stat-grid { grid-template-columns: 1fr; } .personalized-list > li { padding: 14px 11px; } .recommendation-add-btn { width: 100%; margin: 6px 0 0; } .recommendation-result-footer { align-items: stretch; } .recommendation-data-chips { gap: 6px; } }
+@media (max-width: 650px) { .criteria-grid { grid-template-columns: 1fr; } .criteria-actions, .recommendation-section-heading { align-items: stretch; flex-direction: column; } .criteria-actions > div { flex-direction: column-reverse; } .criteria-actions button { width: 100%; } .recommendation-result-actions { justify-content: space-between; } .recommendation-result-actions .recommendation-export-btn { width: auto; } .score-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); } .learning-stat-grid, .snapshot-report-stats { grid-template-columns: 1fr; } .personalized-list > li { padding: 14px 11px; } .recommendation-add-btn { width: 100%; margin: 6px 0 0; } .recommendation-result-footer { align-items: stretch; } .recommendation-data-chips { gap: 6px; } }
 
 /* Keep restored controls visually consistent with the dark StockPilot surface. */
 .table-search,

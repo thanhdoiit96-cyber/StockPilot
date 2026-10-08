@@ -62,6 +62,24 @@ function deriveCalibration(runs) {
   return { calibration, evidence, sample_count: observations.length, minimum_samples: 15, status: observations.length >= 15 ? 'calibrated' : 'insufficient_history' };
 }
 
+function buildHistorySummary(items = []) {
+  const hasForwardReturn = value => value !== null && value !== '' && Number.isFinite(Number(value));
+  const measured = items.filter(item => item.outcome && item.outcome !== 'pending' && hasForwardReturn(item.forward_return_pct));
+  const returns = measured.map(item => Number(item.forward_return_pct));
+  const positive = measured.filter(item => item.outcome === 'positive').length;
+  const negative = measured.filter(item => item.outcome === 'negative').length;
+  const flat = measured.filter(item => item.outcome === 'flat').length;
+  return {
+    measured_count: measured.length,
+    pending_count: items.filter(item => !item.outcome || item.outcome === 'pending' || !hasForwardReturn(item.forward_return_pct)).length,
+    positive_count: positive,
+    negative_count: negative,
+    flat_count: flat,
+    hit_rate_pct: measured.length ? Number((positive / measured.length * 100).toFixed(2)) : null,
+    average_forward_return_pct: returns.length ? Number((returns.reduce((sum, value) => sum + value, 0) / returns.length).toFixed(4)) : null,
+  };
+}
+
 function readSnapshotRisk(runId) {
   const evidencePath = path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json');
   try {
@@ -120,15 +138,36 @@ router.get('/history', async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)));
     const runs = await RecommendationRun.findAll({ limit, order: [['created_at', 'DESC']], include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct'] }] });
-    return res.json({ success: true, data: runs.map(run => {
-      const items = run.recommendations || [];
-      const measured = items.filter(item => item.outcome && item.outcome !== 'pending' && item.forward_return_pct != null);
-      const positive = measured.filter(item => item.outcome === 'positive').length;
-      const returns = measured.map(item => Number(item.forward_return_pct));
-      return { id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, measured_count: measured.length, pending_count: items.filter(item => item.outcome === 'pending' || !item.outcome).length, hit_rate_pct: measured.length ? Number((positive / measured.length * 100).toFixed(2)) : null, average_forward_return_pct: returns.length ? Number((returns.reduce((sum, value) => sum + value, 0) / returns.length).toFixed(4)) : null };
-    }) });
+    return res.json({ success: true, data: runs.map(run => ({
+      id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days,
+      provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count,
+      ...buildHistorySummary(run.recommendations || []),
+    })) });
   } catch (error) { console.error('[Recommendation Controller] Error fetching history:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
+});
+
+router.get('/history/:id', async (req, res) => {
+  try {
+    const run = await RecommendationRun.findOne({
+      where: { id: req.params.id },
+      include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }],
+    });
+    if (!run) return httpError(res, 404, 'recommendation_history_not_found', 'Recommendation snapshot not found');
+    const items = (run.recommendations || []).map(item => ({
+      id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days,
+      entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale,
+      evaluated_at: item.evaluated_at,
+      forward_return_pct: item.forward_return_pct !== null && item.forward_return_pct !== '' && Number.isFinite(Number(item.forward_return_pct)) ? Number(item.forward_return_pct) : null,
+      outcome: item.outcome || 'pending', stock: item.stock,
+    }));
+    return res.json({ success: true, data: {
+      id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days,
+      provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, status: run.status,
+      summary: buildHistorySummary(items), recommendations: items,
+    } });
+  } catch (error) { console.error('[Recommendation Controller] Error fetching history report:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
 });
 
 module.exports = router;
 module.exports.deriveCalibration = deriveCalibration;
+module.exports.buildHistorySummary = buildHistorySummary;
