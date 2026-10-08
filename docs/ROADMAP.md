@@ -786,6 +786,8 @@ Checkpoint integrity readiness 2026-10-08: report lịch sử đã hiển thị 
 
 Operational checkpoint 2026-10-08: evaluator đã được chạy an toàn; toàn bộ 18 run legacy bị chặn do thiếu integrity provenance, không có mutation outcome. EOD hiện fresh nhưng run cùng phiên trước migration thiếu hash; không sinh run trùng phiên. Chờ snapshot sau EOD kế tiếp để bắt đầu chuỗi evaluation hash-backed.
 
+Audit checkpoint 2026-10-08 (mới hơn): read-only PostgreSQL audit phát hiện 5 measured outcomes chỉ có 1 ngày quan sát so với horizon 20, trong 21 run thiếu hash; 3 price rows thiếu ngày hợp lệ. Regression 23/23 đạt. Ưu tiên tiếp theo là eligibility guard cho cohort/report/export, không sửa lịch sử; sau đó session/provider-aware evaluation và round-trip hash. Không cần chờ EOD mới để triển khai các guard này. Calendar-gap verification vẫn chưa hoàn tất.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.
