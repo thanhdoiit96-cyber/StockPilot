@@ -4451,6 +4451,11 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Guard chống snapshot Đề xuất trùng phiên — 2026-10-08
 
+## Smoke generator sau guard — 2026-10-08
+
+- Đã chạy `npm run generate:recommendations` trên PostgreSQL development. Generator trả `snapshot_exists` cho run `8d6dc1e7-8ae5-417d-aef7-153e2a8f3cff` ngày 2026-10-08, universe 624 và 5 mã chọn; không tạo run/recommendation mới.
+- Run này là legacy (`snapshot_sha256: null`), nên vẫn đúng là không vào evaluator hash-backed. Hành động kế tiếp bị ràng buộc bởi phiên EOD mới, không phải thiếu implementation.
+
 - Generator kiểm tra contract `as_of`/model/provider/horizon trước khi ghi. Nếu snapshot cùng phiên đã tồn tại, trả `snapshot_exists` và không tạo recommendation/run mới.
 - Guard giữ cohort không bị nhân đôi khi script hoặc scheduler chạy lặp sau EOD; không sửa, backfill hash hay đánh giá snapshot legacy.
 - Kiểm chứng: Recommendation persistence **5/5** đạt. Snapshot hash-backed đầu tiên sẽ được tạo vào phiên EOD kế tiếp thay vì tạo bản trùng ngày 2026-10-08.
