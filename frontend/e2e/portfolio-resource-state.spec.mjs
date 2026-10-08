@@ -73,3 +73,23 @@ test('recovers portfolio resource after a local retry without page reload', asyn
   await expect(page.locator('.portfolio-positions')).toContainText('FPT')
   expect(portfolioCalls).toBe(2)
 })
+
+test('exposes loading state while portfolio snapshot is pending', async ({ page }) => {
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { id: 'loading-state', email: 'loading@example.com', role: 'admin' } } })
+    if (path === '/api/portfolio') {
+      await new Promise(resolve => setTimeout(resolve, 700))
+      return route.fulfill({ json: { success: true, data: { positions: [], closed_positions: [], position_counts: { open: 0, closed: 0 }, transactions: [], cash_flows: [] } } })
+    }
+    if (path === '/api/stocks') return route.fulfill({ json: { success: true, data: [], pagination: { page: 1, pageSize: 25, total: 0, totalPages: 1 } } })
+    return route.fulfill({ json: { success: true, data: [] } })
+  })
+  await page.goto('/')
+  await expect(page.locator('.dashboard-shell')).toBeVisible()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.getByRole('tab', { name: /Giao dịch/ }).click()
+  await expect(page.locator('.portfolio-ledger-panel .portfolio-resource-state.loading')).toBeVisible()
+  await expect(page.locator('.portfolio-ledger-panel .portfolio-resource-state.loading')).toHaveAttribute('role', 'status')
+  await expect(page.locator('.portfolio-ledger-panel .portfolio-resource-state.loading')).toBeHidden({ timeout: 2000 })
+})

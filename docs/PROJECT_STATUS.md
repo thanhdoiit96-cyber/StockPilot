@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hoàn tất smoke loading/error/partial resource
+
+- Bổ sung response trì hoãn để xác nhận Ledger hiển thị loading spinner với `role=status` trong lúc snapshot portfolio pending, sau đó chuyển đúng sang empty state khi request hoàn tất.
+- Resource-state smoke đạt **4/4**: loading, error, partial và retry recovery; không tràn ngang mobile.
+- Tiếp theo: quay lại các cải thiện UX Danh mục có giá trị người dùng (mobile dialog/form hoặc filter persistence), không mở API retry riêng khi contract snapshot chưa thay đổi.
+
 ## 2026-10-08 — Quyết định contract retry resource
 
 - Đã đối chiếu API hiện tại: Ledger và Dòng tiền đều là phần của snapshot `GET /api/portfolio`, chưa có endpoint đọc riêng để retry độc lập mà vẫn bảo toàn cùng một mốc định giá.
