@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Ghi nhớ bộ lọc Watchlist trong phiên
+
+- Watchlist lưu query, ngành, trạng thái và cách sắp xếp trong `sessionStorage` của tab hiện tại; không lưu mã, ghi chú hay payload danh mục.
+- Reset toàn bộ bộ lọc vẫn xóa state và trả focus về ô tìm kiếm; thiết bị dùng chung không nhận persistence xuyên session.
+- Build production đạt, targeted Watchlist E2E **3/3** (tìm kiếm, lọc/sắp xếp desktop-mobile, sửa metadata) đạt.
+- Tiếp theo: đo lại hành vi khi chuyển giữa nhiều tab trình duyệt và xác nhận không có stale filter sau logout/login.
+
 ## 2026-10-08 — Ghi nhớ bộ lọc Vị thế
 
 - Bộ lọc Mở/Đã đóng, từ khóa tìm kiếm và cách sắp xếp Vị thế được lưu trong `sessionStorage`; khi chuyển tab hoặc reload trong cùng phiên, người dùng trở lại đúng ngữ cảnh đang xem.

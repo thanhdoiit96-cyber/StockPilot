@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { matchesSearch } from '../services/positionSearch.mjs'
 import StockDetailLink from './StockDetailLink.jsx'
 import { translate } from '../services/i18n.mjs'
@@ -7,14 +7,15 @@ import { formatDateTime } from '../services/userLocale.mjs'
 
 export default function WatchlistPanel({ entries = [], addValue, onAddValueChange, onAdd, onOpenDetail, onRemove, onUpdateMetadata, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = (key, values) => translate(language, key, values)
-  const [query, setQuery] = useState('')
-  const [industry, setIndustry] = useState('')
-  const [status, setStatus] = useState('')
-  const [sort, setSort] = useState('recent')
+  const [query, setQuery] = useState(() => { try { return sessionStorage.getItem('stockpilot-watchlist-query') || '' } catch { return '' } })
+  const [industry, setIndustry] = useState(() => { try { return sessionStorage.getItem('stockpilot-watchlist-industry') || '' } catch { return '' } })
+  const [status, setStatus] = useState(() => { try { return sessionStorage.getItem('stockpilot-watchlist-status') || '' } catch { return '' } })
+  const [sort, setSort] = useState(() => { try { return ['recent', 'updated', 'symbol', 'company'].includes(sessionStorage.getItem('stockpilot-watchlist-sort')) ? sessionStorage.getItem('stockpilot-watchlist-sort') : 'recent' } catch { return 'recent' } })
   const [confirmCode, setConfirmCode] = useState('')
   const [editingCode, setEditingCode] = useState('')
   const [draft, setDraft] = useState({ status: 'WATCHING', note: '' })
   const [mutation, setMutation] = useState({ type: '', code: '', message: '', error: false })
+  useEffect(() => { try { sessionStorage.setItem('stockpilot-watchlist-query', query); sessionStorage.setItem('stockpilot-watchlist-industry', industry); sessionStorage.setItem('stockpilot-watchlist-status', status); sessionStorage.setItem('stockpilot-watchlist-sort', sort) } catch {} }, [query, industry, status, sort])
   const mutationLock = useRef(false)
   const searchRef = useRef(null)
   const industries = useMemo(() => watchlistIndustries(entries, language), [entries, language])
