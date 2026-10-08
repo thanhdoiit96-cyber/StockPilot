@@ -758,3 +758,5 @@ Checkpoint intraday baseline 2026-10-08: chart Cả ngày hiển thị tick 09:0
 Checkpoint simplified Market Board 2026-10-08: đã loại `Mã trọng tâm` thay vì chuyển sang Tổng quan, vì ranking pinned/biến động/khối lượng không phải insight có tiêu chí do người dùng kiểm soát. Bảng giá giữ `Chỉ số thị trường` độc lập, căn giữa tối đa 900px rồi đến Danh sách cổ phiếu. Chỉ mở lại shortlist khi có tiêu chí minh bạch, cấu hình người dùng và provenance dữ liệu phù hợp.
 
 Checkpoint horizontal index cards 2026-10-08: card chỉ số luôn ở một hàng ngang để hỗ trợ so sánh; 2 card tự giãn đều, 3–4 card vẫn giữ hàng, mobile cuộn ngang trong section. Browser regression xác nhận các card cùng toạ độ dọc.
+
+Checkpoint full-width compact indices 2026-10-08: section Chỉ số thị trường đã mở full chiều ngang vùng nội dung và nén chiều cao (chart 28px, padding/gap/typography phụ giảm) nhưng giữ baseline và trục giờ. Điều này chỉ là presentation; không đổi contract fixture hay gate provider.

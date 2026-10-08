@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Chỉ số thị trường full-width, compact
+
+- Khối Chỉ số thị trường nay chiếm toàn bộ chiều ngang vùng nội dung thay vì bị giới hạn 900px.
+- Chiều cao được nén đáng kể: chart 48px xuống 28px, padding/gap/typography phụ được giảm nhưng baseline và trục giờ vẫn đọc được.
+- Browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-Cfaej86g.js`).
+- Tiếp theo: chỉ tinh chỉnh thêm sau visual review với các viewport người dùng thực tế; không đổi contract dữ liệu fixture/provider.
+
 ## 2026-10-08 — Card chỉ số một hàng ngang
 
 - Card Chỉ số thị trường nay dùng một hàng ngang: 2 card tự giãn đều, 3–4 card vẫn giữ cùng hàng để so sánh trực tiếp; mobile dùng cuộn ngang cục bộ thay vì xếp dọc.
