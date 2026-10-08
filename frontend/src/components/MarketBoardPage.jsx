@@ -17,7 +17,6 @@ import {
 import { INDEX_SERIES_FIXTURES, indexSeriesFixtureLabel } from '../services/indexSeriesFixture.mjs'
 
 const PAGE_SIZES = [25, 40, 50, 100]
-const SESSION_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
 
 const formatPrice = (value, language) => Number.isFinite(Number(value))
   ? new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { maximumFractionDigits: 0 }).format(Number(value))
@@ -34,37 +33,29 @@ const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase
 const observedLabel = (quote, language, t) => quote?.observed_at
   ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(quote.observed_at))
   : t('market.latestEod')
-const todayLabel = language => new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
 
 function loadColumns() {
   try { return normalizeMarketColumns(JSON.parse(localStorage.getItem(MARKET_COLUMNS_KEY) || '{}')) } catch { return normalizeMarketColumns() }
 }
 
-function MarketTimeline({ rows, language, t }) {
-  const quoted = rows.filter(row => row.quote)
-  const averagePrice = quoted.length ? quoted.reduce((sum, row) => sum + Number(row.price || 0), 0) / quoted.length : null
-  const totalVolume = quoted.reduce((sum, row) => sum + Number(row.volume || 0), 0)
-  const currentHour = new Date().getHours()
-  const currentSlot = currentHour >= 13 ? Math.min(5, currentHour - 9) : Math.max(0, currentHour - 9)
-  return <section className="market-session-timeline" aria-label={t('market.timelineAria')}>
-    <div className="market-session-timeline-header">
-      <div>
-        <div className="market-session-timeline-title"><span aria-hidden="true">⌁</span><strong>{t('market.timelineTitle')} · {todayLabel(language)}</strong></div>
-        <small>{t('market.timelineSubtitle')}</small>
-        <span className="market-session-updated">{quoted.length ? `${t('market.updated')} ${observedLabel(quoted[0].quote, language, t)}` : t('market.noSnapshot')}</span>
-      </div>
-      <div className="market-session-timeline-legend"><span><i className="price-dot" />{t('market.price')}</span><span><i className="volume-dot" />{t('market.volume')}</span></div>
-    </div>
-    <div className="market-session-timeline-grid">
-      {SESSION_SLOTS.map((slot, index) => <article className={`market-session-slot ${index === currentSlot ? 'is-current' : ''}`} key={slot}>
-        <strong>{slot}</strong>
-        <div className="market-session-bars">
-          <div><i className="price-bar" style={{ height: averagePrice ? `${28 + index * 7}%` : '3px' }} /><span>{t('market.priceShort')}</span></div>
-          <div><i className="volume-bar" style={{ height: totalVolume ? `${20 + index * 9}%` : '3px' }} /><span>{t('market.volumeShort')}</span></div>
-        </div>
-        <small className={`market-session-value ${quoted.length ? '' : 'market-session-empty'}`}>{quoted.length ? `${quoted.length} ${t('market.symbols')}` : t('market.noData')}</small>
-      </article>)}
-    </div>
+function TargetedMarketBoard({ rows, language, onOpenDetail, active }) {
+  const copy = language === 'en'
+    ? { title: 'Targeted Market Board', subtitle: 'Priority symbols and the strongest current moves.', empty: 'No current market observations.', volume: 'Volume', source: 'Source' }
+    : { title: 'Mã trọng tâm', subtitle: 'Mã ưu tiên và các biến động nổi bật theo dữ liệu hiện tại.', empty: 'Chưa có quan sát thị trường hiện tại.', volume: 'Khối lượng', source: 'Nguồn' }
+  const selected = [...rows].sort((left, right) => Number(right.pinned) - Number(left.pinned) || Math.abs(Number(right.change || 0)) - Math.abs(Number(left.change || 0)) || Number(right.volume || 0) - Number(left.volume || 0)).slice(0, 4)
+  const ceiling = Math.max(...selected.map(row => Math.abs(Number(row.change || 0))), 1)
+  return <section className="targeted-market-board" hidden={!active} aria-labelledby="targeted-market-title">
+    <div className="targeted-market-heading"><div><span className="eyebrow accent">TARGETED</span><h2 id="targeted-market-title">{copy.title}</h2><p>{copy.subtitle}</p></div></div>
+    {selected.length ? <div className="targeted-market-grid">{selected.map(row => {
+      const change = Number(row.change || 0)
+      const width = Math.max(6, Math.abs(change) / ceiling * 50)
+      const source = row.quote?.upstream || row.quote?.provider || 'EOD'
+      return <button className="targeted-market-card" type="button" key={row.symbol} onClick={() => onOpenDetail?.(row.stock)} aria-label={`${row.symbol} ${formatChange(change)}`}>
+        <div><strong>{row.symbol}</strong>{row.pinned ? <small className="pin-badge portfolio">★</small> : null}</div><span className="targeted-market-price">{formatPrice(row.price, language)}</span><span className={change >= 0 ? 'positive' : 'negative'}>{formatChange(change)}</span>
+        <span className="targeted-market-chart" role="img" aria-label={`${row.symbol} ${formatChange(change)}`}><i className={change >= 0 ? 'positive' : 'negative'} style={{ width: `${width}%`, marginLeft: change >= 0 ? '50%' : `${50 - width}%` }} /></span>
+        <small>{copy.volume}: {formatVolume(row.volume, language)} · {copy.source}: {source}</small>
+      </button>
+    })}</div> : <p className="muted-text targeted-market-empty">{copy.empty}</p>}
   </section>
 }
 
@@ -240,7 +231,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     onOpenDetail?.(stock)
   }
 
-  return <section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
+  return <><TargetedMarketBoard rows={rows} language={language} onOpenDetail={onOpenDetail} active={active} /><section className={`panel table-panel ${columnClasses}`} hidden={!active} aria-label={t('market.label')} data-react-market-board="true" lang={language}>
     <div className="panel-header">
       <h3>{t('market.list')}</h3>
       <div className="table-tools overview-filter-row">
@@ -277,7 +268,6 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     {exportNotice && <p className="market-board-export-notice" role="status">{exportNotice}</p>}
     <p className="overview-data-status" role="status">{listState.loading && stocks.length ? t('market.updatingList') : quoteState.error || (quoteState.loading ? t('market.updatingIntraday') : Object.keys(mergedQuotes).length ? t('market.hasIntraday') : t('market.usingEod'))}</p>
     <p className="overview-source-summary"><span className="overview-source-label">{t('market.dataSource')}</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : t('market.latestEod')}</span><span className="overview-source-description">{t('market.sourceDescription')}</span><button className="overview-source-help" type="button" aria-label={t('market.sourceHelpAria')} title={t('market.sourceHelp')}>?</button></p>
-    <MarketTimeline rows={rows} language={language} t={t} />
     {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>{t('market.retryList')}</button></p>}
     <p id="market-board-scroll-hint" className="table-scroll-hint" role="note">{t('market.scrollHint')}</p>
     <div className="table-wrap" aria-busy={listState.loading}>
@@ -309,5 +299,5 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
       <div className="pagination-actions" role="navigation" aria-label={t('market.pagination')}><button type="button" className="ghost-btn small-btn" aria-label={t('market.previousAria')} disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))}>{t('market.previous')}</button><span aria-live="polite">{t('market.page', { page: pagination.page || page, total: pagination.totalPages || 1 })}</span><button type="button" className="ghost-btn small-btn" aria-label={t('market.nextAria')} disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage(value => value + 1)}>{t('market.next')}</button></div>
     </div>
     <PageLoadingOverlay active={active && (listState.loading || quoteState.loading)} id="market-board-loading-overlay" className="market-board-loading-overlay" label={t('market.overlay')} />
-  </section>
+  </section></>
 }
