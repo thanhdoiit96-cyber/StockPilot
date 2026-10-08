@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Quyết định contract retry resource
+
+- Đã đối chiếu API hiện tại: Ledger và Dòng tiền đều là phần của snapshot `GET /api/portfolio`, chưa có endpoint đọc riêng để retry độc lập mà vẫn bảo toàn cùng một mốc định giá.
+- Giữ retry ở cấp snapshot portfolio nhưng đặt nút tại resource lỗi; retry không reload trang, không mất tab và không xóa dữ liệu đã có. Smoke recovery **3/3** đã chứng minh request lỗi → thành công.
+- Chỉ tách retry backend theo resource khi có contract endpoint riêng và quy tắc consistency tương ứng; không tạo API giả ở bước này.
+
 ## 2026-10-08 — Kiểm chứng retry cục bộ resource Danh mục
 
 - Bổ sung smoke response tuần tự: request portfolio đầu tiên lỗi, nút `Thử lại` gọi lại request, lần hai thành công; vị thế và empty state Ledger được khôi phục mà không reload trang.
