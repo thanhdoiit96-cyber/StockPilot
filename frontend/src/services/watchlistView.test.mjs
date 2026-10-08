@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { filterWatchlist, sortWatchlist, watchlistIndustries } from './watchlistView.mjs'
+import { filterWatchlist, sortWatchlist, watchlistIndustries, watchlistStatusCounts } from './watchlistView.mjs'
 
 const entries = [
   { created_at: '2026-10-01T00:00:00Z', status: 'WATCHING', Stock: { code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },
@@ -10,6 +10,7 @@ const entries = [
 
 test('builds a unique localized industry filter', () => {
   assert.deepEqual(watchlistIndustries(entries), ['Công nghệ', 'Ngân hàng'])
+  assert.deepEqual(watchlistStatusCounts([...entries, { Stock: { code: 'HPG' } }]), { WATCHING: 2, RESEARCHING: 1, PAUSED: 1 })
 })
 
 test('filters by industry and sorts without mutating source entries', () => {

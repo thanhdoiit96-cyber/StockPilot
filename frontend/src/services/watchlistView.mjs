@@ -5,6 +5,14 @@ export function watchlistIndustries(entries = [], language = 'vi') {
     .sort((a, b) => a.localeCompare(b, language === 'en' ? 'en' : 'vi', { sensitivity: 'base' }))
 }
 
+export function watchlistStatusCounts(entries = []) {
+  return entries.reduce((counts, entry) => {
+    const status = text(entry?.status || 'WATCHING')
+    if (Object.hasOwn(counts, status)) counts[status] += 1
+    return counts
+  }, { WATCHING: 0, RESEARCHING: 0, PAUSED: 0 })
+}
+
 export function sortWatchlist(entries = [], sort = 'recent', language = 'vi') {
   const locale = language === 'en' ? 'en' : 'vi'
   return [...entries].sort((a, b) => {
