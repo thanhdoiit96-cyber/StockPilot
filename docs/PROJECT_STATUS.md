@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Kiểm chứng retry cục bộ resource Danh mục
+
+- Bổ sung smoke response tuần tự: request portfolio đầu tiên lỗi, nút `Thử lại` gọi lại request, lần hai thành công; vị thế và empty state Ledger được khôi phục mà không reload trang.
+- Resource-state smoke đạt **3/3**, gồm error, partial và retry; không tràn ngang mobile.
+- Tiếp theo: cân nhắc tách retry theo từng resource backend nếu contract cho phép, hiện vẫn dùng snapshot portfolio chung để bảo toàn tính nhất quán.
+
 ## 2026-10-08 — Smoke partial resource Danh mục
 
 - Bổ sung fixture partial: vị thế FPT vẫn hiển thị khi `transactions` và `cash_flows` là danh sách rỗng; Ledger/Dòng tiền hiển thị empty state đúng ngữ cảnh thay vì làm mất phần dữ liệu còn dùng được.
