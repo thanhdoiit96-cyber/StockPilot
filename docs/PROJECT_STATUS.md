@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Đồng bộ vị trí trạng thái dữ liệu
+
+- Compact quality status nay được chèn ngay dưới topbar trên mọi trang thay vì cuối riêng Bảng giá; details/coverage giữ nguyên.
+- Targeted workflow E2E **1/1** xác nhận footer nằm liền sau topbar, mở được chi tiết và tồn tại qua Danh mục/Chi tiết.
+- Preview opt-in build đạt (`index-CggAsMmf.js`). Tiếp theo: audit visual mobile cho toolbar/header bảng lớn.
+
 ## 2026-10-08 — Thu gọn trạng thái chất lượng dữ liệu
 
 - `#market-data-quality-overlay` được chuyển từ banner đầu trang sang footer `details` ở cuối `.main-panel`: summary chỉ hiển thị trạng thái, phiên và coverage; chi tiết đồng bộ/source chỉ mở theo yêu cầu.
