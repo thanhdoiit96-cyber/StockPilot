@@ -4445,6 +4445,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Đánh giá toàn bộ snapshot pending có integrity — 2026-10-08
 
+## Hiển thị readiness integrity cho Đề xuất — 2026-10-08
+
+- Summary history trả aggregate read-only cho snapshot pending: tổng số, số đã xác minh và số bị chặn integrity. Không trả hash, đường dẫn evidence hay chi tiết vận hành.
+- UI report lịch sử nêu rõ evaluator có thể xử lý bao nhiêu snapshot pending; trạng thái bị chặn giúp phân biệt thiếu outcome với vấn đề integrity.
+- Kiểm chứng: Recommendation controller **5/5**; frontend production build/bundle integrity đạt (`index-Cyyp6JVZ.js`).
+
 - Migration `031_add_recommendation_run_snapshot_hash` đã áp dụng PostgreSQL development. Snapshot mới lưu SHA-256 trên `recommendation_runs`; hash vẫn bao phủ các recommendation/rationale bất biến.
 - `evaluate:recommendations` và scheduler nay quét mọi run còn pending, tải giá một lần, chỉ cập nhật item vừa đo được với điều kiện DB vẫn là `pending`. Outcome đã xác nhận không bị ghi đè.
 - Run cũ không có hash chỉ qua được evidence monitor legacy nếu đúng cùng run/hash; nếu không, evaluator bỏ qua và báo lý do. Không tự backfill hash hoặc đánh giá snapshot không kiểm chứng.

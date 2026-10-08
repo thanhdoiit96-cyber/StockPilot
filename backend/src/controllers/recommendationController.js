@@ -12,6 +12,7 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
+const { verifyRecommendationSnapshot } = require('../services/recommendationPersistence');
 
 router.get('/saved', requireAuth, async (req, res) => {
   try {
@@ -147,6 +148,15 @@ function buildSectorEvaluationCohorts(runs = [], minimumSamples = 15) {
   return { cohorts, excluded_without_snapshot_taxonomy: excludedWithoutSnapshotTaxonomy };
 }
 
+function buildPendingIntegrityCoverage(runs = []) {
+  const pending = runs.filter(run => (run.recommendations || []).some(item => !item.outcome || item.outcome === 'pending'));
+  const snapshots = pending.map(run => {
+    const integrity = verifyRecommendationSnapshot(run);
+    return { id: run.id, as_of: run.as_of, status: integrity.valid ? 'verified' : 'blocked', source: integrity.source || null, reason: integrity.valid ? null : (integrity.reason || 'snapshot_integrity_failed') };
+  });
+  return { pending_runs: snapshots.length, verified_runs: snapshots.filter(item => item.status === 'verified').length, blocked_runs: snapshots.filter(item => item.status === 'blocked').length, snapshots };
+}
+
 function readSnapshotRisk(runId) {
   const evidencePath = path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json');
   try {
@@ -218,11 +228,11 @@ router.get('/history/summary', async (req, res) => {
     const runs = await RecommendationRun.findAll({
       limit: 250,
       order: [['created_at', 'DESC']],
-      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale'] }],
+      include: [{ association: 'recommendations', attributes: ['outcome', 'forward_return_pct', 'rationale', 'rank', 'stock_id', 'entry_price', 'horizon_days'], include: [{ association: 'stock', attributes: ['code'] }] }],
     });
     const minimumSamples = 15;
     const sector = buildSectorEvaluationCohorts(runs, minimumSamples);
-    return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples), sector_cohorts: sector.cohorts, sector_taxonomy: { source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: sector.excluded_without_snapshot_taxonomy } } });
+    return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples), sector_cohorts: sector.cohorts, sector_taxonomy: { source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: sector.excluded_without_snapshot_taxonomy }, pending_integrity: buildPendingIntegrityCoverage(runs) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching history summary:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
 });
 
@@ -256,3 +266,4 @@ module.exports.deriveCalibration = deriveCalibration;
 module.exports.buildHistorySummary = buildHistorySummary;
 module.exports.buildEvaluationCohorts = buildEvaluationCohorts;
 module.exports.buildSectorEvaluationCohorts = buildSectorEvaluationCohorts;
+module.exports.buildPendingIntegrityCoverage = buildPendingIntegrityCoverage;

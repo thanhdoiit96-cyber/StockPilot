@@ -780,5 +780,7 @@ Checkpoint sector cohort 2026-10-08: taxonomy ngành đã được capture cùng
 
 Checkpoint evaluator pending 2026-10-08: scheduler/script đã chuyển từ latest-only sang toàn bộ snapshot pending có integrity hash. Mọi run mới lưu hash tại database; run legacy thiếu hash không được tự đánh giá. Tiếp theo là vận hành EOD/evaluation bình thường và quan sát coverage/skipped integrity, không thêm calibration tự động.
 
+Checkpoint integrity readiness 2026-10-08: report lịch sử đã hiển thị aggregate snapshot pending verified/blocked để theo dõi evaluator. Vẫn không lộ hash/evidence vận hành ra UI. Điểm tiếp tục giữ nguyên: vận hành dữ liệu EOD/outcome và review thủ công với đủ mẫu, không thêm tối ưu model tự động.
+
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.
