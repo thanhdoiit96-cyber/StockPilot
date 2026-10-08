@@ -1781,6 +1781,9 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .cohort-card dd { margin: 0; font-size: 14px; font-weight: 700; }
 .cohort-status { margin: 0; color: var(--muted); font-size: 12px; }
 .cohort-status.is-ready { color: var(--positive); font-weight: 700; }
+.sector-cohort-summary { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+.sector-cohort-summary h4 { margin: 0 0 5px; }
+.taxonomy-note { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
 .learning-definition { display: grid; gap: 5px; margin: 14px 0; padding: 13px 14px; border: 1px solid rgba(255, 190, 80, .3); border-left: 3px solid #f0bf5a; border-radius: 10px; color: var(--muted); background: rgba(227, 168, 49, .075); font-size: 12px; line-height: 1.55; }
 .learning-definition strong { color: #ffd782; font-size: 13px; }
 .learning-definition b { color: var(--text); }
