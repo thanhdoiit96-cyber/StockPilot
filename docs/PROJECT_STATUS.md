@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Khả năng đọc Giao dịch và Dòng tiền trên mobile
+
+- Hoàn tất audit lát cắt Danh mục còn lại: loading/lỗi/empty và retry cục bộ của Nhật ký giao dịch cùng Dòng tiền đã có sẵn, tách biệt với trạng thái trống.
+- Khi có dữ liệu, hai bảng rộng nay có hướng dẫn cuộn ngang bằng Việt/Anh, chỉ hiện trên mobile và được liên kết với bảng qua `aria-describedby`; giữ bảng semantic để quét số liệu, không ép thành card khó so sánh.
+- Browser regression tại 390px xác nhận cả hai panel không làm rộng trang, hướng dẫn hiển thị và bảng giữ mô tả truy cập được. Frontend unit **67/67**, Portfolio resource/mobile E2E **5/5**, Preview build đạt (`index-DaEecw8U.js`).
+- Tiếp theo: chỉ cân nhắc cải tiến density/hành động bảng sau quan sát thực tế; không thêm pagination/bulk action khi gate hiệu năng Watchlist chưa yêu cầu. Benchmark và chỉ số thật tiếp tục chờ index-series hợp lệ.
+
 ## 2026-10-08 — Xuất CSV danh sách đề xuất
 
 - Trang Đề xuất có nút `Xuất CSV đề xuất` cạnh số mã kết quả, không tạo thêm request và chỉ hiện khi có dữ liệu để xuất.
