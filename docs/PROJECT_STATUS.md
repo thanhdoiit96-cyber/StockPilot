@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Smoke partial resource Danh mục
+
+- Bổ sung fixture partial: vị thế FPT vẫn hiển thị khi `transactions` và `cash_flows` là danh sách rỗng; Ledger/Dòng tiền hiển thị empty state đúng ngữ cảnh thay vì làm mất phần dữ liệu còn dùng được.
+- Resource-state smoke đạt **2/2** (error + partial), không tràn ngang trên mobile.
+- Tiếp theo: đánh giá retry cục bộ cho từng resource và giữ nguyên dữ liệu đã tải khi một resource phụ thất bại.
+
 ## 2026-10-08 — Smoke resource-state Ledger/Dòng tiền
 
 - Thêm fixture Playwright độc lập mô phỏng `portfolio_load_failed`; xác nhận Ledger và Dòng tiền hiển thị error state riêng, không lộ empty state, không tràn ngang ở mobile.
