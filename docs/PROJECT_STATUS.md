@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Phân tầng thông tin trên Bảng giá
+
+- Giữ `Mã trọng tâm` tại Bảng giá, không nhân bản sang Tổng quan: Bảng giá là ngữ cảnh so sánh/khám phá mã; Tổng quan giữ vai trò bức tranh thị trường và danh mục.
+- Tách `market-index-fixture-section` khỏi panel bảng thành section `Chỉ số thị trường` độc lập, đặt trước `Mã trọng tâm`, rồi mới đến Danh sách cổ phiếu. Nhãn development/synthetic vẫn hiển thị rõ và feature gate không đổi.
+- Frontend unit **66/66**, browser regression Bảng giá **1/1**, Preview opt-in build đạt (`index-C_u73Yw1.js`).
+- Tiếp theo: chỉ thay fixture bằng index series có license/provenance; không đưa section synthetic vào production mặc định.
+
 ## 2026-10-08 — Tách Targeted Market Board khỏi danh sách cổ phiếu
 
 - Bảng giá nay có section `Mã trọng tâm` riêng, ưu tiên mã trong Danh mục/Watchlist rồi đến biến động tuyệt đối và khối lượng. Mỗi card hiển thị giá, % thay đổi, khối lượng, nguồn quote và thanh biến động hiện tại; bấm card mở Chi tiết mã.
