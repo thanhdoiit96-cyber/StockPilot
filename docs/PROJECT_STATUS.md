@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hash snapshot sau PostgreSQL round-trip
+
+- Sửa generator băm representation đã persist và reload kèm stock.code, thay vì spread Sequelize instance và payload trước JSONB. Giữ nguyên thuật toán hash để không đổi contract lịch sử; snapshot thiếu/run không đọc được hoặc sai số lượng recommendation sẽ không được seal.
+- Thêm `npm run verify:recommendation-hash`: dùng giá synthetic, model Sequelize thật và PostgreSQL development, ghi trong transaction rồi luôn rollback. Đã chạy đạt: hash của instance/toJSON khớp hash persisted, tamper entry_price bị phát hiện, không giữ lại fixture.
+- Kiểm thử targeted persistence/eligibility/controller được chạy; không thay frontend nên không build Preview. Không tự gắn hash cho legacy, không chạy generator trên dữ liệu thật hoặc restart backend trong bước này; process đang chạy cần nạp lại code trước lần generate tiếp theo.
+- Tiếp tục: session/provider-aware evaluator và versioned evaluation evidence. Hash vẫn phụ thuộc joined stock.code và representation JSONB; atomic generation/concurrency guard là phần cần gia cố tiếp, chưa thay đổi schema trong bước này.
+
 ## 2026-10-08 — Tab workspace Đề xuất
 
 - Trang Đề xuất dùng 4 tab theo thứ tự: Đề xuất (tiêu chí/kết quả), Lịch sử & báo cáo, So sánh bản lưu, Hiệu chỉnh. Tái sử dụng style tab Danh mục, mobile 2 cột; role/tablist/tabpanel, roving tabIndex, Arrow/Home/End và focus liên kết đầy đủ.

@@ -792,6 +792,8 @@ Eligibility checkpoint 2026-10-08: đã triển khai guard cho list/report/cohor
 
 UX checkpoint 2026-10-08: đã chia workspace Đề xuất thành 4 tab giữ state, lazy-mount lịch sử, hỗ trợ bàn phím/mobile và thu gọn phân tích tổng hợp. Frontend 73/73, E2E fixture 5/5 đạt, Preview đã build mới. Các bước evaluator/hash/evidence ở trên giữ nguyên ưu tiên kỹ thuật tiếp theo.
 
+Hash checkpoint 2026-10-08: đã sửa seal snapshot từ representation persisted/reloaded và kiểm chứng PostgreSQL bằng synthetic transaction rollback; không sửa legacy. Tiếp theo còn session/provider-aware evaluator, versioned evaluation evidence và atomic/concurrent generation. Chưa có bằng chứng lifecycle outcome từ snapshot thật mới.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

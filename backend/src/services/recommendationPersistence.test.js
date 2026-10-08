@@ -35,6 +35,8 @@ test('generates a v2 snapshot with verified external evidence', async () => {
   const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', industry: 'Technology', toJSON() { return this; } };
   const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
   const stored = [];
+  let persistedRun;
+  let savedHash;
   const result = await generateRecommendationSnapshot({
     Stock: { findAll: async () => [stock] },
     StockPrice: { findAll: async () => prices },
@@ -43,13 +45,21 @@ test('generates a v2 snapshot with verified external evidence', async () => {
       { type: 'news', status: 'verified', source: 'Wire', source_url: 'https://wire.example/fpt', title: 'FPT update', published_at: '2026-01-02', symbol: 'FPT', impact: 'positive', toJSON() { return this; } },
       { type: 'news', status: 'unverified', source: 'Blog', published_at: '2026-01-03', symbol: 'FPT', impact: 'negative', toJSON() { return this; } }
     ] },
-    RecommendationRun: { findOne: async () => null, create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] }, now: new Date('2026-01-31T10:00:00.000Z'),
+    RecommendationRun: {
+      findOne: async options => options.where.id ? { ...persistedRun, recommendations: stored.map(item => ({ ...item, stock: { code: stock.code } })) } : null,
+      create: async payload => { persistedRun = { id: 'run-v2', ...payload }; return persistedRun; },
+      update: async values => { savedHash = values.snapshot_sha256; return [1]; },
+    }, now: new Date('2026-01-31T10:00:00.000Z'),
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
   expect(stored[0].rationale.evidence).toMatchObject({ macro: { status: 'available', verified_count: 1 }, news: { positive_count: 1, negative_count: 0 } });
   expect(stored[0].rationale.evidence.sources).toHaveLength(2);
   expect(stored[0].rationale.snapshot_taxonomy).toMatchObject({ industry: 'Technology', source: 'stocks.industry' });
+  const reloaded = { ...persistedRun, snapshot_sha256: savedHash, recommendations: stored.map(item => ({ ...item, stock: { code: stock.code } })) };
+  expect(verifyRecommendationSnapshot(reloaded)).toMatchObject({ valid: true, source: 'recommendation_runs.snapshot_sha256' });
+  reloaded.recommendations[0].entry_price = 999;
+  expect(verifyRecommendationSnapshot(reloaded).valid).toBe(false);
 });
 
 test('does not create a duplicate scheduled snapshot for the same session contract', async () => {
@@ -64,6 +74,20 @@ test('does not create a duplicate scheduled snapshot for the same session contra
   expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'existing-run' });
   expect(result.as_of).toBe('2026-01-31');
   expect(created).toBe(false);
+});
+
+test.each([null, { recommendations: [{}] }])('does not seal a missing or incomplete persisted snapshot', async persisted => {
+  const update = jest.fn();
+  await expect(generateRecommendationSnapshot({
+    Stock: { findAll: async () => [] },
+    StockPrice: { findAll: async () => [{ stock_id: 's', observed_at: '2026-01-31', close: 100 }] },
+    RecommendationRun: {
+      findOne: async options => options.where.id ? persisted : null,
+      create: async () => ({ id: 'new-run' }), update,
+    },
+    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-31T10:00:00Z'),
+  })).rejects.toThrow('Cannot seal incomplete recommendation snapshot');
+  expect(update).not.toHaveBeenCalled();
 });
 
 test('does not create a snapshot before the current Vietnam EOD session is present', async () => {
