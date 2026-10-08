@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Audit mobile toolbar và header Bảng giá
+
+- Sticky table header được giữ trên desktop nhưng tắt ở breakpoint mobile để không phủ title/corner khi bảng cuộn ngang; toolbar đã dùng wrap/overflow chủ động cho preset và export controls.
+- Targeted Market Board E2E **1/1** đạt; không thay đổi contract cột, export hay persistence.
+- Tiếp theo: review trực quan các panel table còn lại theo cùng nguyên tắc nếu phát hiện overflow thực tế.
+
 ## 2026-10-08 — Đồng bộ vị trí trạng thái dữ liệu
 
 - Compact quality status nay được chèn ngay dưới topbar trên mọi trang thay vì cuối riêng Bảng giá; details/coverage giữ nguyên.
