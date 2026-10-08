@@ -788,5 +788,7 @@ Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.
 
+Checkpoint EOD freshness 2026-10-08: generator đã fail-closed nếu latest EOD session không trùng ngày tạo snapshot tại Asia/Ho_Chi_Minh và dùng session này làm `as_of`. Sau EOD phiên kế tiếp, chạy generate rồi evaluate là bước còn lại để có bằng chứng lifecycle hash-backed.
+
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.
