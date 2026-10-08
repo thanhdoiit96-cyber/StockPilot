@@ -763,4 +763,6 @@ Checkpoint full-width compact indices 2026-10-08: section Chỉ số thị trư�
 
 Checkpoint mobile index discoverability 2026-10-08: dải index dùng scroll-snap, focus outline, region label và hint cuộn ngang chỉ trên mobile; regression tại 390px xác nhận overflow là chủ ý và card vẫn một hàng trên desktop. Provider index-series thật tiếp tục là blocker production.
 
+Checkpoint Portfolio mobile tables 2026-10-08: audit loading/error/empty của Nhật ký giao dịch và Dòng tiền xác nhận các state/retry đã phân biệt; bảng có dữ liệu nay có hướng dẫn cuộn ngang song ngữ trên mobile và `aria-describedby`, không làm tràn page tại 390px. Giữ table semantic để so sánh timeline/số tiền; chỉ mở density, pagination hoặc bulk action sau quan sát quy mô và latency thực tế.
+
 Checkpoint Recommendation export 2026-10-08: người dùng có thể xuất danh sách kết quả hiện tại ra CSV từ trang Đề xuất. Export giữ provenance cần thiết cho việc đối chiếu (giá/thời điểm/nguồn, chỉ báo, luận điểm, snapshot và tiêu chí tùy chỉnh), dùng UTF-8 BOM và neutralize công thức spreadsheet. Chỉ nguồn HTTP có ngày xuất bản đã được validation mới xuất hiện; không đưa URL nguy hiểm, dữ liệu nội bộ hay suy diễn hiệu suất vào file. Mở rộng sang báo cáo lịch sử chỉ sau khi chốt rõ report scope và semantics của outcome.

@@ -149,8 +149,9 @@ export default function PortfolioLedger({ entries = [], onImport, onUpdate, onDe
       </>}
     </div> : null}
     {!loading && !error && ordered.length ? <>
+      <p id="portfolio-ledger-scroll-hint" className="table-scroll-hint" role="note">{t('portfolio.ledger.scrollHint')}</p>
       <div className="table-wrap portfolio-ledger-table">
-        <table aria-label={t('portfolio.ledger.table')}>
+        <table aria-label={t('portfolio.ledger.table')} aria-describedby="portfolio-ledger-scroll-hint">
           <thead><tr><th>{t('portfolio.common.time')}</th><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.transaction.side')}</th><th>{t('portfolio.transaction.quantity')}</th><th>{t('portfolio.ledger.price')}</th><th>{t('portfolio.ledger.fees')}</th><th>{t('portfolio.ledger.source')}</th><th>{t('portfolio.common.actions')}</th></tr></thead>
           <tbody>{visible.map(entry => <tr key={entry.id || `${entry.symbol}-${entry.traded_at}`}>
             <td>{dateTime(entry.traded_at)}</td>

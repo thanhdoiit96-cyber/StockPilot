@@ -93,3 +93,31 @@ test('exposes loading state while portfolio snapshot is pending', async ({ page 
   await expect(page.locator('.portfolio-ledger-panel .portfolio-resource-state.loading')).toHaveAttribute('role', 'status')
   await expect(page.locator('.portfolio-ledger-panel .portfolio-resource-state.loading')).toBeHidden({ timeout: 2000 })
 })
+
+test('explains horizontal ledger and cash tables on mobile without widening the page', async ({ page }) => {
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { id: 'mobile-table-state', email: 'mobile@example.com', role: 'admin' } } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: {
+      positions: [], closed_positions: [], position_counts: { open: 0, closed: 0 },
+      transactions: [{ id: 'trade-1', symbol: 'FPT', side: 'BUY', quantity: 10, price: 120000, fees: 1000, traded_at: '2026-10-08T03:00:00.000Z', source: 'manual' }],
+      cash_flows: [{ id: 'cash-1', type: 'DEPOSIT', amount: 10000000, occurred_at: '2026-10-08T02:00:00.000Z', note: 'Initial capital' }],
+    } } })
+    if (path === '/api/stocks') return route.fulfill({ json: { success: true, data: [], pagination: { page: 1, pageSize: 25, total: 0, totalPages: 1 } } })
+    return route.fulfill({ json: { success: true, data: [] } })
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Nội dung danh mục' })
+  await tabs.getByRole('tab', { name: /Giao dịch/ }).click()
+  const ledger = page.locator('.portfolio-ledger-panel')
+  await expect(ledger.locator('#portfolio-ledger-scroll-hint')).toBeVisible()
+  await expect(ledger.locator('table')).toHaveAttribute('aria-describedby', 'portfolio-ledger-scroll-hint')
+  expect(await ledger.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+  await tabs.getByRole('tab', { name: /Dòng tiền/ }).click()
+  const cash = page.locator('.cash-flow-panel')
+  await expect(cash.locator('#portfolio-cash-scroll-hint')).toBeVisible()
+  await expect(cash.locator('table')).toHaveAttribute('aria-describedby', 'portfolio-cash-scroll-hint')
+  expect(await cash.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
