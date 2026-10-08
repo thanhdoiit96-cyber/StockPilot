@@ -8,6 +8,7 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
   const t = (key, values) => translate(language, key, values)
   const [query, setQuery] = useState('')
   const [industry, setIndustry] = useState('')
+  const [status, setStatus] = useState('')
   const [sort, setSort] = useState('recent')
   const [confirmCode, setConfirmCode] = useState('')
   const [editingCode, setEditingCode] = useState('')
@@ -16,7 +17,7 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
   const mutationLock = useRef(false)
   const searchRef = useRef(null)
   const industries = useMemo(() => watchlistIndustries(entries, language), [entries, language])
-  const visible = useMemo(() => sortWatchlist(filterWatchlist(entries.filter(entry => matchesSearch([entry.Stock?.code, entry.Stock?.name], query)), industry), sort, language), [entries, query, industry, sort, language])
+  const visible = useMemo(() => sortWatchlist(filterWatchlist(entries.filter(entry => matchesSearch([entry.Stock?.code, entry.Stock?.name], query)), industry, status), sort, language), [entries, query, industry, status, sort, language])
   const busy = mutation.type === 'adding' || mutation.type === 'removing' || mutation.type === 'updating'
   const add = async event => {
     event.preventDefault()
@@ -75,7 +76,8 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
     </div>
     <div className="watchlist-view-controls" aria-label={t('portfolio.watchlist.viewControls')}>
       <label>{t('portfolio.watchlist.industry')}<select value={industry} onChange={event => { setIndustry(event.target.value); setConfirmCode('') }}><option value="">{t('portfolio.watchlist.allIndustries')}</option>{industries.map(value => <option value={value} key={value}>{value}</option>)}</select></label>
-      <label>{t('portfolio.watchlist.sort')}<select value={sort} onChange={event => { setSort(event.target.value); setConfirmCode('') }}><option value="recent">{t('portfolio.watchlist.recent')}</option><option value="symbol">{t('portfolio.watchlist.symbolAZ')}</option><option value="company">{t('portfolio.watchlist.companyAZ')}</option></select></label>
+      <label>{t('portfolio.watchlist.statusFilter')}<select value={status} onChange={event => { setStatus(event.target.value); setConfirmCode('') }}><option value="">{t('portfolio.watchlist.allStatuses')}</option><option value="WATCHING">{t('portfolio.watchlist.status.WATCHING')}</option><option value="RESEARCHING">{t('portfolio.watchlist.status.RESEARCHING')}</option><option value="PAUSED">{t('portfolio.watchlist.status.PAUSED')}</option></select></label>
+      <label>{t('portfolio.watchlist.sort')}<select value={sort} onChange={event => { setSort(event.target.value); setConfirmCode('') }}><option value="recent">{t('portfolio.watchlist.recent')}</option><option value="updated">{t('portfolio.watchlist.updated')}</option><option value="symbol">{t('portfolio.watchlist.symbolAZ')}</option><option value="company">{t('portfolio.watchlist.companyAZ')}</option></select></label>
     </div>
     <ul className="watchlist">
       {visible.map(entry => {

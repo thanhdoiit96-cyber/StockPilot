@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Watchlist: lọc trạng thái, ưu tiên mã mới cập nhật và live persistence
+
+- Bổ sung bộ lọc `Tất cả / Theo dõi / Đang nghiên cứu / Tạm dừng` và cách sắp xếp `Mới cập nhật`; thứ tự dùng `metadata_updated_at`, fallback về ngày thêm cho bản ghi chưa từng chỉnh sửa. Các control phối hợp với tìm kiếm, ngành và cách sắp xếp hiện có mà không thêm request.
+- Live authenticated smoke trên `localhost:4173` và PostgreSQL development đã đạt toàn chuỗi: tạo tài khoản cô lập, thêm FPT từ Bảng giá, sửa trạng thái/ghi chú, reload vẫn giữ metadata, lọc theo trạng thái, xóa có xác nhận và reload không còn mã. Credential chỉ tồn tại trong bộ nhớ; một tài khoản smoke cô lập được giữ lại theo chính sách hiện hành.
+- Smoke đồng thời phát hiện script cũ dùng `127.0.0.1` không thuộc CORS allowlist development; đã sửa về đúng origin người dùng `localhost:4173`. Đây là lỗi harness, không nới CORS runtime.
+- Kiểm chứng: frontend unit **64/64**, encoding/API-error contract đạt, Portfolio Playwright **35/35**, live Watchlist **1/1**, build/bundle integrity đạt (`index-CiZS8I4g.js`); Preview 4173 và backend 5000 HTTP 200.
+- Tiếp theo: đưa ghi chú vào phạm vi tìm kiếm và bổ sung tóm tắt số lượng theo trạng thái để người dùng nhận biết hàng đợi nghiên cứu nhanh; giữ toàn bộ xử lý client-side cho đến khi quy mô thực tế chứng minh cần server pagination.
+
 ## 2026-10-08 — Metadata Watchlist do người dùng sở hữu
 
 - Mở rộng `watchlist_items` bằng migration 030 với `status`, ghi chú tối đa 280 ký tự và `metadata_updated_at`. Ba trạng thái trung tính phục vụ tổ chức công việc là `WATCHING`, `RESEARCHING`, `PAUSED`; không lưu giá mục tiêu hoặc suy diễn tín hiệu đầu tư.

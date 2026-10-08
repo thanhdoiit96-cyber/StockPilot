@@ -159,19 +159,26 @@ test('uses the same search field format for positions and Watchlist', async ({ p
 
 test('filters and sorts Watchlist for daily review on desktop and mobile', async ({ page }) => {
   await boot(page, [], [], [], [
-    { stock_id: 'v', created_at: '2026-10-01T00:00:00Z', Stock: { id: 'v', code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },
-    { stock_id: 'f', created_at: '2026-10-03T00:00:00Z', Stock: { id: 'f', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } },
-    { stock_id: 'a', created_at: '2026-10-02T00:00:00Z', Stock: { id: 'a', code: 'ACB', name: 'Á Châu', industry: 'Ngân hàng' } }
+    { stock_id: 'v', created_at: '2026-10-01T00:00:00Z', status: 'WATCHING', Stock: { id: 'v', code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },
+    { stock_id: 'f', created_at: '2026-10-03T00:00:00Z', metadata_updated_at: '2026-10-04T00:00:00Z', status: 'RESEARCHING', Stock: { id: 'f', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } },
+    { stock_id: 'a', created_at: '2026-10-02T00:00:00Z', metadata_updated_at: '2026-10-05T00:00:00Z', status: 'PAUSED', Stock: { id: 'a', code: 'ACB', name: 'Á Châu', industry: 'Ngân hàng' } }
   ])
   await page.getByRole('tab', { name: /Watchlist/ }).click()
   const rows = page.locator('.watchlist > li:not(.watchlist-empty)')
   const codes = async () => rows.locator('.watchlist-company strong').allTextContents()
   await expect.poll(codes).toEqual(['FPT', 'ACB', 'VCB'])
-  await page.locator('.watchlist-view-controls select').nth(1).selectOption('symbol')
+  const controls = page.locator('.watchlist-view-controls select')
+  await controls.nth(2).selectOption('symbol')
   await expect.poll(codes).toEqual(['ACB', 'FPT', 'VCB'])
-  await page.locator('.watchlist-view-controls select').first().selectOption('Ngân hàng')
+  await controls.first().selectOption('Ngân hàng')
   await expect.poll(codes).toEqual(['ACB', 'VCB'])
   await expect(page.locator('.watchlist-search .search-result-count')).toHaveText('2/3 mã hiển thị')
+  await controls.first().selectOption('')
+  await controls.nth(1).selectOption('RESEARCHING')
+  await expect.poll(codes).toEqual(['FPT'])
+  await controls.nth(1).selectOption('')
+  await controls.nth(2).selectOption('updated')
+  await expect.poll(codes).toEqual(['ACB', 'FPT', 'VCB'])
   await page.setViewportSize({ width: 390, height: 844 })
   expect(await page.locator('.watchlist-view-controls').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
@@ -180,13 +187,13 @@ test('edits user-owned Watchlist status and note without leaving the list', asyn
   await boot(page, [], [], [], [{ stock_id: 'a', status: 'WATCHING', note: null, Stock: { id: 'a', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } }])
   await page.getByRole('tab', { name: /Watchlist/ }).click()
   const panel = page.locator('.watchlist-panel')
-  await expect(panel.getByText('Theo dõi', { exact: true })).toBeVisible()
+  await expect(panel.locator('.watchlist-status', { hasText: 'Theo dõi' })).toBeVisible()
   await panel.getByRole('button', { name: 'Chỉnh sửa theo dõi FPT' }).click()
   const editor = page.getByRole('group', { name: 'Chỉnh sửa theo dõi FPT' })
   await editor.getByLabel('Trạng thái').selectOption('RESEARCHING')
   await editor.getByLabel('Ghi chú cá nhân').fill('Kiểm tra tăng trưởng lợi nhuận quý tới')
   await editor.getByRole('button', { name: 'Lưu' }).click()
-  await expect(panel.getByText('Đang nghiên cứu', { exact: true })).toBeVisible()
+  await expect(panel.locator('.watchlist-status', { hasText: 'Đang nghiên cứu' })).toBeVisible()
   await expect(panel.getByText('Kiểm tra tăng trưởng lợi nhuận quý tới')).toBeVisible()
   await expect(panel.locator('.watchlist-mutation')).toContainText('Đã cập nhật FPT.')
   await page.setViewportSize({ width: 390, height: 844 })
