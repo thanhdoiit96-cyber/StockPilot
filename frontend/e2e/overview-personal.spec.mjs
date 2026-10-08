@@ -133,6 +133,7 @@ test('portfolio and watchlist remain pinned across sorting and page-size changes
   await expect.poll(() => state.listRequests.at(-1).get('pageSize')).toBe('25')
   expect(state.listRequests.at(-1).get('pinned')).toBe('FPT,ZZZ')
   await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.getByRole('tab', { name: /Watchlist/ }).click()
   await page.getByRole('button', { name: 'Xóa FPT khỏi Watchlist' }).click()
   await page.getByRole('button', { name: 'Xác nhận xóa' }).click()
   await expect(page.locator('ul.watchlist')).not.toContainText('FPT')

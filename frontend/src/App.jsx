@@ -725,6 +725,7 @@ function lv() {
     Vn = D.useMemo(() => /* @__PURE__ */new Set([...gt, ...yt]), [gt, yt]),
     ll = [...Vn].sort().join(",");
   const currentAuthRef = D.useRef(ue);
+  const localLogoutRef = D.useRef(false);
   currentAuthRef.current = ue;
   const [authLanguage, setAuthLanguage] = D.useState(() => {
     try { return localStorage.getItem("stockpilot-language") === "en" ? "en" : "vi"; } catch { return "vi"; }
@@ -732,7 +733,7 @@ function lv() {
   const profileLanguage = ue?.user?.preferred_language || authLanguage;
   const uiTextValue = text => uiText(profileLanguage, text);
   const profileTimezone = ue?.user?.timezone || "Asia/Ho_Chi_Minh";
-  const profileTheme = themePreference(ue?.user?.theme_preference || (() => { try { return localStorage.getItem(THEME_STORAGE_KEY); } catch { return 'system'; } })());
+  const profileTheme = themePreference(ue?.user?.theme_preference || (() => { try { return localStorage.getItem(THEME_STORAGE_KEY) || 'dark'; } catch { return 'dark'; } })());
   const tr = (key, values) => translate(profileLanguage, key, values);
   const detailText = text => translateDetail(profileLanguage, text);
   const detailMoney = value => value == null ? detailText("Chưa có dữ liệu") : formatMoney(value, profileLanguage);
@@ -781,7 +782,10 @@ function lv() {
   }, []);
   D.useEffect(() => {
     const applyCookieEvent = type => {
-      if (type === "logout") return endSession("", uiTextValue("Phiên đăng nhập đã kết thúc ở một tab khác."));
+      if (type === "logout") {
+        if (localLogoutRef.current) { localLogoutRef.current = false; return; }
+        return endSession("", uiTextValue("Phiên đăng nhập đã kết thúc ở một tab khác."));
+      }
       $r.current = null;
       Bn([]);
       mt(null);
@@ -1451,6 +1455,7 @@ function lv() {
         },
         onPasswordChange: async body => {
           await je("/api/auth/password", { method: "POST", token: ue?.token, body });
+          localLogoutRef.current = true;
           broadcastAuthEvent("logout");
           endSession("", uiTextValue("Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới."));
         },
@@ -1461,6 +1466,7 @@ function lv() {
           : je("/api/auth/sessions/revoke-others", { method: "POST", token: ue?.token }),
         onLogout: async () => {
           await je("/api/auth/logout", { method: "POST", token: ue?.token });
+          localLogoutRef.current = true;
           broadcastAuthEvent("logout");
           endSession("", uiTextValue("Bạn đã đăng xuất an toàn."));
         }
@@ -1496,6 +1502,7 @@ function lv() {
               try {
                 await je("/api/auth/logout", { method: "POST", token: ue.token });
               } catch {}
+              localLogoutRef.current = true;
               broadcastAuthEvent("logout"), endSession("", uiTextValue("Bạn đã đăng xuất an toàn."));
             },
             children: p(uiTextValue("Đăng xuất"))

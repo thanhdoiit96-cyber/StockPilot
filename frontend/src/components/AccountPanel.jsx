@@ -6,7 +6,7 @@ import PasswordChangeForm from "./PasswordChangeForm.jsx";
 import AccountSessions from "./AccountSessions.jsx";
 import { localizeApiError } from "../services/apiErrorCatalog.mjs";
 
-const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh", theme_preference: user?.theme_preference || "system" });
+const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh", theme_preference: user?.theme_preference || "dark" });
 
 export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession }) {
   const t = text => accountText(user?.preferred_language, text);

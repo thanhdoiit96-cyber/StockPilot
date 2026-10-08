@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="StockPilot — nền tảng theo dõi và phân tích cổ phiếu Việt Nam" />
     <script>
-      (() => { try { const p = ['system','dark','light'].includes(localStorage.getItem('stockpilot-theme')) ? localStorage.getItem('stockpilot-theme') : 'system'; const t = p === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; document.documentElement.dataset.themePreference = p; document.documentElement.dataset.theme = t; document.documentElement.style.colorScheme = t; } catch {} })();
+      (() => { try { const p = ['system','dark','light'].includes(localStorage.getItem('stockpilot-theme')) ? localStorage.getItem('stockpilot-theme') : 'dark'; const t = p === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; document.documentElement.dataset.themePreference = p; document.documentElement.dataset.theme = t; document.documentElement.style.colorScheme = t; } catch {} })();
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>StockPilot — Phân tích cổ phiếu</title>

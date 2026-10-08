@@ -1,5 +1,14 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hoàn tất Dark/Light và full UI regression
+
+- Chuẩn hóa token theo theme cho SVG/chart grid/point, chart summary/legend, tooltip, initial/page loading overlay, focus-visible, disabled và error surfaces. Light/Dark dùng chung component tree và semantic token.
+- Giữ Dark làm mặc định tương thích cho tài khoản/fixture cũ; `system` vẫn là lựa chọn chủ động. Migration 029 đổi database default và chuyển các giá trị `system` được tạo bởi migration ban đầu sang Dark để nâng cấp không tự đổi giao diện.
+- Full regression phát hiện và sửa thêm: tooltip khối lượng dùng đúng “Khối lượng giao dịch”, audit theo heading “Danh mục cá nhân”, Watchlist test đi qua tab mới, `html lang` theo locale thật, và logout cùng tab không còn bị thông báo cross-tab ghi đè.
+- Kiểm chứng: frontend unit **62/62**, backend auth/profile **37/37**, Playwright tuần tự **114/114**, page screenshot audit desktop/mobile **2/2**, migration PostgreSQL development thành công; build/bundle integrity đạt (`index-9W2hIjvL.js`).
+- Preview `http://localhost:4173/` đã phục vụ bundle mới. P3 Dark/Light hoàn tất trong phạm vi UI hiện có; các component mới phải tiếp tục dùng semantic token và theme regression.
+- Tiếp theo: quay lại backlog không bị chặn dữ liệu — cải thiện trải nghiệm Danh mục/Watchlist dựa trên tác vụ thực tế; lựa chọn chỉ số và benchmark tiếp tục chờ index-series hợp lệ.
+
 ## 2026-10-08 — Light theme audit cho các màn hình chính
 
 - Mở rộng semantic token cho elevated/inset/control/sticky surfaces và màu chữ success/warning/error; loại nền tối hard-code khỏi sticky navigation, Market Board fixed column/menu, Portfolio performance/chart shell, form giao dịch/dòng tiền và card Detail/Recommendation.
