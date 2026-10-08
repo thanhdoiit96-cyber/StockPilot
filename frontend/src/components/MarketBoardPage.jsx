@@ -14,7 +14,7 @@ import {
   normalizeMarketColumns,
   serializeMarketBoardCsv
 } from '../runtime/market-board-tools-core.mjs'
-import { INDEX_SERIES_FIXTURE, indexSeriesFixtureLabel } from '../services/indexSeriesFixture.mjs'
+import { INDEX_SERIES_FIXTURES, indexSeriesFixtureLabel } from '../services/indexSeriesFixture.mjs'
 
 const PAGE_SIZES = [25, 40, 50, 100]
 const SESSION_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00']
@@ -86,6 +86,9 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const [exportNotice, setExportNotice] = useState('')
   const [exporting, setExporting] = useState(false)
   const [sharedQuotes, setSharedQuotes] = useState(() => window.__stockpilotRecentQuotes || {})
+  const [fixtureSymbols, setFixtureSymbols] = useState(() => { try { const saved = JSON.parse(sessionStorage.getItem('stockpilot-index-fixtures') || '[]'); return Array.isArray(saved) && saved.length ? saved.slice(0, 4) : ['VNINDEX', 'VN30'] } catch { return ['VNINDEX', 'VN30'] } })
+
+  useEffect(() => { try { sessionStorage.setItem('stockpilot-index-fixtures', JSON.stringify(fixtureSymbols)) } catch {} }, [fixtureSymbols])
 
   useEffect(() => {
     const receive = () => setSharedQuotes(window.__stockpilotRecentQuotes || {})
@@ -244,7 +247,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
         <label className="page-size-control"><span>{t('market.pageSize')}</span><select value={pageSize} onChange={changePageSize}>{PAGE_SIZES.map(size => <option value={size} key={size}>{size}</option>)}</select></label>
       </div>
     </div>
-    {(import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && (() => { const points = INDEX_SERIES_FIXTURE.points; const latest = points.at(-1); const previous = points.at(-2); const change = latest && previous ? latest.close - previous.close : null; const pct = change != null && previous?.close ? change / previous.close * 100 : null; return <div className="market-index-fixture" title={`${indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)} · ${INDEX_SERIES_FIXTURE.session_timezone}`} aria-label={`${indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)}: ${latest?.close ?? '-'}, ${latest?.session_date ?? ''}`}><span className="market-index-fixture-dot" aria-hidden="true" /><strong>INDEX fixture</strong><span>{latest?.close?.toLocaleString('en-US') ?? '-'}</span>{change != null ? <span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span> : null}<small>{indexSeriesFixtureLabel(INDEX_SERIES_FIXTURE)} · {latest?.session_date}</small></div> })()}
+    {(import.meta.env.DEV || import.meta.env.VITE_SHOW_INDEX_FIXTURE === 'true') && <section className="market-index-fixture-section" aria-label="Chỉ số mô phỏng"><div className="market-index-fixture-selector" role="group" aria-label="Chọn chỉ số mô phỏng">{INDEX_SERIES_FIXTURES.map(series => <label key={series.symbol}><input type="checkbox" checked={fixtureSymbols.includes(series.symbol)} onChange={event => setFixtureSymbols(current => event.target.checked ? [...current, series.symbol].slice(0, 4) : current.filter(symbol => symbol !== series.symbol))} />{series.symbol}</label>)}</div><div className="market-index-fixture-grid">{INDEX_SERIES_FIXTURES.filter(series => fixtureSymbols.includes(series.symbol)).map(series => { const latest = series.points.at(-1); const previous = series.points.at(-2); const change = latest.close - previous.close; const pct = change / previous.close * 100; return <div className="market-index-fixture" key={series.symbol} title={`${indexSeriesFixtureLabel(series)} · ${series.session_timezone}`} aria-label={`${series.symbol}: ${latest.close}, ${latest.session_date}`}><span className="market-index-fixture-dot" aria-hidden="true" /><strong>{series.symbol}</strong><span>{latest.close.toLocaleString('en-US')}</span><span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span><small>{indexSeriesFixtureLabel(series)} · {latest.session_date}</small></div> })}</div></section>}
     <div className="market-board-toolbar">
       <div className="market-board-presets" role="group" aria-label={t('market.columnPresets')}>
         <span>{t('market.display')}</span>
