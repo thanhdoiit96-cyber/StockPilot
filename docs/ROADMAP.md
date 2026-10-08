@@ -782,5 +782,7 @@ Checkpoint evaluator pending 2026-10-08: scheduler/script đã chuyển từ lat
 
 Checkpoint integrity readiness 2026-10-08: report lịch sử đã hiển thị aggregate snapshot pending verified/blocked để theo dõi evaluator. Vẫn không lộ hash/evidence vận hành ra UI. Điểm tiếp tục giữ nguyên: vận hành dữ liệu EOD/outcome và review thủ công với đủ mẫu, không thêm tối ưu model tự động.
 
+Operational checkpoint 2026-10-08: evaluator đã được chạy an toàn; toàn bộ 18 run legacy bị chặn do thiếu integrity provenance, không có mutation outcome. EOD hiện fresh nhưng run cùng phiên trước migration thiếu hash; không sinh run trùng phiên. Chờ snapshot sau EOD kế tiếp để bắt đầu chuỗi evaluation hash-backed.
+
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.

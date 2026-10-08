@@ -4447,6 +4447,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## Hiển thị readiness integrity cho Đề xuất — 2026-10-08
 
+## Kiểm tra vận hành evaluator — 2026-10-08
+
+- Đã chạy `npm run evaluate:recommendations`: 18 run pending legacy đều bị chặn `snapshot_integrity_failed`; không có outcome nào được ghi/cập nhật. Đây là hành vi an toàn đúng kỳ vọng sau khi không backfill hash.
+- Readiness hiện có 624 mã, 124 mã đủ tối thiểu 50 quan sát và EOD mới nhất ngày 2026-10-08. Run mới nhất cùng ngày được tạo trước migration 031 nên `snapshot_sha256` là `null`.
+- Không tạo thêm snapshot trùng phiên chỉ để vượt integrity gate vì sẽ nhân bản cohort/outcome. Snapshot được tạo sau phiên EOD kế tiếp sẽ mang hash database và vào evaluator toàn bộ pending.
+
 - Summary history trả aggregate read-only cho snapshot pending: tổng số, số đã xác minh và số bị chặn integrity. Không trả hash, đường dẫn evidence hay chi tiết vận hành.
 - UI report lịch sử nêu rõ evaluator có thể xử lý bao nhiêu snapshot pending; trạng thái bị chặn giúp phân biệt thiếu outcome với vấn đề integrity.
 - Kiểm chứng: Recommendation controller **5/5**; frontend production build/bundle integrity đạt (`index-Cyyp6JVZ.js`).
