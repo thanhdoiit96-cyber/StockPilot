@@ -4,18 +4,20 @@ import StockDetailLink from './StockDetailLink.jsx'
 import { translate } from '../services/i18n.mjs'
 import { filterWatchlist, sortWatchlist, watchlistIndustries } from '../services/watchlistView.mjs'
 
-export default function WatchlistPanel({ entries = [], addValue, onAddValueChange, onAdd, onOpenDetail, onRemove, language = 'vi' }) {
+export default function WatchlistPanel({ entries = [], addValue, onAddValueChange, onAdd, onOpenDetail, onRemove, onUpdateMetadata, language = 'vi' }) {
   const t = (key, values) => translate(language, key, values)
   const [query, setQuery] = useState('')
   const [industry, setIndustry] = useState('')
   const [sort, setSort] = useState('recent')
   const [confirmCode, setConfirmCode] = useState('')
+  const [editingCode, setEditingCode] = useState('')
+  const [draft, setDraft] = useState({ status: 'WATCHING', note: '' })
   const [mutation, setMutation] = useState({ type: '', code: '', message: '', error: false })
   const mutationLock = useRef(false)
   const searchRef = useRef(null)
   const industries = useMemo(() => watchlistIndustries(entries, language), [entries, language])
   const visible = useMemo(() => sortWatchlist(filterWatchlist(entries.filter(entry => matchesSearch([entry.Stock?.code, entry.Stock?.name], query)), industry), sort, language), [entries, query, industry, sort, language])
-  const busy = mutation.type === 'adding' || mutation.type === 'removing'
+  const busy = mutation.type === 'adding' || mutation.type === 'removing' || mutation.type === 'updating'
   const add = async event => {
     event.preventDefault()
     if (mutationLock.current || !addValue.trim()) return
@@ -41,6 +43,24 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
       setMutation({ type: '', code, message: error?.message || t('portfolio.watchlist.removeError', { code }), error: true })
     } finally { mutationLock.current = false }
   }
+  const edit = entry => {
+    setConfirmCode('')
+    setEditingCode(entry.Stock?.code || '')
+    setDraft({ status: entry.status || 'WATCHING', note: entry.note || '' })
+    setMutation({ type: '', code: '', message: '', error: false })
+  }
+  const saveMetadata = async code => {
+    if (mutationLock.current || !onUpdateMetadata) return
+    mutationLock.current = true
+    setMutation({ type: 'updating', code, message: '', error: false })
+    try {
+      await onUpdateMetadata(code, draft)
+      setEditingCode('')
+      setMutation({ type: '', code, message: t('portfolio.watchlist.metadataSaved', { code }), error: false })
+    } catch (error) {
+      setMutation({ type: '', code, message: error?.message || t('portfolio.watchlist.metadataError', { code }), error: true })
+    } finally { mutationLock.current = false }
+  }
   return <article className="panel watchlist-panel" aria-labelledby="watchlist-title" lang={language}>
     <div className="watchlist-heading"><div><h3 id="watchlist-title">Watchlist</h3><p className="muted-text">{t('portfolio.watchlist.subtitle')}</p></div><span className="chip neutral">{entries.length} {t('portfolio.common.symbols')}</span></div>
     <form onSubmit={add} className="auth-form watchlist-add-form" aria-busy={mutation.type === 'adding'}>
@@ -61,9 +81,10 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
       {visible.map(entry => {
         const stock = entry.Stock || {}
         const removing = confirmCode === stock.code
+        const editing = editingCode === stock.code
         return <li key={entry.stock_id}>
-          <div className="watchlist-company"><strong>{stock.code}</strong>{stock.name && <small>{stock.name}</small>}</div>
-          {removing ? <div className="watchlist-confirm" role="group" aria-label={`${t('portfolio.watchlist.confirmAria')} ${stock.code}`} aria-busy={mutation.type === 'removing' && mutation.code === stock.code}><span>{t('portfolio.watchlist.removePrompt')}</span><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => setConfirmCode('')}>{t('portfolio.common.cancel')}</button><button type="button" className="danger-btn small-btn" disabled={busy} onClick={() => remove(stock.code)}>{mutation.type === 'removing' && mutation.code === stock.code ? t('portfolio.common.deleting') : t('portfolio.watchlist.confirmRemove')}</button></div> : <div className="watchlist-actions"><StockDetailLink className={`ghost-btn small-btn${busy || !stock.id ? ' is-disabled' : ''}`} stockId={stock.id} symbol={stock.code} onOpenDetail={busy ? undefined : onOpenDetail}>{t('portfolio.watchlist.openDetail')}</StockDetailLink><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => { setConfirmCode(stock.code); setMutation({ type: '', code: '', message: '', error: false }) }} aria-label={t('portfolio.watchlist.removeAria', { code: stock.code })}>{t('portfolio.watchlist.remove')}</button></div>}
+          <div className="watchlist-company"><div><strong>{stock.code}</strong><span className={`watchlist-status status-${String(entry.status || 'WATCHING').toLowerCase()}`}>{t(`portfolio.watchlist.status.${entry.status || 'WATCHING'}`)}</span></div>{stock.name && <small>{stock.name}</small>}{entry.note && <p>{entry.note}</p>}</div>
+          {editing ? <div className="watchlist-metadata-editor" role="group" aria-label={t('portfolio.watchlist.editAria', { code: stock.code })}><label>{t('portfolio.watchlist.statusLabel')}<select value={draft.status} disabled={mutation.type === 'updating'} onChange={event => setDraft(value => ({ ...value, status: event.target.value }))}><option value="WATCHING">{t('portfolio.watchlist.status.WATCHING')}</option><option value="RESEARCHING">{t('portfolio.watchlist.status.RESEARCHING')}</option><option value="PAUSED">{t('portfolio.watchlist.status.PAUSED')}</option></select></label><label>{t('portfolio.watchlist.noteLabel')}<textarea maxLength="280" rows="3" value={draft.note} disabled={mutation.type === 'updating'} onChange={event => setDraft(value => ({ ...value, note: event.target.value }))} placeholder={t('portfolio.watchlist.notePlaceholder')} /></label><span className="watchlist-note-count">{draft.note.length}/280</span><div><button type="button" className="ghost-btn small-btn" disabled={mutation.type === 'updating'} onClick={() => setEditingCode('')}>{t('portfolio.common.cancel')}</button><button type="button" className="primary-btn small-btn" disabled={mutation.type === 'updating'} onClick={() => saveMetadata(stock.code)}>{mutation.type === 'updating' ? t('portfolio.watchlist.saving') : t('portfolio.watchlist.save')}</button></div></div> : removing ? <div className="watchlist-confirm" role="group" aria-label={`${t('portfolio.watchlist.confirmAria')} ${stock.code}`} aria-busy={mutation.type === 'removing' && mutation.code === stock.code}><span>{t('portfolio.watchlist.removePrompt')}</span><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => setConfirmCode('')}>{t('portfolio.common.cancel')}</button><button type="button" className="danger-btn small-btn" disabled={busy} onClick={() => remove(stock.code)}>{mutation.type === 'removing' && mutation.code === stock.code ? t('portfolio.common.deleting') : t('portfolio.watchlist.confirmRemove')}</button></div> : <div className="watchlist-actions"><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => edit(entry)} aria-label={t('portfolio.watchlist.editAria', { code: stock.code })}>{t('portfolio.watchlist.edit')}</button><StockDetailLink className={`ghost-btn small-btn${busy || !stock.id ? ' is-disabled' : ''}`} stockId={stock.id} symbol={stock.code} onOpenDetail={busy ? undefined : onOpenDetail}>{t('portfolio.watchlist.openDetail')}</StockDetailLink><button type="button" className="ghost-btn small-btn" disabled={busy} onClick={() => { setConfirmCode(stock.code); setMutation({ type: '', code: '', message: '', error: false }) }} aria-label={t('portfolio.watchlist.removeAria', { code: stock.code })}>{t('portfolio.watchlist.remove')}</button></div>}
         </li>
       })}
       {!entries.length && <li className="muted-text watchlist-empty">{t('portfolio.watchlist.empty')}</li>}
