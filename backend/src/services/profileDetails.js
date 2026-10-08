@@ -1,15 +1,16 @@
 'use strict';
 
-const fields = ['display_name', 'full_name', 'phone', 'date_of_birth', 'preferred_language', 'timezone'];
+const fields = ['display_name', 'full_name', 'phone', 'date_of_birth', 'preferred_language', 'timezone', 'theme_preference'];
 const languages = new Set(['vi', 'en']);
 const timezones = new Set(['Asia/Ho_Chi_Minh', 'Asia/Bangkok', 'Asia/Singapore', 'UTC']);
+const themes = new Set(['system', 'dark', 'light']);
 function profileDetails(body, now = new Date()) {
   const changes = {};
   for (const field of fields) {
     if (!body || !Object.prototype.hasOwnProperty.call(body, field)) continue;
     const value = body[field];
     if (value === null) {
-      if (field === 'preferred_language' || field === 'timezone') throw new Error('Ngôn ngữ và múi giờ không được để trống.');
+      if (field === 'preferred_language' || field === 'timezone' || field === 'theme_preference') throw new Error('Tùy chọn hiển thị không được để trống.');
       changes[field] = null; continue;
     }
     if (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value)) throw new Error('Thông tin cá nhân phải là văn bản hợp lệ.');
@@ -18,6 +19,8 @@ function profileDetails(body, now = new Date()) {
       if (!languages.has(normalized)) throw new Error('Ngôn ngữ chỉ hỗ trợ tiếng Việt hoặc tiếng Anh.');
     } else if (field === 'timezone') {
       if (!timezones.has(normalized)) throw new Error('Múi giờ chưa được hỗ trợ.');
+    } else if (field === 'theme_preference') {
+      if (!themes.has(normalized)) throw new Error('Giao diện chưa được hỗ trợ.');
     } else if (field === 'phone') {
       if (normalized.length > 32 || !/^[+\d ()-]+$/.test(normalized)) throw new Error('Số điện thoại không hợp lệ.');
       normalized = normalized.replace(/[ ()-]/g, '');
@@ -31,4 +34,4 @@ function profileDetails(body, now = new Date()) {
   if (!Object.keys(changes).length) throw new Error('Chưa có thông tin hồ sơ để cập nhật.');
   return changes;
 }
-module.exports = { profileDetails, languages, timezones };
+module.exports = { profileDetails, languages, timezones, themes };

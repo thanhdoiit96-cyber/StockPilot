@@ -16,6 +16,8 @@ const entries = [
   ['Ngày sinh', 'Date of birth'], ['Số điện thoại', 'Phone number'], ['Ví dụ: +84 912 345 678', 'For example: +84 912 345 678'],
   ['Thông tin tự khai, chưa xác minh. Không dùng để đăng nhập hoặc khôi phục tài khoản.', 'Self-reported and unverified. Not used for sign-in or account recovery.'],
   ['Hiển thị', 'Display'], ['Áp dụng sau khi lưu', 'Applied after saving'], ['Ngôn ngữ và định dạng', 'Language and formatting'],
+  ['Giao diện', 'Appearance'], ['Theo hệ thống', 'Use system setting'], ['Tối', 'Dark'], ['Sáng', 'Light'],
+  ['Theo hệ thống tự động dùng giao diện sáng hoặc tối theo thiết bị của bạn.', 'System setting automatically follows your device light or dark appearance.'],
   ['Áp dụng cho định dạng và các màn hình đã hỗ trợ Việt/Anh. Nội dung phân tích từ nguồn dữ liệu giữ ngôn ngữ gốc.', 'Applies to interface language and formatting. Analysis from data providers retains its original language.'],
   ['Múi giờ', 'Time zone'], ['Việt Nam (UTC+7)', 'Vietnam (UTC+7)'],
   ['Dùng cho thời điểm giao dịch, dòng tiền và báo giá; ngày giao dịch của thị trường vẫn theo phiên Việt Nam.', 'Used for transaction, cash-flow and quote timestamps. Market trading dates follow Vietnamese sessions.'],

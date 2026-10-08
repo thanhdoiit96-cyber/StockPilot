@@ -1,4 +1,5 @@
 import { uiText } from "./services/uiCatalog.mjs";
+import { applyTheme, THEME_STORAGE_KEY, themePreference } from "./services/userTheme.mjs";
 import { translateDetail } from "./services/detailCatalog.mjs";
 import { formatMoney, formatNumber, formatDateTime } from "./services/userLocale.mjs";
 import AccountPanel from "./components/AccountPanel.jsx";
@@ -731,6 +732,7 @@ function lv() {
   const profileLanguage = ue?.user?.preferred_language || authLanguage;
   const uiTextValue = text => uiText(profileLanguage, text);
   const profileTimezone = ue?.user?.timezone || "Asia/Ho_Chi_Minh";
+  const profileTheme = themePreference(ue?.user?.theme_preference || (() => { try { return localStorage.getItem(THEME_STORAGE_KEY); } catch { return 'system'; } })());
   const tr = (key, values) => translate(profileLanguage, key, values);
   const detailText = text => translateDetail(profileLanguage, text);
   const detailMoney = value => value == null ? detailText("Chưa có dữ liệu") : formatMoney(value, profileLanguage);
@@ -744,6 +746,14 @@ function lv() {
     try { localStorage.setItem("stockpilot-language", profileLanguage); } catch {}
     if (authLanguage !== profileLanguage) setAuthLanguage(profileLanguage);
   }, [authLanguage, profileLanguage, profileTimezone]);
+  D.useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const syncTheme = () => applyTheme(profileTheme, document.documentElement, media.matches);
+    syncTheme();
+    try { localStorage.setItem(THEME_STORAGE_KEY, profileTheme); } catch {}
+    media.addEventListener?.('change', syncTheme);
+    return () => media.removeEventListener?.('change', syncTheme);
+  }, [profileTheme]);
   const endSession = (message = "", notice = "") => {
     clearStoredAuth();
     $r.current = null;

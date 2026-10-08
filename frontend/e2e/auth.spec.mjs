@@ -1,5 +1,27 @@
 import { test, expect } from '@playwright/test'
 
+test('applies the saved theme and persists a profile theme change without a reload flash', async ({ page }) => {
+  let theme = 'light'
+  await page.addInitScript(() => localStorage.setItem('stockpilot-theme', 'light'))
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user', preferred_language: 'vi', timezone: 'Asia/Ho_Chi_Minh', theme_preference: theme } } })
+    if (path === '/api/auth/profile') { theme = (await route.request().postDataJSON()).theme_preference; return route.fulfill({ json: { success: true, user: { email: 'investor@example.com', role: 'user', preferred_language: 'vi', timezone: 'Asia/Ho_Chi_Minh', theme_preference: theme } } }) }
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+  await page.locator('#account-theme').selectOption('dark')
+  await page.getByRole('dialog').locator('form:has(#account-theme) button[type="submit"]').click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('stockpilot-theme'))).toBe('dark')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+})
+
 test('switches the guest auth catalog to English and keeps English navigation after sign-in', async ({ page }) => {
   let signedIn = false
   await page.addInitScript(() => { if (!sessionStorage.getItem('i18n-test-ready')) { localStorage.removeItem('market-auth'); localStorage.removeItem('stockpilot-language'); sessionStorage.setItem('i18n-test-ready', '1') } })

@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
   date_of_birth: { type: DataTypes.DATEONLY, allowNull: true },
   preferred_language: { type: DataTypes.STRING(5), allowNull: false, defaultValue: 'vi' },
   timezone: { type: DataTypes.STRING(64), allowNull: false, defaultValue: 'Asia/Ho_Chi_Minh' },
+  theme_preference: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'system' },
   email_verified_at: { type: DataTypes.DATE, allowNull: true },
   created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }

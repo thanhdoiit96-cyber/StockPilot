@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Dark/Light, lát cắt nền tảng
+
+- Bắt đầu hạng mục kế tiếp sau i18n: thêm tùy chọn `Theo hệ thống / Tối / Sáng` trong Tài khoản, lưu bằng `users.theme_preference` (migration 028), trả qua auth contract và kiểm tra validation ở backend.
+- Theme được áp dụng trước khi React khởi động bằng local fallback để tránh nháy màu; sau đăng nhập, preference tài khoản là nguồn chuẩn. Chế độ `system` theo dõi thay đổi `prefers-color-scheme` và cập nhật không cần reload.
+- Chuẩn hóa token Light cho shell, panel, navigation, search, button và Account dialog; giữ một hệ component/CSS thay vì tách hai giao diện. Smoke xác nhận lưu Light→Dark, local persistence và reload giữ đúng theme.
+- Kiểm chứng: backend **46 suite / 250 test**, frontend **62/62**, theme Playwright **1/1**, migration development PostgreSQL thành công, build/bundle integrity đạt (`index-C9culrJN.js`).
+- Tiếp theo: audit trực quan từng page ở Light trên desktop/mobile, thay các màu hard-code còn lại bằng semantic token, rồi chạy full workflow regression trước khi đánh dấu Dark/Light hoàn tất.
+
 ## 2026-10-08 — Hoàn tất catalog giao diện Việt/Anh hiện có
 
 - Thêm catalog tĩnh có parity Việt/Anh cho giao diện dùng chung, Account, sessions, đổi mật khẩu, Market Board, chi tiết mã và Recommendation; giữ fallback an toàn cho nội dung chưa có mapping.
