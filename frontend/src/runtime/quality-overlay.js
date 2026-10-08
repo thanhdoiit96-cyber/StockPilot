@@ -14,7 +14,9 @@
     panel = document.createElement('details')
     panel.id = id
     panel.className = 'market-data-quality-footer'
-    main.append(panel)
+    const topbar = main.querySelector('.topbar')
+    if (topbar) topbar.after(panel)
+    else main.prepend(panel)
     return panel
   }
   const render = data => {
