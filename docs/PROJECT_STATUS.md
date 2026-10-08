@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Tab workspace Đề xuất
+
+- Trang Đề xuất dùng 4 tab theo thứ tự: Đề xuất (tiêu chí/kết quả), Lịch sử & báo cáo, So sánh bản lưu, Hiệu chỉnh. Tái sử dụng style tab Danh mục, mobile 2 cột; role/tablist/tabpanel, roving tabIndex, Arrow/Home/End và focus liên kết đầy đủ.
+- Panel giữ mounted/hidden; history chỉ mount lần mở đầu, sau đó giữ report/selection và không gọi lại API khi chuyển tab. State chỉ giữ trong vòng đời trang, không cam kết khôi phục khi reload/rời trang. Form và control giữ style hiện có.
+- Báo cáo từng snapshot đặt trước phần phân tích tổng hợp; cohort/ngành/integrity thu vào details mặc định đóng. Learning panel chuyển sang tab riêng, liên kết chuyển tab thay vì anchor tới nội dung ẩn; dùng learning snapshot gần nhất khi chưa tạo kết quả cá nhân.
+- Kiểm chứng: frontend unit 73/73, E2E fixture 5/5 (desktop/mobile, bàn phím, giữ trọng số/report, request một lần, CSV, tiếng Anh); encoding/error-contract/build/bundle và diff-check đạt. Preview 4173 trả HTTP 200 với `index-SMsBDdSs.js`. Không sửa backend/schema/dữ liệu; không chạy lại backend regression.
+- Tiếp tục kỹ thuật: session/provider-aware evaluator, round-trip snapshot hash và versioned evaluation evidence như checkpoint trước. UI lịch sử vẫn giới hạn 50 đợt gần nhất; chưa có pagination toàn bộ lịch sử.
+
 ## 2026-10-08 — Eligibility thống kê, báo cáo/CSV và sửa live 404
 
 - Read-time guard giữ nguyên database: chỉ outcome có snapshot hash khớp (không chấp nhận bypass), đủ N ngày EOD cùng provider, VND/share unadjusted hợp lệ, không giá trùng mâu thuẫn, ngày kết thúc và return/sign khớp mới được tính. List/detail/cohort/ngành/calibration cùng dùng guard; report trả `statistics_eligible`, `measurement_status`, `exclusion_reasons`, summary thêm `excluded_count`.

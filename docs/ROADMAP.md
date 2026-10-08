@@ -790,6 +790,8 @@ Audit checkpoint 2026-10-08 (mới hơn): read-only PostgreSQL audit phát hiệ
 
 Eligibility checkpoint 2026-10-08: đã triển khai guard cho list/report/cohort/calibration, trạng thái loại và CSV raw riêng; gộp UI lịch sử chung về một bảng. Live 21 report trả 200 sau restart backend cũ, 5 legacy outcomes không tham gia thống kê. Backend 42, frontend 73, E2E fixture 5 tests đạt. Bước tiếp tục: session/provider-aware evaluator, snapshot hash round-trip và versioned evaluation evidence. Calendar-gap verification vẫn là phần chưa hoàn tất; không suy diễn đủ ngày quan sát thành lịch giao dịch hoàn chỉnh.
 
+UX checkpoint 2026-10-08: đã chia workspace Đề xuất thành 4 tab giữ state, lazy-mount lịch sử, hỗ trợ bàn phím/mobile và thu gọn phân tích tổng hợp. Frontend 73/73, E2E fixture 5/5 đạt, Preview đã build mới. Các bước evaluator/hash/evidence ở trên giữ nguyên ưu tiên kỹ thuật tiếp theo.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

@@ -153,6 +153,8 @@ Timeline Tổng quan hiển thị A/D tích lũy cùng volume breadth EOD cho 1/
 [market-board-productivity.spec.mjs](e2e/market-board-productivity.spec.mjs) kiểm tra sticky mã, persistence cấu hình cột, nội dung CSV và budget tương tác fixture 300/500 mã. Số đo này chỉ là regression baseline cục bộ với mock API, không phải SLA production.
 ## Báo cáo lịch sử Đề xuất
 
+Workspace có bốn tab **Đề xuất**, **Lịch sử & báo cáo**, **So sánh bản lưu**, **Hiệu chỉnh**; style và hành vi bàn phím giống tab Danh mục, mobile hai cột. Panel giữ mounted và dùng hidden để giữ trọng số/kết quả/selection. History chỉ mount khi mở lần đầu, rồi giữ state và không refetch do chuyển tab. State này không tồn tại qua reload/rời trang. Phần phân tích cohort/ngành/chất lượng đặt trong details sau báo cáo từng snapshot, mặc định đóng để giảm cuộn.
+
 Trang Đề xuất có một bảng **Đánh giá từng snapshot đề xuất** duy nhất cho lịch sử chung, báo cáo và CSV; learning panel liên kết tới bảng thay vì lặp dữ liệu. Tải tối đa 50 run gần nhất và mở thêm 8 dòng/lần. Dòng bị loại hiển thị lý do Việt/Anh, không hiển thị return chưa xác minh ở cột chính; CSV giữ raw return trong cột riêng có nhãn. Xem contract eligibility tại [thiết kế Đề xuất](../docs/RECOMMENDATIONS_DESIGN.md). Các bản đề xuất cá nhân đã lưu và so sánh tiêu chí vẫn là chức năng riêng.
 
 ## Daily portfolio performance

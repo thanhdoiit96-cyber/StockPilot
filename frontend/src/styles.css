@@ -1346,6 +1346,12 @@ th {
 .portfolio-panel .muted-text { line-height: 1.5; }
 .portfolio-panel > .portfolio-positions:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .portfolio-tab-panel[hidden] { display: none !important; }
+.recommendation-tab-panel[hidden] { display: none !important; }
+.recommendation-tab-panel { min-width: 0; }
+.recommendation-tab-panel:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.recommendation-section-tabs { background: var(--surface); }
+.recommendation-aggregate { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+.recommendation-aggregate > summary { cursor: pointer; color: var(--text); font-weight: 600; padding: 8px 0; }
 .portfolio-tab-panel:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
 .transaction-entry-panel, .portfolio-tracking-panel { grid-column: 1 / -1; }
 /* Readability and information hierarchy */
