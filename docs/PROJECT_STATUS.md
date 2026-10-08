@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Watchlist: lọc và sắp xếp cho tác vụ theo dõi hằng ngày
+
+- Bổ sung bộ lọc theo ngành và ba cách sắp xếp `Mới thêm / Mã A–Z / Tên doanh nghiệp A–Z`; tìm kiếm, lọc và sắp xếp phối hợp trên client nên không phát sinh request mới và không làm mất dữ liệu gốc.
+- Giao diện dùng semantic theme token, control gọn theo panel và tự xuống hàng trên mobile. Nhãn Việt/Anh tối thiểu của tính năng mới vẫn được giữ parity; đợt rà soát chi tiết i18n toàn ứng dụng được tách lại theo yêu cầu.
+- Kiểm chứng: encoding và API-error contract đạt; frontend unit **64/64** khi chạy `--test-isolation=none` (runner mặc định vẫn vướng giới hạn môi trường `spawn EPERM`); Portfolio Playwright trên bundle mới **34/34**; build/bundle integrity đạt (`index-CdR7G4gK.js`).
+- Giới hạn: Watchlist chưa có ghi chú/trạng thái luận điểm do schema hiện chỉ lưu mã và thời điểm thêm; không dựng giá mục tiêu hoặc dữ liệu thị trường giả. Tiếp theo: thiết kế metadata do người dùng sở hữu (ghi chú ngắn/trạng thái theo dõi), gồm schema, giới hạn dữ liệu, audit và trải nghiệm chỉnh sửa nhanh trước khi triển khai.
+
 ## 2026-10-08 — Sửa theme Light bị trả về Dark
 
 - Nguyên nhân runtime: backend cổng 5000 vẫn là process cũ khởi động trước khi có `theme_preference`, nên response hồ sơ không giữ lựa chọn Light và frontend fallback về Dark. Backend đã được khởi động lại, health HTTP 200 với process mới.

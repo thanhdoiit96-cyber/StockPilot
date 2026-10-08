@@ -2,15 +2,19 @@ import { useMemo, useRef, useState } from 'react'
 import { matchesSearch } from '../services/positionSearch.mjs'
 import StockDetailLink from './StockDetailLink.jsx'
 import { translate } from '../services/i18n.mjs'
+import { filterWatchlist, sortWatchlist, watchlistIndustries } from '../services/watchlistView.mjs'
 
 export default function WatchlistPanel({ entries = [], addValue, onAddValueChange, onAdd, onOpenDetail, onRemove, language = 'vi' }) {
   const t = (key, values) => translate(language, key, values)
   const [query, setQuery] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [sort, setSort] = useState('recent')
   const [confirmCode, setConfirmCode] = useState('')
   const [mutation, setMutation] = useState({ type: '', code: '', message: '', error: false })
   const mutationLock = useRef(false)
   const searchRef = useRef(null)
-  const visible = useMemo(() => entries.filter(entry => matchesSearch([entry.Stock?.code, entry.Stock?.name], query)), [entries, query])
+  const industries = useMemo(() => watchlistIndustries(entries, language), [entries, language])
+  const visible = useMemo(() => sortWatchlist(filterWatchlist(entries.filter(entry => matchesSearch([entry.Stock?.code, entry.Stock?.name], query)), industry), sort, language), [entries, query, industry, sort, language])
   const busy = mutation.type === 'adding' || mutation.type === 'removing'
   const add = async event => {
     event.preventDefault()
@@ -48,6 +52,10 @@ export default function WatchlistPanel({ entries = [], addValue, onAddValueChang
       <label className="search-field-label" htmlFor="watchlist-search">{t('portfolio.watchlist.search')}<input ref={searchRef} className="app-search-input" id="watchlist-search" type="search" value={query} onChange={event => { setQuery(event.target.value); setConfirmCode('') }} placeholder={t('portfolio.watchlist.searchPlaceholder')} /></label>
       {query && <button type="button" className="ghost-btn small-btn search-clear-btn" disabled={busy} onClick={() => { setQuery(''); setConfirmCode(''); searchRef.current?.focus() }}>{t('portfolio.watchlist.clear')}</button>}
       <span className="search-result-count" role="status">{visible.length}/{entries.length} {t('portfolio.watchlist.visible')}</span>
+    </div>
+    <div className="watchlist-view-controls" aria-label={t('portfolio.watchlist.viewControls')}>
+      <label>{t('portfolio.watchlist.industry')}<select value={industry} onChange={event => { setIndustry(event.target.value); setConfirmCode('') }}><option value="">{t('portfolio.watchlist.allIndustries')}</option>{industries.map(value => <option value={value} key={value}>{value}</option>)}</select></label>
+      <label>{t('portfolio.watchlist.sort')}<select value={sort} onChange={event => { setSort(event.target.value); setConfirmCode('') }}><option value="recent">{t('portfolio.watchlist.recent')}</option><option value="symbol">{t('portfolio.watchlist.symbolAZ')}</option><option value="company">{t('portfolio.watchlist.companyAZ')}</option></select></label>
     </div>
     <ul className="watchlist">
       {visible.map(entry => {

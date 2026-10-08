@@ -559,6 +559,10 @@ button, input { font: inherit; }
 .watchlist-search label { display: grid; gap: 6px; flex: 1 1 240px; }
 .watchlist-search label input { width: 100%; min-width: 0; }
 .watchlist-search [role="status"] { color: var(--muted); font-size: 13px; padding-bottom: 10px; }
+.watchlist-view-controls { display:flex; flex-wrap:wrap; gap:10px; margin:-4px 0 16px; padding:10px; border:1px solid var(--border); border-radius:11px; background:var(--panel-soft); }
+.watchlist-view-controls label { display:grid; gap:5px; flex:1 1 190px; color:var(--muted); font-size:12px; font-weight:700; }
+.watchlist-view-controls select { width:100%; min-height:40px; padding:8px 34px 8px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface-control); color:var(--text); font:inherit; color-scheme:dark; }
+:root[data-theme="light"] .watchlist-view-controls select { color-scheme:light; }
 .watchlist-mutation { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
 .watchlist-mutation.success { color: #a7f3d0; background: rgba(16, 185, 129, .1); border: 1px solid rgba(52, 211, 153, .24); }
 .watchlist-mutation.error { color: #fecaca; background: rgba(239, 68, 68, .1); border: 1px solid rgba(248, 113, 113, .28); }
