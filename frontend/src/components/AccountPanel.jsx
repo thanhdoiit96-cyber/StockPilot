@@ -8,7 +8,7 @@ import { localizeApiError } from "../services/apiErrorCatalog.mjs";
 
 const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh", theme_preference: user?.theme_preference || "dark" });
 
-export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession }) {
+export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession, onThemePreview }) {
   const t = text => accountText(user?.preferred_language, text);
   const language = user?.preferred_language === 'en' ? 'en' : 'vi';
   const [sessionDirty, setSessionDirty] = useState(false);
@@ -45,6 +45,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
   const verified = Boolean(user?.email_verified_at && Number.isFinite(Date.parse(user.email_verified_at)));
   const verification = verified ? t("Đã xác thực") : user?.email_verified_at === null ? t("Chưa xác thực") : t("Chưa có thông tin");
   function open() {
+    onThemePreview?.(null);
     setName(user?.display_name || "");
     setDetails(detailsOf(user));
     setTab("profile");
@@ -105,7 +106,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
         <strong>{t("Bạn có thay đổi chưa lưu")}</strong>
         <p>{pendingExit === "logout" ? t("Đăng xuất sẽ bỏ các thay đổi trong hồ sơ.") : t("Đóng hồ sơ sẽ bỏ các thay đổi bạn vừa nhập.")}</p>
         <div><button ref={keepEditing} type="button" className="primary-btn" onClick={() => setPendingExit(null)}>{t("Tiếp tục chỉnh sửa")}</button>
-        <button type="button" className="ghost-btn" onClick={() => pendingExit === "logout" ? logout(true) : dialog.current.close()}>{pendingExit === "logout" ? t("Bỏ thay đổi và đăng xuất") : t("Bỏ thay đổi và đóng")}</button></div>
+        <button type="button" className="ghost-btn" onClick={() => { if (pendingExit === "logout") logout(true); else { onThemePreview?.(null); dialog.current.close(); } }}>{pendingExit === "logout" ? t("Bỏ thay đổi và đăng xuất") : t("Bỏ thay đổi và đóng")}</button></div>
       </section>}
       {onPasswordChange && <div className="account-tabs" role="tablist" aria-label={t("Cài đặt tài khoản")} inert={pendingExit ? "" : undefined}>
         {[["profile", t("Hồ sơ"), profileDirty], ["security", t("Bảo mật"), passwordDirty]].map(([key, label, edited]) => <button key={key} id={"account-tab-" + key} type="button" role="tab" aria-label={label} aria-description={edited ? t("Có thay đổi chưa lưu") : undefined} aria-selected={tab === key} aria-controls={"account-panel-" + key} tabIndex={tab === key ? 0 : -1} disabled={busy} onClick={() => selectTab(key)} onKeyDown={tabKeys}>{label}{edited && <span className="account-draft-dot" aria-label={t("Có thay đổi chưa lưu")}> •</span>}</button>)}
@@ -138,7 +139,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
             <select id="account-language" value={details.preferred_language} disabled={busy} onChange={event => { setDetails({ ...details, preferred_language: event.target.value }); setMessage(""); setError(""); }}><option value="vi">Tiếng Việt · 1.234.567 ₫</option><option value="en">English · ₫1,234,567</option></select>
             <small>{t("Áp dụng cho định dạng và các màn hình đã hỗ trợ Việt/Anh. Nội dung phân tích từ nguồn dữ liệu giữ ngôn ngữ gốc.")}</small>
             <label htmlFor="account-theme">{t("Giao diện")}</label>
-            <select id="account-theme" value={details.theme_preference} disabled={busy} onChange={event => { setDetails({ ...details, theme_preference: event.target.value }); setMessage(""); setError(""); }}><option value="system">{t("Theo hệ thống")}</option><option value="dark">{t("Tối")}</option><option value="light">{t("Sáng")}</option></select>
+            <select id="account-theme" value={details.theme_preference} disabled={busy} onChange={event => { const theme = event.target.value; setDetails({ ...details, theme_preference: theme }); onThemePreview?.(theme); setMessage(""); setError(""); }}><option value="system">{t("Theo hệ thống")}</option><option value="dark">{t("Tối")}</option><option value="light">{t("Sáng")}</option></select>
             <small>{t("Theo hệ thống tự động dùng giao diện sáng hoặc tối theo thiết bị của bạn.")}</small>
             <label htmlFor="account-timezone">{t("Múi giờ")}</label>
             <select id="account-timezone" value={details.timezone} disabled={busy} onChange={event => { setDetails({ ...details, timezone: event.target.value }); setMessage(""); setError(""); }}><option value="Asia/Ho_Chi_Minh">{t("Việt Nam (UTC+7)")}</option><option value="Asia/Bangkok">Bangkok (UTC+7)</option><option value="Asia/Singapore">Singapore (UTC+8)</option><option value="UTC">UTC</option></select>
@@ -148,7 +149,7 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
           <input id="account-email" type="email" value={user?.email || ""} readOnly />
           <small>{t("Email hiện chưa thể thay đổi tại đây.")}</small>
           <div className="account-feedback" aria-live="polite">{message ? <p className="account-success">{message}</p> : null}</div>
-          <div className="account-form-actions"><button type="button" className="ghost-btn" disabled={busy || !profileDirty} onClick={() => { setName(user?.display_name || ""); setDetails(detailsOf(user)); setError(""); setMessage(""); }}>{t("Hoàn tác")}</button><button type="submit" className="primary-btn" disabled={busy || !profileDirty}>{busy ? t("Đang xử lý…") : t("Lưu thay đổi")}</button></div>
+          <div className="account-form-actions"><button type="button" className="ghost-btn" disabled={busy || !profileDirty} onClick={() => { setName(user?.display_name || ""); setDetails(detailsOf(user)); onThemePreview?.(null); setError(""); setMessage(""); }}>{t("Hoàn tác")}</button><button type="submit" className="primary-btn" disabled={busy || !profileDirty}>{busy ? t("Đang xử lý…") : t("Lưu thay đổi")}</button></div>
         </form>
       </div>
       {opened && onPasswordChange && <div id="account-panel-security" role="tabpanel" aria-labelledby="account-tab-security" className="account-password-section" hidden={tab !== "security"} inert={pendingExit ? "" : undefined}>

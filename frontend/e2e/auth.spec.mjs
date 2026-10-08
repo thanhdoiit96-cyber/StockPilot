@@ -30,6 +30,8 @@ test('applies the saved theme and persists a profile theme change without a relo
   await expect(page.locator('#account-theme')).toBeFocused()
   expect(await page.locator('#account-theme').evaluate(element => getComputedStyle(element).outlineStyle)).not.toBe('none')
   await page.locator('#account-theme').selectOption('dark')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('stockpilot-theme'))).toBe('light')
   await saveProfile.click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('stockpilot-theme'))).toBe('dark')
