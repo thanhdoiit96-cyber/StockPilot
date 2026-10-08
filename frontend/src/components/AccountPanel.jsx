@@ -6,7 +6,7 @@ import PasswordChangeForm from "./PasswordChangeForm.jsx";
 import AccountSessions from "./AccountSessions.jsx";
 import { localizeApiError } from "../services/apiErrorCatalog.mjs";
 
-const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh" });
+const detailsOf = user => ({ full_name: user?.full_name || "", phone: user?.phone || "", date_of_birth: user?.date_of_birth || "", preferred_language: user?.preferred_language || "vi", timezone: user?.timezone || "Asia/Ho_Chi_Minh", theme_preference: user?.theme_preference || "system" });
 
 export default function AccountPanel({ user, onSave, onLogout, onPasswordChange, onLoadSessions, onRevokeSessions, onRenameSession }) {
   const t = text => accountText(user?.preferred_language, text);
@@ -137,6 +137,9 @@ export default function AccountPanel({ user, onSave, onLogout, onPasswordChange,
             <label htmlFor="account-language">{t("Ngôn ngữ và định dạng")}</label>
             <select id="account-language" value={details.preferred_language} disabled={busy} onChange={event => { setDetails({ ...details, preferred_language: event.target.value }); setMessage(""); setError(""); }}><option value="vi">Tiếng Việt · 1.234.567 ₫</option><option value="en">English · ₫1,234,567</option></select>
             <small>{t("Áp dụng cho định dạng và các màn hình đã hỗ trợ Việt/Anh. Nội dung phân tích từ nguồn dữ liệu giữ ngôn ngữ gốc.")}</small>
+            <label htmlFor="account-theme">{t("Giao diện")}</label>
+            <select id="account-theme" value={details.theme_preference} disabled={busy} onChange={event => { setDetails({ ...details, theme_preference: event.target.value }); setMessage(""); setError(""); }}><option value="system">{t("Theo hệ thống")}</option><option value="dark">{t("Tối")}</option><option value="light">{t("Sáng")}</option></select>
+            <small>{t("Theo hệ thống tự động dùng giao diện sáng hoặc tối theo thiết bị của bạn.")}</small>
             <label htmlFor="account-timezone">{t("Múi giờ")}</label>
             <select id="account-timezone" value={details.timezone} disabled={busy} onChange={event => { setDetails({ ...details, timezone: event.target.value }); setMessage(""); setError(""); }}><option value="Asia/Ho_Chi_Minh">{t("Việt Nam (UTC+7)")}</option><option value="Asia/Bangkok">Bangkok (UTC+7)</option><option value="Asia/Singapore">Singapore (UTC+8)</option><option value="UTC">UTC</option></select>
             <small>{t("Dùng cho thời điểm giao dịch, dòng tiền và báo giá; ngày giao dịch của thị trường vẫn theo phiên Việt Nam.")}</small>

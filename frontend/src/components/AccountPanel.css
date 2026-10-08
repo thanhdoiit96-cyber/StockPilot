@@ -86,3 +86,15 @@
 .account-details legend span { color:#94a3b8; font-size:11px; font-weight:400; margin-left:8px; }
 .account-details label:not(:first-of-type) { margin-top:14px; }
 .account-details input[type="date"] { color-scheme:dark; }
+
+:root[data-theme="light"] .account-dialog { border-color:#cbd5e1; background:#fff; color:#172033; box-shadow:0 24px 80px rgba(15,23,42,.24); }
+:root[data-theme="light"] .account-dialog::backdrop { background:rgba(51,65,85,.42); }
+:root[data-theme="light"] :is(.account-heading,.account-footer,.account-password-section,.account-sessions,.account-details) { border-color:#dbe3ee; }
+:root[data-theme="light"] .account-footer { background:#f8fafc; }
+:root[data-theme="light"] :is(.account-summary,.account-session-list li) { background:#f4f7fb; border-color:#dbe3ee; }
+:root[data-theme="light"] :is(.account-form input,.account-form select,.account-session-label-form input) { background:#fff; border-color:#b8c4d4; color:#172033; color-scheme:light; }
+:root[data-theme="light"] .account-form input[readonly] { background:#eef2f7; color:#5d6b82; }
+:root[data-theme="light"] .account-details input[type="date"] { color-scheme:light; }
+:root[data-theme="light"] .account-tabs [aria-selected="true"] { background:#dff7f3; border-color:#7dd3c7; color:#115e59; }
+:root[data-theme="light"] .account-close { color:#334155; border-color:#cbd5e1; }
+:root[data-theme="light"] .account-discard,:root[data-theme="light"] .account-profile-reminder { background:#fff8e6; border-color:#d6ad52; color:#6b4c12; }
