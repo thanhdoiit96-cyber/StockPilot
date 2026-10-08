@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Thu gọn trạng thái chất lượng dữ liệu
+
+- `#market-data-quality-overlay` được chuyển từ banner đầu trang sang footer `details` ở cuối `.main-panel`: summary chỉ hiển thị trạng thái, phiên và coverage; chi tiết đồng bộ/source chỉ mở theo yêu cầu.
+- Table header không còn sticky trên mobile, tránh che title/corner khi cuộn ngang; desktop vẫn giữ sticky header.
+- Targeted workflow E2E **1/1** đạt; Preview opt-in build đạt (`index-DsyV0Tsk.js`).
+- Tiếp theo: audit visual desktop/mobile trên các bảng lớn để chỉnh padding/truncation còn lại.
+
 ## 2026-10-08 — Persistence thứ tự index fixture
 
 - Hồi quy Preview xác nhận sau khi đưa VN30 lên đầu rồi reload, thứ tự VN30 → VNINDEX được khôi phục từ session.

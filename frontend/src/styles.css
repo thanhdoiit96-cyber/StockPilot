@@ -716,6 +716,15 @@ button, input { font: inherit; }
   z-index: 2;
   background: #111b2d;
 }
+.market-data-quality-footer { display:block; max-width:100%; margin:24px 0 8px; padding:0; border:1px solid var(--border); border-radius:10px; background:var(--panel-soft); color:var(--muted); font-size:11px; }
+.market-data-quality-footer summary { display:flex; align-items:center; gap:7px; min-height:34px; padding:0 10px; cursor:pointer; list-style:none; }
+.market-data-quality-footer summary::-webkit-details-marker { display:none; }
+.market-data-quality-footer summary i { width:7px; height:7px; flex:0 0 auto; border-radius:50%; background:#fbbf24; box-shadow:0 0 7px rgba(251,191,36,.42); }
+.market-data-quality-footer.is-ready summary i { background:#34d399; box-shadow:0 0 7px rgba(52,211,153,.42); }
+.market-data-quality-footer summary strong { color:var(--text); font-weight:650; }
+.market-data-quality-footer summary span { overflow:hidden; margin-left:auto; text-overflow:ellipsis; white-space:nowrap; }
+.market-data-quality-footer p { margin:0; padding:0 10px 10px; color:var(--muted); line-height:1.45; }
+@media (max-width:700px) { .table-panel thead th { position:static; } .market-data-quality-footer { margin-top:18px; } .market-data-quality-footer summary span { max-width:46%; } }
 
 .table-sort-btn {
   appearance: none;
