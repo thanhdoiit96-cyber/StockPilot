@@ -19,7 +19,7 @@ Adapter provider cần cung cấp một object cho mỗi chỉ số với các t
 | `points` | Ít nhất hai daily close dương, ngày ISO duy nhất và tăng chặt. |
 | `intraday_points` | Nếu cung cấp: tối thiểu hai quote cùng ngày `observed_at`, tăng chặt, không nội suy/điền khuyết. |
 
-`validateMarketIndexSeries` kiểm tra contract này ở frontend test boundary. Nó không fetch dữ liệu, không phê duyệt license và không tự sửa data gap. Backend adapter vẫn là nơi xác thực quyền truy cập, lưu raw provenance và áp dụng stale/session policy.
+`validateMarketIndexSeries` kiểm tra contract này ở frontend test boundary. Backend `marketIndexSeriesService` áp dụng cùng boundary cho adapter: `loadMarketIndexSeries` trả lỗi rõ khi adapter chưa có hoặc provider lỗi, còn `classifyMarketIndexSeries` giữ riêng trạng thái `fresh`/`stale`/`error` của từng chỉ số. Không lớp nào fetch dữ liệu mặc định, phê duyệt license hoặc tự sửa data gap. Backend adapter vẫn là nơi xác thực quyền truy cập và lưu raw provenance.
 
 ## Điều kiện mở production
 

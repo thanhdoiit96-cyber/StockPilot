@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Boundary backend cho index provider
+
+- Bổ sung `marketIndexSeriesService`: adapter chưa được cấu hình trả `market_index_provider_unavailable`; lỗi adapter trả `market_index_provider_failed`; payload không đúng contract trả `market_index_contract_invalid` mà không được sửa/hiển thị.
+- Trạng thái `fresh`/`stale` được tính theo `observed_at` và cửa sổ stale, giữ riêng từng index để controller tương lai không che trạng thái một phần bằng kết quả tổng hợp.
+- Backend service regression **4/4** đạt. Chưa có route production, adapter, API key hay dữ liệu index được thêm; provider/license vẫn là blocker.
+- Tiếp theo: sau khi có provider authority, cài adapter thực, persistence provenance, controller read-only và live smoke; chỉ sau đó mới nối UI production selector/benchmark.
+
 ## 2026-10-08 — Contract index-series trước provider thật
 
 - Đã chốt và kiểm thử validator cho series chỉ số: bắt buộc provider khác fixture, định danh license, URL HTTPS provenance, timezone `Asia/Ho_Chi_Minh`, semantics `price_return`/`total_return`, previous close, freshness và daily/intraday points tăng chặt.
