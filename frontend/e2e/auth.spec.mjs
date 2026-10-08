@@ -13,13 +13,40 @@ test('applies the saved theme and persists a profile theme change without a relo
   })
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  const auditedColors = await page.locator('.sidebar').evaluate(element => {
+    const parse = value => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number)
+    const luminance = value => { const rgb = parse(value).map(channel => { const c = channel / 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4 }); return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2] }
+    const style = getComputedStyle(element)
+    return { background: luminance(style.backgroundColor), text: luminance(style.color) }
+  })
+  expect(auditedColors.background).toBeGreaterThan(.75)
+  expect(auditedColors.text).toBeLessThan(.2)
   await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await page.locator('#account-theme').selectOption('dark')
   await page.getByRole('dialog').locator('form:has(#account-theme) button[type="submit"]').click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('stockpilot-theme'))).toBe('dark')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+})
+
+test('light theme keeps the application shell within the mobile viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => localStorage.setItem('stockpilot-theme', 'light'))
+  await page.route('**/api/**', route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'mobile@example.com', role: 'user', preferred_language: 'vi', timezone: 'Asia/Ho_Chi_Minh', theme_preference: 'light' } } })
+    if (path === '/api/watchlist') return route.fulfill({ json: { success: true, data: [] } })
+    if (path === '/api/portfolio') return route.fulfill({ json: { success: true, data: { positions: [], transactions: [] } } })
+    return route.fulfill({ json: { success: true, data: path === '/api/stocks' ? [] : {} } })
+  })
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect.poll(() => page.getByRole('dialog').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
 
 test('switches the guest auth catalog to English and keeps English navigation after sign-in', async ({ page }) => {
