@@ -200,6 +200,30 @@ test('filters and sorts Watchlist for daily review on desktop and mobile', async
   expect(await summary.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
 
+test('keeps a 500-symbol Watchlist within the render and filter budget', async ({ page }) => {
+  const watch = Array.from({ length: 500 }, (_, index) => ({
+    stock_id: `scale-${index}`,
+    created_at: new Date(Date.UTC(2026, 9, 1, 0, index)).toISOString(),
+    status: index % 3 === 0 ? 'RESEARCHING' : index % 3 === 1 ? 'PAUSED' : 'WATCHING',
+    note: index === 427 ? 'scale target unique note' : `Theo dõi tổng hợp ${index}`,
+    Stock: { id: `scale-${index}`, code: `S${String(index).padStart(3, '0')}`, name: `Doanh nghiệp ${index}`, industry: `Ngành ${index % 12}` }
+  }))
+  await boot(page, [], [], [], watch)
+  const renderStart = Date.now()
+  await page.getByRole('tab', { name: /Watchlist/ }).click()
+  const rows = page.locator('.watchlist > li:not(.watchlist-empty)')
+  await expect(rows).toHaveCount(500)
+  const renderMs = Date.now() - renderStart
+  const filterStart = Date.now()
+  await page.getByLabel('Tìm trong Watchlist').fill('scale target unique')
+  await expect(rows).toHaveCount(1)
+  await expect(rows).toContainText('S427')
+  const filterMs = Date.now() - filterStart
+  console.log(`WATCHLIST_SCALE render_500_ms=${renderMs} filter_500_ms=${filterMs}`)
+  expect(renderMs).toBeLessThan(3000)
+  expect(filterMs).toBeLessThan(1000)
+})
+
 test('edits user-owned Watchlist status and note without leaving the list', async ({ page }) => {
   await boot(page, [], [], [], [{ stock_id: 'a', status: 'WATCHING', note: null, Stock: { id: 'a', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } }])
   await page.getByRole('tab', { name: /Watchlist/ }).click()
