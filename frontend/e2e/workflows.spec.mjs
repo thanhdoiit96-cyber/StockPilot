@@ -160,6 +160,7 @@ test('price board presents balanced market indices separately from the stock lis
   await expect(indexSection.locator('.market-index-fixture-baseline')).toHaveCount(2)
   await expect(indexSection.locator('.market-index-fixture-times').first()).toContainText('09:00')
   await expect(indexSection.locator('.market-index-fixture-times').first()).toContainText('15:00')
+  expect(await indexSection.locator('.market-index-fixture').evaluateAll(cards => cards.every(card => Math.abs(card.getBoundingClientRect().top - cards[0].getBoundingClientRect().top) < 1))).toBe(true)
   await indexSection.getByRole('button', { name: 'Buổi sáng' }).click()
   await expect(indexSection.getByRole('button', { name: 'Buổi sáng' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.targeted-market-board')).toHaveCount(0)

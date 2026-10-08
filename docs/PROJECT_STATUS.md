@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Card chỉ số một hàng ngang
+
+- Card Chỉ số thị trường nay dùng một hàng ngang: 2 card tự giãn đều, 3–4 card vẫn giữ cùng hàng để so sánh trực tiếp; mobile dùng cuộn ngang cục bộ thay vì xếp dọc.
+- Browser regression kiểm tra cùng toạ độ dọc của mọi card; Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-BCe_nt7m.js`).
+- Tiếp theo: giữ interaction này khi thay fixture bằng provider index-series thật.
+
 ## 2026-10-08 — Rút gọn Bảng giá về Chỉ số thị trường
 
 - Đã đánh giá và **loại bỏ Mã trọng tâm**, không chuyển sang Tổng quan. Tiêu chí xếp hạng trước đây không phải cấu hình do người dùng sở hữu và không đủ rõ để tạo một insight độc lập.
