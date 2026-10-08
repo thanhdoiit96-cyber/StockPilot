@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Kiểm tra blocker index-series cho Benchmark
+
+- Đã rà soát backend/frontend/docs: hiện chỉ có schema `market_indices` và thiết kế API, chưa có ingestion/series endpoint đang phục vụ VNINDEX, VN30, HNX30 hoặc HNXINDEX với license, session/timezone, continuity và semantics price/total return.
+- Không triển khai card chọn chỉ số hay benchmark từ breadth/giá cổ phiếu; như vậy sẽ tạo dữ liệu so sánh không hợp lệ.
+- Tiếp theo cần chốt provider/license và contract series thật; trong lúc chờ, backlog UX Danh mục đã hoàn tất các lát cắt không phụ thuộc dữ liệu này.
+
 ## 2026-10-08 — Smoke persistence xuyên lifecycle auth
 
 - Thêm E2E độc lập đặt filter Watchlist/Vị thế, logout qua UI và xác nhận các khóa `sessionStorage` được xóa trước khi hiển thị auth page.
