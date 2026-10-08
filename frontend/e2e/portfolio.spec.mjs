@@ -176,6 +176,17 @@ test('sorts open positions by symbol, value and unrealized P/L', async ({ page }
   expect(await region.locator('.position-search-toolbar').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 })
 
+test('separates position loading and error states from an empty portfolio', async ({ page }) => {
+  await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10, market_value: 100 }])
+  await page.route('**/api/portfolio', route => route.fulfill({ status: 503, json: { success: false, code: 'portfolio_load_failed', message: 'Danh mục đang tạm gián đoạn.' } }))
+  await page.reload()
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  const region = page.locator('.portfolio-positions')
+  await expect(region.locator('.portfolio-positions-state[role="alert"]')).toContainText('Không thể tải vị thế')
+  await expect(region.locator('.portfolio-table')).toHaveCount(0)
+  await expect(region.locator('.portfolio-positions-state')).not.toContainText('Chưa có vị thế mở')
+})
+
 test('filters and sorts Watchlist for daily review on desktop and mobile', async ({ page }) => {
   await boot(page, [], [], [], [
     { stock_id: 'v', created_at: '2026-10-01T00:00:00Z', status: 'WATCHING', Stock: { id: 'v', code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },

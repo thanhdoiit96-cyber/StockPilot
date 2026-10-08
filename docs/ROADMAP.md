@@ -729,6 +729,8 @@ Checkpoint Watchlist performance gate 2026-10-08: aggregate development là 2 it
 
 Checkpoint UX Danh mục 2026-10-08: Vị thế có sắp xếp Mã/Giá trị/Lãi-lỗ chưa thực hiện, giữ tìm kiếm, deep-link và action Watchlist; full Portfolio E2E 37/37 và unit 65/65. Lát cắt kế tiếp là audit loading/partial/error và mobile readability của Danh mục; không mở rộng benchmark khi index-series chưa hợp lệ.
 
+Checkpoint UX state 2026-10-08: Vị thế đã tách rõ loading/error khỏi empty state, có `aria-busy`, responsive semantic surface và hồi quy 38/38. Lát cắt tiếp theo là transaction ledger/cash flow loading/partial/error + mobile readability; benchmark tiếp tục chờ index-series hợp lệ.
+
 **Cập nhật mục 3:** đã triển khai họ tên/điện thoại/ngày sinh tùy chọn và preference ngôn ngữ/múi giờ có hiệu lực qua migration 026–027, validation, UI responsive và formatter Danh mục; live smoke development đạt. Chưa triển khai challenge xác minh email/điện thoại vì chưa có delivery provider. Phần hồ sơ nền tảng hoàn tất; bước tiếp theo là mục 4, catalog Việt/Anh. Xem [thiết kế hồ sơ](PERSONAL_PROFILE_DESIGN.md).
 
 Thứ tự dưới đây do người dùng chốt và là thứ tự triển khai mặc định sau các công việc đang dở có ràng buộc vận hành. Tạm thời không ưu tiên mở rộng AI Advisor.
