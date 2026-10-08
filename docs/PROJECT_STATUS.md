@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Chốt contract chuẩn bị cho index-series
+
+- Bổ sung thiết kế contract Benchmark: return semantics, session/timezone, continuity/gap, provenance và license gate.
+- Chưa thêm API/UI hay dữ liệu mô phỏng; tiêu chí mở triển khai yêu cầu series được cấp phép, đối chiếu độc lập và backend test contract.
+- Tiếp theo: khi có provider hợp lệ, triển khai ingestion bounded và endpoint series trước, rồi mới làm selector/overlay trên Bảng giá.
+
 ## 2026-10-08 — Kiểm tra blocker index-series cho Benchmark
 
 - Đã rà soát backend/frontend/docs: hiện chỉ có schema `market_indices` và thiết kế API, chưa có ingestion/series endpoint đang phục vụ VNINDEX, VN30, HNX30 hoặc HNXINDEX với license, session/timezone, continuity và semantics price/total return.

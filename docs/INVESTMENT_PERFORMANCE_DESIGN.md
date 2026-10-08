@@ -1,5 +1,17 @@
 # Thiết kế Hiệu suất đầu tư
 
+## Contract index-series cho Benchmark (chuẩn bị triển khai)
+
+Benchmark chỉ được mở khi provider trả về chuỗi chỉ số có provenance và license rõ ràng. Contract tối thiểu:
+
+- `symbol`, `provider`, `license`, `return_type` (`price_return` hoặc `total_return`), `currency`.
+- Mỗi điểm gồm `session_date` theo `Asia/Ho_Chi_Minh`, `observed_at`, `close` và tùy chọn `total_return_level`; không suy diễn điểm thiếu.
+- Metadata phải khai báo `session_timezone`, lịch phiên áp dụng, `first_session`, `last_session`, `continuity` (`continuous|gapped|insufficient`) và danh sách gap.
+- API phải giữ nguyên gap/partial để UI hiển thị unavailable; không nối đường biểu đồ qua phiên thiếu và không trộn price-return với portfolio total-return nếu chưa có cảnh báo semantics.
+- Provenance cần URL/identifier nguồn, thời điểm lấy dữ liệu, phiên bản adapter và trạng thái license; không coi dữ liệu mock/test là bằng chứng production.
+
+Tiêu chí mở triển khai: có ít nhất một series được cấp phép, kiểm tra continuity qua nhiều khoảng phiên, đối chiếu độc lập một số điểm, timezone/session contract được backend test, rồi mới thêm API chọn chỉ số và UI card/overlay.
+
 ## Mục tiêu và người dùng
 
 Nhà đầu tư cần biết danh mục đang tạo ra bao nhiêu lãi/lỗ từ các giao dịch họ đã ghi nhận, đồng thời hiểu dữ liệu nào đã và chưa được tính. Bản đầu ưu tiên tính đúng, truy vết tới ledger và phản ánh trung thực dữ liệu thiếu hơn là dựng biểu đồ hoặc tỷ suất chuẩn ngành khi chưa đủ cash flow.
