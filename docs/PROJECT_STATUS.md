@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Watchlist: tìm ghi chú và tóm tắt hàng đợi
+
+- Tìm kiếm Watchlist nay phủ mã, tên doanh nghiệp và ghi chú cá nhân, tiếp tục dùng so khớp không phân biệt dấu. Tóm tắt `Tất cả / Theo dõi / Đang nghiên cứu / Tạm dừng` hiển thị số lượng toàn Watchlist và đồng thời là nhóm nút lọc nhanh có `aria-pressed`, đồng bộ hai chiều với dropdown trạng thái.
+- Bố cục summary dùng 4 cột desktop, 2×2 trên mobile, semantic theme token và không phát sinh request. Bộ đếm được tính một lần theo danh sách hiện tại; tìm kiếm/lọc/sắp xếp vẫn hoàn toàn client-side.
+- Kiểm chứng: frontend unit **64/64**, encoding/API-error contract đạt, Portfolio Playwright **35/35**, live authenticated Watchlist **1/1** xác nhận summary và tìm ghi chú sau reload PostgreSQL; build/bundle integrity đạt (`index-BNdtWiAS.js`). Preview 4173 và backend 5000 HTTP 200.
+- Tiếp theo: hiển thị thời điểm cập nhật metadata trên từng mã và bổ sung thao tác xóa toàn bộ bộ lọc khi có nhiều điều kiện đang bật; sau đó đánh giá bằng dữ liệu sử dụng thực tế trước khi thêm server pagination hoặc bulk action.
+
 ## 2026-10-08 — Watchlist: lọc trạng thái, ưu tiên mã mới cập nhật và live persistence
 
 - Bổ sung bộ lọc `Tất cả / Theo dõi / Đang nghiên cứu / Tạm dừng` và cách sắp xếp `Mới cập nhật`; thứ tự dùng `metadata_updated_at`, fallback về ngày thêm cho bản ghi chưa từng chỉnh sửa. Các control phối hợp với tìm kiếm, ngành và cách sắp xếp hiện có mà không thêm request.
