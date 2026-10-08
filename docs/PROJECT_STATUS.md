@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Hồi quy form và responsive Danh mục
+
+- Kiểm tra toàn bộ luồng Danh mục sau khi chuẩn hóa style input/select và resource state: form giao dịch, form Dòng tiền, dialog sửa/xóa, ledger import/export, tab keyboard/mobile và hiệu suất ngày đều giữ hành vi ổn định.
+- Playwright Portfolio đạt **38/38**; riêng style form desktop/mobile và dialog Dòng tiền đạt; frontend build/bundle integrity vẫn đạt với `index-B1S6epNV.js`.
+- Tiếp theo: thêm fixture smoke riêng cho loading/error/partial của Ledger và Dòng tiền để khóa hồi quy resource-state ở cấp component; benchmark vẫn chờ index-series hợp lệ.
+
 ## 2026-10-08 — UX Danh mục: phân biệt loading/error cho Ledger và Dòng tiền
 
 - Nhật ký giao dịch và Dòng tiền nhận `aria-busy`, hiển thị loading/error state riêng và không còn hiển thị danh sách rỗng khi portfolio request đang tải hoặc thất bại.
