@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Thao tác bảng Danh mục luôn trong tầm với trên mobile
+
+- Cột thao tác của Nhật ký giao dịch và Dòng tiền được ghim bên phải khi bảng cuộn ngang ở mobile; người dùng có thể Sửa/Xóa mà không cần cuộn đến cuối bảng rồi quay lại ngữ cảnh dòng.
+- Vùng chạm Sửa/Xóa là tối thiểu 40px; nền semantic và shadow phân tách cột ghim ở cả dark/light, không ảnh hưởng desktop.
+- Frontend unit **67/67**, Portfolio resource/mobile E2E **5/5**, Preview build đạt (`index-CcBcgYAj.js`).
+- Tiếp theo: không mở pagination/bulk action khi chưa có dữ liệu quy mô/latency thực tế; ưu tiên benchmark/chỉ số thật khi index-series hợp lệ hoặc xử lý một yêu cầu sản phẩm mới có giá trị rõ ràng.
+
 ## 2026-10-08 — Khả năng đọc Giao dịch và Dòng tiền trên mobile
 
 - Hoàn tất audit lát cắt Danh mục còn lại: loading/lỗi/empty và retry cục bộ của Nhật ký giao dịch cùng Dòng tiền đã có sẵn, tách biệt với trạng thái trống.

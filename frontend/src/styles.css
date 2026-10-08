@@ -1409,6 +1409,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 .portfolio-ledger-toggle { margin-top: 12px; }
 .portfolio-ledger-empty { margin: 16px 0 0; }
 @media (max-width: 700px) { .portfolio-ledger-heading { flex-direction: column; } .portfolio-ledger-actions { width: 100%; justify-content: space-between; } .ledger-dialog-backdrop { align-items: end; padding: 12px; } .ledger-dialog { max-height: calc(100vh - 24px); border-radius: 16px 16px 12px 12px; } .ledger-dialog-header { padding: 18px 16px 15px; } .ledger-dialog-note { margin-inline: 16px; } .ledger-edit-grid { grid-template-columns: 1fr; margin-inline: 16px; } .ledger-edit-time { grid-column: auto; } .ledger-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; padding-inline: 16px; } .ledger-dialog-actions button { width: 100%; } }
+@media (max-width: 700px) { .portfolio-ledger-table th:last-child, .portfolio-ledger-table td:last-child, .cash-flow-table th:last-child, .cash-flow-table td:last-child { position: sticky; right: 0; z-index: 2; background: var(--surface-elevated); box-shadow: -10px 0 14px color-mix(in srgb, var(--surface-elevated) 72%, transparent); } .portfolio-ledger-table th:last-child, .cash-flow-table th:last-child { z-index: 3; } .ledger-row-actions .small-btn { min-width: 40px; min-height: 40px; padding-inline: 10px; } }
 .panel-header { gap: 14px; }
 .panel-header > div:first-child { min-width: 0; }
 .detail-symbol-search { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 14px 16px; }
