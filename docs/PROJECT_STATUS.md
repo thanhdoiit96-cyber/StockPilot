@@ -1,8 +1,16 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Baseline phiên trước và trục giờ đầy đủ
+
+- Cụm market context tối đa 900px, căn giữa với hai cột 240px/310px tối thiểu; khoảng trống được phân bố đều thay vì dồn về bên phải.
+- Mỗi chart có baseline nét đứt `Đóng cửa hôm qua`. Segment phía trên baseline là xanh, phía dưới là đỏ; các điểm fixture được bố trí để kiểm tra cả hai trạng thái.
+- Chế độ Cả ngày hiện hiển thị mọi mốc 09:00, 10:00, 11:00, 12:00, 13:00, 14:00 và 15:00. Buổi sáng/Buổi chiều chỉ hiển thị các mốc thuộc khoảng đã chọn.
+- Frontend unit **66/66**, browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-CG87NX0A.js`).
+- Giới hạn giữ nguyên: đường intraday là fixture development có provenance, chưa phải dữ liệu chỉ số thật.
+
 ## 2026-10-08 — Intraday fixture cho chart Chỉ số thị trường
 
-- Cụm `Chỉ số thị trường`/`Mã trọng tâm` tiếp tục thu hẹp về tối đa 980px, cột index tối thiểu 250px và cột mã trọng tâm tối thiểu 320px; breakpoint mobile giữ một cột.
+- Cụm `Chỉ số thị trường`/`Mã trọng tâm` tiếp tục thu hẹp về tối đa 900px, cột index tối thiểu 240px và cột mã trọng tâm tối thiểu 310px; breakpoint mobile giữ một cột.
 - Chart index chuyển từ điểm đóng cửa theo phiên sang các mốc intraday 09:15–14:45, chọn Buổi sáng/Buổi chiều/Cả ngày. Giá và % headline vẫn là thay đổi phiên gần nhất, tách khỏi cửa sổ chart.
 - Các điểm intraday mới là fixture synthetic chỉ dùng development/Preview và tiếp tục mang nhãn provenance; đây không phải xác nhận dữ liệu intraday production.
 - Frontend unit **66/66**, browser Bảng giá **1/1**, fixture index **1/1**, Preview opt-in build đạt (`index-DQGIm3JK.js`).

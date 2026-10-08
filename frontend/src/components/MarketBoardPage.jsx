@@ -33,13 +33,24 @@ const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase
 const observedLabel = (quote, language, t) => quote?.observed_at
   ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(quote.observed_at))
   : t('market.latestEod')
-const fixtureChartPoints = points => {
-  const values = points.map(point => Number(point.close))
+const fixtureChartGeometry = (points, baseline) => {
+  const values = [...points.map(point => Number(point.close)), Number(baseline)]
   const floor = Math.min(...values)
   const ceiling = Math.max(...values)
   const spread = ceiling - floor || 1
-  return points.map((point, index) => `${8 + index * (144 / Math.max(1, points.length - 1))},${44 - ((Number(point.close) - floor) / spread * 34)}`).join(' ')
+  const toY = value => 44 - ((Number(value) - floor) / spread * 34)
+  return { points: points.map((point, index) => ({ x: 8 + index * (144 / Math.max(1, points.length - 1)), y: toY(point.close), value: Number(point.close) })), baselineY: toY(baseline) }
 }
+const fixtureChartSegments = (points, baseline) => points.slice(1).flatMap((end, index) => {
+  const start = points[index]
+  const startClass = start.value > baseline ? 'positive' : start.value < baseline ? 'negative' : 'neutral'
+  const endClass = end.value > baseline ? 'positive' : end.value < baseline ? 'negative' : 'neutral'
+  if (startClass === endClass || startClass === 'neutral' || endClass === 'neutral') return [{ points: `${start.x},${start.y} ${end.x},${end.y}`, tone: endClass === 'neutral' ? startClass : startClass }]
+  const ratio = (baseline - start.value) / (end.value - start.value)
+  const cross = { x: start.x + (end.x - start.x) * ratio, y: start.y + (end.y - start.y) * ratio }
+  return [{ points: `${start.x},${start.y} ${cross.x},${cross.y}`, tone: startClass }, { points: `${cross.x},${cross.y} ${end.x},${end.y}`, tone: endClass }]
+})
+const intradayTicks = range => range === 'morning' ? ['09:00', '10:00', '11:00'] : range === 'afternoon' ? ['13:00', '14:00', '15:00'] : ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00']
 
 function loadColumns() {
   try { return normalizeMarketColumns(JSON.parse(localStorage.getItem(MARKET_COLUMNS_KEY) || '{}')) } catch { return normalizeMarketColumns() }
@@ -78,10 +89,11 @@ function MarketIndexFixtureSection({ fixtureSymbols, selectedFixtureSeries, setF
       const points = series.intraday_points.filter(point => range === 'day' || (range === 'morning' ? point.observed_at.slice(11, 13) < '12' : point.observed_at.slice(11, 13) >= '12'))
       const latest = series.intraday_points.at(-1)
       const previousSession = series.points.at(-2)
-      const first = points[0]
       const change = latest.close - previousSession.close
       const pct = change / previousSession.close * 100
-      return <article className="market-index-fixture" key={series.symbol} title={`${indexSeriesFixtureLabel(series)} · ${series.session_timezone}`} aria-label={`${series.symbol}: ${latest.close}, ${latest.observed_at}`}><div className="market-index-fixture-card-heading"><span className="market-index-fixture-dot" aria-hidden="true" /><strong>{series.symbol}</strong><span className="market-index-fixture-order"><button type="button" aria-label={`Đưa ${series.symbol} sang trái`} disabled={index === 0} onClick={() => moveFixture(series.symbol, -1)}>←</button><button type="button" aria-label={`Đưa ${series.symbol} sang phải`} disabled={index === selectedFixtureSeries.length - 1} onClick={() => moveFixture(series.symbol, 1)}>→</button></span></div><div className="market-index-fixture-value"><strong>{latest.close.toLocaleString('en-US')}</strong><span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span></div><svg className="market-index-fixture-chart" viewBox="0 0 160 52" role="img" aria-label={`${series.symbol} ${ranges.find(option => option.key === range)?.label}: ${formatChange(pct)}`} preserveAspectRatio="none"><polyline points={fixtureChartPoints(points)} className={change >= 0 ? 'positive' : 'negative'} /></svg><div className="market-index-fixture-dates"><span>{first.observed_at.slice(11, 16)}</span><span>{latest.observed_at.slice(11, 16)}</span></div><small>{indexSeriesFixtureLabel(series)} · {latest.observed_at.slice(11, 16)}</small></article>
+      const geometry = fixtureChartGeometry(points, previousSession.close)
+      const segments = fixtureChartSegments(geometry.points, previousSession.close)
+      return <article className="market-index-fixture" key={series.symbol} title={`${indexSeriesFixtureLabel(series)} · ${series.session_timezone}`} aria-label={`${series.symbol}: ${latest.close}, ${latest.observed_at}`}><div className="market-index-fixture-card-heading"><span className="market-index-fixture-dot" aria-hidden="true" /><strong>{series.symbol}</strong><span className="market-index-fixture-order"><button type="button" aria-label={`Đưa ${series.symbol} sang trái`} disabled={index === 0} onClick={() => moveFixture(series.symbol, -1)}>←</button><button type="button" aria-label={`Đưa ${series.symbol} sang phải`} disabled={index === selectedFixtureSeries.length - 1} onClick={() => moveFixture(series.symbol, 1)}>→</button></span></div><div className="market-index-fixture-value"><strong>{latest.close.toLocaleString('en-US')}</strong><span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(0)} ({pct >= 0 ? '+' : ''}{pct.toFixed(2)}%)</span></div><div className="market-index-fixture-reference">{language === 'en' ? 'Previous close' : 'Đóng cửa hôm qua'}: {previousSession.close.toLocaleString('en-US')}</div><svg className="market-index-fixture-chart" viewBox="0 0 160 52" role="img" aria-label={`${series.symbol} ${ranges.find(option => option.key === range)?.label}: ${formatChange(pct)}; ${language === 'en' ? 'previous close' : 'đóng cửa hôm qua'} ${previousSession.close}`} preserveAspectRatio="none"><line className="market-index-fixture-baseline" x1="6" x2="154" y1={geometry.baselineY} y2={geometry.baselineY} />{segments.map((segment, segmentIndex) => <polyline key={segmentIndex} points={segment.points} className={segment.tone} />)}</svg><div className="market-index-fixture-times" aria-hidden="true">{intradayTicks(range).map(time => <span key={time}>{time}</span>)}</div><small>{indexSeriesFixtureLabel(series)} · {latest.observed_at.slice(11, 16)}</small></article>
     })}</div>
   </section>
 }
