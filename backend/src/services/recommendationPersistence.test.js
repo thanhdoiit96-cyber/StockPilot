@@ -43,13 +43,27 @@ test('generates a v2 snapshot with verified external evidence', async () => {
       { type: 'news', status: 'verified', source: 'Wire', source_url: 'https://wire.example/fpt', title: 'FPT update', published_at: '2026-01-02', symbol: 'FPT', impact: 'positive', toJSON() { return this; } },
       { type: 'news', status: 'unverified', source: 'Blog', published_at: '2026-01-03', symbol: 'FPT', impact: 'negative', toJSON() { return this; } }
     ] },
-    RecommendationRun: { create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] },
+    RecommendationRun: { findOne: async () => null, create: async payload => ({ id: 'run-v2', ...payload }), update: async () => [1] },
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
   expect(stored[0].rationale.evidence).toMatchObject({ macro: { status: 'available', verified_count: 1 }, news: { positive_count: 1, negative_count: 0 } });
   expect(stored[0].rationale.evidence.sources).toHaveLength(2);
   expect(stored[0].rationale.snapshot_taxonomy).toMatchObject({ industry: 'Technology', source: 'stocks.industry' });
+});
+
+test('does not create a duplicate scheduled snapshot for the same session contract', async () => {
+  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
+  const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
+  let created = false;
+  const result = await generateRecommendationSnapshot({
+    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] },
+    RecommendationRun: { findOne: async () => ({ id: 'existing-run', universe_size: 1, selected_count: 1, model: 'short_term_rule_v2', snapshot_sha256: null }), create: async () => { created = true; } },
+    Recommendation: { bulkCreate: async () => { throw new Error('must not write recommendations'); } },
+  });
+  expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'existing-run' });
+  expect(result.as_of).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(created).toBe(false);
 });
 
 test('evaluates every pending integrity-verified run without overwriting completed outcomes', async () => {

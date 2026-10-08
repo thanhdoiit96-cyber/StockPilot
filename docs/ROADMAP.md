@@ -784,5 +784,7 @@ Checkpoint integrity readiness 2026-10-08: report lịch sử đã hiển thị 
 
 Operational checkpoint 2026-10-08: evaluator đã được chạy an toàn; toàn bộ 18 run legacy bị chặn do thiếu integrity provenance, không có mutation outcome. EOD hiện fresh nhưng run cùng phiên trước migration thiếu hash; không sinh run trùng phiên. Chờ snapshot sau EOD kế tiếp để bắt đầu chuỗi evaluation hash-backed.
 
+Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
+
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.
