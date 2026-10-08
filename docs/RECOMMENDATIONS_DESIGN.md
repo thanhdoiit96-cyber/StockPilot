@@ -6,6 +6,8 @@
 
 ## Luồng hiển thị
 
+Workspace hiện chia bốn tab: **Đề xuất** ưu tiên form tiêu chí và kết quả; **Lịch sử & báo cáo** cho từng run/CSV; **So sánh bản lưu** cho cấu hình đã lưu; **Hiệu chỉnh** giải thích calibration. Chuyển tab không bỏ state, hỗ trợ Arrow/Home/End và mobile hai cột. Lịch sử được mount lần đầu theo nhu cầu; phân tích tổng hợp trong details mặc định đóng phía sau report, không chặn đường tới báo cáo. Không đổi thuật toán eligibility bằng thay đổi bố cục này.
+
 1. Người dùng mở tab **Đề xuất**.
 2. UI hiển thị thời điểm snapshot, model, universe, số mã chọn và trạng thái dữ liệu.
 3. Mỗi mã hiển thị điểm, horizon, giá tham chiếu, rationale và evidence profile.
