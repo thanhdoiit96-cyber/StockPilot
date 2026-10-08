@@ -157,6 +157,25 @@ test('uses the same search field format for positions and Watchlist', async ({ p
   await expect(watchlistSearch).toBeFocused()
 })
 
+test('sorts open positions by symbol, value and unrealized P/L', async ({ page }) => {
+  await boot(page, [
+    { stock_id: 'v', symbol: 'VCB', quantity: 10, market_value: 200, market_price: 20, avg_cost: 19, unrealized_pnl: 10 },
+    { stock_id: 'f', symbol: 'FPT', quantity: 10, market_value: 500, market_price: 50, avg_cost: 52, unrealized_pnl: -20 },
+    { stock_id: 'a', symbol: 'ACB', quantity: 10, market_value: 300, market_price: 30, avg_cost: 26, unrealized_pnl: 40 }
+  ])
+  const region = page.locator('.portfolio-positions')
+  const rows = region.locator('table tbody tr')
+  const codes = async () => rows.locator('.portfolio-detail-link').allTextContents()
+  await expect.poll(codes).toEqual(['ACB', 'FPT', 'VCB'])
+  const sort = region.locator('.position-sort-control select')
+  await sort.selectOption('value')
+  await expect.poll(codes).toEqual(['FPT', 'ACB', 'VCB'])
+  await sort.selectOption('pnl')
+  await expect.poll(codes).toEqual(['ACB', 'VCB', 'FPT'])
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await region.locator('.position-search-toolbar').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
 test('filters and sorts Watchlist for daily review on desktop and mobile', async ({ page }) => {
   await boot(page, [], [], [], [
     { stock_id: 'v', created_at: '2026-10-01T00:00:00Z', status: 'WATCHING', Stock: { id: 'v', code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },
