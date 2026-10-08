@@ -623,6 +623,11 @@ button, input { font: inherit; }
 .market-index-fixture .negative { color:#f87171; }
 .market-index-fixture small { overflow:hidden; color:var(--muted); text-overflow:ellipsis; white-space:nowrap; }
 .market-index-fixture-dot { width:6px; height:6px; border-radius:50%; background:#fbbf24; box-shadow:0 0 8px rgba(251,191,36,.55); }
+.market-index-fixture-section { display:grid; gap:8px; margin-bottom:10px; }
+.market-index-fixture-grid, .market-index-fixture-selector { display:flex; flex-wrap:wrap; gap:8px; }
+.market-index-fixture-grid .market-index-fixture { margin:0; }
+.market-index-fixture-selector label { display:inline-flex; align-items:center; gap:5px; padding:4px 7px; border:1px solid var(--border); border-radius:7px; color:var(--muted); font-size:10px; cursor:pointer; }
+.market-index-fixture-selector input { width:13px; height:13px; margin:0; accent-color:var(--primary); }
 .watchlist-confirm span { color: var(--muted); font-size: 13px; }
 .watchlist-empty { cursor: default; justify-content: flex-start !important; }
 

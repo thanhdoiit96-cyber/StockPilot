@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Selector 4 chỉ số synthetic trên Preview
+
+- Fixture contract mở rộng thành VNINDEX, VN30, HNXINDEX và HNX30; Market Board cho bật/tắt tối đa 4 card, mặc định VNINDEX + VN30.
+- Lựa chọn được giữ trong `sessionStorage`; mỗi card tiếp tục có nhãn provenance/hover và feature flag opt-in.
+- Build opt-in đạt (`index-CJ9Lg_4n.js`), targeted Preview E2E **1/1** đạt.
+- Tiếp theo: thêm sắp xếp card bằng thao tác gọn, hỗ trợ bàn phím và giữ thứ tự trong session.
+
 ## 2026-10-08 — Smoke opt-in index fixture trên Preview
 
 - E2E trên production Preview đã build bằng `VITE_SHOW_INDEX_FIXTURE=true` xác nhận card hiển thị `INDEX fixture`, mức 1.275, thay đổi `+11 (+0,87%)` và timezone trong title/hover.
