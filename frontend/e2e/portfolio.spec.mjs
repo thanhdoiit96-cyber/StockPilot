@@ -157,6 +157,25 @@ test('uses the same search field format for positions and Watchlist', async ({ p
   await expect(watchlistSearch).toBeFocused()
 })
 
+test('filters and sorts Watchlist for daily review on desktop and mobile', async ({ page }) => {
+  await boot(page, [], [], [], [
+    { stock_id: 'v', created_at: '2026-10-01T00:00:00Z', Stock: { id: 'v', code: 'VCB', name: 'Vietcombank', industry: 'Ngân hàng' } },
+    { stock_id: 'f', created_at: '2026-10-03T00:00:00Z', Stock: { id: 'f', code: 'FPT', name: 'FPT', industry: 'Công nghệ' } },
+    { stock_id: 'a', created_at: '2026-10-02T00:00:00Z', Stock: { id: 'a', code: 'ACB', name: 'Á Châu', industry: 'Ngân hàng' } }
+  ])
+  await page.getByRole('tab', { name: /Watchlist/ }).click()
+  const rows = page.locator('.watchlist > li:not(.watchlist-empty)')
+  const codes = async () => rows.locator('.watchlist-company strong').allTextContents()
+  await expect.poll(codes).toEqual(['FPT', 'ACB', 'VCB'])
+  await page.locator('.watchlist-view-controls select').nth(1).selectOption('symbol')
+  await expect.poll(codes).toEqual(['ACB', 'FPT', 'VCB'])
+  await page.locator('.watchlist-view-controls select').first().selectOption('Ngân hàng')
+  await expect.poll(codes).toEqual(['ACB', 'VCB'])
+  await expect(page.locator('.watchlist-search .search-result-count')).toHaveText('2/3 mã hiển thị')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.locator('.watchlist-view-controls').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
 test('portfolio exposes shareable detail links and compact Watchlist actions', async ({ page }) => {
   await boot(page, [{ stock_id: 'a', symbol: 'FPT', name: 'Công nghệ FPT', quantity: 10 }])
   const row = page.locator('.portfolio-table tbody tr').filter({ hasText: 'FPT' })
