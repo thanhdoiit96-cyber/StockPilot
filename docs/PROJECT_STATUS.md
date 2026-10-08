@@ -4455,6 +4455,12 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 
 ## EOD freshness gate cho snapshot Đề xuất — 2026-10-08
 
+## Lifecycle verifier cho snapshot hash-backed — 2026-10-08
+
+- Thêm `npm run verify:recommendation-lifecycle`: tìm run hash-backed mới nhất, kiểm integrity, chạy evaluator theo contract và trả pending/measured/skipped aggregate. Script không tạo snapshot.
+- Đã chạy smoke trên development: trả `waiting_for_hash_backed_snapshot`, phù hợp vì tất cả run hiện tại là legacy. Node syntax check đạt.
+- Sau EOD phiên mới: chạy generate, rồi chạy lifecycle verifier để tạo bằng chứng pending → outcome; nếu hash không khớp script fail rõ thay vì sửa dữ liệu.
+
 - Generator nay xác định `as_of` từ phiên EOD mới nhất và chỉ tạo snapshot khi phiên đó đúng ngày `Asia/Ho_Chi_Minh` đang chạy. Nếu chưa có EOD cùng phiên, trả `eod_not_ready` trước khi đọc/tạo run.
 - Gate ngăn snapshot bị gắn ngày hiện tại nhưng dựa trên giá phiên cũ; kết hợp với guard trùng phiên bảo vệ cohort khỏi stale/duplicate run.
 - Kiểm chứng: Recommendation persistence **6/6** đạt. Chưa chạy generate mutation mới vì snapshot ngày 2026-10-08 hợp lệ đã tồn tại.
