@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-08 — Smoke persistence xuyên lifecycle auth
+
+- Thêm E2E độc lập đặt filter Watchlist/Vị thế, logout qua UI và xác nhận các khóa `sessionStorage` được xóa trước khi hiển thị auth page.
+- Smoke lifecycle đạt **1/1**, bổ sung cho logout cross-tab **1/1**; không phát sinh request hoặc dữ liệu nhạy cảm mới.
+- Tiếp theo: giữ persistence ở phạm vi session hiện tại và chỉ mở rộng khi có nhu cầu người dùng rõ ràng.
+
 ## 2026-10-08 — Xóa stale filter khi logout
 
 - Khi phiên xác thực bị thu hồi, App xóa toàn bộ view-state Vị thế/Watchlist khỏi `sessionStorage`; login lại không thừa hưởng query, ngành, trạng thái hay sort của phiên cũ.
