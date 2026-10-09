@@ -36,6 +36,7 @@
     ,"monitor:recommendations": "node scripts/monitor-recommendations.cjs"
     ,"verify:recommendation-snapshot": "node scripts/verify-recommendation-snapshot.cjs"
     ,"verify:recommendation-lifecycle": "node scripts/verify-recommendation-lifecycle.cjs"
+    ,"check:recommendation-lifecycle": "node scripts/check-recommendation-lifecycle.cjs"
     ,"audit:recommendation-prices": "node scripts/audit-recommendation-prices.cjs"
     ,"verify:recommendation-hash": "node scripts/verify-recommendation-hash-roundtrip.cjs"
     ,"check:recommendation-scheduler": "node scripts/check-recommendation-scheduler.cjs"
