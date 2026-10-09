@@ -804,6 +804,8 @@ Read consistency checkpoint 2026-10-09: migration 034 input_provenance đã áp 
 
 Lifecycle checkpoint 2026-10-09: preflight read-only đã thêm. Live sáng 09/10 đang `awaiting_eod` (latest 08/10), generate fail-closed và không có hash-backed run. 67 tests đạt. Sau EOD/coverage mới, chạy đúng chuỗi preflight → generate → preflight → verify; không backfill hoặc fixture thay cho lifecycle thật.
 
+Provenance integrity checkpoint 2026-10-09: migration 035 đã hash input provenance vào snapshot v2; tamper fail-closed, 67 tests và synthetic rollback smoke đạt. Lifecycle live vẫn chờ EOD hash-backed mới. Append-only/independent signature chỉ là backlog audit mạnh hơn, chưa triển khai.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

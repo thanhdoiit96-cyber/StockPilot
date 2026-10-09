@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
     snapshot_sha256: { type: DataTypes.STRING(64), allowNull: true },
     generation_key: { type: DataTypes.STRING(64), allowNull: true },
     input_provenance: { type: DataTypes.JSONB, allowNull: true },
+    input_provenance_sha256: { type: DataTypes.STRING(64), allowNull: true },
     status: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'completed' },
     created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, { tableName: 'recommendation_runs', underscored: true, timestamps: false });

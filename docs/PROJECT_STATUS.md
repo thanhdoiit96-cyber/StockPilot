@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Hash input provenance của snapshot
+
+- Migration 035 thêm `recommendation_runs.input_provenance_sha256` nullable. Generator canonicalize provenance v1, lưu SHA-256 rồi seal snapshot v2 có provenance hash. Verifier phải khớp cả snapshot hash và hash provenance; provenance bị tamper trả `input_provenance_integrity_failed`.
+- Không backfill 21 run legacy. Các snapshot mới bắt buộc có provenance trước seal; generation thiếu provenance fail thay vì sinh hash không đầy đủ.
+- Kiểm chứng: recommendation regression 67/67, migration development và PostgreSQL synthetic hash round-trip đạt; sửa entry hoặc provenance đều bị phát hiện, fixture rollback và không retained. Không có EOD mới: preflight vẫn awaiting_eod, không tạo/evaluate snapshot thật; không thay frontend/build Preview.
+- Hạn chế: hash bảo vệ integrity sau khi persist nhưng không tạo lịch sử append-only/independent signature; upstream provider/calendar authority vẫn ngoài phạm vi. Tiếp theo: lifecycle thật sau EOD hash-backed mới, hoặc thiết kế append-only evidence nếu yêu cầu audit mạnh hơn.
+
 ## 2026-10-09 — Lifecycle preflight và checkpoint EOD
 
 - Thêm `npm run check:recommendation-lifecycle` chỉ đọc: so session EOD theo provider với ngày Việt Nam, tìm run đúng contract, rồi báo `awaiting_eod`, `ready_to_generate`, `snapshot_missing_hash`, `snapshot_integrity_failed` hoặc `ready_to_evaluate`. Lệnh không gọi evaluator và không thay dữ liệu.
