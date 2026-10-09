@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, verifyRecommendationSnapshot, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
 
 function sampleRun() {
   return {
@@ -76,6 +76,21 @@ test('does not create a duplicate scheduled snapshot for the same session contra
   expect(created).toBe(false);
 });
 
+test('uses a transaction and returns the winner when a concurrent generation claims the contract', async () => {
+  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
+  const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
+  const winner = { id: 'winner', as_of: '2026-01-31', provider: 'vnstock', model: 'short_term_rule_v2', horizon_days: 20, universe_size: 1, selected_count: 1, snapshot_sha256: 'sealed' };
+  let calls = 0; const transaction = { id: 'tx' };
+  const result = await generateRecommendationSnapshot({
+    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] },
+    sequelize: { transaction: async callback => callback(transaction) },
+    RecommendationRun: { findOne: async () => (++calls === 1 ? null : winner), create: async () => { const error = new Error('duplicate'); error.name = 'SequelizeUniqueConstraintError'; throw error; } },
+    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-31T10:00:00Z'),
+  });
+  expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'winner', snapshot_sha256: 'sealed' });
+  expect(recommendationGenerationKey({ asOf: '2026-01-31', horizonDays: 20, provider: 'vnstock' })).toHaveLength(64);
+});
+
 test.each([null, { recommendations: [{}] }])('does not seal a missing or incomplete persisted snapshot', async persisted => {
   const update = jest.fn();
   await expect(generateRecommendationSnapshot({
@@ -112,11 +127,24 @@ test('evaluates every pending integrity-verified run without overwriting complet
       { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-1', observed_at: '2026-01-02', close: 110, toJSON() { return this; } },
       { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-2', observed_at: '2026-01-03', close: 90, toJSON() { return this; } },
     ] },
-    Recommendation: { update: async (values, options) => updates.push({ values, options }) },
+    Recommendation: { update: async (values, options) => { updates.push({ values, options }); return [1]; } },
   });
   expect(report).toMatchObject({ runs_considered: 2, runs_evaluated: 2, runs_skipped_integrity: 0, measured: 2, positive: 1, hit_rate_pct: 50 });
   expect(updates).toHaveLength(2);
   expect(updates.map(item => item.options.where.id)).toEqual(['rec-1', 'rec-2']);
   expect(updates.every(item => item.options.where.outcome === 'pending')).toBe(true);
   expect(updates.every(item => item.values.evaluation_evidence?.version === 'recommendation_evaluation_v1')).toBe(true);
+});
+
+test('counts only outcome writes claimed atomically by this evaluator', async () => {
+  const pending = { id: 'rec', stock_id: 'stock', entry_price: 100, horizon_days: 1, outcome: 'pending', stock: { code: 'AAA' }, toJSON() { return this; } };
+  const run = { id: 'run', as_of: '2026-01-01', provider: 'vnstock', recommendations: [pending] };
+  run.snapshot_sha256 = recommendationSnapshotHash(run);
+  const transaction = { id: 'tx' };
+  const report = await evaluatePendingRecommendations({
+    sequelize: { transaction: async callback => callback(transaction) }, RecommendationRun: { findAll: async () => [run] },
+    StockPrice: { findAll: async () => [{ stock_id: 'stock', provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 110, toJSON() { return this; } }] },
+    Recommendation: { update: async (_, options) => { expect(options.transaction).toBe(transaction); return [0]; } }, now: new Date('2026-01-03T00:00:00Z'),
+  });
+  expect(report).toMatchObject({ evaluated: 1, measured: 0, positive: 0, hit_rate_pct: null });
 });
