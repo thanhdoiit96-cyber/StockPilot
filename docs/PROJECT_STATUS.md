@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Scheduler recommendation fail-closed và check chỉ đọc
+
+- `check:recommendation-scheduler` hiện chỉ đọc mặc định; không còn tự ghi đè artifact evidence có tên ngày cũ. Muốn lưu checkpoint, operator phải truyền `RECOMMENDATION_SCHEDULER_OUTPUT` rõ ràng. Snapshot không sẵn sàng vẫn exit code 2 để CI/automation nhận biết.
+- Live check: evaluator scheduler bật theo weekday 16:45 Asia/Ho_Chi_Minh nhưng snapshot mới nhất `8d6dc1e7-8ae5-417d-aef7-153e2a8f3cff` là legacy, không có hash/provenance nên integrity false và `ready=false`. Đây là hành vi fail-closed; không có outcome/event nào được ghi.
+- Preflight EOD vẫn `awaiting_eod` (09/10 cần EOD, latest 08/10). Tiếp theo: chỉ sau khi preflight `ready_to_generate` mới tạo snapshot hash-backed; rồi chạy checkpoint scheduler/lifecycle một lần và kiểm tra ledger có event thật.
+
 ## 2026-10-09 — Audit API cho evaluation ledger
 
 - Thêm `GET /api/recommendations/history/:id/evaluation-ledger` chỉ đọc: trả payload/hash của event, rank/mã liên quan và tự canonicalize lại payload để báo `integrity=verified|invalid`. Snapshot chưa có outcome có `event_count=0`; snapshot không tồn tại trả 404 rõ ràng. Endpoint không tạo/sửa/backfill event hoặc outcome.
