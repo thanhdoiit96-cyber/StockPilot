@@ -18,7 +18,9 @@ Workspace hiện chia bốn tab: **Đề xuất** ưu tiên form tiêu chí và 
 
 `recommendations.evaluation_evidence` (migration 032) lưu contract `recommendation_evaluation_v1` cho kết quả mới: `generated_at`, provider, interval, timezone, horizon, danh sách ngày quan sát, entry price, target metadata, forward return và outcome. Evaluator bỏ observation tương lai so với `generated_at`; report chỉ tính khi evidence khớp dữ liệu đã lưu. Dòng legacy không được backfill. JSONB có version nhưng chưa được ký độc lập/append-only.
 
-Migration 033 dùng `generation_key` SHA-256 nullable/unique cho snapshot mới, để worker đồng thời chỉ giữ một winner. Các run legacy giữ null vì contract cũ có duplicate. Creation ghi run/items/seal hash cùng transaction; update outcome/evidence chỉ claim row còn pending trong transaction. Không suy diễn các transaction này thành snapshot đọc dữ liệu nhất quán: price/quote analysis hiện vẫn hoàn thành trước transaction ghi.
+Migration 033 dùng `generation_key` SHA-256 nullable/unique cho snapshot mới, để worker đồng thời chỉ giữ một winner. Các run legacy giữ null vì contract cũ có duplicate. Creation ghi run/items/seal hash cùng transaction; update outcome/evidence chỉ claim row còn pending trong transaction.
+
+Migration 034 chuyển reads của scheduled snapshot vào `REPEATABLE READ` transaction và lưu `input_provenance` v1 nhỏ gọn. Scheduled snapshot chỉ dùng EOD, không intraday. Provenance ghi phạm vi/contract đếm được, không lưu giá chi tiết; chưa được hash riêng hay append-only. Upstream ingestion vẫn ngoài transaction này.
 
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
 

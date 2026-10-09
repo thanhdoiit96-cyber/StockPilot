@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
 
 function sampleRun() {
   return {
@@ -21,6 +21,15 @@ test('accepts evidence when snapshot hash matches', () => {
   fs.writeFileSync(file, JSON.stringify({ run: { id: run.id, snapshot_sha256: recommendationSnapshotHash(run) } }), 'utf8');
   expect(verifyRecommendationSnapshot(run, file)).toMatchObject({ valid: true });
   fs.rmSync(file, { force: true });
+});
+
+test('records bounded, EOD-only input provenance without price values', () => {
+  const provenance = inputProvenance({ rows: [
+    { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false },
+    { provider: 'vnstock', interval: '1m', currency: 'VND' },
+  ], factors: [{ id: 'factor-1' }], provider: 'vnstock', session: '2026-01-31', now: '2026-02-01T00:00:00Z' });
+  expect(provenance).toEqual(expect.objectContaining({ version: 'recommendation_input_v1', eod_session: '2026-01-31', price_rows: 1, verified_external_factor_count: 1, reference_price_source: 'eod' }));
+  expect(JSON.stringify(provenance)).not.toContain('close');
 });
 
 test('blocks evaluation when snapshot evidence has been changed', () => {
@@ -83,7 +92,7 @@ test('uses a transaction and returns the winner when a concurrent generation cla
   let calls = 0; const transaction = { id: 'tx' };
   const result = await generateRecommendationSnapshot({
     Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] },
-    sequelize: { transaction: async callback => callback(transaction) },
+    sequelize: { transaction: async (...args) => args.at(-1)(transaction) },
     RecommendationRun: { findOne: async () => (++calls === 1 ? null : winner), create: async () => { const error = new Error('duplicate'); error.name = 'SequelizeUniqueConstraintError'; throw error; } },
     Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-31T10:00:00Z'),
   });
@@ -142,7 +151,7 @@ test('counts only outcome writes claimed atomically by this evaluator', async ()
   run.snapshot_sha256 = recommendationSnapshotHash(run);
   const transaction = { id: 'tx' };
   const report = await evaluatePendingRecommendations({
-    sequelize: { transaction: async callback => callback(transaction) }, RecommendationRun: { findAll: async () => [run] },
+    sequelize: { transaction: async (...args) => args.at(-1)(transaction) }, RecommendationRun: { findAll: async () => [run] },
     StockPrice: { findAll: async () => [{ stock_id: 'stock', provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 110, toJSON() { return this; } }] },
     Recommendation: { update: async (_, options) => { expect(options.transaction).toBe(transaction); return [0]; } }, now: new Date('2026-01-03T00:00:00Z'),
   });

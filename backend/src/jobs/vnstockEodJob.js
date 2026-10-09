@@ -169,7 +169,7 @@ function startVnstockEodJob({
       }
       logger.info(`[Vnstock EOD] ${JSON.stringify(report)}`);
       if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true' && evidence.after.symbols > 0 && evidence.after.missing_symbols.length === 0) {
-        const snapshot = await generateRecommendationSnapshot({ ...models, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', useIntradayReference: true, limit: Math.min(5, Math.max(3, Number(process.env.RECOMMENDATION_LIMIT || 5))), horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
+        const snapshot = await generateRecommendationSnapshot({ ...models, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', useIntradayReference: false, limit: Math.min(5, Math.max(3, Number(process.env.RECOMMENDATION_LIMIT || 5))), horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
         evidence.recommendations = snapshot;
         logger.info(`[Recommendations] ${JSON.stringify(snapshot)}`);
       } else if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {

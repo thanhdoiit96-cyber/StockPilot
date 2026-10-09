@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Snapshot read consistency và input provenance
+
+- Migration 034 thêm `recommendation_runs.input_provenance` JSONB nullable. Generator đọc stocks, prices EOD, verified external factors, duplicate check, create/items/reload/seal trong cùng PostgreSQL `REPEATABLE READ` transaction. Scheduled EOD job không còn yêu cầu quote intraday; snapshot định kỳ chỉ dùng EOD immutable.
+- Provenance `recommendation_input_v1` ghi read_at, isolation, EOD session, provider, reference source, số price rows/provider-contracts và số external factors đã verified; không lưu close/quote values. Nó chưa được snapshot hash bao phủ riêng và chưa append-only.
+- Kiểm chứng: recommendation regression 62/62, migration development thành công; schema input_provenance JSONB nullable. Hash round-trip PostgreSQL synthetic chạy lại thành công với fixture outer transaction; retained synthetic runs = 0. Không tạo snapshot thật hoặc mutate outcome/history.
+- Hạn chế: provider feeds, quote networking và ingestion xảy ra trước transaction generator; transaction chỉ tạo snapshot consistent từ DB tại thời điểm đọc. Chưa có provider official calendar hoặc lifecycle outcome hash-backed. Tiếp theo: lifecycle smoke chỉ sau EOD mới; nếu cần integrity mạnh hơn, version/hash input provenance trước khi nâng UI.
+
 ## 2026-10-09 — Generation key và transaction ghi Recommendation
 
 - Migration 033 thêm `recommendation_runs.generation_key` nullable với unique index. Key là SHA-256 của as_of/horizon/provider/model và chỉ set cho snapshot mới; 21 run legacy giữ null do 3 contract cũ có bản trùng, không bị thay đổi hoặc xóa.
