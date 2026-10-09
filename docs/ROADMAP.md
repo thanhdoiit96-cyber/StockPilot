@@ -77,6 +77,7 @@ M5 progress: long-history EOD ingestion is complete for the current prototype sy
 - EOD path regression: complete coverage is now explicitly tested to invoke snapshot generation with EOD-only references and retain the returned sealed-run evidence, while incomplete coverage cannot invoke the generator. This is fixture evidence only; the real acceptance gate remains the next completed EOD session.
 - Evaluator path regression: the weekday evaluation scheduler is explicitly opt-in, invokes the integrity-gated evaluator with application models, and contains worker errors instead of terminating the scheduled callback. It remains unproven against the next real EOD snapshot.
 - Post-EOD checkpoint: a bounded, read-only lifecycle scheduler now logs the gate at 16:40 ICT before the 16:45 evaluator. API, CLI and scheduled log share one service, avoiding divergent readiness semantics. This prepares the real EOD acceptance run without generating artificial records.
+- Watchlist scale gate: development aggregate currently has p95 of 2 items, so pagination/windowing/bulk actions remain deferred. Repeat the measurement with production-like list sizes and render timing before changing the compact current UX.
 
 ## i18n checkpoint — 2026-10-08
 
