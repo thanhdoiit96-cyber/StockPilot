@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Regression nhánh EOD hoàn chỉnh
+
+- Bổ sung regression scheduler cho nhánh coverage hoàn chỉnh: chỉ sau khi toàn bộ coverage EOD đạt mới gọi generator; request bắt buộc `useIntradayReference=false`, provider/horizon theo contract và evidence giữ `run_id`/snapshot hash trả về. Nhánh coverage thiếu tiếp tục không gọi generator.
+- `vnstockEodJob` đạt 13/13. Đây là mock scheduler, không gọi provider, không tạo snapshot hay dữ liệu database. Nó bảo vệ bước lifecycle thật sẽ chạy sau EOD, không phải xác nhận EOD/provider production.
+- Pipeline runtime vẫn bật ingest → generation → evaluation; EOD 09/10 chưa có nên preflight còn `awaiting_eod`. Tiếp theo không đổi: thực thi checkpoint thật sau EOD hash-backed.
+
 ## 2026-10-09 — Trạng thái lifecycle trên UI Đề xuất
 
 - Thêm `GET /api/recommendations/lifecycle-readiness` chỉ đọc, dùng cùng lifecycle contract với CLI nhưng query EOD mới nhất bounded thay vì nạp toàn bộ giá. UI Đề xuất hiển thị dải status Việt/Anh, responsive: chờ EOD, sẵn sàng tạo/đánh giá hoặc bị chặn integrity; không có thao tác chạy job.
