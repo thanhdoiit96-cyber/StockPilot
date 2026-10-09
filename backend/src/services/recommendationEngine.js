@@ -82,11 +82,11 @@ function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map
   return candidates.sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol)).slice(0, limit).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-function evaluateRecommendations({ recommendations = [], priceRowsByStock = new Map(), asOf = new Date() } = {}) {
+function evaluateRecommendations({ recommendations = [], priceRowsByStock = new Map(), asOf = new Date(), provider } = {}) {
   return recommendations.map(item => {
-    const rows = (priceRowsByStock.get(item.stock_id) || []).filter(row => new Date(row.observed_at || row.date) > new Date(asOf)).sort((a, b) => new Date(a.observed_at || a.date) - new Date(b.observed_at || b.date));
-    const horizon = Number(item.horizon_days);
-    const target = Number.isInteger(horizon) && horizon > 0 ? rows[horizon - 1] : null;
+    const { observationWindow } = require('./recommendationSessions');
+    const window = observationWindow({ rows: priceRowsByStock.get(item.stock_id) || [], asOf, provider, horizonDays: item.horizon_days });
+    const target = window.reasons.length ? null : window.target;
     const entry = Number(item.entry_price);
     if (!target || !Number.isFinite(entry) || entry <= 0) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
     const exit = Number(target.close ?? target.price);

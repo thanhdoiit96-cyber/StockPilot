@@ -794,6 +794,8 @@ UX checkpoint 2026-10-08: đã chia workspace Đề xuất thành 4 tab giữ st
 
 Hash checkpoint 2026-10-08: đã sửa seal snapshot từ representation persisted/reloaded và kiểm chứng PostgreSQL bằng synthetic transaction rollback; không sửa legacy. Tiếp theo còn session/provider-aware evaluator, versioned evaluation evidence và atomic/concurrent generation. Chưa có bằng chứng lifecycle outcome từ snapshot thật mới.
 
+Evaluator checkpoint 2026-10-09: engine và eligibility dùng chung ngày quan sát/provider, loại intraday, kiểm metadata/duplicate conflict; 56 tests và hash PostgreSQL rollback smoke đạt. Tiếp theo versioned evaluation evidence kèm cutoff ngày đánh giá; official calendar-gap và atomic/concurrent generation còn mở. Không mutation outcome lịch sử.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

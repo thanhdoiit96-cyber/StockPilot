@@ -27,24 +27,24 @@ test('evaluates realized forward return without inventing missing data', () => {
   const recommendation = { stock_id: 'a', entry_price: 100, horizon_days: 2 };
   const priceRowsByStock = new Map([
     ['a', [
-      { observed_at: '2026-01-02', close: 101 },
-      { observed_at: '2026-01-03', close: 105 }
+      { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 101 },
+      { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-03', close: 105 }
     ]]
   ]);
-  const result = evaluateRecommendations({ recommendations: [recommendation], asOf: new Date('2026-01-01'), priceRowsByStock });
+  const result = evaluateRecommendations({ provider: 'vnstock', recommendations: [recommendation], asOf: new Date('2026-01-01'), priceRowsByStock });
   expect(result[0]).toMatchObject({ outcome: 'positive', forward_return_pct: 5 });
 });
 
 test('waits for the full horizon and selects that observation even when later prices exist', () => {
   const recommendation = { stock_id: 'a', entry_price: 100, horizon_days: 2 };
-  const prices = [{ observed_at: '2026-01-02', close: 101 }, { observed_at: '2026-01-05', close: 105 }, { observed_at: '2026-01-06', close: 120 }];
-  const evaluate = rows => evaluateRecommendations({ recommendations: [recommendation], asOf: '2026-01-01', priceRowsByStock: new Map([['a', rows]]) })[0];
+  const prices = [{ provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 101 }, { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-05', close: 105 }, { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-06', close: 120 }];
+  const evaluate = rows => evaluateRecommendations({ provider: 'vnstock', recommendations: [recommendation], asOf: '2026-01-01', priceRowsByStock: new Map([['a', rows]]) })[0];
   expect(evaluate(prices.slice(0, 1))).toMatchObject({ outcome: 'pending', evaluated_at: null, forward_return_pct: null });
   expect(evaluate(prices)).toMatchObject({ outcome: 'positive', evaluated_at: '2026-01-05', forward_return_pct: 5 });
 });
 
 test.each([0, -1, null, 'invalid', Infinity])('rejects invalid reference price %s', entry_price => {
-  const result = evaluateRecommendations({ recommendations: [{ stock_id: 'a', entry_price, horizon_days: 1 }], asOf: '2026-01-01', priceRowsByStock: new Map([['a', [{ observed_at: '2026-01-02', close: 100 }]]]) });
+  const result = evaluateRecommendations({ provider: 'vnstock', recommendations: [{ stock_id: 'a', entry_price, horizon_days: 1 }], asOf: '2026-01-01', priceRowsByStock: new Map([['a', [{ provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 100 }]]]) });
   expect(result[0]).toMatchObject({ outcome: 'pending', forward_return_pct: null });
 });
 
