@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Lifecycle preflight và checkpoint EOD
+
+- Thêm `npm run check:recommendation-lifecycle` chỉ đọc: so session EOD theo provider với ngày Việt Nam, tìm run đúng contract, rồi báo `awaiting_eod`, `ready_to_generate`, `snapshot_missing_hash`, `snapshot_integrity_failed` hoặc `ready_to_evaluate`. Lệnh không gọi evaluator và không thay dữ liệu.
+- Live development lúc 09/10 buổi sáng: latest EOD 08/10, expected 09/10, trạng thái `awaiting_eod`; `generate:recommendations` cũng trả `eod_not_ready`. Database vẫn 21 run, 0 hash-backed/input provenance; không có mutation. Không chạy `verify:recommendation-lifecycle` vì chưa đủ điều kiện.
+- Kiểm chứng: recommendation regression 67/67, preflight live thành công; hash round-trip synthetic rollback trước đó vẫn đạt. Không thay frontend/build Preview.
+- Tiếp theo: sau EOD 09/10 và coverage hoàn chỉnh, chạy preflight → generate → preflight → verify lifecycle một lần; chỉ khi xuất hiện snapshot hash-backed mới. Không thay thế checkpoint này bằng fixture hoặc backfill legacy.
+
 ## 2026-10-09 — Snapshot read consistency và input provenance
 
 - Migration 034 thêm `recommendation_runs.input_provenance` JSONB nullable. Generator đọc stocks, prices EOD, verified external factors, duplicate check, create/items/reload/seal trong cùng PostgreSQL `REPEATABLE READ` transaction. Scheduled EOD job không còn yêu cầu quote intraday; snapshot định kỳ chỉ dùng EOD immutable.

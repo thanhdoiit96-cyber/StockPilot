@@ -802,6 +802,8 @@ Atomic checkpoint 2026-10-09: migration 033 unique generation_key đã áp dụn
 
 Read consistency checkpoint 2026-10-09: migration 034 input_provenance đã áp dụng; scheduled snapshot EOD reads/create/seal dùng REPEATABLE READ, intraday bị bỏ qua. 62 tests và PostgreSQL synthetic rollback smoke đạt, không giữ fixture. Tiếp theo lifecycle smoke khi có snapshot EOD hash-backed mới; input provenance hash/append-only và official calendar vẫn là backlog integrity.
 
+Lifecycle checkpoint 2026-10-09: preflight read-only đã thêm. Live sáng 09/10 đang `awaiting_eod` (latest 08/10), generate fail-closed và không có hash-backed run. 67 tests đạt. Sau EOD/coverage mới, chạy đúng chuỗi preflight → generate → preflight → verify; không backfill hoặc fixture thay cho lifecycle thật.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.
