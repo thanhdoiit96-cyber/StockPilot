@@ -19,6 +19,27 @@ const criteria = [
   { key: 'liquidity', label: 'Thanh khoản', description: 'Xếp hạng tương đối theo khối lượng 20 phiên' },
 ]
 const money = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value) + ' đ'
+function RecommendationLifecycleStatus({ language }) {
+  const [readiness, setReadiness] = useState(null)
+  useEffect(() => {
+    let active = true
+    requestJson('/api/recommendations/lifecycle-readiness').then(response => { if (active) setReadiness(response.data || null) }).catch(() => { if (active) setReadiness(null) })
+    return () => { active = false }
+  }, [])
+  if (!readiness) return null
+  const en = language === 'en'
+  const copy = (vi, english) => en ? english : vi
+  const labels = {
+    awaiting_eod: [copy('Đang chờ dữ liệu EOD', 'Waiting for EOD data'), copy('Snapshot sẽ chỉ được tạo sau khi phiên EOD hiện tại có mặt.', 'A snapshot is created only after the current EOD session is available.')],
+    ready_to_generate: [copy('Sẵn sàng tạo snapshot', 'Ready to create a snapshot'), copy('Dữ liệu EOD đã sẵn sàng để job lịch chạy tạo bản lưu bất biến.', 'EOD data is ready for the scheduled job to create an immutable snapshot.')],
+    snapshot_missing_hash: [copy('Snapshot chưa được niêm phong', 'Snapshot is not sealed'), copy('Kết quả chưa thể được đánh giá cho đến khi integrity được xác minh.', 'Outcomes cannot be evaluated until integrity is verified.')],
+    snapshot_integrity_failed: [copy('Snapshot không qua kiểm tra integrity', 'Snapshot integrity check failed'), copy('Hệ thống giữ kết quả ở trạng thái chặn và không tự sửa dữ liệu.', 'The system blocks evaluation and does not repair data automatically.')],
+    ready_to_evaluate: [copy('Sẵn sàng đánh giá', 'Ready to evaluate'), copy('Snapshot đã niêm phong và có thể chờ đủ kỳ hạn quan sát.', 'The sealed snapshot can be evaluated when its observation horizon is available.')],
+  }
+  const [title, description] = labels[readiness.status] || [copy('Trạng thái dữ liệu chưa xác định', 'Data status is unknown'), copy('Không thể xác định lifecycle hiện tại.', 'The current lifecycle could not be determined.')]
+  const sessions = readiness.expected_session || readiness.latest_eod_session ? `${copy('Phiên cần', 'Expected')} ${readiness.expected_session || '—'} · EOD ${readiness.latest_eod_session || '—'}` : null
+  return <div className={`recommendation-lifecycle-status is-${readiness.status}`} role="status"><div><strong>{title}</strong><span>{description}</span></div>{sessions && <small>{sessions}</small>}</div>
+}
 export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, language = 'vi' }) {
   const ui = text => uiText(language, text)
   const money = value => value == null ? '—' : new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
@@ -116,7 +137,7 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     link.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 0)
   }
-  return <section className="recommendations-page recommendation-workbench" lang={language}>    <div className="recommendation-command-header"><div><span className="eyebrow accent">{copy('ĐỀ XUẤT CÁ NHÂN', 'PERSONAL IDEAS')}</span><h2>{copy('Đề xuất theo tiêu chí của bạn', 'Ideas based on your criteria')}</h2><p className="muted-text">{copy('Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.', 'Set priorities to rank symbols for your goals.')}</p></div><span className="chip neutral">{copy('Mô hình giải thích được', 'Explainable model')}</span></div>{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>{copy('Cảnh báo tập trung danh mục', 'Portfolio concentration warning')}</strong><span>{copy('Tỷ trọng ngành cao nhất đang ở mức', 'The largest sector share is')} {initialData.risk.max_sector_share_pct}%.</span><small>{copy('Đang chờ đo lường thêm', 'Waiting for')} {initialData.risk.pending || 0} {copy('kết quả.', 'more results.')}</small></div>}
+  return <section className="recommendations-page recommendation-workbench" lang={language}>    <div className="recommendation-command-header"><div><span className="eyebrow accent">{copy('ĐỀ XUẤT CÁ NHÂN', 'PERSONAL IDEAS')}</span><h2>{copy('Đề xuất theo tiêu chí của bạn', 'Ideas based on your criteria')}</h2><p className="muted-text">{copy('Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.', 'Set priorities to rank symbols for your goals.')}</p></div><span className="chip neutral">{copy('Mô hình giải thích được', 'Explainable model')}</span></div><RecommendationLifecycleStatus language={language} />{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>{copy('Cảnh báo tập trung danh mục', 'Portfolio concentration warning')}</strong><span>{copy('Tỷ trọng ngành cao nhất đang ở mức', 'The largest sector share is')} {initialData.risk.max_sector_share_pct}%.</span><small>{copy('Đang chờ đo lường thêm', 'Waiting for')} {initialData.risk.pending || 0} {copy('kết quả.', 'more results.')}</small></div>}
     <RecommendationSectionTabs active={activeTab} onChange={selectTab} language={language} />
     <div id="recommendation-panel-ideas" role="tabpanel" aria-labelledby="recommendation-tab-ideas" className="recommendation-tab-panel" hidden={activeTab !== 'ideas'} tabIndex={0}>
     <section className="panel recommendation-criteria-panel">

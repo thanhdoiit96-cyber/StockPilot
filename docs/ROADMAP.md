@@ -73,6 +73,7 @@ M5 progress: long-history EOD ingestion is complete for the current prototype sy
 - Dependency unchanged: do not generate or evaluate a real snapshot until lifecycle preflight observes the current Vietnam EOD session. UI/export of ledger events remains deferred until a hash-backed snapshot produces a real event; no legacy backfill is planned.
 - Scheduler checkpoint: `check:recommendation-scheduler` is read-only unless an explicit `RECOMMENDATION_SCHEDULER_OUTPUT` path is supplied. The currently enabled evaluator correctly remains not-ready for the latest legacy, unsealed snapshot; it must not be treated as evidence of evaluation readiness.
 - Audit readiness: `audit:recommendation-ledger` verifies canonical event hashes and drift against current outcome/evidence in one read-only database snapshot. Run it after the first real event and before interpreting any audit/export result; it never repairs legacy data.
+- Lifecycle transparency: completed read-only lifecycle API and compact Recommendation UI status. It explains EOD, sealing, and integrity gates without exposing a control to generate/evaluate or manufacturing a synthetic result. The next acceptance event remains a real EOD-backed, hash-sealed snapshot.
 
 ## i18n checkpoint — 2026-10-08
 
