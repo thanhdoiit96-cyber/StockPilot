@@ -15,6 +15,7 @@ const CacheService = require('./services/cacheService');
 const CacheCleanupJob = require('./jobs/cacheCleanupJob');
 const startVnstockEodJob = require('./jobs/vnstockEodJob');
 const startRecommendationEvaluationJob = require('./jobs/recommendationEvaluationJob');
+const startRecommendationLifecycleCheckpointJob = require('./jobs/recommendationLifecycleCheckpointJob');
 const { startVnstockListingJob } = require('./jobs/vnstockListingJob');
 const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
 const marketDataController = require('./controllers/marketDataController');
@@ -239,6 +240,9 @@ async function start() {
     }
     if (startRecommendationEvaluationJob({ logger })) {
       logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5'})`);
+    }
+    if (startRecommendationLifecycleCheckpointJob({ logger })) {
+      logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '40 16 * * 1-5'})`);
     }
     if (startVnstockListingJob({ cacheService, logger })) {
       logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);

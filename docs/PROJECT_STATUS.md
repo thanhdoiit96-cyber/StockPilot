@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Lên lịch checkpoint lifecycle sau EOD
+
+- Thêm scheduler checkpoint chỉ đọc mặc định `40 16 * * 1-5` Asia/Ho_Chi_Minh, trước evaluator 16:45. Nó dùng chung service bounded với API/CLI, log gate sau EOD nhưng không sinh snapshot/evaluate hay ghi evidence. Có cờ opt-out và cron/timezone override.
+- Refactor CLI/API cùng dùng `readRecommendationLifecycleCheckpoint`; truy vấn chỉ latest EOD row thay vì nạp toàn bộ price rows. Regression service, checkpoint job, controller, EOD job và evaluator job đạt 28/28. Live preflight vẫn `awaiting_eod` (expected 09/10, latest 08/10).
+- Backend cần restart để scheduler mới nhận lịch 16:40 hôm nay. Sau checkpoint, EOD job vẫn là bên duy nhất được phép tạo snapshot; nếu `ready_to_generate`, tiếp tục generate → preflight → evaluator/audit theo contract.
+
 ## 2026-10-09 — Regression scheduler evaluator
 
 - Thêm test cho `recommendationEvaluationJob`: không schedule khi cờ chưa bật; schedule đúng timezone/cron và truyền models vào evaluator; lỗi evaluator được log nhưng callback scheduler không throw/dừng job.

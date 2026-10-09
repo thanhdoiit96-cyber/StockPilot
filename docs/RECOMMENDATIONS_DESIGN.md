@@ -30,6 +30,8 @@ Migration 036 thêm ledger event evaluation append-only trong PostgreSQL. Outcom
 
 `GET /api/recommendations/lifecycle-readiness` đưa lifecycle scheduler ra UI dưới dạng chỉ đọc. Endpoint chỉ đọc EOD mới nhất theo provider và run đúng contract của phiên hiện tại, rồi trả `awaiting_eod`, `ready_to_generate`, `snapshot_missing_hash`, `snapshot_integrity_failed` hoặc `ready_to_evaluate`. UI Đề xuất dùng thông tin này để giải thích trạng thái nhỏ gọn, không cho người dùng kích hoạt job hay ngụ ý dữ liệu đã được đánh giá.
 
+Backend chạy checkpoint lifecycle chỉ đọc mặc định lúc 16:40 ngày làm việc theo `Asia/Ho_Chi_Minh`, trước evaluator 16:45. Checkpoint dùng cùng query bounded/service với API và CLI, chỉ log trạng thái gate để kiểm tra sau EOD; không tạo snapshot, không chạy evaluator và không ghi evidence. Có thể tắt bằng `RECOMMENDATION_LIFECYCLE_CHECK_ENABLED=false`.
+
 `npm run audit:recommendation-ledger` đọc toàn bộ event trong một PostgreSQL `REPEATABLE READ`/`READ ONLY` transaction. Nó kiểm hash canonical, đối chiếu ID/schema event với payload và đối chiếu payload với outcome/evidence hiện tại trên recommendation row. Audit chỉ báo drift/tamper, không repair hay backfill; exit 2 báo có finding, exit 0 là không có finding. Giá, đủ phiên, eligibility, signature ngoài database và lưu trữ ngoài hệ thống vẫn cần các kiểm chứng riêng.
 
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
