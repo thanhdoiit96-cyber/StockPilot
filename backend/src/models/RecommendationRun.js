@@ -14,6 +14,6 @@ module.exports = (sequelize, DataTypes) => {
     status: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'completed' },
     created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, { tableName: 'recommendation_runs', underscored: true, timestamps: false });
-  RecommendationRun.associate = models => { if (models.Recommendation) RecommendationRun.hasMany(models.Recommendation, { foreignKey: 'run_id', as: 'recommendations' }); };
+  RecommendationRun.associate = models => { if (models.Recommendation) RecommendationRun.hasMany(models.Recommendation, { foreignKey: 'run_id', as: 'recommendations' }); if (models.RecommendationEvaluationEvent) RecommendationRun.hasMany(models.RecommendationEvaluationEvent, { foreignKey: 'run_id', as: 'evaluation_events' }); };
   return RecommendationRun;
 };

@@ -13,6 +13,6 @@ module.exports = (sequelize, DataTypes) => {
     outcome: { type: DataTypes.STRING(30), allowNull: true }
     ,evaluation_evidence: { type: DataTypes.JSONB, allowNull: true }
   }, { tableName: 'recommendations', underscored: true, timestamps: false });
-  Recommendation.associate = models => { Recommendation.belongsTo(models.RecommendationRun, { foreignKey: 'run_id', as: 'run' }); Recommendation.belongsTo(models.Stock, { foreignKey: 'stock_id', as: 'stock' }); };
+  Recommendation.associate = models => { Recommendation.belongsTo(models.RecommendationRun, { foreignKey: 'run_id', as: 'run' }); Recommendation.belongsTo(models.Stock, { foreignKey: 'stock_id', as: 'stock' }); if (models.RecommendationEvaluationEvent) Recommendation.hasMany(models.RecommendationEvaluationEvent, { foreignKey: 'recommendation_id', as: 'evaluation_events' }); };
   return Recommendation;
 };

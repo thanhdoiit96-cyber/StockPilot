@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, recommendationInputProvenanceHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
 
 function sealRun(run) {
   run.input_provenance = { version: 'recommendation_input_v1', eod_session: run.as_of, provider: run.provider };
@@ -37,6 +37,15 @@ test('records bounded, EOD-only input provenance without price values', () => {
   ], factors: [{ id: 'factor-1' }], provider: 'vnstock', session: '2026-01-31', now: '2026-02-01T00:00:00Z' });
   expect(provenance).toEqual(expect.objectContaining({ version: 'recommendation_input_v1', eod_session: '2026-01-31', price_rows: 1, verified_external_factor_count: 1, reference_price_source: 'eod' }));
   expect(JSON.stringify(provenance)).not.toContain('close');
+});
+
+test('hashes an immutable evaluation event deterministically', () => {
+  const recommendation = { id: 'rec', outcome: 'positive', evaluated_at: '2026-01-02', forward_return_pct: 5, evaluation_evidence: { version: 'recommendation_evaluation_v1' } };
+  const first = recommendationEvaluationEvent({ recommendation, run: { id: 'run' }, now: '2026-01-03T00:00:00Z' });
+  const second = recommendationEvaluationEvent({ recommendation, run: { id: 'run' }, now: '2026-01-03T00:00:00Z' });
+  expect(first).toEqual(second);
+  recommendation.forward_return_pct = 6;
+  expect(recommendationEvaluationEvent({ recommendation, run: { id: 'run' }, now: '2026-01-03T00:00:00Z' }).payload_sha256).not.toBe(first.payload_sha256);
 });
 
 test('blocks evaluation when snapshot evidence has been changed', () => {
@@ -145,7 +154,7 @@ test('evaluates every pending integrity-verified run without overwriting complet
       { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-1', observed_at: '2026-01-02', close: 110, toJSON() { return this; } },
       { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-2', observed_at: '2026-01-03', close: 90, toJSON() { return this; } },
     ] },
-    Recommendation: { update: async (values, options) => { updates.push({ values, options }); return [1]; } },
+    Recommendation: { update: async (values, options) => { updates.push({ values, options }); return [1]; } }, RecommendationEvaluationEvent: { create: async () => ({}) },
   });
   expect(report).toMatchObject({ runs_considered: 2, runs_evaluated: 2, runs_skipped_integrity: 0, measured: 2, positive: 1, hit_rate_pct: 50 });
   expect(updates).toHaveLength(2);
@@ -162,7 +171,7 @@ test('counts only outcome writes claimed atomically by this evaluator', async ()
   const report = await evaluatePendingRecommendations({
     sequelize: { transaction: async (...args) => args.at(-1)(transaction) }, RecommendationRun: { findAll: async () => [run] },
     StockPrice: { findAll: async () => [{ stock_id: 'stock', provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, observed_at: '2026-01-02', close: 110, toJSON() { return this; } }] },
-    Recommendation: { update: async (_, options) => { expect(options.transaction).toBe(transaction); return [0]; } }, now: new Date('2026-01-03T00:00:00Z'),
+    Recommendation: { update: async (_, options) => { expect(options.transaction).toBe(transaction); return [0]; } }, RecommendationEvaluationEvent: { create: jest.fn() }, now: new Date('2026-01-03T00:00:00Z'),
   });
   expect(report).toMatchObject({ evaluated: 1, measured: 0, positive: 0, hit_rate_pct: null });
 });
