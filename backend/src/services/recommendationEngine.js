@@ -82,17 +82,23 @@ function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map
   return candidates.sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol)).slice(0, limit).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-function evaluateRecommendations({ recommendations = [], priceRowsByStock = new Map(), asOf = new Date(), provider } = {}) {
+function evaluateRecommendations({ recommendations = [], priceRowsByStock = new Map(), asOf = new Date(), provider, evaluatedAt = new Date() } = {}) {
   return recommendations.map(item => {
     const { observationWindow } = require('./recommendationSessions');
-    const window = observationWindow({ rows: priceRowsByStock.get(item.stock_id) || [], asOf, provider, horizonDays: item.horizon_days });
+    const window = observationWindow({ rows: priceRowsByStock.get(item.stock_id) || [], asOf, provider, horizonDays: item.horizon_days, cutoffAt: evaluatedAt });
     const target = window.reasons.length ? null : window.target;
     const entry = Number(item.entry_price);
     if (!target || !Number.isFinite(entry) || entry <= 0) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
     const exit = Number(target.close ?? target.price);
     if (!Number.isFinite(exit) || exit <= 0) return { ...item, outcome: 'pending', evaluated_at: null, forward_return_pct: null };
     const forwardReturn = Number((((exit / Number(item.entry_price)) - 1) * 100).toFixed(4));
-    return { ...item, outcome: forwardReturn > 0 ? 'positive' : forwardReturn < 0 ? 'negative' : 'flat', evaluated_at: target.observed_at || target.date, forward_return_pct: forwardReturn };
+    const outcome = forwardReturn > 0 ? 'positive' : forwardReturn < 0 ? 'negative' : 'flat';
+    return { ...item, outcome, evaluated_at: target.observed_at || target.date, forward_return_pct: forwardReturn, evaluation_evidence: {
+      version: 'recommendation_evaluation_v1', generated_at: new Date(evaluatedAt).toISOString(), provider,
+      interval: '1d', timezone: 'Asia/Ho_Chi_Minh', horizon_days: Number(item.horizon_days), observed_session_dates: window.selected_days,
+      entry_price: entry, target: { observed_at: target.observed_at || target.date, close: exit, currency: target.currency, price_unit: target.price_unit, is_adjusted: target.is_adjusted },
+      forward_return_pct: forwardReturn, outcome,
+    } };
   });
 }
 

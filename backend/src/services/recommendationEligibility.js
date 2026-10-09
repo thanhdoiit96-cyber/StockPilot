@@ -31,6 +31,15 @@ function assessRun(run, prices = []) {
       const outcome = expected > 0 ? 'positive' : expected < 0 ? 'negative' : 'flat';
       if (Math.abs(expected - Number(value)) > 0.0001 || outcome !== item.outcome) reasons.push('return_mismatch');
     }
+    const evidence = item.evaluation_evidence;
+    const generated = new Date(evidence?.generated_at);
+    const evidenceMatches = evidence?.version === 'recommendation_evaluation_v1'
+      && evidence.provider === plain.provider && evidence.interval === '1d' && evidence.timezone === 'Asia/Ho_Chi_Minh'
+      && Number(evidence.horizon_days) === horizon && JSON.stringify(evidence.observed_session_dates) === JSON.stringify(days.slice(0, horizon))
+      && Number(evidence.entry_price) === Number(item.entry_price) && new Date(evidence.target?.observed_at).getTime() === new Date(item.evaluated_at).getTime()
+      && Number(evidence.target?.close) === Number(target?.close ?? target?.price) && Number(evidence.forward_return_pct) === Number(value)
+      && evidence.outcome === item.outcome && Number.isFinite(generated.getTime()) && generated >= new Date(item.evaluated_at);
+    if (!evidenceMatches) reasons.push('evaluation_evidence_invalid');
     return { ...item, statistics_eligible: reasons.length === 0, measurement_status: reasons.length ? 'excluded' : 'eligible', exclusion_reasons: reasons, observed_session_count: days.length };
   }) };
 }

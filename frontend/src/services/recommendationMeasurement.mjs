@@ -7,6 +7,7 @@ const reasons = {
   conflicting_session_prices: ['Giá trong cùng phiên không nhất quán', 'Conflicting prices within a session'],
   invalid_return: ['Giá hoặc lợi nhuận đã lưu không hợp lệ', 'Invalid stored price or return'],
   return_mismatch: ['Lợi nhuận đã lưu không khớp bằng chứng giá', 'Stored return does not match price evidence'],
+  evaluation_evidence_invalid: ['Bằng chứng đánh giá thiếu hoặc không khớp', 'Evaluation evidence is missing or inconsistent'],
 }
 
 export function measurementLabel(item, language = 'vi') {

@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     evaluated_at: { type: DataTypes.DATE, allowNull: true },
     forward_return_pct: { type: DataTypes.DECIMAL, allowNull: true },
     outcome: { type: DataTypes.STRING(30), allowNull: true }
+    ,evaluation_evidence: { type: DataTypes.JSONB, allowNull: true }
   }, { tableName: 'recommendations', underscored: true, timestamps: false });
   Recommendation.associate = models => { Recommendation.belongsTo(models.RecommendationRun, { foreignKey: 'run_id', as: 'run' }); Recommendation.belongsTo(models.Stock, { foreignKey: 'stock_id', as: 'stock' }); };
   return Recommendation;

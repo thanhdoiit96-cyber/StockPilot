@@ -97,7 +97,7 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
 }
 
-async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation } = {}) {
+async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation, now = new Date() } = {}) {
   const runs = await RecommendationRun.findAll({ order: [['created_at', 'ASC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
   const pendingRuns = runs.filter(run => (run.recommendations || []).some(item => !item.outcome || item.outcome === 'pending'));
   if (!pendingRuns.length) return { status: 'no_pending_recommendations', evaluated: 0, measured: 0, runs_considered: 0, runs_skipped_integrity: 0 };
@@ -107,12 +107,12 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
     const integrity = verifyRecommendationSnapshot(run);
     if (!integrity.valid) { report.runs_skipped_integrity += 1; report.skipped.push({ run_id: run.id, reason: integrity.reason || 'snapshot_integrity_failed' }); continue; }
     const pending = run.recommendations.filter(item => !item.outcome || item.outcome === 'pending').map(item => item.toJSON ? item.toJSON() : item);
-    const evaluated = evaluateRecommendations({ recommendations: pending, priceRowsByStock, asOf: run.as_of, provider: run.provider });
+    const evaluated = evaluateRecommendations({ recommendations: pending, priceRowsByStock, asOf: run.as_of, provider: run.provider, evaluatedAt: now });
     report.runs_evaluated += 1;
     report.evaluated += evaluated.length;
     for (const item of evaluated) {
       if (item.outcome === 'pending') continue;
-      await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome }, { where: { id: item.id, outcome: 'pending' } });
+      await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome, evaluation_evidence: item.evaluation_evidence }, { where: { id: item.id, outcome: 'pending' } });
       report.measured += 1;
       if (item.outcome === 'positive') report.positive += 1;
     }

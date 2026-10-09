@@ -796,6 +796,8 @@ Hash checkpoint 2026-10-08: đã sửa seal snapshot từ representation persist
 
 Evaluator checkpoint 2026-10-09: engine và eligibility dùng chung ngày quan sát/provider, loại intraday, kiểm metadata/duplicate conflict; 56 tests và hash PostgreSQL rollback smoke đạt. Tiếp theo versioned evaluation evidence kèm cutoff ngày đánh giá; official calendar-gap và atomic/concurrent generation còn mở. Không mutation outcome lịch sử.
 
+Evidence checkpoint 2026-10-09: migration 032 đã áp dụng development; evaluator lưu evidence v1 và chặn timestamp tương lai, eligibility kiểm evidence. 91 legacy recommendations giữ null, không backfill/mutation outcome; 59 tests đạt. Tiếp theo atomic/concurrent snapshot generation, transaction outcome+evidence và lifecycle thật khi có snapshot hash-backed mới. Calendar-gap vẫn mở.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

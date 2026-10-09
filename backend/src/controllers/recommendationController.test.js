@@ -65,7 +65,7 @@ describe('saved recommendation API', () => {
 
   test('list, report and cohort consistently count only evidenced outcomes', async () => {
     const { recommendationSnapshotHash } = require('../services/recommendationPersistence');
-    const eligible = { id: 'verified', as_of: '2026-01-01', model: 'test', provider: 'vnstock', horizon_days: 1, selected_count: 1, recommendations: [{ id: 'rec', stock_id: 's', stock: { code: 'FPT' }, rank: 1, horizon_days: 1, entry_price: 100, evaluated_at: '2026-01-02', forward_return_pct: 5, outcome: 'positive', rationale: { score_parts: { trend: 80 } } }] };
+    const eligible = { id: 'verified', as_of: '2026-01-01', model: 'test', provider: 'vnstock', horizon_days: 1, selected_count: 1, recommendations: [{ id: 'rec', stock_id: 's', stock: { code: 'FPT' }, rank: 1, horizon_days: 1, entry_price: 100, evaluated_at: '2026-01-02', forward_return_pct: 5, outcome: 'positive', rationale: { score_parts: { trend: 80 } }, evaluation_evidence: { version: 'recommendation_evaluation_v1', generated_at: '2026-01-03T00:00:00.000Z', provider: 'vnstock', interval: '1d', timezone: 'Asia/Ho_Chi_Minh', horizon_days: 1, observed_session_dates: ['2026-01-02'], entry_price: 100, target: { observed_at: '2026-01-02', close: 105 }, forward_return_pct: 5, outcome: 'positive' } }] };
     eligible.snapshot_sha256 = recommendationSnapshotHash(eligible);
     const excluded = { ...eligible, id: 'legacy', snapshot_sha256: null };
     StockPrice.findAll.mockResolvedValue([{ stock_id: 's', observed_at: '2026-01-02', close: 105, interval: '1d', provider: 'vnstock', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false }]);

@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Evidence đánh giá v1 và cutoff thời gian
+
+- Migration 032 thêm `recommendations.evaluation_evidence` JSONB nullable. Evaluator mới lưu `recommendation_evaluation_v1`: thời điểm chạy, provider/interval/timezone, horizon, các ngày quan sát, giá vào, giá đích cùng metadata, return và outcome. `evaluated_at` tiếp tục là timestamp giá đích, không dùng thay thời điểm chạy.
+- `observationWindow` nhận cutoff tuyệt đối và bỏ mọi observation có timestamp sau thời điểm evaluator chạy. Eligibility yêu cầu evidence v1 khớp run/item/window/return và generated_at không trước target; thiếu hoặc sai evidence có lý do `evaluation_evidence_invalid` và không tham gia thống kê.
+- Development migration đạt: cột JSONB nullable tồn tại; 91 recommendation hiện có, 0 evidence. Không backfill, không chạy evaluator hay sửa outcome lịch sử. Recommendation regression 59/59 đạt, gồm future timestamp cutoff, evidence thiếu/tamper và persistence payload. Backend đã restart; history API trả 200. Preview 4173 đã build bundle `index-C1oLY43V.js` để có nhãn lỗi evidence Việt/Anh.
+- Hạn chế: evidence hiện nằm cùng hàng outcome, chưa có chữ ký/hash riêng hoặc bảng append-only; official calendar gaps vẫn chưa được chứng minh. Bước tiếp theo: atomic/concurrent snapshot generation, rồi transaction hóa update outcome/evidence và kiểm chứng lifecycle trên snapshot hash-backed mới.
+
 ## 2026-10-09 — Evaluator theo ngày quan sát và provider
 
 - Thêm observationWindow dùng chung cho evaluator và eligibility: ngày Asia/Ho_Chi_Minh sau as_of, cùng provider và interval 1d, N ngày khác nhau. Duplicate tương đương không tăng horizon; chọn timestamp sớm nhất của ngày đích để không phụ thuộc thứ tự query.
