@@ -12,9 +12,9 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
-const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent, vietnamSessionDate, latestEodSession } = require('../services/recommendationPersistence');
+const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent } = require('../services/recommendationPersistence');
 const { assessRuns } = require('../services/recommendationEligibility');
-const { lifecycleReadiness } = require('../services/recommendationLifecycleReadiness');
+const { readRecommendationLifecycleCheckpoint } = require('../services/recommendationLifecycleCheckpoint');
 const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
 
 router.get('/saved', requireAuth, async (req, res) => {
@@ -192,14 +192,7 @@ router.get('/lifecycle-readiness', async (req, res) => {
   try {
     const provider = process.env.RECOMMENDATION_PROVIDER || 'vnstock';
     const horizonDays = Number(process.env.RECOMMENDATION_HORIZON || 20);
-    const expectedSession = vietnamSessionDate();
-    const [latestPrice, run] = await Promise.all([
-      StockPrice.findOne({ attributes: ['observed_at'], where: { provider, interval: '1d' }, order: [['observed_at', 'DESC']] }),
-      RecommendationRun.findOne({ where: { as_of: expectedSession, provider, model: 'short_term_rule_v2', horizon_days: horizonDays }, order: [['created_at', 'DESC']], include: historyInclude }),
-    ]);
-    const latestSession = latestPrice ? latestEodSession([latestPrice.toJSON ? latestPrice.toJSON() : latestPrice]) : null;
-    const integrity = run?.snapshot_sha256 ? verifyRecommendationSnapshot(run) : null;
-    return res.json({ success: true, data: { provider, ...lifecycleReadiness({ expectedSession, latestEodSession: latestSession, run, integrity }) } });
+    return res.json({ success: true, data: await readRecommendationLifecycleCheckpoint({ StockPrice, RecommendationRun, provider, horizonDays }) });
   } catch (error) { console.error('[Recommendation Controller] Error fetching lifecycle readiness:', error); return httpError(res, 500, 'recommendation_lifecycle_readiness_failed', 'Error fetching recommendation lifecycle readiness'); }
 });
 
