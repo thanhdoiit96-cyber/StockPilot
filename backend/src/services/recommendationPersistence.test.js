@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
 
 function sealRun(run) {
   run.input_provenance = { version: 'recommendation_input_v1', eod_session: run.as_of, provider: run.provider };
@@ -46,6 +46,13 @@ test('hashes an immutable evaluation event deterministically', () => {
   expect(first).toEqual(second);
   recommendation.forward_return_pct = 6;
   expect(recommendationEvaluationEvent({ recommendation, run: { id: 'run' }, now: '2026-01-03T00:00:00Z' }).payload_sha256).not.toBe(first.payload_sha256);
+});
+
+test('verifies an evaluation event from its canonical persisted payload', () => {
+  const event = recommendationEvaluationEvent({ recommendation: { id: 'rec', outcome: 'positive', evaluated_at: '2026-01-02', forward_return_pct: 5, evaluation_evidence: { version: 'recommendation_evaluation_v1' } }, run: { id: 'run' }, now: '2026-01-03T00:00:00Z' });
+  expect(verifyRecommendationEvaluationEvent(event)).toMatchObject({ valid: true });
+  event.payload.forward_return_pct = 6;
+  expect(verifyRecommendationEvaluationEvent(event)).toMatchObject({ valid: false, reason: 'payload_sha256_mismatch' });
 });
 
 test('blocks evaluation when snapshot evidence has been changed', () => {

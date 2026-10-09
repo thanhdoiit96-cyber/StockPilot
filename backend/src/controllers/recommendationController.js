@@ -4,7 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const router = express.Router();
-const { RecommendationRun, Stock, StockPrice } = require('../models');
+const { RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice } = require('../models');
 const { SavedRecommendation } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { buildPersonalizedRecommendations, DEFAULT_CRITERIA } = require('../services/recommendationEngine');
@@ -12,7 +12,7 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
-const { verifyRecommendationSnapshot } = require('../services/recommendationPersistence');
+const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent } = require('../services/recommendationPersistence');
 const { assessRuns } = require('../services/recommendationEligibility');
 const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
 
@@ -237,6 +237,29 @@ router.get('/history/summary', async (req, res) => {
     const sector = buildSectorEvaluationCohorts(runs, minimumSamples);
     return res.json({ success: true, data: { minimum_samples: minimumSamples, cohorts: buildEvaluationCohorts(runs, minimumSamples), sector_cohorts: sector.cohorts, sector_taxonomy: { source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: sector.excluded_without_snapshot_taxonomy }, pending_integrity: buildPendingIntegrityCoverage(runs) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching history summary:', error); return httpError(res, 500, 'recommendation_history_failed', 'Error fetching recommendation history'); }
+});
+
+router.get('/history/:id/evaluation-ledger', async (req, res) => {
+  try {
+    const run = await RecommendationRun.findOne({ where: { id: req.params.id }, attributes: ['id'] });
+    if (!run) return httpError(res, 404, 'recommendation_history_not_found', 'Recommendation snapshot not found');
+    const rows = await RecommendationEvaluationEvent.findAll({
+      where: { run_id: req.params.id },
+      order: [['created_at', 'ASC'], ['id', 'ASC']],
+      include: [{ association: 'recommendation', attributes: ['id', 'rank'], include: [{ association: 'stock', attributes: ['code'] }] }],
+    });
+    const events = rows.map(row => {
+      const event = row.toJSON ? row.toJSON() : row;
+      const integrity = verifyRecommendationEvaluationEvent(event);
+      return {
+        id: event.id, recommendation_id: event.recommendation_id, event_type: event.event_type,
+        schema_version: event.schema_version, payload: event.payload, payload_sha256: event.payload_sha256,
+        created_at: event.created_at, integrity: integrity.valid ? 'verified' : 'invalid', integrity_reason: integrity.valid ? null : integrity.reason,
+        recommendation: event.recommendation ? { id: event.recommendation.id, rank: event.recommendation.rank, stock_code: event.recommendation.stock?.code || null } : null,
+      };
+    });
+    return res.json({ success: true, data: { run_id: run.id, event_count: events.length, events } });
+  } catch (error) { console.error('[Recommendation Controller] Error fetching evaluation ledger:', error); return httpError(res, 500, 'recommendation_evaluation_ledger_failed', 'Error fetching recommendation evaluation ledger'); }
 });
 
 router.get('/history/:id', async (req, res) => {

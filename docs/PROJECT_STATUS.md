@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Audit API cho evaluation ledger
+
+- Thêm `GET /api/recommendations/history/:id/evaluation-ledger` chỉ đọc: trả payload/hash của event, rank/mã liên quan và tự canonicalize lại payload để báo `integrity=verified|invalid`. Snapshot chưa có outcome có `event_count=0`; snapshot không tồn tại trả 404 rõ ràng. Endpoint không tạo/sửa/backfill event hoặc outcome.
+- Preflight checkpoint vẫn là `awaiting_eod` (expected 09/10, EOD mới nhất 08/10), nên không chạy generator/evaluator thật. Regression Recommendation 71/71 đạt, gồm route ledger, not-found và payload hash tamper. PostgreSQL/API smoke trên snapshot legacy xác nhận `event_count=0`; backend cổng 5000 đã restart để nạp route mới.
+- Hạn chế: audit endpoint chuẩn bị cho report/export nhưng UI chưa hiển thị ledger; external archive/signature chưa có. Tiếp theo vẫn là lifecycle thật khi preflight chuyển `ready_to_generate`, sau đó có event thật mới cân nhắc UI/export.
+
 ## 2026-10-09 — Immutable evaluation event ledger
 
 - Migration 036 tạo `recommendation_evaluation_events`: event type/schema/payload/hash, unique `(recommendation_id,event_type)`, index run/time và trigger PostgreSQL từ chối UPDATE/DELETE. Evaluator ghi outcome + evaluation_evidence rồi event `evaluation_recorded` hash trong cùng transaction; chỉ row claim pending mới tạo event.
