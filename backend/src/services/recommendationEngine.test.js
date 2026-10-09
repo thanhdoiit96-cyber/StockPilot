@@ -33,6 +33,7 @@ test('evaluates realized forward return without inventing missing data', () => {
   ]);
   const result = evaluateRecommendations({ provider: 'vnstock', recommendations: [recommendation], asOf: new Date('2026-01-01'), priceRowsByStock });
   expect(result[0]).toMatchObject({ outcome: 'positive', forward_return_pct: 5 });
+  expect(result[0].evaluation_evidence).toMatchObject({ version: 'recommendation_evaluation_v1', provider: 'vnstock', horizon_days: 2, observed_session_dates: ['2026-01-02', '2026-01-03'], target: { close: 105 }, outcome: 'positive' });
 });
 
 test('waits for the full horizon and selects that observation even when later prices exist', () => {

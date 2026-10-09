@@ -1,15 +1,17 @@
 'use strict';
 const { sessionDate } = require('./recommendationPriceAudit');
 
-function observationWindow({ rows = [], asOf, provider, horizonDays, through } = {}) {
+function observationWindow({ rows = [], asOf, provider, horizonDays, through, cutoffAt } = {}) {
   const start = sessionDate(asOf);
   const end = through == null ? null : sessionDate(through);
   const horizon = Number(horizonDays);
-  if (!start || !provider || !Number.isInteger(horizon) || horizon <= 0 || (through != null && !end)) return { reasons: ['invalid_evaluation_boundary'], days: [], target: null };
+  const cutoff = cutoffAt == null ? null : new Date(cutoffAt);
+  if (!start || !provider || !Number.isInteger(horizon) || horizon <= 0 || (through != null && !end) || (cutoffAt != null && !Number.isFinite(cutoff.getTime()))) return { reasons: ['invalid_evaluation_boundary'], days: [], target: null };
   const groups = new Map();
   for (const row of rows) {
     const day = sessionDate(row.observed_at);
-    if (!day || day <= start || (end && day > end) || row.provider !== provider || row.interval !== '1d') continue;
+    const observed = new Date(row.observed_at);
+    if (!day || !Number.isFinite(observed.getTime()) || (cutoff && observed > cutoff) || day <= start || (end && day > end) || row.provider !== provider || row.interval !== '1d') continue;
     if (!groups.has(day)) groups.set(day, []);
     groups.get(day).push(row);
   }
@@ -22,6 +24,6 @@ function observationWindow({ rows = [], asOf, provider, horizonDays, through } =
   if (selected.some(day => new Set(groups.get(day).map(row => Number(row.close ?? row.price))).size > 1)) reasons.push('conflicting_session_prices');
   // Stable timestamp for equivalent same-day duplicates, independent of query order.
   const target = days.length >= horizon ? [...groups.get(days[horizon - 1])].sort((a, b) => new Date(a.observed_at) - new Date(b.observed_at))[0] : null;
-  return { days, target, reasons };
+  return { days, target, reasons, selected_days: selected };
 }
 module.exports = { observationWindow };

@@ -118,4 +118,5 @@ test('evaluates every pending integrity-verified run without overwriting complet
   expect(updates).toHaveLength(2);
   expect(updates.map(item => item.options.where.id)).toEqual(['rec-1', 'rec-2']);
   expect(updates.every(item => item.options.where.outcome === 'pending')).toBe(true);
+  expect(updates.every(item => item.values.evaluation_evidence?.version === 'recommendation_evaluation_v1')).toBe(true);
 });

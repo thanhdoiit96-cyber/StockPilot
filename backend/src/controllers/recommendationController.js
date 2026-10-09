@@ -253,6 +253,7 @@ router.get('/history/:id', async (req, res) => {
       id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days,
       entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale,
       evaluated_at: item.evaluated_at,
+      evaluation_evidence: item.evaluation_evidence || null,
       statistics_eligible: item.statistics_eligible, measurement_status: item.measurement_status,
       exclusion_reasons: item.exclusion_reasons, observed_session_count: item.observed_session_count,
       forward_return_pct: hasReturn ? Number(item.forward_return_pct) : null,

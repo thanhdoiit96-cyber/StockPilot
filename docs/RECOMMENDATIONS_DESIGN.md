@@ -16,6 +16,8 @@ Workspace hiện chia bốn tab: **Đề xuất** ưu tiên form tiêu chí và 
 
 ## Contract evidence
 
+`recommendations.evaluation_evidence` (migration 032) lưu contract `recommendation_evaluation_v1` cho kết quả mới: `generated_at`, provider, interval, timezone, horizon, danh sách ngày quan sát, entry price, target metadata, forward return và outcome. Evaluator bỏ observation tương lai so với `generated_at`; report chỉ tính khi evidence khớp dữ liệu đã lưu. Dòng legacy không được backfill. JSONB có version nhưng chưa được ký độc lập/append-only.
+
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
 
 `rationale.evidence` gồm:
