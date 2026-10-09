@@ -1,5 +1,5 @@
 import { uiText } from "../services/uiCatalog.mjs";
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
 import { localizeApiError } from '../services/apiErrorCatalog.mjs'
 import { serializeRecommendationCsv } from '../services/recommendationCsv.mjs'
@@ -21,10 +21,16 @@ const criteria = [
 const money = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value) + ' đ'
 function RecommendationLifecycleStatus({ language }) {
   const [readiness, setReadiness] = useState(null)
+  const [checking, setChecking] = useState(false)
+  const mounted = useRef(true)
+  async function refresh() {
+    if (mounted.current) setChecking(true)
+    try { const response = await requestJson('/api/recommendations/lifecycle-readiness'); if (mounted.current) setReadiness(response.data || null) } catch { if (mounted.current) setReadiness(null) } finally { if (mounted.current) setChecking(false) }
+  }
   useEffect(() => {
-    let active = true
-    requestJson('/api/recommendations/lifecycle-readiness').then(response => { if (active) setReadiness(response.data || null) }).catch(() => { if (active) setReadiness(null) })
-    return () => { active = false }
+    mounted.current = true
+    refresh()
+    return () => { mounted.current = false }
   }, [])
   if (!readiness) return null
   const en = language === 'en'
@@ -38,7 +44,7 @@ function RecommendationLifecycleStatus({ language }) {
   }
   const [title, description] = labels[readiness.status] || [copy('Trạng thái dữ liệu chưa xác định', 'Data status is unknown'), copy('Không thể xác định lifecycle hiện tại.', 'The current lifecycle could not be determined.')]
   const sessions = readiness.expected_session || readiness.latest_eod_session ? `${copy('Phiên cần', 'Expected')} ${readiness.expected_session || '—'} · EOD ${readiness.latest_eod_session || '—'}` : null
-  return <div className={`recommendation-lifecycle-status is-${readiness.status}`} role="status"><div><strong>{title}</strong><span>{description}</span></div>{sessions && <small>{sessions}</small>}</div>
+  return <div className={`recommendation-lifecycle-status is-${readiness.status}`} role="status"><div><strong>{title}</strong><span>{description}</span></div><div className="recommendation-lifecycle-actions">{sessions && <small>{sessions}</small>}<button type="button" className="ghost-btn small-btn" onClick={refresh} disabled={checking}>{checking ? copy('Đang kiểm tra…', 'Checking…') : copy('Làm mới', 'Refresh')}</button></div></div>
 }
 export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, language = 'vi' }) {
   const ui = text => uiText(language, text)
