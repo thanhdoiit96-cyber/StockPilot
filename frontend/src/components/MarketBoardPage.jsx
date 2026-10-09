@@ -77,7 +77,7 @@ function MarketIndexFixtureSection({ fixtureSymbols, selectedFixtureSeries, setF
   </section>
 }
 
-export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], onOpenDetail, onAddToPortfolio, onAddToWatchlist, language = 'vi' }) {
+export default function MarketBoardPage({ active, overviewStocks = [], overviewTotal = 0, overviewQuotes = {}, portfolioSymbols = [], watchlistSymbols = [], requestedSector = '', onRequestedSectorConsumed, onOpenDetail, onAddToPortfolio, onAddToWatchlist, language = 'vi' }) {
   const t = (key, values) => translate(language, key, values)
   const [query, setQuery] = useState('')
   const [queryInput, setQueryInput] = useState('')
@@ -108,6 +108,15 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   })
 
   useEffect(() => { try { sessionStorage.setItem('stockpilot-index-fixtures', JSON.stringify(fixtureSymbols)) } catch {} }, [fixtureSymbols])
+
+  useEffect(() => {
+    if (!active || !requestedSector) return
+    setQueryInput('')
+    setQuery('')
+    setSector(requestedSector)
+    setPage(1)
+    onRequestedSectorConsumed?.()
+  }, [active, requestedSector, onRequestedSectorConsumed])
 
   useEffect(() => {
     const receive = () => setSharedQuotes(window.__stockpilotRecentQuotes || {})

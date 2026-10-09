@@ -13,8 +13,8 @@ function createLiveQuoteService(fetcher, {
   failureThreshold = 3,
   cooldownMs = 30000
 } = {}) {
-  const cache = new Map(), pending = new Map(), retryAfter = new Map(), queue = [];
-  let batchPending = null;
+  const cache = new Map(), pending = new Map(), retryAfter = new Map(), queue = [], batchQueue = [], batchPending = new Map();
+  let batchActive = false;
   const metrics = { successes: 0, failures: 0, consecutiveFailures: 0, lastSuccessAt: null, lastFailureAt: null, lastError: null, openUntil: 0 };
   let active = 0;
   const circuitOpen = () => now() < metrics.openUntil;
@@ -68,9 +68,9 @@ function createLiveQuoteService(fetcher, {
         circuit_open: open,
         circuit_open_until: open ? new Date(metrics.openUntil).toISOString() : null,
         active,
-        queued: queue.length,
+        queued: queue.length + batchQueue.length,
         cached: cache.size,
-        pending: pending.size,
+        pending: pending.size + batchPending.size,
         successes: metrics.successes,
         failures: metrics.failures,
         consecutive_failures: metrics.consecutiveFailures,
@@ -84,20 +84,36 @@ function createLiveQuoteService(fetcher, {
       // Overview asks for a universe; send it as one provider request instead
       // of creating a 40-item serial queue that starves subsequent refreshes.
       if (wanted.length > 5) {
-        if (!batchPending) {
-          batchPending = Promise.resolve().then(async () => {
+        const key = wanted.join(',');
+        if (!batchPending.has(key)) {
+          let resolve;
+          const task = new Promise(done => { resolve = done; });
+          batchPending.set(key, task);
+          batchQueue.push({ key, wanted, resolve });
+        }
+        const runBatch = () => {
+          if (batchActive || !batchQueue.length) return;
+          const batch = batchQueue.shift();
+          batchActive = true;
+          Promise.resolve().then(async () => {
             if (circuitOpen()) return;
             try {
-              const rows = await fetcher({ symbols: wanted, source: 'VCI', mode: 'intraday' });
-              const quotes = latestQuotes(rows, wanted);
+              const rows = await fetcher({ symbols: batch.wanted, source: 'VCI', mode: 'intraday' });
+              const quotes = latestQuotes(rows, batch.wanted);
               Object.entries(quotes).forEach(([symbol, quote]) => cache.set(symbol, { quote, at: now() }));
               if (Object.keys(quotes).length) markSuccess(); else markFailure();
-              wanted.filter(symbol => !quotes[symbol]).forEach(symbol => retryAfter.set(symbol, now() + 5000));
-            } catch (error) { markFailure(error); wanted.forEach(symbol => retryAfter.set(symbol, now() + 5000)); }
-          }).finally(() => { batchPending = null; });
-        }
+              batch.wanted.filter(symbol => !quotes[symbol]).forEach(symbol => retryAfter.set(symbol, now() + 5000));
+            } catch (error) { markFailure(error); batch.wanted.forEach(symbol => retryAfter.set(symbol, now() + 5000)); }
+          }).finally(() => {
+            batchPending.delete(batch.key);
+            batch.resolve();
+            batchActive = false;
+            runBatch();
+          });
+        };
+        runBatch();
         let timer;
-        await Promise.race([batchPending, new Promise(resolve => { timer = setTimeout(resolve, waitMs); })]);
+        await Promise.race([batchPending.get(key), new Promise(resolve => { timer = setTimeout(resolve, waitMs); })]);
         clearTimeout(timer);
         return peek(wanted);
       }

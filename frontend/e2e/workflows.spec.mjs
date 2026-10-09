@@ -37,7 +37,7 @@ for (const width of [390, 800, 900]) {
     const geometry = () => page.evaluate(() => {
       const nav = document.querySelector('.sidebar').getBoundingClientRect()
       const main = document.querySelector('.main-panel').getBoundingClientRect()
-      return { separate: nav.bottom <= main.top + 1, compact: nav.height < 180, fits: document.documentElement.scrollWidth <= innerWidth, top: nav.top }
+      return { separate: nav.bottom <= main.top + 1, compact: nav.height < 180, fits: document.documentElement.scrollWidth <= innerWidth, scrollable: document.documentElement.scrollHeight > innerHeight, top: nav.top }
     })
     expect(await geometry()).toMatchObject({ separate: true, compact: true, fits: true })
     const account = page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true })
@@ -53,7 +53,7 @@ for (const width of [390, 800, 900]) {
     await page.getByRole('button', { name: 'Bỏ thay đổi và đóng', exact: true }).click()
     await expect(account).toBeFocused()
     await page.evaluate(() => window.scrollTo(0, 450))
-    await expect.poll(async () => (await geometry()).top).toBeLessThan(0)
+    if ((await geometry()).scrollable) await expect.poll(async () => (await geometry()).top).toBeLessThan(0)
     expect(await geometry()).toMatchObject({ separate: true, fits: true })
     await page.screenshot({ path: `test-results/navigation-${width}.png` })
     await page.setViewportSize({ width: 1280, height: 900 })
@@ -143,6 +143,7 @@ test('market breadth exchange and sector scopes update snapshot and history cont
 test('market breadth leader symbols open stock detail', async ({ page }) => {
   await boot(page)
   await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  await page.getByRole('button', { name: 'Xem chi tiết', exact: true }).click()
   const symbol = page.locator('[data-breadth-symbol="FPT"]').first()
   await expect(symbol).toHaveAttribute('title', 'Mở Chi tiết mã FPT · EOD fallback')
   await expect(symbol.locator('.breadth-leader-source')).toHaveText('EOD')

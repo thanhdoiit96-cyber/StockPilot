@@ -9,10 +9,28 @@ const GROUPS = [['up', 'overview.up', 'up'], ['down', 'overview.down', 'down'], 
 
 const symbolOf = stock => String(stock.symbol || stock.code || '').toUpperCase()
 const compact = value => new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value || 0))
-const formatDateTime = value => value && Number.isFinite(Date.parse(value))
-  ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value))
+const formatDateTime = (value, language = 'vi') => value && Number.isFinite(Date.parse(value))
+  ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value))
   : null
 const quoteFor = (quotes, symbol) => quotes[symbol] || quotes[symbol.toUpperCase()] || null
+const QUOTE_BATCH_SIZE = 200
+
+async function loadQuoteBatches(symbols, signal) {
+  const batches = []
+  for (let index = 0; index < symbols.length; index += QUOTE_BATCH_SIZE) batches.push(symbols.slice(index, index + QUOTE_BATCH_SIZE))
+  const results = await Promise.allSettled(batches.map(batch => requestJson(`/api/stocks/quotes?symbols=${encodeURIComponent(batch.join(','))}`, { signal })))
+  return results.reduce((quotes, result) => {
+    if (result.status !== 'fulfilled' || !result.value?.data || typeof result.value.data !== 'object') return quotes
+    return { ...quotes, ...result.value.data }
+  }, {})
+}
+
+function inScope(stock, exchange, sector) {
+  const status = stock.listing_status || stock.listingStatus
+  if (status !== 'listed') return false
+  if (exchange && String(stock.exchange || '').toUpperCase() !== exchange) return false
+  return !sector || stock.sector === sector || (!stock.sector && sector === 'other')
+}
 
 function metricsFor(stocks, quotes) {
   const metrics = {
@@ -44,8 +62,48 @@ function metricsFor(stocks, quotes) {
   return { metrics, rows }
 }
 
-export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal, onOpenDetail, language = 'vi' }) {
+function SectorBreadth({ rows, selectedSector, onSelect, language }) {
+  const text = (vi, en) => language === 'en' ? en : vi
+  const sectors = useMemo(() => {
+    const grouped = new Map()
+    rows.forEach(row => {
+      const key = SECTOR_OPTIONS.some(([value]) => value === row.stock?.sector) ? row.stock.sector : 'other'
+      const current = grouped.get(key) || { key, total: 0, quoted: 0, up: 0, down: 0, flat: 0, changes: [] }
+      current.total += 1
+      if (row.quote) current.quoted += 1
+      if (Number.isFinite(row.change)) {
+        current.changes.push(row.change)
+        if (row.change > 0) current.up += 1
+        else if (row.change < 0) current.down += 1
+        else current.flat += 1
+      }
+      grouped.set(key, current)
+    })
+    return [...grouped.values()].map(item => ({
+      ...item,
+      classified: item.up + item.down + item.flat,
+      spread: item.up - item.down,
+      average: item.changes.length ? item.changes.reduce((sum, value) => sum + value, 0) / item.changes.length : null
+    })).filter(item => item.classified > 0).sort((left, right) => right.spread - left.spread || (right.average || 0) - (left.average || 0) || left.key.localeCompare(right.key)).slice(0, 6)
+  }, [rows])
+
+  if (!sectors.length) return null
+
+  return <section className="breadth-sector-pulse" aria-labelledby="breadth-sector-pulse-heading">
+    <div className="breadth-sector-pulse-heading"><div><strong id="breadth-sector-pulse-heading">{text('Độ rộng theo ngành', 'Sector breadth')}</strong><small>{text('Chọn ngành để áp dụng bộ lọc cho toàn bộ phần Độ rộng.', 'Choose a sector to apply the filter across Market breadth.')}</small></div><span>{text('Theo số mã', 'By symbols')}</span></div>
+    <div className="breadth-sector-list">
+      {sectors.map(item => <button type="button" className={`breadth-sector-row${selectedSector === item.key ? ' is-selected' : ''}`} data-sector-key={item.key} aria-pressed={selectedSector === item.key} key={item.key} onClick={() => onSelect(item.key)}>
+        <span className="breadth-sector-name"><strong>{labelForSector(item.key) || text('Khác / chưa phân loại', 'Other / uncategorized')}</strong><small>{item.quoted}/{item.total} {text('quote Intraday', 'intraday quotes')}</small></span>
+        <span className="breadth-sector-metrics"><b className={item.spread > 0 ? 'positive' : item.spread < 0 ? 'negative' : ''}>{item.spread > 0 ? '+' : ''}{item.spread} A/D</b><em className={item.average != null && item.average < 0 ? 'negative' : item.average != null && item.average > 0 ? 'positive' : ''}>{item.average == null ? '—' : `${item.average > 0 ? '+' : ''}${item.average.toFixed(2)}%`}</em></span>
+      </button>)}
+    </div>
+    <p className="breadth-sector-pulse-note">{text('Xếp hạng theo chênh lệch số mã tăng–giảm, sau đó theo biến động bình quân. Không suy ra dòng tiền hoặc đóng góp chỉ số.', 'Ranked by advancing-minus-declining symbols, then average change. It does not infer money flow or index contribution.')}</p>
+  </section>
+}
+
+export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal, onOpenDetail, onOpenMarketSector, language = 'vi' }) {
   const t = (key, values) => translate(language, key, values)
+  const text = (vi, en) => language === 'en' ? en : vi
   const initialScope = useMemo(() => readMarketBreadthScope(), [])
   const [exchange, setExchange] = useState(initialScope.exchange)
   const [sector, setSector] = useState(initialScope.sector)
@@ -53,6 +111,7 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
   const [scopedStocks, setScopedStocks] = useState(listedStocks)
   const [scopedQuotes, setScopedQuotes] = useState(quotes)
   const [loading, setLoading] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     try { localStorage.setItem(MARKET_BREADTH_SCOPE_KEY, JSON.stringify({ exchange, sector })) } catch {}
@@ -71,34 +130,24 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
   }, [])
 
   useEffect(() => {
-    if (!exchange && !sector) {
-      setScopedStocks(listedStocks)
-      setScopedQuotes(quotes)
-      return
-    }
     const controller = new AbortController()
     setLoading(true)
     const params = new URLSearchParams({ page: '1', pageSize: '500', q: '', sector, exchange, listing_status: 'listed', sort: 'code', direction: 'asc', pinned: '' })
     requestJson(`/api/stocks?${params}`, { signal: controller.signal })
       .then(async payload => {
-        const list = stockList(payload)
+        const list = stockList(payload).filter(stock => inScope(stock, exchange, sector))
         const symbols = list.map(symbolOf).filter(Boolean)
         let nextQuotes = {}
-        if (symbols.length) {
-          try {
-            const quotePayload = await requestJson(`/api/stocks/quotes?symbols=${encodeURIComponent(symbols.join(','))}`, { signal: controller.signal })
-            nextQuotes = quotePayload.data && typeof quotePayload.data === 'object' ? quotePayload.data : {}
-          } catch (_) { /* EOD values remain usable. */ }
-        }
+        try { nextQuotes = symbols.length ? await loadQuoteBatches(symbols, controller.signal) : {} } catch (_) { /* EOD values remain usable. */ }
         if (!controller.signal.aborted) {
           setScopedStocks(list)
           setScopedQuotes(nextQuotes)
         }
       })
-      .catch(() => { if (!controller.signal.aborted) { setScopedStocks([]); setScopedQuotes({}) } })
+      .catch(() => { if (!controller.signal.aborted) { setScopedStocks(listedStocks.filter(stock => inScope(stock, exchange, sector))); setScopedQuotes(quotes) } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [exchange, sector, listedStocks, quotes])
+  }, [exchange, sector])
 
   const { metrics, rows } = useMemo(() => metricsFor(scopedStocks, scopedQuotes), [scopedStocks, scopedQuotes])
   const leaders = useMemo(() => [
@@ -115,6 +164,9 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
   const scopeText = sector
     ? `${scopedStocks.length} ${t('overview.symbols')} · ${exchange || t('overview.allExchanges')} · ${selectedSectorLabel}`
     : exchange ? `${scopedStocks.length} ${t('overview.symbolsOf')} ${exchange}` : `${displayedTotal} ${t('overview.symbolsInUniverse')} · ${metrics.quoted}/${displayedTotal} ${t('overview.quotedIntraday')}`
+  const freshnessText = metrics.quoted
+    ? `${metrics.quoted}/${displayedTotal} ${text('m\u00e3 c\u00f3 quote Intraday', 'intraday quotes')}${metrics.latestQuoteAt ? ` · ${text('ghi nh\u1eadn', 'observed')} ${formatDateTime(metrics.latestQuoteAt, language)}` : ''}`
+    : text('\u0110ang d\u00f9ng gi\u00e1 EOD g\u1ea7n nh\u1ea5t', 'Using latest EOD prices')
 
   return <section className="panel market-breadth-panel" aria-labelledby="market-breadth-heading" lang={language}>
     <div className="panel-header market-breadth-header">
@@ -122,7 +174,10 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
         <h3 id="market-breadth-heading">{t('overview.breadth')}</h3>
         <p className="muted-text">{scopeText}{loading ? ` · ${t('overview.updating')}` : ''}</p>
       </div>
-      <span className="chip neutral"><span className={metrics.average != null && metrics.average < 0 ? 'negative' : 'positive'}>{metrics.average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${metrics.average >= 0 ? '+' : ''}${metrics.average.toFixed(2)}%`}</span></span>
+      <div className="breadth-header-signals">
+        <span className="chip neutral"><span className={metrics.average != null && metrics.average < 0 ? 'negative' : 'positive'}>{metrics.average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${metrics.average >= 0 ? '+' : ''}${metrics.average.toFixed(2)}%`}</span></span>
+        <span className="breadth-header-status" role="status"><i className={metrics.quoted ? 'is-live' : 'is-eod'} aria-hidden="true" />{freshnessText}</span>
+      </div>
       <div className="breadth-scope-controls">
         <label className="select-control breadth-exchange-control"><span>{t('overview.exchange')}</span><select className="app-select breadth-exchange-select" aria-label={t('overview.exchangeAria')} value={exchange} onChange={event => setExchange(event.target.value)}>
           <option value="">{t('overview.allExchanges')}</option><option value="HSX">HSX</option><option value="HNX">HNX</option><option value="UPCOM">UPCOM</option>
@@ -139,13 +194,21 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
       <div><span>Chênh lệch A−D</span><strong className={spread >= 0 ? 'positive' : 'negative'}>{spread > 0 ? '+' : ''}{spread}</strong><small>Mã tăng trừ mã giảm</small></div>
       <div><span>Đã phân loại</span><strong>{classifiedPercent}%</strong><small>Dựa trên mã có biến động</small></div>
     </div>
-    <div className="breadth-volume-heading"><strong>Khối lượng phiên theo nhóm biến động</strong><span>{compact(metrics.totalVolume)} cổ phiếu</span></div>
+    <MarketBreadthHistory exchange={exchange} sector={sector} sectorLabel={selectedSectorLabel} language={language} />
+    <div className="breadth-details-toggle">
+      <div><strong>{text('Chi tiết độ rộng', 'Breadth details')}</strong><small>{text('Khối lượng và các mã dẫn dắt theo phạm vi đang chọn.', 'Volume and leading symbols in the selected scope.')}</small></div>
+      <button type="button" className="ghost-btn small-btn" aria-expanded={showDetails} aria-controls="market-breadth-details" onClick={() => setShowDetails(value => !value)}>{showDetails ? text('Thu gọn', 'Show less') : text('Xem chi tiết', 'View details')}</button>
+    </div>
+    <div id="market-breadth-details" className="breadth-details" hidden={!showDetails}>
+      <SectorBreadth rows={rows} selectedSector={sector} onSelect={setSector} language={language} />
+      {sector && <button type="button" className="ghost-btn small-btn breadth-sector-board-link" onClick={() => onOpenMarketSector?.(sector)}>{text('Xem danh sách ngành', 'Open sector list')}</button>}
+      <div className="breadth-volume-heading"><strong>{text('Khối lượng phiên theo nhóm biến động', 'Session volume by price direction')}</strong><span>{compact(metrics.totalVolume)} {text('cổ phiếu', 'shares')}</span></div>
     <div className="breadth-volume-chart">{GROUPS.map(([key, labelKey, color]) => <div className="breadth-volume-column" key={key}><div className="breadth-volume-track"><span className={color} style={{ height: `${metrics[key].volume / metrics.maxVolume * 100}%` }} /></div><strong>{compact(metrics[key].volume)}</strong><small>{t(labelKey)}</small></div>)}</div>
     <div className="breadth-leaders">
       <div className="breadth-leaders-header"><div><strong>Nhóm dẫn dắt</strong><small>{[exchange && `Sàn: ${exchange}`, selectedSectorLabel && `Ngành: ${selectedSectorLabel}`].filter(Boolean).join(' · ') || 'Toàn bộ thị trường'} · Bộ lọc áp dụng cho độ rộng và Top list</small></div></div>
-      {leaders.map(([label, items, field]) => <section className="breadth-leader" key={label}><strong>{label}</strong><small>{field === 'change' ? 'Xếp theo % biến động mới nhất' : 'Xếp theo khối lượng mới nhất'}</small><small className="breadth-leader-timestamp">{metrics.latestQuoteAt ? `Quote gần nhất ${formatDateTime(metrics.latestQuoteAt)}` : 'Chưa có thời điểm quote intraday'}</small>{items.length ? <ol>{items.map(row => <li key={row.symbol}><button type="button" data-breadth-symbol={row.symbol} title={`Mở Chi tiết mã ${row.symbol} · ${row.quote ? `Intraday ${formatDateTime(row.observedAt) || ''}` : 'EOD fallback'}`} aria-label={`Mở Chi tiết mã ${row.symbol}`} onClick={() => onOpenDetail?.(row.stock)}><span>{row.symbol}</span><small className={`breadth-leader-source ${row.quote ? 'intraday' : 'eod'}`}>{row.quote ? 'Intraday' : 'EOD'}</small></button><b>{field === 'change' ? `${row.change >= 0 ? '+' : ''}${row.change.toFixed(2)}%` : compact(row.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
+      {leaders.map(([label, items, field]) => <section className="breadth-leader" key={label}><strong>{label}</strong><small>{field === 'change' ? 'Xếp theo % biến động mới nhất' : 'Xếp theo khối lượng mới nhất'}</small><small className="breadth-leader-timestamp">{metrics.latestQuoteAt ? `Quote gần nhất ${formatDateTime(metrics.latestQuoteAt, language)}` : 'Chưa có thời điểm quote intraday'}</small>{items.length ? <ol>{items.map(row => <li key={row.symbol}><button type="button" data-breadth-symbol={row.symbol} title={`Mở Chi tiết mã ${row.symbol} · ${row.quote ? `Intraday ${formatDateTime(row.observedAt, language) || ''}` : 'EOD fallback'}`} aria-label={`Mở Chi tiết mã ${row.symbol}`} onClick={() => onOpenDetail?.(row.stock)}><span>{row.symbol}</span><small className={`breadth-leader-source ${row.quote ? 'intraday' : 'eod'}`}>{row.quote ? 'Intraday' : 'EOD'}</small></button><b>{field === 'change' ? `${row.change >= 0 ? '+' : ''}${row.change.toFixed(2)}%` : compact(row.volume)}</b></li>)}</ol> : <p>Chưa có dữ liệu</p>}</section>)}
     </div>
-    <MarketBreadthHistory exchange={exchange} sector={sector} sectorLabel={selectedSectorLabel} language={language} />
+    </div>
     <p className="breadth-disclaimer">Phân loại dùng biến động giá mới nhất{exchange || sector ? ` trong phạm vi ${[exchange, selectedSectorLabel].filter(Boolean).join(' · ')}` : ''}; nguồn hiện tại không tách khối lượng chủ động bên mua và bên bán.</p>
   </section>
 }

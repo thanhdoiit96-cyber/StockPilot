@@ -7,6 +7,7 @@ import * as D from "react";
 import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
+import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
@@ -626,6 +627,8 @@ const nv = e => ({
     volume: e.volume == null ? null : Number(e.volume),
     rating: e.rating || p("Chưa đánh giá"),
     industry: e.industry || p("Chưa phân loại"),
+    sector: e.sector || "other",
+    sectorLabel: e.sector_label || null,
     exchange: e.exchange || null,
     listingStatus: e.listing_status || "unknown",
     listingCheckedAt: e.listing_checked_at || null,
@@ -710,6 +713,7 @@ function lv() {
     [xn, En] = D.useState(1),
     [Ht, li] = D.useState(40),
     [Qt, ii] = D.useState(""),
+    [marketBoardSector, setMarketBoardSector] = D.useState(""),
     [pt, Bn] = D.useState([]),
     [Jr, el] = D.useState(""),
     [pe, mt] = D.useState(null),
@@ -941,7 +945,6 @@ function lv() {
     au = Pn("/api/ai-gate", Bm),
     su = Pn("/api/recommendations/latest", Vm),
     uu = Pn("/api/recommendations/history?limit=50", Hm);
-  Pn("/api/recommendations/readiness", Qm);
   const Nt = Pn(`/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`, Pc),
     il = D.useMemo(() => (Nt.data || []).map(nv), [Nt.data]),
     si = D.useMemo(() => il.slice(0, 40), [il]),
@@ -1552,6 +1555,8 @@ function lv() {
         overviewStocks: il,
         overviewTotal: vu,
         overviewQuotes: an,
+        requestedSector: marketBoardSector,
+        onRequestedSectorConsumed: () => setMarketBoardSector(""),
         portfolioSymbols: [...gt],
         watchlistSymbols: [...yt],
         language: profileLanguage,
@@ -1569,11 +1574,11 @@ function lv() {
               className: "eyebrow accent",
               children: tr("page.overview")
             }), O.jsx("h2", {
-              children: profileLanguage === "en" ? "Track prices and the symbols you care about." : uiTextValue("Theo dõi giá và các mã quan tâm của bạn.")
+              children: profileLanguage === "en" ? "A compact view of market breadth and its recent direction." : uiTextValue("Nắm bắt nhanh độ rộng và xu hướng gần đây của thị trường.")
             }), O.jsx("p", {
-              children: profileLanguage === "en" ? "Intraday prices are used when a quote is available; other symbols keep their EOD price." : uiTextValue("Giá intraday được dùng khi có quote; các mã còn lại giữ giá EOD.")
+              children: profileLanguage === "en" ? "Use the scope controls to compare exchanges and sectors; open the details only when you need the underlying leaders and volume." : uiTextValue("Dùng bộ lọc để so sánh sàn, ngành; chỉ mở chi tiết khi cần xem khối lượng và các mã dẫn dắt.")
             })]
-          }), O.jsxs("div", {
+          }), false && O.jsxs("div", {
             className: "overview-hero-actions",
             children: [O.jsx("button", {
               className: "primary-btn",
@@ -1587,7 +1592,7 @@ function lv() {
               children: profileLanguage === "en" ? "Open Ideas" : uiTextValue("Đến tab đề xuất")
             })]
           })]
-        }), O.jsxs("section", {
+        }), false && O.jsxs("section", {
           className: "overview-metrics",
           "aria-label": profileLanguage === "en" ? "Market summary" : uiTextValue("Tóm tắt thị trường"),
           children: [O.jsxs("article", {
@@ -1630,12 +1635,27 @@ function lv() {
               children: profileLanguage === "en" ? "Provider observation time" : uiTextValue("Thời điểm provider ghi nhận")
             })]
           })]
-        }), O.jsx(MarketBreadth, {
-          stocks: si,
-          quotes: an,
-          universeTotal: vu,
-          onOpenDetail: openMarketStock,
-          language: profileLanguage
+        }), O.jsxs("div", {
+          className: `overview-market-grid ${pt.length && ue?.user ? "has-watchlist-pulse" : ""}`,
+          children: [O.jsx(MarketBreadth, {
+            stocks: si,
+            quotes: an,
+            universeTotal: vu,
+            onOpenDetail: openMarketStock,
+            onOpenMarketSector: sector => {
+              setMarketBoardSector(sector), Xe("market-board");
+            },
+            language: profileLanguage
+          }), pt.length > 0 && ue?.user && O.jsx(OverviewWatchlistPulse, {
+            entries: pt,
+            stocks: il,
+            quotes: an,
+            onOpenDetail: openMarketStock,
+            onOpenWatchlist: () => {
+              setPortfolioTab("watchlist"), Xe("portfolio");
+            },
+            language: profileLanguage
+          })]
         }), false && O.jsxs("section", {
           className: "panel legacy-table-panel",
           children: [O.jsxs("div", {
