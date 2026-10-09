@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Regression scheduler evaluator
+
+- Thêm test cho `recommendationEvaluationJob`: không schedule khi cờ chưa bật; schedule đúng timezone/cron và truyền models vào evaluator; lỗi evaluator được log nhưng callback scheduler không throw/dừng job.
+- Targeted suite đạt 3/3, coverage scheduler 100%. Đây là kiểm chứng fixture/in-process, không gọi evaluator với PostgreSQL hoặc ghi outcome/event.
+- Chuỗi tự động EOD ingest → snapshot EOD-only → evaluator đã có regression ở cả hai job. Vẫn chờ EOD 09/10 để chạy lifecycle thật theo preflight.
+
 ## 2026-10-09 — Regression nhánh EOD hoàn chỉnh
 
 - Bổ sung regression scheduler cho nhánh coverage hoàn chỉnh: chỉ sau khi toàn bộ coverage EOD đạt mới gọi generator; request bắt buộc `useIntradayReference=false`, provider/horizon theo contract và evidence giữ `run_id`/snapshot hash trả về. Nhánh coverage thiếu tiếp tục không gọi generator.
