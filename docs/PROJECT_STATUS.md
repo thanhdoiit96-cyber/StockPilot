@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Read-only integrity audit cho evaluation ledger
+
+- Thêm `npm run audit:recommendation-ledger`: PostgreSQL `REPEATABLE READ` + `READ ONLY`, kiểm canonical event hash, ID/schema payload và drift giữa payload bất biến với outcome/evidence hiện tại. Exit 2 khi có finding; ledger rỗng là báo cáo hợp lệ, không phải kết quả đánh giá.
+- Unit coverage gồm event hợp lệ, payload tamper/current-row drift và ledger rỗng; Recommendation regression 74/74 đạt. Live PostgreSQL audit đạt `total_events=0`, `invalid_events=0`, phù hợp vì chưa có snapshot hash-backed/evaluation thật.
+- Không tạo snapshot/evaluation/event giả khi EOD 09/10 còn thiếu. Tiếp theo vẫn là preflight thật → snapshot hash-backed → lifecycle/evaluator; audit này là bằng chứng kiểm tra ngay sau khi event đầu tiên xuất hiện.
+
 ## 2026-10-09 — Scheduler recommendation fail-closed và check chỉ đọc
 
 - `check:recommendation-scheduler` hiện chỉ đọc mặc định; không còn tự ghi đè artifact evidence có tên ngày cũ. Muốn lưu checkpoint, operator phải truyền `RECOMMENDATION_SCHEDULER_OUTPUT` rõ ràng. Snapshot không sẵn sàng vẫn exit code 2 để CI/automation nhận biết.

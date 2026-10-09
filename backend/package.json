@@ -39,6 +39,7 @@
     ,"check:recommendation-lifecycle": "node scripts/check-recommendation-lifecycle.cjs"
     ,"verify:recommendation-ledger": "node scripts/verify-recommendation-evaluation-ledger.cjs"
     ,"audit:recommendation-prices": "node scripts/audit-recommendation-prices.cjs"
+    ,"audit:recommendation-ledger": "node scripts/audit-recommendation-ledger.cjs"
     ,"verify:recommendation-hash": "node scripts/verify-recommendation-hash-roundtrip.cjs"
     ,"check:recommendation-scheduler": "node scripts/check-recommendation-scheduler.cjs"
     ,"verify:quote-freshness": "node scripts/verify-quote-freshness.cjs"

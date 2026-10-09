@@ -72,6 +72,7 @@ M5 progress: long-history EOD ingestion is complete for the current prototype sy
 - Completed: the immutable evaluation ledger now has a read-only per-snapshot audit endpoint at `GET /api/recommendations/history/:id/evaluation-ledger`. It recomputes each canonical payload SHA-256 before reporting `verified` or `invalid`; empty ledgers stay explicit and unknown snapshots return 404. Recommendation regression (71 tests) and the live PostgreSQL empty-ledger smoke passed.
 - Dependency unchanged: do not generate or evaluate a real snapshot until lifecycle preflight observes the current Vietnam EOD session. UI/export of ledger events remains deferred until a hash-backed snapshot produces a real event; no legacy backfill is planned.
 - Scheduler checkpoint: `check:recommendation-scheduler` is read-only unless an explicit `RECOMMENDATION_SCHEDULER_OUTPUT` path is supplied. The currently enabled evaluator correctly remains not-ready for the latest legacy, unsealed snapshot; it must not be treated as evidence of evaluation readiness.
+- Audit readiness: `audit:recommendation-ledger` verifies canonical event hashes and drift against current outcome/evidence in one read-only database snapshot. Run it after the first real event and before interpreting any audit/export result; it never repairs legacy data.
 
 ## i18n checkpoint — 2026-10-08
 
