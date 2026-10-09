@@ -17,8 +17,8 @@ async function main() {
     snapshot: run ? { id: run.id, as_of: run.as_of, created_at: run.created_at, selected_count: run.selected_count, integrity } : null,
     ready: Boolean(run && integrity.valid && process.env.RECOMMENDATION_EVALUATION_ENABLED === 'true')
   };
-  const output = process.env.RECOMMENDATION_SCHEDULER_OUTPUT || path.resolve(__dirname, '../evidence/recommendation-scheduler-2026-09-21.json');
-  fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  const output = process.env.RECOMMENDATION_SCHEDULER_OUTPUT;
+  if (output) fs.writeFileSync(path.resolve(output), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify(report, null, 2));
   if (!report.ready) process.exitCode = 2;
 }
