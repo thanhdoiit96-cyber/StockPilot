@@ -800,6 +800,8 @@ Evidence checkpoint 2026-10-09: migration 032 đã áp dụng development; evalu
 
 Atomic checkpoint 2026-10-09: migration 033 unique generation_key đã áp dụng; run/item/seal ghi trong transaction, unique race trả winner và outcome/evidence conditional update được tính đúng. 61 tests đạt; 21 legacy run giữ key null. Tiếp theo: provenance/read-consistency hoặc lifecycle smoke chỉ sau EOD snapshot hash-backed mới. Không có snapshot thật/outcome mới trong checkpoint này.
 
+Read consistency checkpoint 2026-10-09: migration 034 input_provenance đã áp dụng; scheduled snapshot EOD reads/create/seal dùng REPEATABLE READ, intraday bị bỏ qua. 62 tests và PostgreSQL synthetic rollback smoke đạt, không giữ fixture. Tiếp theo lifecycle smoke khi có snapshot EOD hash-backed mới; input provenance hash/append-only và official calendar vẫn là backlog integrity.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

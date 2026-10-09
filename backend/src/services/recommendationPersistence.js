@@ -4,9 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { buildShortTermRecommendations, evaluateRecommendations } = require('./recommendationEngine');
-const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstockBridgeFetcher');
-const { createQuoteLoader } = require('./quoteLoader');
-const loadSnapshotQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 
 function recommendationSnapshotHash(run) {
   const snapshot = (run.recommendations || []).map(item => ({ rank: item.rank, stock_id: item.stock_id, code: item.stock?.code, entry_price: item.entry_price == null ? null : Number(item.entry_price), horizon_days: item.horizon_days, rationale: item.rationale })).sort((a, b) => a.rank - b.rank);
@@ -31,16 +28,16 @@ function verifyRecommendationSnapshot(run, evidencePath = process.env.RECOMMENDA
   }
 }
 
-async function loadPriceRows({ StockPrice, stocks }) {
-  const rows = await StockPrice.findAll({ order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000 });
+async function loadPriceRows({ StockPrice, transaction }) {
+  const rows = await StockPrice.findAll({ order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000, transaction });
   const byStock = new Map();
   for (const row of rows) { if (!byStock.has(row.stock_id)) byStock.set(row.stock_id, []); byStock.get(row.stock_id).push(row.toJSON ? row.toJSON() : row); }
   return byStock;
 }
 
-async function loadVerifiedExternalFactors({ ExternalFactor } = {}) {
+async function loadVerifiedExternalFactors({ ExternalFactor, transaction } = {}) {
   if (!ExternalFactor?.findAll) return [];
-  const rows = await ExternalFactor.findAll({ where: { status: 'verified' }, order: [['published_at', 'DESC'], ['id', 'DESC']] });
+  const rows = await ExternalFactor.findAll({ where: { status: 'verified' }, order: [['published_at', 'DESC'], ['id', 'DESC']], transaction });
   return rows.map(row => row.toJSON ? row.toJSON() : row).filter(item => item.source && item.published_at);
 }
 
@@ -67,30 +64,38 @@ function latestEodSession(rows = []) {
   }, null);
 }
 
+function inputProvenance({ rows, factors, provider, session, now }) {
+  const eligible = rows.filter(row => row.provider === provider && row.interval === '1d');
+  return {
+    version: 'recommendation_input_v1', read_at: new Date(now).toISOString(), transaction_isolation: 'REPEATABLE READ',
+    eod_session: session, provider, reference_price_source: 'eod', price_rows: eligible.length,
+    price_contracts: [...new Set(eligible.map(row => [row.provider, row.interval, row.currency, row.price_unit, row.is_adjusted].join('|')))].sort(),
+    verified_external_factor_count: factors.length,
+  };
+}
+
 async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFactor, RecommendationRun, Recommendation, sequelize, provider = 'vnstock', limit = 5, horizonDays = 20, useIntradayReference = false, now = new Date() } = {}) {
-  const stocks = await Stock.findAll({ order: [['code', 'ASC']] });
-  const priceRowsByStock = await loadPriceRows({ StockPrice, stocks });
+  if (useIntradayReference) console.warn('[Recommendation Persistence] Intraday references are ignored for immutable scheduled snapshots');
+  let asOfDate;
+  let generation_key;
+  const seal = async transaction => {
+  const stocks = await Stock.findAll({ order: [['code', 'ASC']], transaction });
+  const priceRowsByStock = await loadPriceRows({ StockPrice, transaction });
   const priceRows = [...priceRowsByStock.values()].flat();
   const expectedSession = vietnamSessionDate(now);
   const latestSession = latestEodSession(priceRows);
   if (latestSession !== expectedSession) return { status: 'eod_not_ready', expected_session: expectedSession, latest_eod_session: latestSession, universe_size: stocks.length };
   const stockData = stocks.map(item => item.toJSON());
-  const externalFactors = await loadVerifiedExternalFactors({ ExternalFactor });
+  const externalFactors = await loadVerifiedExternalFactors({ ExternalFactor, transaction });
   const factorsByStock = groupExternalFactorsByStock(stockData, externalFactors);
-  const baseline = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
-  let currentQuotes = {};
-  if (useIntradayReference) { try { currentQuotes = await loadSnapshotQuotes(baseline.map(item => item.symbol)); } catch (error) { console.warn(`[Recommendation Persistence] intraday reference fallback: ${error.message}`); } }
-  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
-  const asOfDate = latestSession;
-  const model = 'short_term_rule_v2';
-  const generation_key = recommendationGenerationKey({ asOf: asOfDate, horizonDays, provider, model });
-  const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model }, order: [['created_at', 'DESC']] });
+  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
+  asOfDate = latestSession; const model = 'short_term_rule_v2';
+  generation_key = recommendationGenerationKey({ asOf: asOfDate, horizonDays, provider, model });
+  const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model }, order: [['created_at', 'DESC']], transaction });
   if (existing) return { status: 'snapshot_exists', run_id: existing.id, as_of: asOfDate, universe_size: existing.universe_size, selected_count: existing.selected_count, model: existing.model, snapshot_sha256: existing.snapshot_sha256 || null };
-  const seal = async transaction => {
-  const option = transaction ? { transaction } : {};
-  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model, generation_key, universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' }, option);
+  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model, generation_key, input_provenance: inputProvenance({ rows: priceRows, factors: externalFactors, provider, session: asOfDate, now }), universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' }, { transaction });
   const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
-  if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations, option);
+  if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations, { transaction });
   // Hash the persisted representation, including joined stock codes and JSONB
   // key ordering. Spreading a Sequelize instance loses its attribute getters.
   const persisted = await RecommendationRun.findOne({
@@ -104,7 +109,7 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id }, transaction });
   return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
   };
-  try { return sequelize?.transaction ? await sequelize.transaction(seal) : await seal(); }
+  try { return sequelize?.transaction ? await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' }, seal) : await seal(); }
   catch (error) {
     if (!['SequelizeUniqueConstraintError', '23505'].includes(error?.name) && error?.original?.code !== '23505') throw error;
     const raced = await RecommendationRun.findOne({ where: { generation_key }, order: [['created_at', 'DESC']] });
@@ -139,7 +144,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
 
 
 

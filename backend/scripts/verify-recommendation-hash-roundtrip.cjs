@@ -22,6 +22,8 @@ async function main() {
     };
     const result = await generateRecommendationSnapshot({
       Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices },
+      // Reuse the outer fixture transaction: this script must never commit a run.
+      sequelize: { transaction: async (...args) => args.at(-1)(transaction) },
       RecommendationRun: runModel,
       Recommendation: { bulkCreate: rows => models.Recommendation.bulkCreate(rows, { transaction }) },
       now: new Date(prices.at(-1).observed_at), provider: 'synthetic-hash-roundtrip-test',
