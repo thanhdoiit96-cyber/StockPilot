@@ -17,7 +17,17 @@ function recommendationInputProvenanceHash(provenance) {
 
 function recommendationEvaluationEvent({ recommendation, run, now }) {
   const payload = { version: 'recommendation_evaluation_event_v1', recommendation_id: recommendation.id, run_id: run.id, outcome: recommendation.outcome, evaluated_at: recommendation.evaluated_at, forward_return_pct: recommendation.forward_return_pct, evaluation_evidence: recommendation.evaluation_evidence, recorded_at: new Date(now).toISOString() };
-  return { recommendation_id: recommendation.id, run_id: run.id, event_type: 'evaluation_recorded', schema_version: 'recommendation_evaluation_event_v1', payload, payload_sha256: crypto.createHash('sha256').update(canonicalJson(payload)).digest('hex') };
+  return { recommendation_id: recommendation.id, run_id: run.id, event_type: 'evaluation_recorded', schema_version: 'recommendation_evaluation_event_v1', payload, payload_sha256: recommendationEvaluationEventHash(payload) };
+}
+
+function recommendationEvaluationEventHash(payload) {
+  return payload && typeof payload === 'object' ? crypto.createHash('sha256').update(canonicalJson(payload)).digest('hex') : null;
+}
+
+function verifyRecommendationEvaluationEvent(event) {
+  const expected = typeof event?.payload_sha256 === 'string' ? event.payload_sha256 : null;
+  const actual = recommendationEvaluationEventHash(event?.payload);
+  return { valid: Boolean(expected && actual && expected === actual), expected, actual, reason: expected && actual ? 'payload_sha256_mismatch' : 'payload_or_hash_missing' };
 }
 
 function recommendationSnapshotHash(run) {
@@ -171,7 +181,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, recommendationEvaluationEventHash, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
 
 
 

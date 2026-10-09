@@ -67,6 +67,11 @@ M5 progress: quality_gate_v1 now blocks overconfident insight when price history
 
 M5 progress: long-history EOD ingestion is complete for the current prototype symbols; quality_gate_v1 now passes for FPT with 250 observations and verified macro context.
 
+## Recommendation audit checkpoint — 2026-10-09
+
+- Completed: the immutable evaluation ledger now has a read-only per-snapshot audit endpoint at `GET /api/recommendations/history/:id/evaluation-ledger`. It recomputes each canonical payload SHA-256 before reporting `verified` or `invalid`; empty ledgers stay explicit and unknown snapshots return 404. Recommendation regression (71 tests) and the live PostgreSQL empty-ledger smoke passed.
+- Dependency unchanged: do not generate or evaluate a real snapshot until lifecycle preflight observes the current Vietnam EOD session. UI/export of ledger events remains deferred until a hash-backed snapshot produces a real event; no legacy backfill is planned.
+
 ## i18n checkpoint — 2026-10-08
 
 - Phạm vi đa ngôn ngữ Việt/Anh của giao diện hiện có đã hoàn tất: catalog tĩnh, Account/security, navigation/header, Market Board, chi tiết mã và Recommendation đều dùng locale hiện tại, giữ state khi chuyển ngôn ngữ.

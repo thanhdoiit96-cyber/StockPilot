@@ -3,12 +3,13 @@ jest.mock('../models', () => ({
   RecommendationRun: { findOne: jest.fn(), findAll: jest.fn() },
   Stock: { findAll: jest.fn() },
   StockPrice: { findAll: jest.fn() },
-  SavedRecommendation: { findAll: jest.fn(), create: jest.fn(), destroy: jest.fn() }
+  SavedRecommendation: { findAll: jest.fn(), create: jest.fn(), destroy: jest.fn() },
+  RecommendationEvaluationEvent: { findAll: jest.fn() }
 }));
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { SavedRecommendation, RecommendationRun, StockPrice } = require('../models');
+const { SavedRecommendation, RecommendationRun, RecommendationEvaluationEvent, StockPrice } = require('../models');
 const createRouter = require('./recommendationController');
 
 describe('saved recommendation API', () => {
@@ -61,6 +62,26 @@ describe('saved recommendation API', () => {
     const response = await request(app).get('/api/recommendations/history/missing');
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('recommendation_history_not_found');
+  });
+
+  test('returns a read-only evaluation ledger with independently verified event hashes', async () => {
+    const { recommendationEvaluationEvent } = require('../services/recommendationPersistence');
+    const recommendation = { id: 'rec-1', outcome: 'positive', evaluated_at: '2026-01-02T00:00:00.000Z', forward_return_pct: 5, evaluation_evidence: { version: 'recommendation_evaluation_v1' } };
+    const event = recommendationEvaluationEvent({ recommendation, run: { id: 'run-1' }, now: '2026-01-03T00:00:00.000Z' });
+    RecommendationRun.findOne.mockResolvedValue({ id: 'run-1' });
+    RecommendationEvaluationEvent.findAll.mockResolvedValue([{ id: 'event-1', ...event, created_at: '2026-01-03T00:00:00.000Z', recommendation: { id: 'rec-1', rank: 1, stock: { code: 'FPT' } } }]);
+    const response = await request(app).get('/api/recommendations/history/run-1/evaluation-ledger');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ run_id: 'run-1', event_count: 1, events: [expect.objectContaining({ event_type: 'evaluation_recorded', integrity: 'verified', recommendation: expect.objectContaining({ stock_code: 'FPT' }) })] });
+    expect(RecommendationEvaluationEvent.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { run_id: 'run-1' } }));
+  });
+
+  test('rejects an unknown snapshot before querying its evaluation ledger', async () => {
+    RecommendationRun.findOne.mockResolvedValue(null);
+    const response = await request(app).get('/api/recommendations/history/missing/evaluation-ledger');
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe('recommendation_history_not_found');
+    expect(RecommendationEvaluationEvent.findAll).not.toHaveBeenCalled();
   });
 
   test('list, report and cohort consistently count only evidenced outcomes', async () => {

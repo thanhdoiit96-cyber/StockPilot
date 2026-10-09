@@ -26,6 +26,8 @@ Migration 035 hash canonical `input_provenance` bằng SHA-256 và seal nó vào
 
 Migration 036 thêm ledger event evaluation append-only trong PostgreSQL. Outcome/evidence và `evaluation_recorded` event hash được ghi cùng transaction sau conditional claim pending; trigger cấm update/delete. Ledger chưa có signature/external archive hoặc UI/export; legacy outcome không được backfill event.
 
+`GET /api/recommendations/history/:id/evaluation-ledger` là đường audit chỉ đọc cho một snapshot có thật. Mỗi event trả payload đã lưu, SHA-256 và trạng thái integrity được server tính lại (`verified`/`invalid`), kèm rank/mã nếu quan hệ còn đọc được. Danh sách rỗng chỉ có nghĩa snapshot chưa có outcome được ghi ledger; endpoint không tạo, sửa hoặc backfill event. Snapshot không tồn tại trả 404 `recommendation_history_not_found`.
+
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
 
 `rationale.evidence` gồm:
