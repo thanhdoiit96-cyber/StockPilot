@@ -30,6 +30,7 @@ test.each([
   ['conflicting duplicate', ({ prices }) => { prices.push({ ...prices[0], close: 99 }); }, 'conflicting_session_prices'],
   ['wrong return', ({ run }) => { run.recommendations[0].forward_return_pct = 25; }, 'return_mismatch'],
   ['wrong sign', ({ run }) => { run.recommendations[0].outcome = 'negative'; }, 'return_mismatch'],
+  ['missing evaluation date', ({ run }) => { run.recommendations[0].evaluated_at = null; }, 'invalid_evaluation_boundary'],
   ['late evaluation', ({ run }) => { run.recommendations[0].evaluated_at = '2026-01-06'; }, 'evaluation_date_mismatch'],
 ])('excludes %s', (_, modify, reason) => {
   const data = fixture(); modify(data);

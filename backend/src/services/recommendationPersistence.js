@@ -107,7 +107,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
     const integrity = verifyRecommendationSnapshot(run);
     if (!integrity.valid) { report.runs_skipped_integrity += 1; report.skipped.push({ run_id: run.id, reason: integrity.reason || 'snapshot_integrity_failed' }); continue; }
     const pending = run.recommendations.filter(item => !item.outcome || item.outcome === 'pending').map(item => item.toJSON ? item.toJSON() : item);
-    const evaluated = evaluateRecommendations({ recommendations: pending, priceRowsByStock, asOf: run.as_of });
+    const evaluated = evaluateRecommendations({ recommendations: pending, priceRowsByStock, asOf: run.as_of, provider: run.provider });
     report.runs_evaluated += 1;
     report.evaluated += evaluated.length;
     for (const item of evaluated) {

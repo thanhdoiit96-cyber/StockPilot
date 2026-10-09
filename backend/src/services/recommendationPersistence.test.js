@@ -109,8 +109,8 @@ test('evaluates every pending integrity-verified run without overwriting complet
   const report = await evaluatePendingRecommendations({
     RecommendationRun: { findAll: async () => [first, second] },
     StockPrice: { findAll: async () => [
-      { stock_id: 'stock-1', observed_at: '2026-01-02', close: 110, toJSON() { return this; } },
-      { stock_id: 'stock-2', observed_at: '2026-01-03', close: 90, toJSON() { return this; } },
+      { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-1', observed_at: '2026-01-02', close: 110, toJSON() { return this; } },
+      { provider: 'vnstock', interval: '1d', currency: 'VND', price_unit: 'VND_PER_SHARE', is_adjusted: false, stock_id: 'stock-2', observed_at: '2026-01-03', close: 90, toJSON() { return this; } },
     ] },
     Recommendation: { update: async (values, options) => updates.push({ values, options }) },
   });

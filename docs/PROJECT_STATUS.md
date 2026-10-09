@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Evaluator theo ngày quan sát và provider
+
+- Thêm observationWindow dùng chung cho evaluator và eligibility: ngày Asia/Ho_Chi_Minh sau as_of, cùng provider và interval 1d, N ngày khác nhau. Duplicate tương đương không tăng horizon; chọn timestamp sớm nhất của ngày đích để không phụ thuộc thứ tự query.
+- Trong N ngày đầu, giá phải hữu hạn dương, VND/VND_PER_SHARE/unadjusted; giá trùng mâu thuẫn hoặc metadata không hợp lệ giữ pending, không bỏ qua để chọn giá muộn hơn. Persistence truyền provider của run cho engine. Thiếu evaluated_at vẫn bị loại khỏi thống kê.
+- Kiểm chứng: 56/56 recommendation tests đạt, gồm timezone, duplicates/conflict, mixed provider/intraday, invalid units, đảo thứ tự và parity evaluator/eligibility. PostgreSQL synthetic hash round-trip đạt, transaction rollback, không giữ fixture. Không evaluate/update outcome lịch sử, không sửa schema/frontend hoặc build Preview; backend đang chạy chưa restart để nạp code mới.
+- Hạn chế: ngày có quan sát chưa phải lịch phiên sàn đầy đủ; chưa phát hiện chắc chắn missing session hay chặn dữ liệu future-dated theo đồng hồ chạy. Tiếp theo: versioned evaluation evidence và cutoff ngày đánh giá, sau đó atomic/concurrent generation; không xem test fixture là xác nhận outcome thật.
+
 ## 2026-10-08 — Hash snapshot sau PostgreSQL round-trip
 
 - Sửa generator băm representation đã persist và reload kèm stock.code, thay vì spread Sequelize instance và payload trước JSONB. Giữ nguyên thuật toán hash để không đổi contract lịch sử; snapshot thiếu/run không đọc được hoặc sai số lượng recommendation sẽ không được seal.
