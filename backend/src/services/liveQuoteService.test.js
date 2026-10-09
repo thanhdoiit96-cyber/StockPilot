@@ -74,3 +74,14 @@ test('uses one provider request for an overview universe and retains partial row
   expect(Object.keys(quotes)).toHaveLength(6);
   expect(service.health().successes).toBe(1);
 });
+
+test('queues distinct overview batches instead of returning another batch\'s cache', async () => {
+  const fetcher = jest.fn(async ({ symbols }) => symbols.map(trade));
+  const service = createLiveQuoteService(fetcher, { now: () => start });
+  const first = ['FPT', 'SSI', 'VCB', 'HPG', 'VCI', 'VNM'];
+  const second = ['ACB', 'BID', 'CTG', 'MBB', 'TCB', 'VPB'];
+  const [left, right] = await Promise.all([service.load(first, { waitMs: 500 }), service.load(second, { waitMs: 500 })]);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(Object.keys(left)).toEqual(first);
+  expect(Object.keys(right)).toEqual(second);
+});

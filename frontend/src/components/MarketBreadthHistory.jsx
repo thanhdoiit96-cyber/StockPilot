@@ -7,6 +7,8 @@ const WIDTH = 640
 const HEIGHT = 180
 const VOLUME_HEIGHT = 84
 const PADDING = 24
+const VOLUME_TOP = 196
+const COMBINED_HEIGHT = VOLUME_TOP + VOLUME_HEIGHT + 20
 const VOLUME_SIGNALS = {
   confirmation: { label: 'Đồng thuận', tone: 'neutral', note: 'Số mã và khối lượng cùng nghiêng về một phía.' },
   negative_divergence: { label: 'Phân kỳ giảm', tone: 'negative', note: 'Số mã tăng chiếm ưu thế nhưng khối lượng nghiêng về nhóm giảm.' },
@@ -15,8 +17,8 @@ const VOLUME_SIGNALS = {
   unavailable: { label: 'Chưa đủ volume', tone: 'neutral', note: 'Không đủ quan sát volume EOD để đánh giá.' }
 }
 
-const formatDate = value => value
-  ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(`${value}T00:00:00+07:00`))
+const formatDate = (value, language = 'vi') => value
+  ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'vi-VN', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(`${value}T00:00:00+07:00`))
   : '-'
 
 function plot(points) {
@@ -51,6 +53,7 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
   const [range, setRange] = useState(5)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', data: null, error: null })
+  const [selectedSession, setSelectedSession] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -74,16 +77,37 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
   const plotted = useMemo(() => plot(state.data?.points || []), [state.data])
   const volumeBars = useMemo(() => plotVolume(plotted), [plotted])
   const latest = plotted.at(-1)
+  const selected = plotted.find(point => point.session_date === selectedSession) || latest
+  const selectedVolume = volumeBars.find(point => point.session_date === selected?.session_date) || null
   const continuous = state.data?.continuity?.status === 'continuous'
   const volumeObserved = volumeBars.filter(point => point.volumeNetPct != null).length
+  const chartHeight = volumeObserved > 0 ? COMBINED_HEIGHT : HEIGHT
+  const tickEvery = Math.max(1, Math.ceil(plotted.length / 5))
   const volumeSignal = VOLUME_SIGNALS[latest?.volume?.signal] || VOLUME_SIGNALS.unavailable
+  const selectedVolumeSignal = VOLUME_SIGNALS[selected?.volume?.signal] || VOLUME_SIGNALS.unavailable
   const signalLabel = signal => ({ confirmation: text('Đồng thuận', 'Confirmed'), negative_divergence: text('Phân kỳ giảm', 'Negative divergence'), positive_divergence: text('Phân kỳ tăng', 'Positive divergence'), neutral: text('Trung tính', 'Neutral'), unavailable: text('Chưa đủ volume', 'Insufficient volume') }[signal] || text('Chưa đủ volume', 'Insufficient volume'))
+  const handlePointKey = (event, index) => {
+    const targetIndex = event.key === 'ArrowRight' ? Math.min(plotted.length - 1, index + 1)
+      : event.key === 'ArrowLeft' ? Math.max(0, index - 1)
+        : event.key === 'Home' ? 0
+          : event.key === 'End' ? plotted.length - 1
+            : null
+    if (targetIndex != null) {
+      event.preventDefault()
+      setSelectedSession(plotted[targetIndex].session_date)
+      return
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setSelectedSession(plotted[index].session_date)
+    }
+  }
 
   return <section className="breadth-history" aria-labelledby="breadth-history-heading" lang={language}>
     <div className="breadth-history-header">
       <div><strong id="breadth-history-heading">{text('Lịch sử A/D', 'A/D history')}</strong><small>{exchange || text('Tất cả sàn', 'All exchanges')} · {sectorLabel || text('Tất cả ngành', 'All sectors')} · {text('EOD theo phiên', 'Session EOD')}</small></div>
       <div className="breadth-history-ranges" aria-label={text('Khoảng lịch sử độ rộng', 'Breadth history range')}>
-        {RANGES.map(value => <button type="button" key={value} aria-pressed={range === value} className={range === value ? 'active' : ''} onClick={() => setRange(value)}>{value}D</button>)}
+        {RANGES.map(value => <button type="button" key={value} aria-pressed={range === value} className={range === value ? 'active' : ''} onClick={() => { setSelectedSession(''); setRange(value) }}>{value}D</button>)}
       </div>
     </div>
     {state.status === 'loading' && <p className="muted-text" role="status">{text('Đang tải lịch sử độ rộng…', 'Loading breadth history…')}</p>}
@@ -99,19 +123,21 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
         <span>Volume coverage <b>{latest.volume?.observations == null ? '—' : `${latest.volume.observations}/${latest.classified}`}</b></span>
         <span>{text('Tín hiệu', 'Signal')} <b className={volumeSignal.tone}>{signalLabel(latest?.volume?.signal)}</b></span>
       </div>
-      <svg className="breadth-history-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={`Đường A/D tích lũy ${range} phiên, từ ${formatDate(plotted[0].session_date)} đến ${formatDate(latest.session_date)}`}>
+      <div className="breadth-history-chart-legend" aria-hidden="true"><span><i className="breadth-history-legend-line" />{text('A/D tích lũy', 'Cumulative A/D')}</span>{volumeObserved > 0 && <span><i className="breadth-history-legend-bar" />{text('Net volume EOD', 'EOD net volume')}</span>}</div>
+      <svg className={`breadth-history-chart${volumeObserved > 0 ? ' breadth-history-combined-chart' : ''}`} viewBox={`0 0 ${WIDTH} ${chartHeight}`} role="group" aria-label={text(`Biểu đồ A/D và độ rộng khối lượng chung ${range} phiên, từ ${formatDate(plotted[0].session_date, language)} đến ${formatDate(latest.session_date, language)}. Chọn một điểm để xem chi tiết phiên; dùng mũi tên trái/phải, Home hoặc End để đổi phiên.`, `Combined A/D and volume breadth chart for ${range} sessions, from ${formatDate(plotted[0].session_date, language)} to ${formatDate(latest.session_date, language)}. Select a point for session details; use Left/Right arrows, Home, or End to change session.`)}>
         <line x1={PADDING} y1={HEIGHT / 2} x2={WIDTH - PADDING} y2={HEIGHT / 2} className="breadth-history-zero" />
         {plotted.length > 1 && <polyline points={plotted.map(point => `${point.x},${point.y}`).join(' ')} className="breadth-history-line" />}
-        {plotted.map(point => <circle key={point.session_date} cx={point.x} cy={point.y} r="4" className="breadth-history-point"><title>{`${point.session_date}: A−D ${point.spread >= 0 ? '+' : ''}${point.spread}, coverage ${point.coverage_pct ?? '—'}%`}</title></circle>)}
+        {plotted.map((point, index) => <g key={point.session_date} className={`breadth-history-point-button${selected?.session_date === point.session_date ? ' is-selected' : ''}`} role="button" tabIndex="0" aria-pressed={selected?.session_date === point.session_date} aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space" aria-label={text(`${formatDate(point.session_date, language)}: A−D ${point.spread >= 0 ? '+' : ''}${point.spread}, coverage ${point.coverage_pct ?? '—'}%`, `${formatDate(point.session_date, language)}: A−D ${point.spread >= 0 ? '+' : ''}${point.spread}, coverage ${point.coverage_pct ?? '—'}%`)} onClick={() => setSelectedSession(point.session_date)} onKeyDown={event => handlePointKey(event, index)}><circle cx={point.x} cy={point.y} r="4" className="breadth-history-point"><title>{`${point.session_date}: A−D ${point.spread >= 0 ? '+' : ''}${point.spread}, coverage ${point.coverage_pct ?? '—'}%`}</title></circle></g>)}
+        {volumeObserved > 0 && <>
+          <line x1={PADDING} y1={VOLUME_TOP + VOLUME_HEIGHT / 2} x2={WIDTH - PADDING} y2={VOLUME_TOP + VOLUME_HEIGHT / 2} className="breadth-history-zero" />
+          {volumeBars.filter(point => point.volumeNetPct != null).map(point => <rect key={point.session_date} x={point.x} y={point.y + VOLUME_TOP} width={point.width} height={point.height} className={`breadth-volume-history-bar ${point.volumeNetPct > 0 ? 'positive' : point.volumeNetPct < 0 ? 'negative' : 'neutral'}${selected?.session_date === point.session_date ? ' is-selected' : ''}`}><title>{`${point.session_date}: net volume ${point.volumeNetPct > 0 ? '+' : ''}${point.volumeNetPct}%, ${signalLabel(point.volume?.signal)}`}</title></rect>)}
+          {plotted.map((point, index) => (index % tickEvery === 0 || index === plotted.length - 1) && <text key={point.session_date} className="breadth-history-axis-label" x={point.x} y={COMBINED_HEIGHT - 4} textAnchor="middle">{formatDate(point.session_date, language)}</text>)}
+        </>}
       </svg>
-      <p className="breadth-history-caption">{formatDate(plotted[0].session_date)} → {formatDate(latest.session_date)} · {plotted.length} phiên liên tục · không nội suy dữ liệu thiếu</p>
+      <p className="breadth-history-caption">{formatDate(plotted[0].session_date, language)} → {formatDate(latest.session_date, language)} · {plotted.length} {text('phiên liên tục', 'continuous sessions')} · {text('không nội suy dữ liệu thiếu', 'missing data is not interpolated')}</p>
+      <p className="breadth-history-selection" role="status"><strong>{text('Phiên', 'Session')} {formatDate(selected.session_date, language)}</strong><span>A/D {selected.ad_ratio == null ? '—' : Number(selected.ad_ratio).toFixed(2)}</span><span>A−D {selected.spread >= 0 ? '+' : ''}{selected.spread}</span><span>{text('Coverage', 'Coverage')} {selected.coverage_pct ?? '—'}%</span>{selectedVolume?.volumeNetPct != null && <span>{text('Khối lượng ròng', 'Net volume')} {selectedVolume.volumeNetPct > 0 ? '+' : ''}{selectedVolume.volumeNetPct}%</span>}</p>
       {volumeObserved > 0 && <>
-        <div className="breadth-volume-history-heading"><strong>{text('Độ rộng khối lượng EOD', 'EOD volume breadth')}</strong><span>{text('Net volume nhóm tăng − nhóm giảm', 'Net volume: gainers − decliners')}</span></div>
-        <svg className="breadth-volume-history-chart" viewBox={`0 0 ${WIDTH} ${VOLUME_HEIGHT}`} role="img" aria-label={`Độ rộng khối lượng ${volumeObserved}/${plotted.length} phiên có quan sát`}>
-          <line x1={PADDING} y1={VOLUME_HEIGHT / 2} x2={WIDTH - PADDING} y2={VOLUME_HEIGHT / 2} className="breadth-history-zero" />
-          {volumeBars.filter(point => point.volumeNetPct != null).map(point => <rect key={point.session_date} x={point.x} y={point.y} width={point.width} height={point.height} className={`breadth-volume-history-bar ${point.volumeNetPct > 0 ? 'positive' : point.volumeNetPct < 0 ? 'negative' : 'neutral'}`}><title>{`${point.session_date}: net volume ${point.volumeNetPct > 0 ? '+' : ''}${point.volumeNetPct}%, ${signalLabel(point.volume?.signal)}`}</title></rect>)}
-        </svg>
-        <p className={`breadth-volume-history-caption ${volumeSignal.tone}`}><strong>{signalLabel(latest?.volume?.signal)}:</strong> {text(volumeSignal.note, volumeSignal.note === VOLUME_SIGNALS.confirmation.note ? 'Symbols and volume lean in the same direction.' : volumeSignal.note === VOLUME_SIGNALS.negative_divergence.note ? 'Gainers lead by count, but volume leans toward decliners.' : volumeSignal.note === VOLUME_SIGNALS.positive_divergence.note ? 'Decliners lead by count, but volume leans toward gainers.' : 'Not enough EOD volume observations to assess.')} {volumeObserved}/{plotted.length} {text('phiên có volume; đây là volume theo hướng biến động giá, không phải khối lượng mua/bán chủ động.', 'sessions have volume; this follows price direction and is not active buy/sell volume.')}</p>
+        <p className={`breadth-volume-history-caption ${selectedVolumeSignal.tone}`}><strong>{signalLabel(selected?.volume?.signal)}:</strong> {text(selectedVolumeSignal.note, selectedVolumeSignal.note === VOLUME_SIGNALS.confirmation.note ? 'Symbols and volume lean in the same direction.' : selectedVolumeSignal.note === VOLUME_SIGNALS.negative_divergence.note ? 'Gainers lead by count, but volume leans toward decliners.' : selectedVolumeSignal.note === VOLUME_SIGNALS.positive_divergence.note ? 'Decliners lead by count, but volume leans toward gainers.' : 'Not enough EOD volume observations to assess.')} {volumeObserved}/{plotted.length} {text('phiên có volume; đây là volume theo hướng biến động giá, không phải khối lượng mua/bán chủ động.', 'sessions have volume; this follows price direction and is not active buy/sell volume.')}</p>
       </>}
     </>}
   </section>

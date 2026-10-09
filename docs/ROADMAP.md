@@ -144,6 +144,30 @@ pm run evaluate:recommendations after the 20-session horizon and inspect /api/re
 
 - Dashboard usability: overview now prioritizes investor-facing information, supports sortable market data columns, and hides raw diagnostic payloads from non-admin accounts. Keep diagnostic access role-gated as new operational panels are added.
 
+- Overview market-pulse checkpoint (2026-10-09): the initial layout now removes operational metric cards and competing CTAs from the first view, keeps the A/D history and coverage visible, and discloses volume/leaders only on demand. A conditional Watchlist pulse now reuses already-loaded personal quote/EOD data, states intraday coverage/latest observation or EOD fallback, and links to Detail or the Watchlist tab; it does not render for an empty watchlist or add a request. Do not introduce index/benchmark series without a licensed provider; validate real-session rendering before expanding this surface.
+
+- Chart-accessibility checkpoint (2026-10-09): A/D chart points are selectable with pointer, Enter, or Space; the selected session’s A/D, A−D spread, and coverage are exposed in visible text. Preserve this state only in the current rendered range and never represent it as an index or an investment signal.
+
+- Chart-linking checkpoint (2026-10-09): selecting an A/D session highlights the matching EOD volume-breadth bar and updates the net-volume context/caveat to that same session. This links observations without implying active buyer/seller flow.
+
+- Shared-session chart checkpoint (2026-10-09): A/D history and EOD net-volume breadth now share one chart container and one session X-axis, while retaining separate Y scales. This is the required comparison layout; no index-series is implied or substituted.
+
+- Keyboard chart checkpoint (2026-10-09): selected A/D points support Arrow Left/Right, Home/End, Enter, and Space; selection is reset safely on range changes. Keyboard navigation remains bounded to the rendered, continuous session range.
+
+- Breadth freshness checkpoint (2026-10-09): the market-breadth header reuses loaded quote coverage and its latest observation time; when no quote exists it explicitly states the EOD fallback. This adds no polling, provider assumption, or separate operational panel.
+
+- Sector-breadth checkpoint (2026-10-09): Market breadth details now provide a compact, client-side sector drill-down using the already-loaded universe and quote/EOD fallback. Each row reports symbol A/D, average change and intraday coverage; selecting it applies the existing sector filter. It deliberately excludes inferred flow, value, market-cap and index-contribution claims until those provider-backed fields exist.
+
+- Breadth scope checkpoint (2026-10-09): the live snapshot now loads its own bounded 500-symbol listed universe for the selected exchange/sector, matching the breadth surface rather than inheriting the visible board page. Quote requests are split at the API's 200-symbol bound and partial quote failure preserves EOD fallback. This is a bounded on-view refresh, not continuous polling; measure it at production-like scale before raising the limit.
+
+- Breadth 500-symbol measurement (2026-10-09): the read-only local API probe now measures the same 500-list/200-quote-batch path. Three samples observed list p50/p95 of 9/1,266 ms and concurrent quote-batch settlement p50/p95 of 622/625 ms; all batches returned HTTP 200, but only 195 of 500 symbols had a quote. Retain the bounded limit and explicit EOD fallback. This is not an authenticated browser trace or production SLA; obtain that trace before selecting pagination, windowing, or a different quote lifecycle.
+
+- Sector-to-list navigation checkpoint (2026-10-09): after choosing a sector in Market breadth details, users can open the Market Board with that sector applied. The one-shot navigation request clears after use, preserving subsequent board filter control. This completes the drill-down-to-list path without duplicating tables or carrying a hidden search query.
+
+- Quote-batch integrity checkpoint (2026-10-09): distinct large quote batches now queue separately in the backend instead of sharing the first batch's pending promise. Targeted regression verifies concurrent universes each receive only their own quotes. After API restart, the 500-symbol local probe observed 357 quotes across batches (195/128/34), rather than the false 195/0/0 result. The serialized path measured quote settlement p50/p95 of 1,899/2,791 ms; retain it for correctness and do not add virtualization or raise limits before an authenticated browser trace identifies an actual UI bottleneck.
+
+- Real EOD lifecycle checkpoint (2026-10-09): current-session EOD preflight became `ready_to_generate`, so a new sealed `short_term_rule_v2` snapshot was generated from 624 symbols with five selected entries (DGW, FRT, GVR, MSB, MSN). Post-generation preflight is `ready_to_evaluate` and the lifecycle verifier passed. Evaluation leaves all five entries pending until the 20-session horizon; the append-only evaluation ledger therefore correctly remains empty and audit has zero findings. Do not interpret this as model performance or calibrate it; rerun evaluator and ledger audit only after sufficient future EOD sessions.
+
 - Universe UX: search and 25-row pagination are now available before scaling beyond the prototype universe. Add server-side filtering/pagination only when response size makes the current API endpoint a bottleneck.
 
 - Server-side universe UX: filtering and pagination now run in the backend with bounded page size and query-aware cache keys. Extend server sort to derived latest-price fields only if product requirements need globally sorted price/volume views.

@@ -2,11 +2,12 @@ import { test, expect } from '@playwright/test'
 
 const stocks = ['AAA', 'BBB', 'FPT', 'ZZZ'].map(code => ({ id: code, code, name: `${code} Company`, price: 60000,
   exchange: code === 'AAA' ? 'DELISTED' : 'HSX', listing_status: code === 'AAA' ? 'delisted' : 'listed', listing_checked_at: '2026-09-22T08:00:00Z',
+  sector: code === 'BBB' ? 'banking_finance' : code === 'FPT' ? 'technology' : code === 'ZZZ' ? 'real_estate' : 'other',
   website_url: code === 'AAA' ? 'javascript:alert(1)' : 'https://example.test/company/' + code }))
 
-async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous' } = {}) {
+async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous', watchlist = true } = {}) {
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
-  let watch = [{ stock_id: 'FPT', Stock: { code: 'FPT' } }]
+  let watch = watchlist ? [{ stock_id: 'FPT', Stock: { code: 'FPT' } }] : []
   const transactions = []
   const watchMutations = []
   const listRequests = []
@@ -69,11 +70,16 @@ const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(c
 
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {
   const state = await setup(page, { board: false })
-  await expect(page.locator('.overview-metrics .overview-metric')).toHaveCount(4)
-  await expect(page.locator('.overview-metrics')).toContainText('Quote intraday')
-  await expect(page.locator('.overview-metrics')).toContainText('Mã cá nhân')
+  await expect(page.locator('.overview-metrics')).toHaveCount(0)
   await expect(page.locator('.overview-data-status')).toContainText('Có dữ liệu intraday')
   await expect(page.locator('.market-breadth-panel')).toBeVisible()
+  await expect(page.locator('.breadth-header-status')).toContainText('3/4 mã có quote Intraday')
+  await expect(page.locator('.breadth-header-status')).toContainText('10:00')
+  await expect.poll(() => state.listRequests.some(params => params.get('pageSize') === '500' && params.get('listing_status') === 'listed')).toBe(true)
+  await expect(page.locator('.overview-watchlist-pulse')).toBeVisible()
+  await expect(page.locator('.overview-watchlist-pulse')).toContainText('FPT')
+  await expect(page.locator('.overview-watchlist-data-status')).toContainText('1/1 mã có quote Intraday')
+  await expect(page.locator('.overview-watchlist-pulse .overview-watchlist-list button')).toHaveCount(1)
   await expect(page.locator('.table-panel')).toHaveCount(1)
   await expect(page.locator('.table-panel')).toBeHidden()
   await expect(page.locator('.breadth-count.up strong')).toHaveText('1')
@@ -83,11 +89,18 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-snapshot strong').nth(0)).toHaveText('1.00')
   await expect(page.locator('.breadth-snapshot strong').nth(1)).toHaveText('0')
   await expect(page.locator('.breadth-snapshot strong').nth(2)).toHaveText('100.0%')
+  await expect(page.getByRole('button', { name: 'Xem chi tiết', exact: true })).toHaveAttribute('aria-expanded', 'false')
+  await page.getByRole('button', { name: 'Xem chi tiết', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Thu gọn', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.locator('.breadth-sector-row')).toHaveCount(3)
+  await page.locator('.breadth-sector-row[data-sector-key="technology"]').click()
+  await expect(page.locator('.breadth-sector-select')).toHaveValue('technology')
   await expect(page.locator('.breadth-leaders .breadth-leader')).toHaveCount(3)
   await expect(page.locator('.breadth-leader-timestamp')).toHaveCount(3)
   await expect(page.locator('.breadth-leader-timestamp').first()).toContainText('10:00')
   await expect(page.locator('.breadth-leader-source').first()).toHaveText('Intraday')
   await expect(page.locator('.breadth-history-chart')).toBeVisible()
+  await expect(page.locator('.breadth-history-combined-chart')).toBeVisible()
   await expect(page.locator('.breadth-history-ranges button')).toHaveCount(3)
   await expect(page.locator('.breadth-history-point')).toHaveCount(5)
   await expect(page.locator('.breadth-volume-history-bar')).toHaveCount(5)
@@ -95,6 +108,16 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.breadth-history-summary')).toContainText('Volume coverage 4/4')
   await expect(page.locator('.breadth-history-summary')).toContainText('Phân kỳ giảm')
   await expect(page.locator('.breadth-volume-history-caption')).toContainText('không phải khối lượng mua/bán chủ động')
+  await expect(page.locator('.breadth-history-selection')).toContainText(/Phiên 05[/-]09/)
+  await page.locator('.breadth-history-point-button').first().focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('.breadth-history-selection')).toContainText(/Phiên 01[/-]09/)
+  await expect(page.locator('.breadth-history-selection')).toContainText('Khối lượng ròng +50%')
+  await expect(page.locator('.breadth-volume-history-bar').first()).toHaveClass(/is-selected/)
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.breadth-history-selection')).toContainText(/Phiên 02[/-]09/)
+  await page.keyboard.press('End')
+  await expect(page.locator('.breadth-history-selection')).toContainText(/Phiên 05[/-]09/)
   await page.locator('.breadth-history-ranges button').filter({ hasText: '1D' }).click()
   await expect(page.locator('.breadth-history-point')).toHaveCount(1)
   await expect(page.locator('.breadth-volume-history-bar')).toHaveCount(1)
@@ -104,7 +127,9 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.getByRole('heading', { name: 'Lịch sử hiệu quả đề xuất' })).toHaveCount(0)
   await expect(page.locator('.overview-next')).toBeHidden()
   await expect(page.locator('#overview-data-guide')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  await page.locator('.breadth-sector-board-link').click()
+  await expect(page.getByRole('button', { name: 'Bảng giá', exact: true })).toHaveClass(/active/)
+  await expect(page.locator('.sector-select')).toHaveValue('technology')
   await expect(page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ')).toHaveAttribute('title', /Intraday:.*EOD:.*Dữ liệu cũ:/)
   await page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ').focus()
   await expect(page.getByLabel('Giải thích Intraday, EOD và dữ liệu cũ')).toBeFocused()
@@ -112,8 +137,25 @@ test('overview focuses on real market coverage and leaves recommendation history
   await expect(page.locator('.volume-context').first()).toHaveAttribute('tabindex', '0')
   await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
   await expect(page.locator('#overview-data-guide')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  await page.locator('.sidebar').getByRole('button', { name: 'Tổng quan', exact: true }).click()
   await expect(page.locator('.market-breadth-panel')).toBeVisible()
+})
+
+test('watchlist pulse appears only for the signed-in watchlist and links to its two destinations', async ({ page }) => {
+  await setup(page, { board: false })
+  const pulse = page.locator('.overview-watchlist-pulse')
+  await expect(pulse).toBeVisible()
+  await pulse.locator('.overview-watchlist-list button').click()
+  await expect(page.getByRole('button', { name: 'Chi tiết mã', exact: true })).toHaveClass(/active/)
+  await page.locator('.sidebar').getByRole('button', { name: 'Tổng quan', exact: true }).click()
+  await page.getByRole('button', { name: 'Quản lý Watchlist', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Danh mục cá nhân', exact: true })).toHaveClass(/active/)
+  await expect(page.getByRole('tab', { name: /Watchlist/ })).toHaveAttribute('aria-selected', 'true')
+})
+
+test('watchlist pulse does not create an empty personal panel', async ({ page }) => {
+  await setup(page, { board: false, watchlist: false })
+  await expect(page.locator('.overview-watchlist-pulse')).toHaveCount(0)
 })
 
 test('portfolio and watchlist remain pinned across sorting and page-size changes', async ({ page }) => {
@@ -147,7 +189,7 @@ test('breadth history does not connect a gapped session series', async ({ page }
   await setup(page, { board: false, breadthStatus: 'gapped' })
   await expect(page.locator('.breadth-history-state')).toContainText('Chưa đủ chuỗi phiên liên tục')
   await expect(page.locator('.breadth-history-chart')).toHaveCount(0)
-  await expect(page.locator('.breadth-volume-history-chart')).toHaveCount(0)
+  await expect(page.locator('.breadth-history-combined-chart')).toHaveCount(0)
 })
 
 test('overview add opens a prefilled form, writes only on save and then pins the stock', async ({ page }) => {
