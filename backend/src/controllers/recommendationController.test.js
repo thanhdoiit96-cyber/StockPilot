@@ -2,7 +2,7 @@ jest.mock('../models', () => ({
   User: { findByPk: jest.fn(async () => ({ password_version: 0 })) },
   RecommendationRun: { findOne: jest.fn(), findAll: jest.fn() },
   Stock: { findAll: jest.fn() },
-  StockPrice: { findAll: jest.fn() },
+  StockPrice: { findAll: jest.fn(), findOne: jest.fn() },
   SavedRecommendation: { findAll: jest.fn(), create: jest.fn(), destroy: jest.fn() },
   RecommendationEvaluationEvent: { findAll: jest.fn() }
 }));
@@ -82,6 +82,15 @@ describe('saved recommendation API', () => {
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('recommendation_history_not_found');
     expect(RecommendationEvaluationEvent.findAll).not.toHaveBeenCalled();
+  });
+
+  test('exposes a read-only lifecycle reason without creating a snapshot', async () => {
+    StockPrice.findOne.mockResolvedValue({ observed_at: '2026-10-08T00:00:00.000Z' });
+    RecommendationRun.findOne.mockResolvedValue(null);
+    const response = await request(app).get('/api/recommendations/lifecycle-readiness');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ provider: 'vnstock', status: 'awaiting_eod', latest_eod_session: '2026-10-08', can_generate: false, can_evaluate: false });
+    expect(StockPrice.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', interval: '1d' } }));
   });
 
   test('list, report and cohort consistently count only evidenced outcomes', async () => {

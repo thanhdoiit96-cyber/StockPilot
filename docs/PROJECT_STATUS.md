@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Trạng thái lifecycle trên UI Đề xuất
+
+- Thêm `GET /api/recommendations/lifecycle-readiness` chỉ đọc, dùng cùng lifecycle contract với CLI nhưng query EOD mới nhất bounded thay vì nạp toàn bộ giá. UI Đề xuất hiển thị dải status Việt/Anh, responsive: chờ EOD, sẵn sàng tạo/đánh giá hoặc bị chặn integrity; không có thao tác chạy job.
+- Regression Recommendation 75/75 và frontend 73/73 (encoding/API error contract) đạt. Build Preview đạt bundle `index-BwlOdUNw.js`; API smoke PostgreSQL trả `awaiting_eod`, expected 09/10, latest 08/10. Backend cổng 5000 đã restart; Preview 4173 trả 200 và phục vụ bundle mới.
+- EOD vẫn là dependency thật: không tạo snapshot/evaluate dữ liệu thật cho tới `ready_to_generate`. Tiếp theo là chạy lifecycle checkpoint sau EOD, không phát triển thêm UI dựa trên event giả.
+
 ## 2026-10-09 — Read-only integrity audit cho evaluation ledger
 
 - Thêm `npm run audit:recommendation-ledger`: PostgreSQL `REPEATABLE READ` + `READ ONLY`, kiểm canonical event hash, ID/schema payload và drift giữa payload bất biến với outcome/evidence hiện tại. Exit 2 khi có finding; ledger rỗng là báo cáo hợp lệ, không phải kết quả đánh giá.
