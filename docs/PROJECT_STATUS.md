@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Immutable evaluation event ledger
+
+- Migration 036 tạo `recommendation_evaluation_events`: event type/schema/payload/hash, unique `(recommendation_id,event_type)`, index run/time và trigger PostgreSQL từ chối UPDATE/DELETE. Evaluator ghi outcome + evaluation_evidence rồi event `evaluation_recorded` hash trong cùng transaction; chỉ row claim pending mới tạo event.
+- Thêm `npm run verify:recommendation-ledger` development-only. Live synthetic transaction xác nhận payload hash 64 ký tự, trigger reject update, rollback hoàn toàn; event thực còn 0. Migration 036 development đạt và regression Recommendation 68/68 đạt.
+- EOD 09/10 vẫn chưa có lúc checkpoint nên preflight `awaiting_eod`; không tạo snapshot/evaluate outcome thật, không backfill legacy. Không thay frontend/build Preview.
+- Hạn chế: ledger append-only trong database nhưng chưa xuất event ra immutable external store/signature; API/UI chưa trình bày event ledger. Tiếp theo vẫn là lifecycle thật sau EOD hash-backed mới; sau đó mới cân nhắc read-only audit/export ledger khi có event thật.
+
 ## 2026-10-09 — Hash input provenance của snapshot
 
 - Migration 035 thêm `recommendation_runs.input_provenance_sha256` nullable. Generator canonicalize provenance v1, lưu SHA-256 rồi seal snapshot v2 có provenance hash. Verifier phải khớp cả snapshot hash và hash provenance; provenance bị tamper trả `input_provenance_integrity_failed`.

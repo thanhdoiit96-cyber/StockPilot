@@ -24,6 +24,8 @@ Migration 034 chuyển reads của scheduled snapshot vào `REPEATABLE READ` tra
 
 Migration 035 hash canonical `input_provenance` bằng SHA-256 và seal nó vào snapshot v2. Verifier kiểm hash snapshot và provenance; mismatch fail-closed. Đây là phát hiện sửa đổi sau lưu, chưa là signature độc lập hay ledger append-only.
 
+Migration 036 thêm ledger event evaluation append-only trong PostgreSQL. Outcome/evidence và `evaluation_recorded` event hash được ghi cùng transaction sau conditional claim pending; trigger cấm update/delete. Ledger chưa có signature/external archive hoặc UI/export; legacy outcome không được backfill event.
+
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
 
 `rationale.evidence` gồm:

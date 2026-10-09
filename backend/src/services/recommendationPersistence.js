@@ -15,6 +15,11 @@ function recommendationInputProvenanceHash(provenance) {
   return provenance && typeof provenance === 'object' ? crypto.createHash('sha256').update(canonicalJson(provenance)).digest('hex') : null;
 }
 
+function recommendationEvaluationEvent({ recommendation, run, now }) {
+  const payload = { version: 'recommendation_evaluation_event_v1', recommendation_id: recommendation.id, run_id: run.id, outcome: recommendation.outcome, evaluated_at: recommendation.evaluated_at, forward_return_pct: recommendation.forward_return_pct, evaluation_evidence: recommendation.evaluation_evidence, recorded_at: new Date(now).toISOString() };
+  return { recommendation_id: recommendation.id, run_id: run.id, event_type: 'evaluation_recorded', schema_version: 'recommendation_evaluation_event_v1', payload, payload_sha256: crypto.createHash('sha256').update(canonicalJson(payload)).digest('hex') };
+}
+
 function recommendationSnapshotHash(run) {
   const snapshot = (run.recommendations || []).map(item => ({ rank: item.rank, stock_id: item.stock_id, code: item.stock?.code, entry_price: item.entry_price == null ? null : Number(item.entry_price), horizon_days: item.horizon_days, rationale: item.rationale })).sort((a, b) => a.rank - b.rank);
   return crypto.createHash('sha256').update(canonicalJson({ version: 'recommendation_snapshot_v2', run_id: run.id, as_of: run.as_of, model: run.model, provider: run.provider, input_provenance_sha256: run.input_provenance_sha256 || null, snapshot })).digest('hex');
@@ -135,7 +140,7 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   }
 }
 
-async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation, sequelize, now = new Date() } = {}) {
+async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation, RecommendationEvaluationEvent, sequelize, now = new Date() } = {}) {
   const runs = await RecommendationRun.findAll({ order: [['created_at', 'ASC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
   const pendingRuns = runs.filter(run => (run.recommendations || []).some(item => !item.outcome || item.outcome === 'pending'));
   if (!pendingRuns.length) return { status: 'no_pending_recommendations', evaluated: 0, measured: 0, runs_considered: 0, runs_skipped_integrity: 0 };
@@ -150,7 +155,12 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
     report.evaluated += evaluated.length;
     for (const item of evaluated) {
       if (item.outcome === 'pending') continue;
-      const write = transaction => Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome, evaluation_evidence: item.evaluation_evidence }, { where: { id: item.id, outcome: 'pending' }, transaction });
+      if (!RecommendationEvaluationEvent?.create) throw new Error('RecommendationEvaluationEvent model is required to record evaluation');
+      const write = async transaction => {
+        const [affected = 0] = await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome, evaluation_evidence: item.evaluation_evidence }, { where: { id: item.id, outcome: 'pending' }, transaction });
+        if (affected) await RecommendationEvaluationEvent.create(recommendationEvaluationEvent({ recommendation: item, run, now }), { transaction });
+        return [affected];
+      };
       const [affected = 0] = sequelize?.transaction ? await sequelize.transaction(write) : await write();
       if (affected) { report.measured += 1; if (item.outcome === 'positive') report.positive += 1; }
     }
@@ -161,7 +171,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
 
 
 
