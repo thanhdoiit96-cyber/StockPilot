@@ -798,6 +798,8 @@ Evaluator checkpoint 2026-10-09: engine và eligibility dùng chung ngày quan s
 
 Evidence checkpoint 2026-10-09: migration 032 đã áp dụng development; evaluator lưu evidence v1 và chặn timestamp tương lai, eligibility kiểm evidence. 91 legacy recommendations giữ null, không backfill/mutation outcome; 59 tests đạt. Tiếp theo atomic/concurrent snapshot generation, transaction outcome+evidence và lifecycle thật khi có snapshot hash-backed mới. Calendar-gap vẫn mở.
 
+Atomic checkpoint 2026-10-09: migration 033 unique generation_key đã áp dụng; run/item/seal ghi trong transaction, unique race trả winner và outcome/evidence conditional update được tính đúng. 61 tests đạt; 21 legacy run giữ key null. Tiếp theo: provenance/read-consistency hoặc lifecycle smoke chỉ sau EOD snapshot hash-backed mới. Không có snapshot thật/outcome mới trong checkpoint này.
+
 Checkpoint idempotent generation 2026-10-08: generator đã từ chối snapshot trùng `as_of`/model/provider/horizon để bảo vệ cohort. Không có bước code an toàn tiếp theo trước EOD mới; sau phiên kế tiếp chạy generate rồi evaluate để xác nhận run hash-backed đi qua vòng đời pending → outcome.
 
 Smoke checkpoint 2026-10-08: generator development đã xác nhận `snapshot_exists` cho phiên hiện tại, không mutation dữ liệu. Chờ EOD mới là dependency thực tế cho checkpoint lifecycle hash-backed.

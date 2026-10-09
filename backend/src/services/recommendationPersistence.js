@@ -13,6 +13,10 @@ function recommendationSnapshotHash(run) {
   return crypto.createHash('sha256').update(JSON.stringify({ run_id: run.id, as_of: run.as_of, model: run.model, provider: run.provider, snapshot })).digest('hex');
 }
 
+function recommendationGenerationKey({ asOf, horizonDays, provider, model = 'short_term_rule_v2' }) {
+  return crypto.createHash('sha256').update(JSON.stringify({ as_of: asOf, horizon_days: Number(horizonDays), provider, model })).digest('hex');
+}
+
 function verifyRecommendationSnapshot(run, evidencePath = process.env.RECOMMENDATION_MONITOR_EVIDENCE || path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json')) {
   if (process.env.RECOMMENDATION_SNAPSHOT_VERIFY === 'false') return { valid: true, skipped: true };
   const actual = recommendationSnapshotHash(run);
@@ -63,7 +67,7 @@ function latestEodSession(rows = []) {
   }, null);
 }
 
-async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFactor, RecommendationRun, Recommendation, provider = 'vnstock', limit = 5, horizonDays = 20, useIntradayReference = false, now = new Date() } = {}) {
+async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFactor, RecommendationRun, Recommendation, sequelize, provider = 'vnstock', limit = 5, horizonDays = 20, useIntradayReference = false, now = new Date() } = {}) {
   const stocks = await Stock.findAll({ order: [['code', 'ASC']] });
   const priceRowsByStock = await loadPriceRows({ StockPrice, stocks });
   const priceRows = [...priceRowsByStock.values()].flat();
@@ -78,26 +82,38 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   if (useIntradayReference) { try { currentQuotes = await loadSnapshotQuotes(baseline.map(item => item.symbol)); } catch (error) { console.warn(`[Recommendation Persistence] intraday reference fallback: ${error.message}`); } }
   const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, currentQuotes, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
   const asOfDate = latestSession;
-  const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2' }, order: [['created_at', 'DESC']] });
+  const model = 'short_term_rule_v2';
+  const generation_key = recommendationGenerationKey({ asOf: asOfDate, horizonDays, provider, model });
+  const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model }, order: [['created_at', 'DESC']] });
   if (existing) return { status: 'snapshot_exists', run_id: existing.id, as_of: asOfDate, universe_size: existing.universe_size, selected_count: existing.selected_count, model: existing.model, snapshot_sha256: existing.snapshot_sha256 || null };
-  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model: 'short_term_rule_v2', universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' });
+  const seal = async transaction => {
+  const option = transaction ? { transaction } : {};
+  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model, generation_key, universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' }, option);
   const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
-  if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations);
+  if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations, option);
   // Hash the persisted representation, including joined stock codes and JSONB
   // key ordering. Spreading a Sequelize instance loses its attribute getters.
   const persisted = await RecommendationRun.findOne({
-    where: { id: run.id },
+    where: { id: run.id }, transaction,
     include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }],
   });
   if (!persisted || persisted.recommendations?.length !== storedRecommendations.length) {
     throw new Error('Cannot seal incomplete recommendation snapshot');
   }
   const snapshot_sha256 = recommendationSnapshotHash(persisted);
-  await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id } });
+  await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id }, transaction });
   return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
+  };
+  try { return sequelize?.transaction ? await sequelize.transaction(seal) : await seal(); }
+  catch (error) {
+    if (!['SequelizeUniqueConstraintError', '23505'].includes(error?.name) && error?.original?.code !== '23505') throw error;
+    const raced = await RecommendationRun.findOne({ where: { generation_key }, order: [['created_at', 'DESC']] });
+    if (!raced) throw error;
+    return { status: 'snapshot_exists', run_id: raced.id, as_of: asOfDate, universe_size: raced.universe_size, selected_count: raced.selected_count, model: raced.model, snapshot_sha256: raced.snapshot_sha256 || null };
+  }
 }
 
-async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation, now = new Date() } = {}) {
+async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, Recommendation, sequelize, now = new Date() } = {}) {
   const runs = await RecommendationRun.findAll({ order: [['created_at', 'ASC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
   const pendingRuns = runs.filter(run => (run.recommendations || []).some(item => !item.outcome || item.outcome === 'pending'));
   if (!pendingRuns.length) return { status: 'no_pending_recommendations', evaluated: 0, measured: 0, runs_considered: 0, runs_skipped_integrity: 0 };
@@ -112,9 +128,9 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
     report.evaluated += evaluated.length;
     for (const item of evaluated) {
       if (item.outcome === 'pending') continue;
-      await Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome, evaluation_evidence: item.evaluation_evidence }, { where: { id: item.id, outcome: 'pending' } });
-      report.measured += 1;
-      if (item.outcome === 'positive') report.positive += 1;
+      const write = transaction => Recommendation.update({ evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct, outcome: item.outcome, evaluation_evidence: item.evaluation_evidence }, { where: { id: item.id, outcome: 'pending' }, transaction });
+      const [affected = 0] = sequelize?.transaction ? await sequelize.transaction(write) : await write();
+      if (affected) { report.measured += 1; if (item.outcome === 'positive') report.positive += 1; }
     }
   }
   report.hit_rate_pct = report.measured ? Number((report.positive / report.measured * 100).toFixed(2)) : null;
@@ -123,7 +139,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, vietnamSessionDate, latestEodSession };
 
 
 

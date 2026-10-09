@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Generation key và transaction ghi Recommendation
+
+- Migration 033 thêm `recommendation_runs.generation_key` nullable với unique index. Key là SHA-256 của as_of/horizon/provider/model và chỉ set cho snapshot mới; 21 run legacy giữ null do 3 contract cũ có bản trùng, không bị thay đổi hoặc xóa.
+- Tạo snapshot mới ghi run, recommendations, reload/seal hash trong một transaction. Unique conflict do worker chạy đồng thời được chuyển thành `snapshot_exists` của winner, không để partial run/recommendations. Outcome update có transaction riêng cho từng item; chỉ tăng measured/positive khi update `outcome='pending'` thực sự affected một hàng, nên hai evaluator không double-count.
+- Kiểm chứng: recommendation regression 61/61 đạt, gồm transaction path, unique-race winner và update bị worker khác claim; migration development đạt. Schema check: generation_key VARCHAR(64) nullable, unique index đúng một field; 21/21 legacy key null. Không sinh snapshot thật, không evaluate/mutate outcome lịch sử và không thay frontend/build Preview.
+- Hạn chế: transaction generation hiện bảo vệ phần ghi sau khi analysis/read hoàn tất; upstream quote/price reads không nằm trong transaction snapshot consistent. Evidence chưa append-only/ký riêng và calendar-gap chưa có nguồn chính thức. Tiếp theo: snapshot data-read consistency/provenance hoặc lifecycle smoke sau EOD hash-backed; không tự tạo giả snapshot production.
+
 ## 2026-10-09 — Evidence đánh giá v1 và cutoff thời gian
 
 - Migration 032 thêm `recommendations.evaluation_evidence` JSONB nullable. Evaluator mới lưu `recommendation_evaluation_v1`: thời điểm chạy, provider/interval/timezone, horizon, các ngày quan sát, giá vào, giá đích cùng metadata, return và outcome. `evaluated_at` tiếp tục là timestamp giá đích, không dùng thay thời điểm chạy.
