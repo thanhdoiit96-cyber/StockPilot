@@ -75,6 +75,7 @@ M5 progress: long-history EOD ingestion is complete for the current prototype sy
 - Audit readiness: `audit:recommendation-ledger` verifies canonical event hashes and drift against current outcome/evidence in one read-only database snapshot. Run it after the first real event and before interpreting any audit/export result; it never repairs legacy data.
 - Lifecycle transparency: completed read-only lifecycle API and compact Recommendation UI status. It explains EOD, sealing, and integrity gates without exposing a control to generate/evaluate or manufacturing a synthetic result. The next acceptance event remains a real EOD-backed, hash-sealed snapshot.
 - EOD path regression: complete coverage is now explicitly tested to invoke snapshot generation with EOD-only references and retain the returned sealed-run evidence, while incomplete coverage cannot invoke the generator. This is fixture evidence only; the real acceptance gate remains the next completed EOD session.
+- Evaluator path regression: the weekday evaluation scheduler is explicitly opt-in, invokes the integrity-gated evaluator with application models, and contains worker errors instead of terminating the scheduled callback. It remains unproven against the next real EOD snapshot.
 
 ## i18n checkpoint — 2026-10-08
 
