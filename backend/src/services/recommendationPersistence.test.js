@@ -3,7 +3,14 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, recommendationInputProvenanceHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+
+function sealRun(run) {
+  run.input_provenance = { version: 'recommendation_input_v1', eod_session: run.as_of, provider: run.provider };
+  run.input_provenance_sha256 = recommendationInputProvenanceHash(run.input_provenance);
+  run.snapshot_sha256 = recommendationSnapshotHash(run);
+  return run;
+}
 
 function sampleRun() {
   return {
@@ -57,7 +64,7 @@ test('generates a v2 snapshot with verified external evidence', async () => {
     RecommendationRun: {
       findOne: async options => options.where.id ? { ...persistedRun, recommendations: stored.map(item => ({ ...item, stock: { code: stock.code } })) } : null,
       create: async payload => { persistedRun = { id: 'run-v2', ...payload }; return persistedRun; },
-      update: async values => { savedHash = values.snapshot_sha256; return [1]; },
+      update: async values => { Object.assign(persistedRun, values); if (values.snapshot_sha256) savedHash = values.snapshot_sha256; return [1]; },
     }, now: new Date('2026-01-31T10:00:00.000Z'),
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
@@ -69,6 +76,9 @@ test('generates a v2 snapshot with verified external evidence', async () => {
   expect(verifyRecommendationSnapshot(reloaded)).toMatchObject({ valid: true, source: 'recommendation_runs.snapshot_sha256' });
   reloaded.recommendations[0].entry_price = 999;
   expect(verifyRecommendationSnapshot(reloaded).valid).toBe(false);
+  reloaded.recommendations[0].entry_price = stored[0].entry_price;
+  reloaded.input_provenance.price_rows = 999;
+  expect(verifyRecommendationSnapshot(reloaded)).toMatchObject({ valid: false, reason: 'input_provenance_integrity_failed' });
 });
 
 test('does not create a duplicate scheduled snapshot for the same session contract', async () => {
@@ -127,8 +137,7 @@ test('evaluates every pending integrity-verified run without overwriting complet
   const pending = (id, stockId, code, asOf) => ({ id, stock_id: stockId, entry_price: 100, horizon_days: 1, outcome: 'pending', rationale: {}, stock: { code }, toJSON() { return this; } });
   const first = { id: 'run-1', as_of: '2026-01-01', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-1', 'stock-1', 'AAA', '2026-01-01')] };
   const second = { id: 'run-2', as_of: '2026-01-02', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-2', 'stock-2', 'BBB', '2026-01-02')] };
-  first.snapshot_sha256 = recommendationSnapshotHash(first);
-  second.snapshot_sha256 = recommendationSnapshotHash(second);
+  sealRun(first); sealRun(second);
   const updates = [];
   const report = await evaluatePendingRecommendations({
     RecommendationRun: { findAll: async () => [first, second] },
@@ -148,7 +157,7 @@ test('evaluates every pending integrity-verified run without overwriting complet
 test('counts only outcome writes claimed atomically by this evaluator', async () => {
   const pending = { id: 'rec', stock_id: 'stock', entry_price: 100, horizon_days: 1, outcome: 'pending', stock: { code: 'AAA' }, toJSON() { return this; } };
   const run = { id: 'run', as_of: '2026-01-01', provider: 'vnstock', recommendations: [pending] };
-  run.snapshot_sha256 = recommendationSnapshotHash(run);
+  sealRun(run);
   const transaction = { id: 'tx' };
   const report = await evaluatePendingRecommendations({
     sequelize: { transaction: async (...args) => args.at(-1)(transaction) }, RecommendationRun: { findAll: async () => [run] },

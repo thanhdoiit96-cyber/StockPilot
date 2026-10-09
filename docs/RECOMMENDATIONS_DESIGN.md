@@ -22,6 +22,8 @@ Migration 033 dùng `generation_key` SHA-256 nullable/unique cho snapshot mới,
 
 Migration 034 chuyển reads của scheduled snapshot vào `REPEATABLE READ` transaction và lưu `input_provenance` v1 nhỏ gọn. Scheduled snapshot chỉ dùng EOD, không intraday. Provenance ghi phạm vi/contract đếm được, không lưu giá chi tiết; chưa được hash riêng hay append-only. Upstream ingestion vẫn ngoài transaction này.
 
+Migration 035 hash canonical `input_provenance` bằng SHA-256 và seal nó vào snapshot v2. Verifier kiểm hash snapshot và provenance; mismatch fail-closed. Đây là phát hiện sửa đổi sau lưu, chưa là signature độc lập hay ledger append-only.
+
 Evaluator và read-time eligibility dùng chung observationWindow (2026-10-09): đếm ngày giá Việt Nam khác nhau, đúng provider/1d, kiểm đơn vị/adjustment/giá và duplicate trong N ngày đầu. Duplicate tương đương không tăng kỳ hạn; dữ liệu mâu thuẫn giữ pending thay vì nhảy sang giá muộn. Đây chưa phải chứng nhận đủ phiên sàn hoặc evidence được version hóa; cutoff thời gian chạy vẫn là phần cần triển khai.
 
 `rationale.evidence` gồm:

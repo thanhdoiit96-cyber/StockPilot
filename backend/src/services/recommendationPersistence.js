@@ -5,9 +5,19 @@ const path = require('path');
 const crypto = require('crypto');
 const { buildShortTermRecommendations, evaluateRecommendations } = require('./recommendationEngine');
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  return JSON.stringify(value);
+}
+
+function recommendationInputProvenanceHash(provenance) {
+  return provenance && typeof provenance === 'object' ? crypto.createHash('sha256').update(canonicalJson(provenance)).digest('hex') : null;
+}
+
 function recommendationSnapshotHash(run) {
   const snapshot = (run.recommendations || []).map(item => ({ rank: item.rank, stock_id: item.stock_id, code: item.stock?.code, entry_price: item.entry_price == null ? null : Number(item.entry_price), horizon_days: item.horizon_days, rationale: item.rationale })).sort((a, b) => a.rank - b.rank);
-  return crypto.createHash('sha256').update(JSON.stringify({ run_id: run.id, as_of: run.as_of, model: run.model, provider: run.provider, snapshot })).digest('hex');
+  return crypto.createHash('sha256').update(canonicalJson({ version: 'recommendation_snapshot_v2', run_id: run.id, as_of: run.as_of, model: run.model, provider: run.provider, input_provenance_sha256: run.input_provenance_sha256 || null, snapshot })).digest('hex');
 }
 
 function recommendationGenerationKey({ asOf, horizonDays, provider, model = 'short_term_rule_v2' }) {
@@ -17,7 +27,10 @@ function recommendationGenerationKey({ asOf, horizonDays, provider, model = 'sho
 function verifyRecommendationSnapshot(run, evidencePath = process.env.RECOMMENDATION_MONITOR_EVIDENCE || path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json')) {
   if (process.env.RECOMMENDATION_SNAPSHOT_VERIFY === 'false') return { valid: true, skipped: true };
   const actual = recommendationSnapshotHash(run);
-  if (run.snapshot_sha256) return { valid: run.snapshot_sha256 === actual, expected: run.snapshot_sha256, actual, source: 'recommendation_runs.snapshot_sha256' };
+  if (run.snapshot_sha256) {
+    const provenanceValid = Boolean(run.input_provenance_sha256 && run.input_provenance_sha256 === recommendationInputProvenanceHash(run.input_provenance));
+    return { valid: run.snapshot_sha256 === actual && provenanceValid, expected: run.snapshot_sha256, actual, source: 'recommendation_runs.snapshot_sha256', reason: provenanceValid ? null : 'input_provenance_integrity_failed' };
+  }
   if (!fs.existsSync(evidencePath)) return { valid: false, reason: 'snapshot_monitor_evidence_missing', evidencePath };
   try {
     const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
@@ -105,7 +118,11 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   if (!persisted || persisted.recommendations?.length !== storedRecommendations.length) {
     throw new Error('Cannot seal incomplete recommendation snapshot');
   }
-  const snapshot_sha256 = recommendationSnapshotHash(persisted);
+  const input_provenance_sha256 = recommendationInputProvenanceHash(persisted.input_provenance);
+  if (!input_provenance_sha256) throw new Error('Cannot seal snapshot without input provenance');
+  await RecommendationRun.update({ input_provenance_sha256 }, { where: { id: run.id }, transaction });
+  const sealed = await RecommendationRun.findOne({ where: { id: run.id }, transaction, include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['code'] }] }] });
+  const snapshot_sha256 = recommendationSnapshotHash(sealed);
   await RecommendationRun.update({ snapshot_sha256 }, { where: { id: run.id }, transaction });
   return { run_id: run.id, universe_size: stocks.length, selected_count: recommendations.length, symbols: recommendations.map(item => item.symbol), model: 'short_term_rule_v2', snapshot_sha256 };
   };
@@ -144,7 +161,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
 
 
 
