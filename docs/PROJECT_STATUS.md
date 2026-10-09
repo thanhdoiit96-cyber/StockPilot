@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-09 — Gate quy mô Watchlist
+
+- Chạy `npm run measure:watchlist` read-only trên PostgreSQL development: 2 mục, 1 user có mục, max/p50/p95 đều 2. Đây là dữ liệu development aggregate, không phải số liệu production hay latency browser.
+- Chưa có bằng chứng để thêm pagination/windowing/bulk action; giữ tìm kiếm/lọc/sắp xếp hiện tại để UI không phức tạp sớm. Khi p95 số dòng hoặc trace render thực tế tăng, đo lại trước khi thay contract/list layout.
+- Checkpoint EOD 16:40 vẫn đã schedule; các thay đổi Watchlist không phụ thuộc và không chạm dữ liệu người dùng.
+
 ## 2026-10-09 — Lên lịch checkpoint lifecycle sau EOD
 
 - Thêm scheduler checkpoint chỉ đọc mặc định `40 16 * * 1-5` Asia/Ho_Chi_Minh, trước evaluator 16:45. Nó dùng chung service bounded với API/CLI, log gate sau EOD nhưng không sinh snapshot/evaluate hay ghi evidence. Có cờ opt-out và cron/timezone override.
