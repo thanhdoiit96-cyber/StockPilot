@@ -164,3 +164,11 @@ The preview artifact now materializes all seven test predictions for each 1/5-se
 Primary proper scoring rules are multiclass Brier sum and log loss, both lower-is-better. Accuracy is secondary. Fixed confidence bins report sample count, mean confidence and observed accuracy, but bins below five samples are marked `insufficient_samples` and the entire report remains `calibrated=false`. Frequency and frozen-persistence baselines use the same fold/test samples; deltas follow model-minus-baseline, so negative favors the model.
 
 The synthetic fixture is not evidence of market accuracy. Horizon 1 has Brier 0.806 and log loss 1.641 versus frequency baseline 0.703/1.165. Horizon 5 has Brier 1.239 and log loss 7.532 versus 0.755/1.214. Both are worse than frequency baseline. This result must be visible as an inconclusive/weak research state in the future UI, not presented as calibrated confidence.
+
+## Append-only snapshot lifecycle — 2026-10-12
+
+Migration 037 separates immutable prediction snapshots from append-only outcome events. A snapshot key hashes provider, model version, horizon and as-of. The payload hash covers probabilities plus split/training provenance. Retrying an identical identity is idempotent; a different payload for that identity is an integrity conflict. Database triggers reject update/delete on both tables.
+
+Pending is the absence of an outcome event; measured is derived from the single integrity-bound event. Outcome time must be at or after 15:00 Asia/Ho_Chi_Minh on the declared target session. Brier/log loss are recomputed from the sealed probabilities and actual class, not accepted from callers. Retention is an immutable `expires_at` query boundary (default 180, bounded 30–730 days); expiration does not delete audit records. History ordering is as-of/id descending with a bounded opaque cursor and maximum 50 rows.
+
+This is currently a persistence foundation only. The development artifact endpoint still reads its materialized file, and no scheduler writes the store. The next step is a development-only materializer that imports validated artifact predictions idempotently and resolves eligible outcomes transactionally; production remains disabled.
