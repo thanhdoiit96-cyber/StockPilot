@@ -15,6 +15,7 @@
     "audit:forecast-data": "node scripts/audit-forecast-data.cjs",
     "report:forecast-research": "node scripts/report-forecast-research.cjs",
     "report:forecast-exclusions": "node scripts/report-forecast-exclusions.cjs",
+    "generate:forecast-preview": "node scripts/generate-forecast-preview.cjs",
     "lint": "eslint src/**/*.js",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",

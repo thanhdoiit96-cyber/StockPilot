@@ -49,7 +49,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
     } else if (path === '/api/auth/me') payload = { success: true, user: { email: 'e2e@example.com', role: 'user' } }
     else if (path === '/api/forecast/research-preview') {
       const horizon = Number(url.searchParams.get('horizon'))
-      payload.data = { version: 'forecast_presentation_v1', status: 'research_preview', source: 'synthetic_replay', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, as_of: '2025-03-18', probabilities: [
+      payload.data = { version: 'forecast_presentation_v1', status: 'research_preview', source: 'synthetic_replay', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, as_of: '2025-03-18', artifact_sha256: 'a'.repeat(64), artifact_generated_at: '2026-10-12T06:00:00Z', artifact_freshness: 'fresh', artifact_age_seconds: 60, probabilities: [
         { class: 'advancing', value: horizon === 1 ? 0.41 : 0.52 }, { class: 'balanced', value: 0.31 }, { class: 'declining', value: horizon === 1 ? 0.28 : 0.17 }
       ] }
     }

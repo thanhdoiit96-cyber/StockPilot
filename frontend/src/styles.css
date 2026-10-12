@@ -2159,6 +2159,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .outlook-meter { height: 5px; border-radius: 5px; background: #8882; overflow: hidden; }
 .outlook-meter i { display: block; height: 100%; background: currentColor; border-radius: inherit; }
 .outlook-note, .outlook-footer { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.outlook-note.is-stale { color: #d99b3d; font-weight: 600; }
 .outlook-range-value { display: flex; gap: 10px; align-items: baseline; }
 .outlook-range-value strong { font-size: 24px; }
 .outlook-range-value span { font-size: 11px; color: var(--muted); }
