@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — F2 replay đa chế độ và contract trình bày
+
+- Fixture research khai báo rõ thiết kế multi-regime synthetic, tạo đủ nhãn declining/balanced/advancing cho cả kỳ 1/5 phiên. Replay kiểm chứng model evaluated ở cả hai kỳ, mỗi fold chấm đúng 7 test sessions trên cùng split của baseline.
+- Summary CLI nay báo version/status/calibration, số fold và sample đã chấm, cùng reason khi model unavailable. Fixture artifact hai-origin vẫn trả insufficient_training_classes; không hạ tiêu chuẩn chỉ để có xác suất.
+- Thêm forecast_presentation_v1: chỉ ánh xạ đúng một prediction lịch sử theo as-of, đổi class order phù hợp UI, luôn giữ synthetic/research_only/live=false/market_accuracy_verified=false. Thiếu session, model hoặc report không phải synthetic đều fail closed; không thể bị hiểu là dự báo hiện tại.
+- Kiểm chứng toàn bộ forecast ngoài sandbox: 44/44 đạt, gồm 2 CLI subprocess (sandbox mặc định chặn bằng spawn EPERM). Chưa nối contract vào endpoint/UI, nên card Tổng quan vẫn là fixture giao diện cố định.
+- Tiếp theo: tạo endpoint research-preview chỉ bật trong development, trả contract trên và trạng thái unavailable rõ ràng; frontend dùng endpoint đó với fallback an toàn, giữ nhãn Mô phỏng và không thay bằng dữ liệu live.
+
 ## 2026-10-12 — F2 prototype xác suất synthetic
 
 - Thêm softmax ba lớp, feature là mean return 1/5/20 phiên của rổ; chuẩn hóa trên train, optimizer cố định 300 bước, không tune bằng test. Dùng chính manifest train/test và eligibility sau audit của baseline F1. Replay/CLI synthetic trả models cho horizon 1/5; supplied-evidence không chạy prototype này.

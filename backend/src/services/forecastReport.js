@@ -7,7 +7,9 @@ function summarizeForecastReport(report) {
     sample_count: report.samples.length,
     excluded_origin_count: report.excluded.length,
     origin_exclusion_reasons: countReasons(report.excluded.flatMap(item => item.reasons)),
-    horizons: report.baselines.map(baseline => ({
+    horizons: report.baselines.map(baseline => {
+      const model = report.models?.find(item => item.horizon_sessions === baseline.horizon_sessions);
+      return ({
       horizon_sessions: baseline.horizon_sessions,
       status: baseline.status,
       evaluated_folds: baseline.folds.filter(fold => fold.status === 'available').length,
@@ -15,8 +17,15 @@ function summarizeForecastReport(report) {
       scored_samples: baseline.folds.reduce((sum, fold) => sum + (fold.metrics?.samples || 0), 0),
       excluded_labels: baseline.excluded.length,
       exclusion_reasons: countReasons(baseline.excluded.map(item => item.reason)),
-      invalidated_outcomes: report.outcome_audits.filter(a => a.horizon_sessions === baseline.horizon_sessions && a.status === 'invalidated').length
-    }))
+      invalidated_outcomes: report.outcome_audits.filter(a => a.horizon_sessions === baseline.horizon_sessions && a.status === 'invalidated').length,
+      model: model ? {
+        version: model.version, status: model.status, calibrated: model.calibrated,
+        evaluated_folds: model.folds.filter(fold => fold.status === 'available').length,
+        unavailable_reasons: countReasons(model.folds.filter(fold => fold.status !== 'available').map(fold => fold.reason)),
+        scored_samples: model.folds.reduce((sum, fold) => sum + (fold.metrics?.samples || 0), 0)
+      } : { status: 'not_run', evaluated_folds: 0, scored_samples: 0 }
+      });
+    })
   };
 }
 module.exports = { summarizeForecastReport };
