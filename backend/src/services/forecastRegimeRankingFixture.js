@@ -18,8 +18,12 @@ function forecastRegimeRankingFixture() {
   }
   return { synthetic: true, provider: 'ranking-fixture', synthetic_design: { kind: 'pre_registered_regime_blocks_v1', block_sessions: 12, sequence: ['advancing', 'balanced', 'declining'], market_evidence: false },
     calendar: { verified: true, source: 'synthetic-ranking-calendar', version: 'ranking-fixture-v1', sessions }, rows,
-    origins: sessions.slice(59, 125).map(asOf => ({ asOf, cutoff: asOf + 'T18:00:00+07:00' })),
-    evaluationCutoffs: sessions.slice(60, 131).map(day => day + 'T19:00:00+07:00'),
-    folds: [{ testStart: sessions[100], testEnd: sessions[124], fitCutoff: sessions[99] + 'T23:00:00+07:00' }] };
+    origins: sessions.slice(59, 135).map(asOf => ({ asOf, cutoff: asOf + 'T18:00:00+07:00' })),
+    evaluationCutoffs: sessions.slice(60, 140).map(day => day + 'T19:00:00+07:00'),
+    folds: [
+      { testStart: sessions[80], testEnd: sessions[94], fitCutoff: sessions[79] + 'T23:00:00+07:00' },
+      { testStart: sessions[100], testEnd: sessions[114], fitCutoff: sessions[99] + 'T23:00:00+07:00' },
+      { testStart: sessions[120], testEnd: sessions[134], fitCutoff: sessions[119] + 'T23:00:00+07:00' }
+    ] };
 }
 module.exports = { forecastRegimeRankingFixture };
