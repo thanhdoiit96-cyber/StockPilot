@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — UI lịch sử kiểm chứng dự báo
+
+- Tổng quan có panel thu gọn “Lịch sử kiểm chứng dự báo” trong card Triển vọng. Panel mặc định đóng và chỉ gọi `/api/forecast/research-history` khi mở; đổi kỳ 1/5 khi đang mở sẽ hủy request cũ và tải đúng kỳ mới.
+- UI hiển thị verdict chưa vượt baseline, Brier/log loss cạnh frequency baseline và delta, số reliability bin đủ mẫu, cùng timeline dự báo → outcome. Mobile dùng score một cột và timeline cuộn ngang nội bộ, không làm tràn trang.
+- Loading/error/empty tách biệt; lỗi không dùng fixture để tính score. Client chỉ nhận contract synthetic, research-only, non-live, `calibrated=false`, kiểm count/outcome/probability/confidence trước render. Nội dung giải thích proper score thấp hơn tốt hơn và accuracy đơn lẻ không chứng minh chất lượng.
+- Kiểm chứng: frontend unit/contract 77/77; production build/bundle integrity đạt (`index-DZElTwS-.js`); Overview E2E 15/15 gồm lazy request và viewport 390px. Preview artifact vẫn là synthetic 7 mẫu/kỳ; không xác nhận market accuracy.
+- Tiếp theo: thiết kế kho snapshot forecast append-only và lifecycle pending → measured để lịch sử tích lũy qua nhiều lần inference, có idempotency/retention/pagination; chưa bật production hoặc dùng dữ liệu thật khi evidence/provider chưa hợp lệ.
+
 ## 2026-10-12 — Lịch sử dự báo bất biến và scoring
 
 - Thêm `forecast_history_v1` cho kỳ 1/5 phiên: mỗi prediction giữ `as_of`, probability, predicted/actual class, target/outcome availability cùng model/split/training hash. Pending không bị chấm điểm; thay outcome trong test chỉ đổi outcome/score, không đổi prediction identity.
