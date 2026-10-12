@@ -160,3 +160,6 @@ Trang Đề xuất có một bảng **Đánh giá từng snapshot đề xuất**
 ## Daily portfolio performance
 
 The Portfolio page lazily requests `/api/portfolio/performance/history` only while the authenticated portfolio view is active. Users can inspect 20, 30, 60 or 120 stored sessions. History starts at the first ledger activity rather than drawing pre-activity zeroes. The lightweight SVG chart has a compact VND axis and keyboard-readable points, does not connect across partial valuation gaps, and explains negative cash, missing prices, or unresolved events separately. TWR remains explicitly unavailable unless the backend marks the full range complete. Portfolio mutations refresh the portfolio object and therefore the history without polling.
+## Short-term outlook preview (2026-10-12)
+
+Overview includes ShortTermOutlook with 1/5-session controls, three illustrative probabilities and an advancing-stock-share range. Fixed fixtures are always labeled Simulated; no forecast API is called. Session storage retains the horizon. Native buttons/details support keyboard use and the layout stacks on mobile. Values are not model outputs or VNINDEX forecasts.

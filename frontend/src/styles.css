@@ -2137,3 +2137,35 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) button { min-height:44px; }
 @media(max-width:600px) { :is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) input,:is(.transaction-entry-panel .transaction-form, .cash-flow-form, .cash-flow-dialog .ledger-edit-grid) select { font-size:16px; } }
 @media (max-width: 700px) { .advisor-conversation-toolbar { grid-template-columns: 1fr 1fr; } .advisor-conversation-toolbar label, .advisor-conversation-toolbar select, .advisor-conversation-toolbar small { grid-column: 1 / -1; } }
+.short-term-outlook { padding: 22px; margin-bottom: 20px; }
+.outlook-header, .outlook-controls { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.outlook-header h2 { margin: 5px 0; font-size: 1.3rem; }
+.outlook-header p { margin: 0; font-size: 12px; }
+.outlook-horizons { display: flex; gap: 6px; }
+.outlook-horizons button[aria-pressed="true"] { background: var(--text); color: var(--bg, #101827); }
+.outlook-info { position: relative; font-size: 12px; color: var(--muted); }
+.outlook-info summary { cursor: pointer; padding: 7px 10px; border: 1px solid currentColor; border-radius: 20px; }
+.outlook-info p { position: absolute; z-index: 5; right: 0; top: 35px; width: min(300px, 70vw); padding: 14px; border-radius: 10px; background: var(--bg, #101827); color: var(--text); border: 1px solid var(--muted); line-height: 1.6; box-shadow: 0 8px 25px #0003; }
+.outlook-body { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; margin-top: 20px; }
+.outlook-body h3 { font-size: 13px; margin: 0 0 12px; }
+.outlook-probabilities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.outlook-probability span { display: block; font-size: 12px; color: var(--muted); }
+.outlook-probability strong { display: block; margin: 7px 0 10px; font-size: 28px; font-variant-numeric: tabular-nums; }
+.outlook-probability small { font-size: 14px; margin-left: 3px; }
+.outlook-probability.tone-0 { color: #249d78; }
+.outlook-probability.tone-1 { color: var(--text); }
+.outlook-probability.tone-2 { color: #db626a; }
+.outlook-meter { height: 5px; border-radius: 5px; background: #8882; overflow: hidden; }
+.outlook-meter i { display: block; height: 100%; background: currentColor; border-radius: inherit; }
+.outlook-note, .outlook-footer { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.outlook-range-value { display: flex; gap: 10px; align-items: baseline; }
+.outlook-range-value strong { font-size: 24px; }
+.outlook-range-value span { font-size: 11px; color: var(--muted); }
+.outlook-range svg { width: 100%; height: 66px; overflow: visible; }
+.outlook-range text { fill: var(--muted); font-size: 11px; }
+.outlook-axis { stroke: #8885; stroke-width: 3; }
+.outlook-reference { stroke: var(--muted); stroke-dasharray: 3 3; }
+.outlook-band { stroke: #5c91d9; stroke-width: 12; stroke-linecap: round; opacity: .45; }
+.outlook-point { fill: #5c91d9; stroke: var(--text); stroke-width: 2; }
+.outlook-footer { border-top: 1px solid #8883; padding-top: 10px; margin-top: 6px; }
+@media (max-width: 700px) { .short-term-outlook { padding: 16px; } .outlook-body { grid-template-columns: 1fr; gap: 14px; } .outlook-controls { width: 100%; } .outlook-info p { right: auto; left: 0; } .outlook-probabilities { gap: 10px; } }
