@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Materialized forecast preview và freshness
+
+- `npm run generate:forecast-preview` chạy replay synthetic ngoài request, tạo atomic artifact `forecast_research_preview_artifact_v1` cho kỳ 1/5 trong `backend/evidence/forecast-research-preview.json`. Envelope có canonical SHA-256, generated_at, stale window 7 ngày, model/split metadata và hai presentation contracts.
+- Endpoint development chỉ đọc artifact giới hạn 256 KiB, xác minh hash/schema/probabilities rồi trả artifact hash, tuổi và fresh/stale; không chạy model trong request. As-of không tồn tại trả unavailable, file thiếu/hỏng trả 503 đã che chi tiết. UI chỉ nhận contract có metadata hợp lệ, hiển thị ngày tạo và cảnh báo “Đã cũ/Stale”.
+- Kiểm chứng: toàn bộ forecast 50/50 đạt (gồm artifact, controller và CLI subprocess); controller request test khoảng 4–33 ms sau setup. Frontend 75/75; build/integrity đạt; browser outlook mobile/keyboard 1/1. Đã kiểm tra tạo đè artifact an toàn trên Windows; backend restart; endpoint qua Preview 4173 báo fresh. Bundle `index-BALAKtcr.js`.
+- Giới hạn: freshness là tuổi artifact được tạo, không phải độ mới dữ liệu thị trường; replay vẫn là synthetic lịch sử 2025-03-18. Artifact nằm trong evidence bị git-ignore và phải tạo lại sau clone/deploy development.
+- Tiếp theo: tự động materialize artifact trong workflow development/release check, bổ sung kiểm thử missing/corrupt artifact trên UI và nút thử lại gọn; production vẫn không mở endpoint.
+
 ## 2026-10-12 — Research-preview API và UI Tổng quan
 
 - Thêm `GET /api/forecast/research-preview?horizon=1|5`: chỉ mở khi NODE_ENV=development và không đặt FORECAST_RESEARCH_PREVIEW=false; production/disabled trả 404 trước khi tạo report. Response `no-store`, lỗi tạo fixture được che nội dung và trả 503. Report synthetic được cache trong tiến trình sau lần tạo đầu.

@@ -902,3 +902,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành endpoint development-only và nối card Tổng quan với contract fail-closed, loading/fallback, responsive và keyboard regression. Bundle mới đã có trên Preview 4173; endpoint production vẫn đóng.
 - Tiếp theo: materialize artifact preview ngoài request path, bổ sung hash/thời điểm tạo/freshness và trạng thái stale trên UI. Không chuyển thành current/live forecast trước evidence thật, calibration và nghiệm thu ngoài mẫu.
+## Cập nhật ưu tiên 2026-10-12 — Materialized preview
+
+- Hoàn thành artifact preview có checksum/generated_at/freshness; endpoint không còn chạy replay trong request. UI hiển thị ngày artifact và stale status, vẫn giữ nhãn research-only/synthetic.
+- Tiếp theo: đưa bước generate/validate vào workflow development và release verification, hoàn thiện retry khi artifact thiếu/hỏng. Không dùng freshness artifact để suy ra độ mới thị trường.

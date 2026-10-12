@@ -323,3 +323,12 @@ npm.cmd run verify:live:portfolio-dividend
 ```
 
 Script tạo ledger cô lập, xác nhận pending event khóa coverage/TWR, kiểm tra `dividend_income` được cộng vào cash trong khi `external_cash_flow` vẫn bằng 0, split giữ quantity/cost basis continuity, quyền mua 0 không tự thực hiện entitlement và quyền mua một phần cập nhật đúng quantity/cash/cost basis. Giao dịch và dòng tiền thử được dọn; account cùng cancelled event audit được giữ, không lưu credential.
+### Tạo Forecast research preview (development)
+
+Sau khi cài dependency backend, chạy trong thư mục `backend`:
+
+```powershell
+npm run generate:forecast-preview
+```
+
+Lệnh tạo `evidence/forecast-research-preview.json` từ fixture synthetic trước khi backend phục vụ endpoint. File không được commit. Khởi động lại backend sau khi cập nhật mã; Tổng quan sẽ hiển thị ngày tạo và cảnh báo nếu artifact quá 7 ngày. Đây không phải dữ liệu thị trường hay dự báo live.
