@@ -3,15 +3,22 @@ const { replayForecastDataset } = require('./forecastReplay');
 const { evaluateRegimeAwareRanking } = require('./forecastRegimeRanking');
 let input, report;
 beforeAll(() => { input = forecastRegimeRankingFixture(); report = replayForecastDataset(input); });
-test('compares regime-aware and rule rankings on 25 pre-registered synthetic sessions with diagnostics', () => {
+test('compares regime-aware and rule rankings across disjoint synthetic folds with cost diagnostics', () => {
   const result = evaluateRegimeAwareRanking({ report, rows: input.rows, horizon: 5, topK: 5 });
-  expect(result).toMatchObject({ status: 'evaluated', synthetic: true, research_only: true, market_accuracy_verified: false, comparable_sessions: 25, coupling_enabled: false, evidence_gate_passed: false, decision: 'no_incremental_value' });
-  expect(result.confidence_intervals).toMatchObject({ method: 'paired_session_bootstrap', iterations: 1000, seed: 20261012, confidence: .95 });
+  expect(result).toMatchObject({ status: 'evaluated', synthetic: true, research_only: true, market_accuracy_verified: false, comparable_sessions: 45,
+    coupling_enabled: false, evidence_gate_passed: false, decision: 'no_incremental_value' });
+  expect(result.confidence_intervals).toMatchObject({ method: 'hierarchical_fold_session_bootstrap', iterations: 1000, seed: 20261012, confidence: .95, folds: 3, cost_bps: 25 });
+  expect(result.cost_sensitivity.map(item => item.cost_bps)).toEqual([0, 10, 25, 50]);
+  expect(result.fold_results).toHaveLength(3);
+  expect(result.fold_results.every(item => item.sessions === 15)).toBe(true);
+  expect(result.fold_results.slice(1).every((item, index) => result.sessions.find(row => row.fold_index === index).target_session < item.first_session)).toBe(true);
+  expect(result.gate).toHaveProperty('all_folds_net_positive');
   expect(result.selection_diagnostics.baseline.average_turnover).toBeGreaterThanOrEqual(0);
+  expect(result.selection_diagnostics.baseline.turnover_transitions).toBe(42);
   expect(result.selection_diagnostics.regime.concentration_hhi).toBeGreaterThan(0);
   expect(result.baseline.stocks).toBe(result.regime.stocks);
-  expect(result.baseline.stocks).toBe(125);
-  expect(result.sessions.every(item => item.baseline_returns.length === 5 && item.regime_returns.length === 5)).toBe(true);
+  expect(result.baseline.stocks).toBe(225);
+  expect(result.sessions.every(item => item.baseline_returns.length === 5 && item.regime_returns.length === 5 && Number.isInteger(item.fold_index))).toBe(true);
 });
 test('outcomes affect metrics but cannot alter the frozen selections', () => {
   const before = evaluateRegimeAwareRanking({ report, rows: input.rows, horizon: 5 });

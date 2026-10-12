@@ -918,3 +918,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Fixture 25 phiên đạt minimum sample; mean-return CI dương nhưng positive-rate CI chạm 0, turnover tăng 10,83 điểm %. Evidence gate vẫn fail và UI không đổi.
 - Tiếp theo: nhiều walk-forward folds không chồng lấn, bootstrap theo fold/session và cost sensitivity theo turnover/slippage. Yêu cầu hiệu quả sau chi phí có CI dương ổn định trước evidence thật.
+
+## Cập nhật ưu tiên 2026-10-12 — Đóng policy regime overlay
+
+- Hoàn thành 3 fold rời nhau có purge horizon, hierarchical bootstrap và cost sensitivity 0/10/25/50 bps. Policy không đạt: positive-rate giảm, net delta 25 bps có CI chứa 0 và một fold âm. Không nối regime forecast vào stock ranking/UI; không tune lại policy trên holdout đã quan sát.
+- Tiếp theo: quay lại forecast cấp thị trường, thêm lịch sử artifact prediction và scoring rule/calibration theo kỳ 1/5 phiên để người dùng có thể đối chiếu dự báo với outcome khi đủ dữ liệu. Giữ research-preview/synthetic rõ ràng; chưa công bố market accuracy hoặc bật live forecast.

@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Walk-forward nhiều fold và chi phí regime ranking
+
+- Mở rộng shadow evaluation thành 45 origin/225 outcome trên 3 fold cố định, mỗi fold 15 phiên và purge 5 phiên để target horizon 5 kết thúc trước fold kế tiếp. Selection vẫn chỉ dùng dữ liệu đến origin; test outcome không tham gia xếp hạng.
+- Bootstrap phân cấp 1.000 lần (seed 20261012): lấy mẫu fold rồi lấy mẫu session trong fold. Turnover reset theo fold, tính 100% cho lần tạo danh mục đầu; cost sensitivity dùng 0/10/25/50 bps một chiều nhân turnover, gate chính ở 25 bps.
+- Kết quả synthetic: baseline/regime gross mean +0,396%/+0,398%; positive rate 45,33%/41,78%. Tại 25 bps, net delta -0,011 điểm % với CI 95% [-0,340; +0,241] điểm %; 1/3 fold có net delta âm. Gross CI, positive-rate CI và net CI đều không vượt 0 ổn định.
+- Gate fail, `coupling_enabled=false`, decision `no_incremental_value`. Policy overlay cố định này được đóng lại; không nối vào UI hoặc đánh giá live. Nếu nghiên cứu tiếp phải đăng ký giả thuyết/policy mới trước khi xem holdout, không tune lại theo fixture này.
+- Kiểm chứng: targeted ranking 3/3 và toàn bộ forecast regression 53/53 đạt. Điểm tiếp theo chuyển về forecast cấp thị trường: thiết kế lịch sử dự báo và scoring rule/calibration theo artifact, vẫn chỉ research-preview cho tới khi có evidence hợp lệ.
+
 ## 2026-10-12 — Regime ranking 25 phiên, bootstrap và turnover
 
 - Thêm fixture riêng `pre_registered_regime_blocks_v1`: 140 phiên, block 12 phiên tăng/cân bằng/giảm định trước; trong thị trường giảm vẫn có nhóm relative winners để baseline tạo đủ top-5. Fold test cố định 25 origins, không thay fixture F1/F2.
