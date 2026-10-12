@@ -26,6 +26,8 @@ test('seals contemporaneous baselines in v2 without rewriting a legacy identity'
   const legacy = stored();
   const result = await createForecastSnapshot({ ForecastSnapshot: { findOne: async () => legacy }, sequelize: { transaction: jest.fn() } }, inputV2());
   expect(result).toMatchObject({ status: 'snapshot_legacy_exists', snapshot: { id: ID1 } });
+  expect(validateSnapshot({ ...inputV2(), baseline_snapshot: { ...inputV2().baseline_snapshot, fit_cutoff: '2025-03-18T18:00:00+07:00' } }).version).toBe('forecast_snapshot_payload_v2');
+  expect(() => validateSnapshot({ ...inputV2(), baseline_snapshot: { ...inputV2().baseline_snapshot, fit_cutoff: '2025-03-19T00:00:00+07:00' } })).toThrow('baseline');
 });
 test('creates once and returns an identical existing snapshot without mutation', async () => {
   let saved;

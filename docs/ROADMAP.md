@@ -965,3 +965,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành tách timeline và aggregate trên UI Tổng quan: timeline tiếp tục cursor pagination; score/verdict chỉ đọc cohort v2 qua sample gate. Coverage v1/v2, tiến độ minimum sample và trạng thái aggregate lỗi/đang tải hiển thị độc lập, không fallback sang page score.
 - Frontend unit, Overview E2E và production build đạt; Preview 4173 đã dùng bundle mới. Dữ liệu development hiện 0/20 measured v2 nên score chủ động để trống.
 - Tiếp theo: lifecycle rolling tạo identity as-of mới và materialize payload v2 định kỳ trong development, có idempotency/freshness/cutoff; fixture replay tĩnh chỉ dùng regression. Chưa scheduler production hoặc diễn giải market performance.
+
+## Cập nhật ưu tiên 2026-10-12 — Rolling forecast development
+
+- Hoàn thành inference EOD tách khỏi replay scoring, lọc label theo cutoff, bắt buộc target session đã xác định, seal baseline v2 và materialize pending idempotent bằng ngày fixture tường minh. PostgreSQL có proof hợp lệ 2025-03-18 cho horizon 1/5. Hai snapshot thử 2025-03-19 trước gate được giữ bất biến; horizon 5 thiếu target nên evaluator sau phải loại rõ ràng.
+- Không tự động tăng ngày, không ghi outcome và không bật production. Cohort v2 measured vẫn 0/20 nên UI không hiển thị performance.
+- Tiếp theo: evaluator riêng cho rolling snapshot pending, chỉ tìm actual class từ evidence sau target-session cutoff, kiểm provenance và append outcome bất biến khi đủ dữ liệu; thiếu target/evidence tiếp tục pending.
