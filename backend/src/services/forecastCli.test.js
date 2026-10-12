@@ -35,6 +35,8 @@ test('CLI artifact replay is reproducible, retains provenance and rejects tamper
     expect(report.artifact_sha256).toBe(artifact.sha256);
     expect(report.summary).toMatchObject({ scope: 'synthetic_research', sample_count: 2, market_accuracy_verified: false });
     expect(report.summary.horizons.map(h => h.scored_samples)).toEqual([1, 1]);
+    expect(report.summary.horizons.map(h => h.model.status)).toEqual(['unavailable', 'unavailable']);
+    expect(report.summary.horizons.every(h => h.model.unavailable_reasons.insufficient_training_classes === 1)).toBe(true);
     expect(report.samples[0].evidence_manifest.revision_ids.length).toBeGreaterThan(0);
     expect(fs.readFileSync(file, 'utf8')).toBe(content);
     artifact.payload.rows[0].close = 999;

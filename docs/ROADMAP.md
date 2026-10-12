@@ -894,3 +894,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Đã triển khai bản xem trước “Triển vọng ngắn hạn” trên Tổng quan: 1/5 phiên, xác suất và khoảng tỷ lệ mã tăng, nhãn mô phỏng luôn hiển thị, responsive và keyboard regression. Chỉ hoàn tất prototype giao diện, chưa hoàn tất tính năng dự báo thật.
 - Tiếp theo: F2 model xác suất trên fixture, so sánh cùng folds/baselines F1 và contract synthetic/unavailable trước khi nối UI. Nghiệm thu dữ liệu thật và model ngoài mẫu vẫn phụ thuộc evidence hợp lệ; không dùng fixture để công bố hiệu quả dự báo.
+## Cập nhật ưu tiên 2026-10-12 — F2 contract synthetic
+
+- Hoàn thành replay đa chế độ cho model xác suất 1/5 phiên và contract trình bày research-preview. Contract chỉ nhận một prediction lịch sử xác định, luôn đánh dấu synthetic/research-only/live=false; trường hợp thiếu hoặc không hợp lệ trả unavailable.
+- Tiếp theo: endpoint research-preview chỉ bật ở development, sau đó nối card Tổng quan với loading/unavailable/fallback rõ ràng. Chưa mở endpoint live và chưa công bố hiệu quả thị trường trước khi có evidence hợp lệ cùng đánh giá ngoài mẫu.
