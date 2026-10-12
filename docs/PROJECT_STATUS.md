@@ -1,5 +1,14 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Lịch sử dự báo bất biến và scoring
+
+- Thêm `forecast_history_v1` cho kỳ 1/5 phiên: mỗi prediction giữ `as_of`, probability, predicted/actual class, target/outcome availability cùng model/split/training hash. Pending không bị chấm điểm; thay outcome trong test chỉ đổi outcome/score, không đổi prediction identity.
+- Chấm multiclass Brier sum và log loss (thấp hơn tốt hơn), accuracy chỉ là phụ; so cùng mẫu với frequency và frozen-persistence baseline. Reliability dùng bin cố định, bin dưới 5 mẫu ghi `insufficient_samples`; toàn contract giữ `calibrated=false`, `market_accuracy_verified=false`.
+- Artifact preview đã bao gồm lịch sử có checksum. Endpoint development-only `GET /api/forecast/research-history?horizon=1|5`, `no-store`; production/explicit disable trả 404, artifact thiếu/hỏng trả lỗi đã sanitize. Parser từ chối cả artifact tự hash lại nếu summary không khớp entries.
+- Fixture 7 mẫu/kỳ: horizon 1 Brier/log loss 0,806/1,641, kém frequency baseline 0,703/1,165; horizon 5 là 1,239/7,532, kém baseline 0,755/1,214. Đây là evidence synthetic cho thấy prototype yếu, không phải market accuracy.
+- Kiểm chứng: targeted history/artifact/controller 12/12; toàn bộ forecast 59/59; `verify:forecast-preview` đạt và xác nhận 7/7 outcome measured cho mỗi horizon. Không migration/DB/UI ở lát cắt này.
+- Tiếp theo: UI lịch sử trên Tổng quan dưới tab/expandable panel gọn, thể hiện outcome timeline, Brier/log loss so baseline và reliability state; mặc định nhấn mạnh “nghiên cứu/chưa hiệu chỉnh”, không hiển thị accuracy đơn lẻ như cam kết dự báo.
+
 ## 2026-10-12 — Walk-forward nhiều fold và chi phí regime ranking
 
 - Mở rộng shadow evaluation thành 45 origin/225 outcome trên 3 fold cố định, mỗi fold 15 phiên và purge 5 phiên để target horizon 5 kết thúc trước fold kế tiếp. Selection vẫn chỉ dùng dữ liệu đến origin; test outcome không tham gia xếp hạng.
