@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Research history từ repository và tải thêm
+
+- `GET /api/forecast/research-history` development-only nay đọc PostgreSQL snapshot store, nhận `horizon`, `limit` 1–50 và opaque cursor. Mỗi snapshot/outcome được kiểm SHA-256 trước khi trả; một row sai integrity làm response fail-closed và lỗi nội bộ được sanitize.
+- Summary Brier/log loss/accuracy và reliability chỉ tổng hợp outcome event measured của trang. Baseline chưa được seal trong snapshot schema v1 nên trả `baseline_not_stored_with_snapshot`; không ghép metric từ artifact khác nguồn/thời điểm.
+- UI lazy-load 7 record/trang, có “Tải thêm”, gộp entry duy nhất và tính lại diagnostics trên toàn bộ rows đã tải. Trạng thái baseline hiển thị “Đang tích lũy bằng chứng”; lỗi trang sau giữ nguyên dữ liệu đã có.
+- Kiểm chứng: backend targeted store/controller 11/11; full forecast 68/68; frontend 78/78; production build bundle `index-Dn6PPRda.js`; Overview E2E 15/15. Live development sau restart: trang đầu 4, trang sau 3, tổng 7 measured, cursor kết thúc đúng; Preview 4173 đang phục vụ bundle mới.
+- Tiếp theo: schema v2 seal baseline contemporaneous vào snapshot mới (không sửa v1), aggregate toàn cohort bằng query riêng thay vì suy từ page, rồi thêm filter model/date nếu lịch sử đủ lớn. Production vẫn đóng.
+
 ## 2026-10-12 — Materializer và evaluator forecast development
 
 - Prediction history nay giữ `provider` trong artifact đã hash. `materialize:forecast-preview` chỉ đọc artifact qua integrity parser rồi ghi snapshot idempotent; `evaluate:forecast-preview` tra đúng generation key và chỉ append outcome có `outcome_available_at <= now`. Evaluator không tự tạo snapshot thiếu.

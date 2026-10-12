@@ -177,4 +177,10 @@ This is currently a persistence foundation only. The development artifact endpoi
 
 The materializer consumes only an artifact that has passed `readForecastPreviewArtifact`. Provider is now carried per prediction alongside model/split/training provenance. Prediction import and outcome evaluation are separate commands: the former creates sealed snapshots, while the latter looks up the exact generation key and appends an event only when `outcome_available_at <= now`. Evaluation never creates a missing snapshot.
 
-The PostgreSQL development run imported 14 predictions (seven for each horizon) and measured 14 eligible outcomes. An immediate second run returned 14 existing snapshots and 14 existing outcomes with zero duplicates. This is synthetic lifecycle evidence only. The file-backed API has not yet switched to database pagination; that is the next boundary so rollout can be tested without changing production availability.
+The PostgreSQL development run imported 14 predictions (seven for each horizon) and measured 14 eligible outcomes. An immediate second run returned 14 existing snapshots and 14 existing outcomes with zero duplicates. This is synthetic lifecycle evidence only.
+
+## Repository-backed research history — 2026-10-12
+
+The development history endpoint now reads immutable PostgreSQL snapshots with a 1–50 limit and opaque as-of/id cursor. Every returned snapshot and outcome hash is checked before aggregation; one invalid row fails the response instead of silently dropping evidence. Proper scores and reliability bins are computed only from measured outcome events in the returned page. The UI merges unique cursor pages and recomputes loaded-row diagnostics.
+
+Baseline metrics were not sealed into the first snapshot schema. The endpoint therefore returns `baseline_not_stored_with_snapshot` and the UI says evidence is accumulating. It does not join the mutable preview artifact to historical rows. A future schema version may seal the contemporaneous baseline at prediction time; existing immutable rows will remain unchanged. Production access remains disabled.

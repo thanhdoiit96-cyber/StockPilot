@@ -4,9 +4,17 @@ const createForecastController = require('./forecastController');
 const { forecastResearchFixture } = require('../services/forecastResearchFixture');
 const { replayForecastDataset } = require('../services/forecastReplay');
 const { createForecastPreviewArtifact, parseForecastPreviewArtifact } = require('../services/forecastPreviewArtifact');
+const { artifactHash } = require('../services/forecastArtifact');
+const { validateSnapshot, validateOutcome } = require('../services/forecastSnapshotStore');
 let artifact;
 beforeAll(() => { artifact = parseForecastPreviewArtifact(JSON.stringify(createForecastPreviewArtifact(replayForecastDataset(forecastResearchFixture()), { generatedAt: '2026-10-12T06:00:00Z' })), { now: new Date('2026-10-12T06:01:00Z') }); });
-function app(env, loadArtifact = () => artifact) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact })); return instance; }
+const snapshotPayload = validateSnapshot({ synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: 5,
+  as_of: '2025-03-18', target_session: '2025-03-23', split_hash: 'a'.repeat(64), training_hash: 'b'.repeat(64), probabilities: [{ class: 'advancing', value: .6 }, { class: 'balanced', value: .3 }, { class: 'declining', value: .1 }] });
+const snapshot = { id: '11111111-1111-4111-8111-111111111111', provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: 5, as_of: '2025-03-18', target_session: '2025-03-23', payload: snapshotPayload, payload_sha256: artifactHash(snapshotPayload), integrity_valid: true };
+const outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
+snapshot.outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
+const listHistory = async () => ({ items: [snapshot], has_more: false, next_cursor: null });
+function app(env, loadArtifact = () => artifact, history = listHistory) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history })); return instance; }
 test('development exposes a no-store synthetic research preview for both horizons', async () => {
   for (const horizon of [1, 5]) {
     const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-preview').query({ horizon });
@@ -38,7 +46,13 @@ test('development exposes scored synthetic history without claiming calibration'
   const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-history?horizon=5');
   expect(response.status).toBe(200);
   expect(response.headers['cache-control']).toBe('no-store');
-  expect(response.body.data).toMatchObject({ status: 'research_history', synthetic: true, live: false, calibrated: false,
-    market_accuracy_verified: false, horizon_sessions: 5, summary: { predictions: 7, measured: 7, pending: 0 }, artifact_freshness: 'fresh' });
-  expect(response.body.data.entries).toHaveLength(7);
+  expect(response.body.data).toMatchObject({ status: 'research_history', source: 'snapshot_store', synthetic: true, live: false, calibrated: false,
+    market_accuracy_verified: false, horizon_sessions: 5, summary: { predictions: 1, measured: 1, pending: 0 }, pagination: { has_more: false, next_cursor: null } });
+  expect(response.body.data.entries).toHaveLength(1);
+});
+test('history validates pagination and sanitizes repository integrity failures', async () => {
+  expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-history?horizon=5&limit=51')).status).toBe(400);
+  expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-history?horizon=5&cursor=bad')).status).toBe(400);
+  const response = await request(app({ NODE_ENV: 'development' }, () => artifact, async () => { throw new Error('database secret'); })).get('/api/forecast/research-history?horizon=5');
+  expect(response.status).toBe(503); expect(response.text).not.toContain('database secret');
 });

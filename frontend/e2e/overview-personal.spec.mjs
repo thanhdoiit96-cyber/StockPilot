@@ -60,13 +60,15 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
     else if (path === '/api/forecast/research-history') {
       forecastHistoryRequests += 1
       const horizon = Number(url.searchParams.get('horizon'))
-      const entries = Array.from({ length: 7 }, (_, index) => ({ horizon_sessions: horizon, as_of: `2025-03-${String(12 + index).padStart(2, '0')}`,
+      const offset = url.searchParams.has('cursor') ? 4 : 0
+      const count = offset ? 3 : 4
+      const entries = Array.from({ length: count }, (_, index) => ({ id: `forecast-${offset + index}`, horizon_sessions: horizon, as_of: `2025-03-${String(12 + offset + index).padStart(2, '0')}`,
         outcome_status: 'measured', predicted_class: 'advancing', actual_class: index % 3 ? 'balanced' : 'advancing', correct: index % 3 === 0,
         confidence: .82, brier_multiclass_sum: .9, log_loss: 1.4, probabilities: [{ class: 'advancing', value: .82 }, { class: 'balanced', value: .1 }, { class: 'declining', value: .08 }] }))
-      payload.data = { status: 'research_history', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon,
-        artifact_sha256: 'a'.repeat(64), artifact_freshness: 'fresh', summary: { predictions: 7, measured: 7, pending: 0, brier_multiclass_sum: 1.239, log_loss: 7.532,
-          baseline_comparison: { frequency: { brier_multiclass_sum: .755, log_loss: 1.214, brier_delta: .484, log_loss_delta: 6.318 } } },
-        reliability: { interpretation: 'diagnostic_only_not_calibration', bins: [{ status: 'insufficient_samples' }, { status: 'observed' }] }, entries }
+      payload.data = { status: 'research_history', source: 'snapshot_store', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon,
+        summary: { predictions: count, measured: count, pending: 0, brier_multiclass_sum: .9, log_loss: 1.4, baseline_comparison: { status: 'unavailable', reason: 'baseline_not_stored_with_snapshot' } },
+        reliability: { interpretation: 'diagnostic_only_not_calibration', bins: [{ status: 'insufficient_samples' }, { status: 'insufficient_samples' }] },
+        pagination: { has_more: offset === 0, next_cursor: offset === 0 ? 'next-page' : null }, entries }
     }
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: [] }
     else if (path === '/api/recommendations/latest') payload.data = { status: recommendationItems.length ? 'generated' : 'unavailable', recommendations: recommendationItems }
@@ -125,10 +127,13 @@ test('outlook lazily opens scored forecast history and stays compact on mobile',
   const card = page.locator('.short-term-outlook')
   expect(state.forecastHistoryRequests()).toBe(0)
   await card.getByText('Lịch sử kiểm chứng dự báo', { exact: true }).click()
-  await expect(card.getByText('Chưa vượt baseline')).toBeVisible()
-  await expect(card.locator('.forecast-history-entry')).toHaveCount(7)
-  await expect(card.locator('.forecast-score-grid')).toContainText('1.239')
+  await expect(card.getByText('Đang tích lũy bằng chứng')).toBeVisible()
+  await expect(card.locator('.forecast-history-entry')).toHaveCount(4)
+  await expect(card.locator('.forecast-score-grid')).toContainText('0.900')
   expect(state.forecastHistoryRequests()).toBe(1)
+  await card.getByRole('button', { name: 'Tải thêm' }).click()
+  await expect(card.locator('.forecast-history-entry')).toHaveCount(7)
+  expect(state.forecastHistoryRequests()).toBe(2)
   expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 })
 

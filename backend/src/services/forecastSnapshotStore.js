@@ -99,4 +99,34 @@ async function listForecastSnapshots({ ForecastSnapshot, ForecastOutcomeEvent },
   const page = rows.slice(0, limit).map(item => { const row = plain(item); return { ...row, lifecycle_status: row.outcome ? 'measured' : 'pending', integrity_valid: verifySnapshot(row) }; });
   return { items: page, has_more: rows.length > limit, next_cursor: rows.length > limit ? writeForecastCursor(page.at(-1)) : null };
 }
-module.exports = { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots };
+function buildStoredForecastHistory(page, horizon, minimumBinSamples = 5) {
+  if (![1, 5].includes(horizon) || !Array.isArray(page?.items) || !Number.isInteger(minimumBinSamples) || minimumBinSamples < 2) throw new Error('Invalid stored forecast history');
+  const entries = page.items.map(row => {
+    if (!row.integrity_valid || row.payload?.horizon_sessions !== horizon) throw new Error('Forecast snapshot integrity failed');
+    const probabilities = row.payload.probabilities;
+    const ranked = [...probabilities].sort((a, b) => b.value - a.value || a.class.localeCompare(b.class));
+    const base = { id: row.id, as_of: row.as_of, target_session: row.target_session, horizon_sessions: horizon, provider: row.provider, model_version: row.model_version,
+      predicted_class: ranked[0].class, confidence: ranked[0].value, probabilities };
+    if (!row.outcome) return { ...base, outcome_status: 'pending' };
+    const outcome = plain(row.outcome);
+    if (!outcome.payload_sha256 || outcome.payload_sha256 !== artifactHash(outcome.payload) || outcome.payload?.snapshot_sha256 !== row.payload_sha256) throw new Error('Forecast outcome integrity failed');
+    return { ...base, outcome_status: 'measured', actual_class: outcome.payload.actual_class, outcome_available_at: outcome.payload.outcome_available_at,
+      correct: ranked[0].class === outcome.payload.actual_class, brier_multiclass_sum: outcome.payload.brier_multiclass_sum, log_loss: outcome.payload.log_loss };
+  });
+  const measured = entries.filter(entry => entry.outcome_status === 'measured');
+  const mean = key => measured.length ? measured.reduce((sum, entry) => sum + entry[key], 0) / measured.length : null;
+  const bins = [[0, .5], [.5, .7], [.7, .85], [.85, 1.0000000001]].map(([lower, upper], index) => {
+    const rows = measured.filter(entry => entry.confidence >= lower && entry.confidence < upper);
+    return { bin_index: index, confidence_lower: lower, confidence_upper: Math.min(1, upper), samples: rows.length,
+      status: rows.length >= minimumBinSamples ? 'observed' : 'insufficient_samples', mean_confidence: rows.length ? rows.reduce((sum, row) => sum + row.confidence, 0) / rows.length : null,
+      accuracy: rows.length ? rows.filter(row => row.correct).length / rows.length : null };
+  });
+  return { version: 'forecast_history_repository_v1', status: 'research_history', source: 'snapshot_store', synthetic: true, research_only: true, live: false,
+    market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, scoring: { convention: 'lower_is_better_for_brier_and_log_loss', baseline_status: 'unavailable_not_stored' },
+    summary: { predictions: entries.length, measured: measured.length, pending: entries.length - measured.length, brier_multiclass_sum: mean('brier_multiclass_sum'),
+      log_loss: mean('log_loss'), accuracy: measured.length ? measured.filter(entry => entry.correct).length / measured.length : null,
+      baseline_comparison: { status: 'unavailable', reason: 'baseline_not_stored_with_snapshot' } },
+    reliability: { minimum_bin_samples: minimumBinSamples, interpretation: 'diagnostic_only_not_calibration', bins }, entries,
+    pagination: { has_more: page.has_more === true, next_cursor: page.next_cursor || null } };
+}
+module.exports = { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory };
