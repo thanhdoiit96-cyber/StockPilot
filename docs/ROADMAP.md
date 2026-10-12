@@ -910,3 +910,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành cơ sở nhận định trên card; bổ sung danh sách mã từ snapshot rule-based có score/factors/indicator evidence và tách bạch khỏi forecast breadth synthetic. Watchlist Tổng quan hiển thị đủ 6/6, giới hạn an toàn 8 mã.
 - Tiếp theo: nghiên cứu regime-aware ranking trên fixture labeled, đo incremental value so với short_term_rule_v2 theo cùng time split. Chỉ nối forecast vào điểm cổ phiếu nếu cải thiện ngoài mẫu và provenance đạt; nếu không giữ hai tín hiệu độc lập.
+## Cập nhật ưu tiên 2026-10-12 — Regime-aware ranking gate
+
+- Shadow evaluation đã hoàn thành nhưng gate không đạt: chỉ 7/20 phiên tối thiểu, mean return kém baseline 5,67 điểm phần trăm và hit-rate không tăng. Vì vậy forecast synthetic không được phép điều chỉnh score hoặc danh sách mã trên UI.
+- Tiếp theo: fixture >=20 test origins, regime blocks định trước, bootstrap CI, turnover và concentration. Không tối ưu policy bằng test outcomes; đóng coupling nếu không có incremental value ổn định.
