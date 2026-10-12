@@ -34,3 +34,11 @@ test('an as-of outside the materialized artifact returns unavailable without rec
   expect(response.status).toBe(200);
   expect(response.body.data).toMatchObject({ status: 'unavailable', reason: 'prediction_not_in_artifact', as_of: '2099-01-01' });
 });
+test('development exposes scored synthetic history without claiming calibration', async () => {
+  const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-history?horizon=5');
+  expect(response.status).toBe(200);
+  expect(response.headers['cache-control']).toBe('no-store');
+  expect(response.body.data).toMatchObject({ status: 'research_history', synthetic: true, live: false, calibrated: false,
+    market_accuracy_verified: false, horizon_sessions: 5, summary: { predictions: 7, measured: 7, pending: 0 }, artifact_freshness: 'fresh' });
+  expect(response.body.data.entries).toHaveLength(7);
+});

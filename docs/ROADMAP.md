@@ -923,3 +923,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành 3 fold rời nhau có purge horizon, hierarchical bootstrap và cost sensitivity 0/10/25/50 bps. Policy không đạt: positive-rate giảm, net delta 25 bps có CI chứa 0 và một fold âm. Không nối regime forecast vào stock ranking/UI; không tune lại policy trên holdout đã quan sát.
 - Tiếp theo: quay lại forecast cấp thị trường, thêm lịch sử artifact prediction và scoring rule/calibration theo kỳ 1/5 phiên để người dùng có thể đối chiếu dự báo với outcome khi đủ dữ liệu. Giữ research-preview/synthetic rõ ràng; chưa công bố market accuracy hoặc bật live forecast.
+
+## Cập nhật ưu tiên 2026-10-12 — Lịch sử và scoring dự báo
+
+- Hoàn thành lịch sử artifact bất biến cho kỳ 1/5 phiên, outcome pending/measured, Brier/log loss, accuracy phụ, reliability bin có minimum sample và so sánh frequency/persistence baseline. Endpoint chỉ bật development; synthetic prototype hiện kém frequency baseline ở cả hai kỳ nên không đạt calibration/market-accuracy gate.
+- Tiếp theo: trình bày lịch sử trên UI Tổng quan bằng panel/tab gọn với timeline dự báo → outcome, so sánh proper score với baseline và trạng thái reliability. UI phải ưu tiên cảnh báo research-only/chưa hiệu chỉnh, hỗ trợ loading/error/empty/mobile; không đưa stock ranking overlay đã bị loại trở lại.

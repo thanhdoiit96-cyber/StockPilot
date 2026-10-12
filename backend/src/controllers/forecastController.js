@@ -26,6 +26,21 @@ function createForecastController({ env = process.env, loadArtifact } = {}) {
       return res.status(503).json({ success: false, code: 'FORECAST_PREVIEW_UNAVAILABLE', message: 'Forecast research preview artifact is unavailable.' });
     }
   });
+  router.get('/research-history', (req, res) => {
+    if (env.NODE_ENV !== 'development' || env.FORECAST_RESEARCH_PREVIEW === 'false') return res.status(404).json({ success: false, code: 'FORECAST_PREVIEW_DISABLED', message: 'Forecast research preview is not available.' });
+    const horizon = Number(req.query.horizon);
+    if (![1, 5].includes(horizon)) return res.status(400).json({ success: false, code: 'INVALID_HORIZON', message: 'horizon must be 1 or 5.' });
+    try {
+      const artifact = load();
+      const history = artifact.payload.histories.find(item => item.horizon_sessions === horizon);
+      if (!history) throw new Error('History missing');
+      res.set('Cache-Control', 'no-store');
+      return res.json({ success: true, data: { ...history, artifact_sha256: artifact.sha256, artifact_generated_at: artifact.payload.generated_at,
+        artifact_freshness: artifact.freshness, artifact_age_seconds: artifact.age_seconds } });
+    } catch (_) {
+      return res.status(503).json({ success: false, code: 'FORECAST_HISTORY_UNAVAILABLE', message: 'Forecast research history artifact is unavailable.' });
+    }
+  });
   return router;
 }
 module.exports = createForecastController;
