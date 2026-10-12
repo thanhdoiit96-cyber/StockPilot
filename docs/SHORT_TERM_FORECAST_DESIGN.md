@@ -183,4 +183,10 @@ The PostgreSQL development run imported 14 predictions (seven for each horizon) 
 
 The development history endpoint now reads immutable PostgreSQL snapshots with a 1–50 limit and opaque as-of/id cursor. Every returned snapshot and outcome hash is checked before aggregation; one invalid row fails the response instead of silently dropping evidence. Proper scores and reliability bins are computed only from measured outcome events in the returned page. The UI merges unique cursor pages and recomputes loaded-row diagnostics.
 
-Baseline metrics were not sealed into the first snapshot schema. The endpoint therefore returns `baseline_not_stored_with_snapshot` and the UI says evidence is accumulating. It does not join the mutable preview artifact to historical rows. A future schema version may seal the contemporaneous baseline at prediction time; existing immutable rows will remain unchanged. Production access remains disabled.
+Baseline metrics were not sealed into the first snapshot schema. For those rows, the endpoint returns `baseline_not_stored_with_snapshot` and the UI says evidence is accumulating. It does not join the mutable preview artifact to historical rows. Payload v2 below seals baseline for new predictions while existing immutable rows remain unchanged. Production access remains disabled.
+
+## Snapshot payload v2 — sealed contemporaneous baseline — 2026-10-12
+
+New snapshot inputs include the fold's frequency and frozen-persistence probability vectors, their versions and the fit cutoff. Validation requires complete three-class probability vectors and a fit cutoff before as-of. These fields are covered by the snapshot SHA-256. When an outcome is appended, repository history computes baseline Brier/log loss from those sealed probabilities and the same actual class used for the model score.
+
+Comparison is all-or-nothing for measured rows in a returned cohort/page. If any measured row is v1, baseline status remains unavailable; the service does not compare only the convenient subset. The 14 existing development identities remain v1 and materialization reports `legacy_existing=14`, with no update or duplicate. PostgreSQL rollback smoke created a v2 snapshot/outcome, confirmed the baseline was sealed and the immutable trigger held, then retained no fixture.

@@ -16,10 +16,23 @@ function validateSnapshot(input) {
   if (!Array.isArray(input.probabilities) || input.probabilities.length !== 3) throw new Error('Invalid snapshot probabilities');
   const values = Object.fromEntries(input.probabilities.map(item => [item.class, item.value]));
   if (CLASSES.some(name => !Number.isFinite(values[name]) || values[name] < 0 || values[name] > 1) || Math.abs(CLASSES.reduce((sum, name) => sum + values[name], 0) - 1) > 1e-9) throw new Error('Invalid snapshot probabilities');
-  return { version: 'forecast_snapshot_payload_v1', synthetic: true, research_only: true, live: false, market_accuracy_verified: false,
+  let baseline_snapshot;
+  if (input.baseline_snapshot) {
+    const baseline = input.baseline_snapshot;
+    const normalize = probabilities => {
+      if (!Array.isArray(probabilities) || probabilities.length !== 3) throw new Error('Invalid snapshot baseline');
+      const mapped = Object.fromEntries(probabilities.map(item => [item.class, item.value]));
+      if (CLASSES.some(name => !Number.isFinite(mapped[name]) || mapped[name] < 0 || mapped[name] > 1) || Math.abs(CLASSES.reduce((sum, name) => sum + mapped[name], 0) - 1) > 1e-9) throw new Error('Invalid snapshot baseline');
+      return CLASSES.map(name => ({ class: name, value: mapped[name] }));
+    };
+    if (typeof baseline.version !== 'string' || !baseline.version || typeof baseline.persistence_version !== 'string' || !baseline.persistence_version || typeof baseline.fit_cutoff !== 'string' || !Number.isFinite(Date.parse(baseline.fit_cutoff)) || Date.parse(baseline.fit_cutoff) >= Date.parse(`${input.as_of}T00:00:00+07:00`)) throw new Error('Invalid snapshot baseline');
+    baseline_snapshot = { version: baseline.version, fit_cutoff: new Date(baseline.fit_cutoff).toISOString(), frequency_probabilities: normalize(baseline.frequency_probabilities),
+      persistence_version: baseline.persistence_version, persistence_probabilities: normalize(baseline.persistence_probabilities) };
+  }
+  return { version: baseline_snapshot ? 'forecast_snapshot_payload_v2' : 'forecast_snapshot_payload_v1', synthetic: true, research_only: true, live: false, market_accuracy_verified: false,
     provider: input.provider, model_version: input.model_version, horizon_sessions: input.horizon_sessions, as_of: input.as_of,
     target_session: validDate(input.target_session) && input.target_session > input.as_of ? input.target_session : null, split_hash: input.split_hash, training_hash: input.training_hash,
-    probabilities: CLASSES.map(name => ({ class: name, value: values[name] })) };
+    probabilities: CLASSES.map(name => ({ class: name, value: values[name] })), ...(baseline_snapshot ? { baseline_snapshot } : {}) };
 }
 function snapshotGenerationKey(payload) { return keyHash([payload.provider, payload.model_version, payload.horizon_sessions, payload.as_of]); }
 function verifySnapshot(row) { const value = plain(row); return Boolean(value?.payload_sha256 && value.payload_sha256 === artifactHash(value.payload)); }
@@ -43,7 +56,12 @@ async function createForecastSnapshot({ ForecastSnapshot, sequelize }, input, { 
   const payload = validateSnapshot(input), generation_key = snapshotGenerationKey(payload), payload_sha256 = artifactHash(payload);
   const existing = await ForecastSnapshot.findOne({ where: { generation_key } });
   if (existing) {
-    if (!verifySnapshot(existing) || plain(existing).payload_sha256 !== payload_sha256) throw new Error('Snapshot identity conflict');
+    const row = plain(existing);
+    if (!verifySnapshot(row)) throw new Error('Snapshot identity conflict');
+    if (row.payload_sha256 !== payload_sha256) {
+      if (row.payload?.version === 'forecast_snapshot_payload_v1' && payload.version === 'forecast_snapshot_payload_v2') return { status: 'snapshot_legacy_exists', snapshot: row };
+      throw new Error('Snapshot identity conflict');
+    }
     return { status: 'snapshot_exists', snapshot: plain(existing) };
   }
   const values = { generation_key, schema_version: payload.version, provider: payload.provider, model_version: payload.model_version, horizon_sessions: payload.horizon_sessions,
@@ -55,8 +73,13 @@ async function createForecastSnapshot({ ForecastSnapshot, sequelize }, input, { 
   } catch (error) {
     if (error?.name !== 'SequelizeUniqueConstraintError') throw error;
     const raced = await ForecastSnapshot.findOne({ where: { generation_key } });
-    if (!raced || !verifySnapshot(raced) || plain(raced).payload_sha256 !== payload_sha256) throw new Error('Snapshot identity conflict');
-    return { status: 'snapshot_exists', snapshot: plain(raced) };
+    const row = plain(raced);
+    if (!row || !verifySnapshot(row)) throw new Error('Snapshot identity conflict');
+    if (row.payload_sha256 !== payload_sha256) {
+      if (row.payload?.version === 'forecast_snapshot_payload_v1' && payload.version === 'forecast_snapshot_payload_v2') return { status: 'snapshot_legacy_exists', snapshot: row };
+      throw new Error('Snapshot identity conflict');
+    }
+    return { status: 'snapshot_exists', snapshot: row };
   }
 }
 
@@ -110,8 +133,13 @@ function buildStoredForecastHistory(page, horizon, minimumBinSamples = 5) {
     if (!row.outcome) return { ...base, outcome_status: 'pending' };
     const outcome = plain(row.outcome);
     if (!outcome.payload_sha256 || outcome.payload_sha256 !== artifactHash(outcome.payload) || outcome.payload?.snapshot_sha256 !== row.payload_sha256) throw new Error('Forecast outcome integrity failed');
-    return { ...base, outcome_status: 'measured', actual_class: outcome.payload.actual_class, outcome_available_at: outcome.payload.outcome_available_at,
-      correct: ranked[0].class === outcome.payload.actual_class, brier_multiclass_sum: outcome.payload.brier_multiclass_sum, log_loss: outcome.payload.log_loss };
+    const actual = outcome.payload.actual_class, truth = CLASSES.indexOf(actual);
+    const baseline = row.payload.baseline_snapshot;
+    const baselineScore = probabilities => probabilities ? { brier_multiclass_sum: probabilities.reduce((sum, item, index) => sum + (item.value - Number(index === truth)) ** 2, 0),
+      log_loss: -Math.log(Math.max(1e-15, probabilities[truth].value)) } : null;
+    return { ...base, outcome_status: 'measured', actual_class: actual, outcome_available_at: outcome.payload.outcome_available_at,
+      correct: ranked[0].class === actual, brier_multiclass_sum: outcome.payload.brier_multiclass_sum, log_loss: outcome.payload.log_loss,
+      baseline_scores: baseline ? { frequency: baselineScore(baseline.frequency_probabilities), persistence: baselineScore(baseline.persistence_probabilities) } : null };
   });
   const measured = entries.filter(entry => entry.outcome_status === 'measured');
   const mean = key => measured.length ? measured.reduce((sum, entry) => sum + entry[key], 0) / measured.length : null;
@@ -121,11 +149,19 @@ function buildStoredForecastHistory(page, horizon, minimumBinSamples = 5) {
       status: rows.length >= minimumBinSamples ? 'observed' : 'insufficient_samples', mean_confidence: rows.length ? rows.reduce((sum, row) => sum + row.confidence, 0) / rows.length : null,
       accuracy: rows.length ? rows.filter(row => row.correct).length / rows.length : null };
   });
+  const withBaseline = measured.filter(entry => entry.baseline_scores);
+  const baselineMean = (type, key) => withBaseline.length ? withBaseline.reduce((sum, entry) => sum + entry.baseline_scores[type][key], 0) / withBaseline.length : null;
+  const modelBrier = mean('brier_multiclass_sum'), modelLogLoss = mean('log_loss'), baselineComplete = measured.length > 0 && withBaseline.length === measured.length;
+  const baselineComparison = baselineComplete ? { status: 'available', convention: 'model_minus_baseline; negative_favors_model', frequency: {
+    samples: withBaseline.length, brier_multiclass_sum: baselineMean('frequency', 'brier_multiclass_sum'), log_loss: baselineMean('frequency', 'log_loss'),
+    brier_delta: modelBrier - baselineMean('frequency', 'brier_multiclass_sum'), log_loss_delta: modelLogLoss - baselineMean('frequency', 'log_loss') }, persistence: {
+    samples: withBaseline.length, brier_multiclass_sum: baselineMean('persistence', 'brier_multiclass_sum'), log_loss: baselineMean('persistence', 'log_loss'),
+    brier_delta: modelBrier - baselineMean('persistence', 'brier_multiclass_sum'), log_loss_delta: modelLogLoss - baselineMean('persistence', 'log_loss') } }
+    : { status: 'unavailable', reason: measured.length ? 'baseline_not_stored_with_all_snapshots' : 'no_measured_outcomes' };
   return { version: 'forecast_history_repository_v1', status: 'research_history', source: 'snapshot_store', synthetic: true, research_only: true, live: false,
-    market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, scoring: { convention: 'lower_is_better_for_brier_and_log_loss', baseline_status: 'unavailable_not_stored' },
-    summary: { predictions: entries.length, measured: measured.length, pending: entries.length - measured.length, brier_multiclass_sum: mean('brier_multiclass_sum'),
-      log_loss: mean('log_loss'), accuracy: measured.length ? measured.filter(entry => entry.correct).length / measured.length : null,
-      baseline_comparison: { status: 'unavailable', reason: 'baseline_not_stored_with_snapshot' } },
+    market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, scoring: { convention: 'lower_is_better_for_brier_and_log_loss', baseline_status: baselineComparison.status },
+    summary: { predictions: entries.length, measured: measured.length, pending: entries.length - measured.length, brier_multiclass_sum: modelBrier,
+      log_loss: modelLogLoss, accuracy: measured.length ? measured.filter(entry => entry.correct).length / measured.length : null, baseline_comparison: baselineComparison },
     reliability: { minimum_bin_samples: minimumBinSamples, interpretation: 'diagnostic_only_not_calibration', bins }, entries,
     pagination: { has_more: page.has_more === true, next_cursor: page.next_cursor || null } };
 }

@@ -7,6 +7,7 @@ function buildForecastHistory({ report, horizon, minimumBinSamples = 5 } = {}) {
   if (report?.synthetic !== true || report?.research_only !== true) return unavailable('verified_live_history_not_available');
   if (![1, 5].includes(horizon) || !Number.isInteger(minimumBinSamples) || minimumBinSamples < 2) return unavailable('invalid_request');
   const model = report.models?.find(item => item.horizon_sessions === horizon);
+  const baseline = report.baselines?.find(item => item.horizon_sessions === horizon);
   if (!model || model.status !== 'evaluated' || model.classes?.join('|') !== CLASSES.join('|')) return unavailable('model_unavailable');
   const samples = new Map(report.samples.map(sample => [sample.as_of, sample]));
   const entries = [];
@@ -17,9 +18,14 @@ function buildForecastHistory({ report, horizon, minimumBinSamples = 5 } = {}) {
     const probabilities = Object.fromEntries(CLASSES.map((name, index) => [name, prediction.probabilities[index]]));
     if (Object.values(probabilities).some(value => !Number.isFinite(value) || value < 0 || value > 1) || Math.abs(Object.values(probabilities).reduce((a, b) => a + b, 0) - 1) > 1e-9) continue;
     const ranked = CLASSES.map(name => ({ class: name, value: probabilities[name] })).sort((a, b) => b.value - a.value || a.class.localeCompare(b.class));
+    const baselineFold = baseline?.folds?.[foldIndex];
+    const baselineSnapshot = baselineFold?.status === 'available' ? { version: baseline.version, fit_cutoff: baselineFold.fitCutoff,
+      frequency_probabilities: CLASSES.map((name, index) => ({ class: name, value: baselineFold.probabilities[index] })),
+      persistence_version: baselineFold.persistence.version,
+      persistence_probabilities: CLASSES.map((name, index) => ({ class: name, value: baselineFold.persistence.probabilities[index] })) } : null;
     const base = { fold_index: foldIndex, as_of: prediction.session, horizon_sessions: horizon, model_version: model.version,
       provider: sample.provider, split_hash: model.split_hash, training_hash: fold.training_hash, predicted_class: ranked[0].class, confidence: ranked[0].value,
-      probabilities: CLASSES.map(name => ({ class: name, value: probabilities[name] })) };
+      probabilities: CLASSES.map(name => ({ class: name, value: probabilities[name] })), baseline_snapshot: baselineSnapshot };
     if (outcome?.status !== 'available' || !CLASSES.includes(outcome.label)) {
       entries.push({ ...base, outcome_status: 'pending', target_session: outcome?.target_session || null, outcome_available_at: null }); continue;
     }
@@ -33,7 +39,6 @@ function buildForecastHistory({ report, horizon, minimumBinSamples = 5 } = {}) {
   if (!entries.length) return unavailable('prediction_history_empty');
   const measured = entries.filter(entry => entry.outcome_status === 'measured');
   const mean = key => measured.length ? measured.reduce((sum, entry) => sum + entry[key], 0) / measured.length : null;
-  const baseline = report.baselines?.find(item => item.horizon_sessions === horizon);
   const baselineFolds = baseline?.folds?.filter(fold => fold.status === 'available') || [];
   const baselineSamples = baselineFolds.reduce((sum, fold) => sum + fold.metrics.samples, 0);
   const weighted = (path) => baselineSamples ? baselineFolds.reduce((sum, fold) => sum + path(fold) * fold.metrics.samples, 0) / baselineSamples : null;

@@ -11,16 +11,16 @@ function artifactEntries(artifact) {
 function snapshotInput(entry) {
   return { synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: entry.provider, model_version: entry.model_version,
     horizon_sessions: entry.horizon_sessions, as_of: entry.as_of, target_session: entry.target_session, split_hash: entry.split_hash,
-    training_hash: entry.training_hash, probabilities: entry.probabilities };
+    training_hash: entry.training_hash, probabilities: entry.probabilities, baseline_snapshot: entry.baseline_snapshot };
 }
 async function materializeForecastArtifact({ artifact, models, env = process.env, retentionDays = 180, now = new Date() }) {
   assertDevelopment(env);
-  const counts = { created: 0, existing: 0 };
+  const counts = { created: 0, existing: 0, legacy_existing: 0 };
   for (const entry of artifactEntries(artifact)) {
     const result = await createForecastSnapshot(models, snapshotInput(entry), { retentionDays, now });
-    counts[result.status === 'created' ? 'created' : 'existing']++;
+    counts[result.status === 'created' ? 'created' : result.status === 'snapshot_legacy_exists' ? 'legacy_existing' : 'existing']++;
   }
-  return { status: 'materialized', synthetic: true, artifact_sha256: artifact.sha256, predictions: counts.created + counts.existing, ...counts };
+  return { status: 'materialized', synthetic: true, artifact_sha256: artifact.sha256, predictions: counts.created + counts.existing + counts.legacy_existing, ...counts };
 }
 async function evaluateForecastArtifactOutcomes({ artifact, models, env = process.env, now = new Date() }) {
   assertDevelopment(env);

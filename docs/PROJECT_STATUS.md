@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Snapshot v2 seal baseline cùng prediction
+
+- Artifact/history entry nay chứa frequency và frozen-persistence probability, version và fit cutoff của đúng fold. `forecast_snapshot_payload_v2` kiểm đủ 3 class, tổng probability và fit cutoff trước `as_of`; toàn baseline nằm trong snapshot SHA-256.
+- Khi outcome measured, repository tự tính Brier/log loss cho model và hai baseline từ cùng actual class. Chỉ trả comparison khi mọi measured row trong page/cohort có baseline v2; mixed/v1 trả unavailable, không chọn subset thuận lợi.
+- 14 identity development hiện hữu vẫn là v1 bất biến. Materialize artifact mới trả `legacy_existing=14`, `created=0`, không update/duplicate. Prediction mới chưa tồn tại sẽ dùng v2. Race unique giữa v1/v2 cũng xử lý theo cùng quy tắc.
+- PostgreSQL rollback smoke: `schema_version=forecast_snapshot_payload_v2`, `baseline_sealed=true`, outcome measured, trigger immutable, không giữ fixture. Toàn bộ forecast regression 70/70 đạt.
+- Tiếp theo: cohort aggregate endpoint độc lập pagination, tách v1/v2 coverage, group model/horizon/date và minimum-sample gate; UI chỉ hiển thị comparison cohort v2 đủ mẫu.
+
 ## 2026-10-12 — Research history từ repository và tải thêm
 
 - `GET /api/forecast/research-history` development-only nay đọc PostgreSQL snapshot store, nhận `horizon`, `limit` 1–50 và opaque cursor. Mỗi snapshot/outcome được kiểm SHA-256 trước khi trả; một row sai integrity làm response fail-closed và lỗi nội bộ được sanitize.
