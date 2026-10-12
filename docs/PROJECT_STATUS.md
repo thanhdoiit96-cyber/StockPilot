@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Shadow evaluation regime-aware stock ranking
+
+- Thêm `forecast_regime_ranking_v1`: trên từng test origin, dùng prediction đã fit trước phiên test, tạo pool `short_term_rule_v2` chỉ từ lịch sử đến origin, rồi thử công thức cố định `rule_score + (p_advancing - p_declining) × (momentum - stability) × 0.1`. Baseline và biến thể dùng cùng session/horizon/top-5/outcome.
+- Gate bắt buộc >=20 comparable sessions, mean forward return delta >0 và positive-rate delta >0. Fixture có 7 phiên/35 stock outcomes: baseline mean -3,13%, regime -8,80%, delta -5,67 điểm phần trăm; positive rate cùng 5,71%. `coupling_enabled=false`, decision=insufficient_evidence; kết quả cũng không cho thấy incremental value.
+- Test chứng minh thay outcome cuối chỉ đổi metric, không đổi selection hash/danh sách; non-synthetic và model unavailable fail closed. `npm run report:forecast-regime-ranking` xuất summary và session manifest, không ghi DB/UI.
+- Kiểm chứng toàn bộ forecast 53/53 đạt, gồm CLI subprocess ngoài sandbox. Không thay UI/bundle ở bước này vì gate không đạt; danh sách mã trên Tổng quan tiếp tục độc lập với forecast synthetic.
+- Tiếp theo: mở rộng synthetic replay có ít nhất 20 test origins và nhiều regime blocks, thêm bootstrap confidence interval cùng turnover/concentration; chỉ thử policy pre-registered, không tune trên test. Nếu vẫn không thắng baseline, đóng hướng coupling và giữ forecast ở cấp thị trường.
+
 ## 2026-10-12 — Cơ sở dự báo, mã quan sát và Watchlist Tổng quan
 
 - Card outlook hiển thị cơ sở nhận định ngay trên UI: feature mean return rổ synthetic 1/5/20 phiên, softmax ba trạng thái, time split, as-of và 12 ký tự đầu artifact hash; ghi rõ chưa calibration. Khi artifact lỗi, phần cơ sở nói rõ chỉ còn fixture và không được diễn giải thành dự báo.

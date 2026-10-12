@@ -138,3 +138,8 @@ The multi-regime fixture now explicitly declares that it is not market evidence 
 ## Materialized research preview artifact — 2026-10-12
 
 `generate:forecast-preview` runs the synthetic replay before serving requests and atomically writes a small `forecast_research_preview_artifact_v1` envelope. Canonical SHA-256 covers generated time, seven-day stale window, report/model/split metadata and both presentation contracts. The endpoint reads at most 256 KiB and validates the full contract. It returns artifact hash, generated time, age and fresh/stale classification; these describe artifact generation only, not market-data freshness. The evidence directory is intentionally not committed.
+## Regime-aware stock ranking shadow evaluation — 2026-10-12
+
+`forecast_regime_ranking_v1` compares `short_term_rule_v2` with a pre-specified overlay on identical synthetic test origins and forward outcomes. The overlay adds `(p_advancing - p_declining) × (momentum - stability) × 0.1` to the rule score. Forecast probabilities are frozen before each test origin; price history is capped at that origin. A regression test changes the last target outcome and proves selections remain unchanged.
+
+Automatic coupling requires at least 20 comparable sessions and strictly positive deltas for both mean forward return and positive rate. The current seven-session fixture fails all practical evidence requirements: mean return is lower and positive rate is unchanged. Coupling remains disabled and these synthetic metrics are not market performance. Future policies must be pre-registered and evaluated with confidence intervals, turnover and concentration; test outcomes must not be used for tuning.
