@@ -249,3 +249,5 @@ Run `npm run audit:forecast-data` to inspect stored daily-price coverage, histor
 ## Forecast research preview
 
 Run `npm run generate:forecast-preview` before using the development preview. It materializes `evidence/forecast-research-preview.json` outside the HTTP request path. `GET /api/forecast/research-preview?horizon=1|5` verifies the bounded artifact checksum and returns generated-at/freshness metadata with `Cache-Control: no-store`. It returns 404 in production or when `FORECAST_RESEARCH_PREVIEW=false`, and never represents a live forecast. Missing or invalid artifacts return 503 without exposing a local path. See `docs/SHORT_TERM_FORECAST_DESIGN.md` for the presentation contract.
+
+`npm run dev` runs artifact generation automatically through `predev`. `npm run verify:forecast-preview` regenerates the artifact and fails unless checksum/schema/freshness and both horizons are valid. This verifies development research plumbing, not market accuracy.

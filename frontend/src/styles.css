@@ -2160,6 +2160,9 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .outlook-meter i { display: block; height: 100%; background: currentColor; border-radius: inherit; }
 .outlook-note, .outlook-footer { font-size: 11px; color: var(--muted); line-height: 1.6; }
 .outlook-note.is-stale { color: #d99b3d; font-weight: 600; }
+.outlook-preview-status { display: flex; align-items: center; gap: 8px; margin-top: 8px; }.outlook-preview-status .outlook-note { margin: 0; }
+.outlook-basis { margin-top: 14px; padding: 11px 13px; border-radius: 11px; border: 1px solid rgba(92, 145, 217, .25); background: rgba(92, 145, 217, .07); font-size: 10px; line-height: 1.5; }
+.outlook-basis > strong { font-size: 11px; }.outlook-basis ul { display: flex; flex-wrap: wrap; gap: 5px 20px; margin: 6px 0 0; padding-left: 17px; color: var(--muted); }.outlook-basis li { flex: 1 1 230px; }.outlook-basis p { margin: 5px 0 0; color: var(--muted); }
 .outlook-range-value { display: flex; gap: 10px; align-items: baseline; }
 .outlook-range-value strong { font-size: 24px; }
 .outlook-range-value span { font-size: 11px; color: var(--muted); }
@@ -2170,4 +2173,16 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .outlook-band { stroke: #5c91d9; stroke-width: 12; stroke-linecap: round; opacity: .45; }
 .outlook-point { fill: #5c91d9; stroke: var(--text); stroke-width: 2; }
 .outlook-footer { border-top: 1px solid #8883; padding-top: 10px; margin-top: 6px; }
-@media (max-width: 700px) { .short-term-outlook { padding: 16px; } .outlook-body { grid-template-columns: 1fr; gap: 14px; } .outlook-controls { width: 100%; } .outlook-info p { right: auto; left: 0; } .outlook-probabilities { gap: 10px; } }
+.outlook-candidates { margin-top: 16px; padding-top: 14px; border-top: 1px solid #8883; }
+.outlook-candidates-heading { display: flex; justify-content: space-between; align-items: start; gap: 14px; }
+.outlook-candidates-heading h3 { margin: 0 0 4px; font-size: 13px; }
+.outlook-candidates-heading p, .outlook-candidates-empty { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.outlook-candidate-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.outlook-candidate-list > li { position: relative; min-width: 0; padding: 12px; border: 1px solid #8883; border-radius: 12px; background: #8881; }
+.outlook-candidate-main { display: flex; align-items: center; gap: 8px; padding-right: 68px; }
+.outlook-candidate-main .symbol { border: 0; padding: 0; background: none; cursor: pointer; }
+.outlook-candidate-score { font-weight: 700; font-variant-numeric: tabular-nums; }.outlook-candidate-score small { color: var(--muted); font-size: 9px; }
+.outlook-candidate-list > li > p { min-height: 34px; margin: 8px 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.outlook-candidate-evidence { display: flex; gap: 5px; flex-wrap: wrap; }.outlook-candidate-evidence span { padding: 3px 6px; border-radius: 9px; background: #8882; color: var(--muted); font-size: 9px; }.outlook-candidate-evidence b { color: var(--text); }
+.outlook-candidate-watch { position: absolute; top: 9px; right: 9px; }
+@media (max-width: 700px) { .short-term-outlook { padding: 16px; } .outlook-body { grid-template-columns: 1fr; gap: 14px; } .outlook-controls { width: 100%; } .outlook-info p { right: auto; left: 0; } .outlook-probabilities { gap: 10px; } .outlook-candidate-list { grid-template-columns: 1fr; } .outlook-candidates-heading { align-items: center; } }

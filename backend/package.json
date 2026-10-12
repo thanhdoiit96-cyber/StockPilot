@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/app.js",
+    "predev": "npm run generate:forecast-preview",
     "dev": "nodemon src/app.js",
     "test": "jest --coverage",
     "test:postgres": "node scripts/verify-postgres.cjs",
@@ -16,6 +17,7 @@
     "report:forecast-research": "node scripts/report-forecast-research.cjs",
     "report:forecast-exclusions": "node scripts/report-forecast-exclusions.cjs",
     "generate:forecast-preview": "node scripts/generate-forecast-preview.cjs",
+    "verify:forecast-preview": "npm run generate:forecast-preview && node scripts/verify-forecast-preview.cjs",
     "lint": "eslint src/**/*.js",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
