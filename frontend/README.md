@@ -163,3 +163,4 @@ The Portfolio page lazily requests `/api/portfolio/performance/history` only whi
 ## Short-term outlook preview (2026-10-12)
 
 Overview includes ShortTermOutlook with 1/5-session controls, three illustrative probabilities and an advancing-stock-share range. Fixed fixtures are always labeled Simulated; no forecast API is called. Session storage retains the horizon. Native buttons/details support keyboard use and the layout stacks on mobile. Values are not model outputs or VNINDEX forecasts.
+The Overview short-term outlook requests `/api/forecast/research-preview` for 1/5-session synthetic replay probabilities. The client accepts only the explicit research-only, non-live contract. Loading retains the card layout; unavailable or malformed responses fall back to labeled fixed UI fixtures. The advancing-share range remains illustrative and is not a model output.

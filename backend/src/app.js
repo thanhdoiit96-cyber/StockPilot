@@ -24,6 +24,7 @@ const watchlistController = require('./controllers/watchlistController');
 const portfolioController = require('./controllers/portfolioController');
 const recommendationController = require('./controllers/recommendationController');
 const advisorController = require('./controllers/advisorController');
+const forecastController = require('./controllers/forecastController')();
 const requireAdmin = require('./middleware/requireAdmin');
 const requestMetrics = require('./middleware/requestMetrics');
 const { createRequestMetrics } = require('./services/requestMetrics');
@@ -218,6 +219,7 @@ async function start() {
     app.use('/api/portfolio', portfolioController);
     app.use('/api/recommendations', recommendationController);
     app.use('/api/advisor/conversations', advisorController);
+    app.use('/api/forecast', forecastController);
     logger.info('[Routes] /api/stocks mounted');
 
     // Start server

@@ -2149,6 +2149,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .outlook-body { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; margin-top: 20px; }
 .outlook-body h3 { font-size: 13px; margin: 0 0 12px; }
 .outlook-probabilities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.outlook-probabilities.is-loading { opacity: .55; }
 .outlook-probability span { display: block; font-size: 12px; color: var(--muted); }
 .outlook-probability strong { display: block; margin: 7px 0 10px; font-size: 28px; font-variant-numeric: tabular-nums; }
 .outlook-probability small { font-size: 14px; margin-left: 3px; }

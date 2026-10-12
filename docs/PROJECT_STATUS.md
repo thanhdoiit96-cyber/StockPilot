@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Research-preview API và UI Tổng quan
+
+- Thêm `GET /api/forecast/research-preview?horizon=1|5`: chỉ mở khi NODE_ENV=development và không đặt FORECAST_RESEARCH_PREVIEW=false; production/disabled trả 404 trước khi tạo report. Response `no-store`, lỗi tạo fixture được che nội dung và trả 503. Report synthetic được cache trong tiến trình sau lần tạo đầu.
+- Frontend kiểm tra đầy đủ contract synthetic/research_only/live=false/market_accuracy_verified=false, thứ tự lớp và tổng xác suất. Card Tổng quan lấy xác suất replay cho kỳ 1/5; trong lúc tải giữ layout ổn định, khi endpoint lỗi/disabled hiển thị fixture dự phòng cùng nhãn rõ. Khoảng tỷ lệ mã tăng vẫn là fixture, không bị trình bày như output model.
+- Kiểm chứng: backend controller 3/3; frontend 75/75; build/integrity đạt; browser mobile/keyboard outlook 1/1 đạt. Backend development đã restart; endpoint qua localhost:4173 trả research_preview cho cả hai kỳ. Preview phục vụ bundle `index-GKpFGgwY.js`.
+- Giới hạn: đây là replay synthetic tại 2025-03-18, chưa hiệu chỉnh và không phải dự báo hiện tại. Lần gọi đầu tạo fixture có thể chậm hơn do replay; các lần sau dùng cache trong tiến trình. Endpoint không tồn tại trên production.
+- Tiếp theo: tách artifact research preview được tạo sẵn khỏi request path, thêm metadata generated_at/artifact hash và freshness; UI hiển thị tuổi artifact. Sau đó mới cân nhắc endpoint current forecast khi có evidence thật và đánh giá ngoài mẫu.
+
 ## 2026-10-12 — F2 replay đa chế độ và contract trình bày
 
 - Fixture research khai báo rõ thiết kế multi-regime synthetic, tạo đủ nhãn declining/balanced/advancing cho cả kỳ 1/5 phiên. Replay kiểm chứng model evaluated ở cả hai kỳ, mỗi fold chấm đúng 7 test sessions trên cùng split của baseline.

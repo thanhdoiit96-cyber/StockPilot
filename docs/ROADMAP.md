@@ -898,3 +898,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành replay đa chế độ cho model xác suất 1/5 phiên và contract trình bày research-preview. Contract chỉ nhận một prediction lịch sử xác định, luôn đánh dấu synthetic/research-only/live=false; trường hợp thiếu hoặc không hợp lệ trả unavailable.
 - Tiếp theo: endpoint research-preview chỉ bật ở development, sau đó nối card Tổng quan với loading/unavailable/fallback rõ ràng. Chưa mở endpoint live và chưa công bố hiệu quả thị trường trước khi có evidence hợp lệ cùng đánh giá ngoài mẫu.
+## Cập nhật ưu tiên 2026-10-12 — Research preview trên Tổng quan
+
+- Hoàn thành endpoint development-only và nối card Tổng quan với contract fail-closed, loading/fallback, responsive và keyboard regression. Bundle mới đã có trên Preview 4173; endpoint production vẫn đóng.
+- Tiếp theo: materialize artifact preview ngoài request path, bổ sung hash/thời điểm tạo/freshness và trạng thái stale trên UI. Không chuyển thành current/live forecast trước evidence thật, calibration và nghiệm thu ngoài mẫu.
