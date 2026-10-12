@@ -959,3 +959,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành `research-cohorts` development-only độc lập timeline pagination, có filter horizon/model/date, cohort tháng, coverage v1/v2, integrity fail-closed, giới hạn 5.000 row và minimum-sample gate mặc định 20 cho measured v2.
 - PostgreSQL development hiện chỉ có 7 measured v1 ở horizon 5 nên comparison bị khóa đúng thiết kế; không xem fixture là bằng chứng thị trường.
 - Tiếp theo: UI lịch sử gọi aggregate riêng khi panel mở, hiển thị coverage/gate nhỏ gọn và dùng cohort score thay cho score suy từ các page timeline đã tải. Timeline tiếp tục dùng cursor; chưa cần hiện filter model/date cho đến khi có nhiều cohort thực tế.
+
+## Cập nhật ưu tiên 2026-10-12 — UI forecast cohort
+
+- Hoàn thành tách timeline và aggregate trên UI Tổng quan: timeline tiếp tục cursor pagination; score/verdict chỉ đọc cohort v2 qua sample gate. Coverage v1/v2, tiến độ minimum sample và trạng thái aggregate lỗi/đang tải hiển thị độc lập, không fallback sang page score.
+- Frontend unit, Overview E2E và production build đạt; Preview 4173 đã dùng bundle mới. Dữ liệu development hiện 0/20 measured v2 nên score chủ động để trống.
+- Tiếp theo: lifecycle rolling tạo identity as-of mới và materialize payload v2 định kỳ trong development, có idempotency/freshness/cutoff; fixture replay tĩnh chỉ dùng regression. Chưa scheduler production hoặc diễn giải market performance.

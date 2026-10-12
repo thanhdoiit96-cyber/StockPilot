@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — UI dùng forecast cohort aggregate
+
+- Panel “Lịch sử kiểm chứng dự báo” nay lazy-load đồng thời timeline phân trang và `research-cohorts`. Nút Tải thêm chỉ mở rộng timeline; verdict, Brier/log loss và baseline delta không còn thay đổi theo số page người dùng đã tải.
+- UI chọn cohort cùng model của entry mới nhất, báo tiến độ measured v2/minimum gate và coverage measured v1/v2. Score để trống cho tới khi comparison `available`; lỗi aggregate không lấy page summary làm performance fallback. Reliability được đổi nhãn rõ là chẩn đoán trên page đã tải.
+- Frontend service kiểm chặt synthetic/research-only contract, count/coverage và minimum-sample gate. Frontend 79/79, Overview E2E 15/15 và production build đạt; Preview 4173 đang phục vụ `index-Coj8VUe9.js`. Live API trả 7 measured v1, 0 v2, gate `insufficient_samples`, nên UI đúng trạng thái 0/20.
+- Tiếp theo: tạo lifecycle rolling cho prediction as-of mới để snapshot v2 thực sự tích lũy qua thời gian; giữ fixture hiện tại làm test, không sửa 14 identity v1 và không mở production trước khi có evidence hợp lệ.
+
 ## 2026-10-12 — Forecast cohort aggregate độc lập phân trang
 
 - Thêm development-only `GET /api/forecast/research-cohorts`: query repository riêng, không phụ thuộc cursor/limit của timeline; lọc tùy chọn theo horizon, model và khoảng `as_of`, trả cohort provider/model/horizon cùng cohort tháng.
