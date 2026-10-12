@@ -914,3 +914,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Shadow evaluation đã hoàn thành nhưng gate không đạt: chỉ 7/20 phiên tối thiểu, mean return kém baseline 5,67 điểm phần trăm và hit-rate không tăng. Vì vậy forecast synthetic không được phép điều chỉnh score hoặc danh sách mã trên UI.
 - Tiếp theo: fixture >=20 test origins, regime blocks định trước, bootstrap CI, turnover và concentration. Không tối ưu policy bằng test outcomes; đóng coupling nếu không có incremental value ổn định.
+## Cập nhật ưu tiên 2026-10-12 — CI và chi phí ranking
+
+- Fixture 25 phiên đạt minimum sample; mean-return CI dương nhưng positive-rate CI chạm 0, turnover tăng 10,83 điểm %. Evidence gate vẫn fail và UI không đổi.
+- Tiếp theo: nhiều walk-forward folds không chồng lấn, bootstrap theo fold/session và cost sensitivity theo turnover/slippage. Yêu cầu hiệu quả sau chi phí có CI dương ổn định trước evidence thật.
