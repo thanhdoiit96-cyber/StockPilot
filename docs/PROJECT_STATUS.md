@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Rolling forecast issuance development
+
+- Thêm rolling inference riêng với replay evaluator: origin dùng feature của phiên đã hoàn tất, training chỉ nhận label có `label_available_at <= cutoff` và target trước origin. Optimizer cố định; frequency/persistence baseline dùng cùng tập train và được seal trong snapshot v2.
+- CLI `materialize:forecast-rolling` bắt buộc `FORECAST_ROLLING_AS_OF`, chỉ nhận ngày trong fixture calendar và yêu cầu xác định được target session cho cả hai horizon, mặc định cutoff 18:00 ICT. Rolling model có identity riêng nên có thể dùng cùng origin với replay evaluator. Lệnh chỉ tạo prediction pending, không append outcome, không tự chọn ngày và fail-closed ngoài development.
+- Sửa invariant snapshot v2 cho inference EOD: fit cutoff được phép nằm trong ngày `as_of`, nhưng không được vượt cuối ngày ICT. Test giữ chặn cutoff tương lai. PostgreSQL development đã tạo 2 snapshot v2 pending cho synthetic 2025-03-19 (horizon 1/5); chạy lại `created=0, existing=2`.
+- PostgreSQL development có proof hợp lệ tại 2025-03-18: 2 snapshot rolling v2 pending với target session đầy đủ; chạy lại trả `created=0, existing=2`. Lần thử 2025-03-19 trước khi bổ sung gate đã append 2 fixture snapshot bất biến; horizon 5 thiếu target session nên không đủ điều kiện evaluator và được giữ làm audit evidence thay vì sửa/xóa. Measured v2 vẫn 0 nên gate tiếp tục khóa. Full forecast regression 16 suite, 77/77 đạt.
+- Tiếp theo: thiết kế evaluator rolling đọc evidence chỉ sau target-session cutoff, append outcome cho snapshot pending khi đủ điều kiện và giữ pending nếu target chưa tồn tại; không dùng evaluator artifact replay cho rolling identity.
+
 ## 2026-10-12 — UI dùng forecast cohort aggregate
 
 - Panel “Lịch sử kiểm chứng dự báo” nay lazy-load đồng thời timeline phân trang và `research-cohorts`. Nút Tải thêm chỉ mở rộng timeline; verdict, Brier/log loss và baseline delta không còn thay đổi theo số page người dùng đã tải.

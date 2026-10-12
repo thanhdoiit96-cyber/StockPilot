@@ -25,7 +25,7 @@ function validateSnapshot(input) {
       if (CLASSES.some(name => !Number.isFinite(mapped[name]) || mapped[name] < 0 || mapped[name] > 1) || Math.abs(CLASSES.reduce((sum, name) => sum + mapped[name], 0) - 1) > 1e-9) throw new Error('Invalid snapshot baseline');
       return CLASSES.map(name => ({ class: name, value: mapped[name] }));
     };
-    if (typeof baseline.version !== 'string' || !baseline.version || typeof baseline.persistence_version !== 'string' || !baseline.persistence_version || typeof baseline.fit_cutoff !== 'string' || !Number.isFinite(Date.parse(baseline.fit_cutoff)) || Date.parse(baseline.fit_cutoff) >= Date.parse(`${input.as_of}T00:00:00+07:00`)) throw new Error('Invalid snapshot baseline');
+    if (typeof baseline.version !== 'string' || !baseline.version || typeof baseline.persistence_version !== 'string' || !baseline.persistence_version || typeof baseline.fit_cutoff !== 'string' || !Number.isFinite(Date.parse(baseline.fit_cutoff)) || Date.parse(baseline.fit_cutoff) > Date.parse(`${input.as_of}T23:59:59.999+07:00`)) throw new Error('Invalid snapshot baseline');
     baseline_snapshot = { version: baseline.version, fit_cutoff: new Date(baseline.fit_cutoff).toISOString(), frequency_probabilities: normalize(baseline.frequency_probabilities),
       persistence_version: baseline.persistence_version, persistence_probabilities: normalize(baseline.persistence_probabilities) };
   }
