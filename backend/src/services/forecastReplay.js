@@ -1,6 +1,7 @@
 'use strict';
 const { buildForecastSample } = require('./forecastDataset');
 const { evaluateForecastBaseline } = require('./forecastBaseline');
+const { evaluateForecastModel } = require('./forecastModel');
 const timestamp = value => typeof value === 'string' && /T.*(Z|[+-]\d{2}:\d{2})$/.test(value) ? Date.parse(value) : NaN;
 
 function replayForecastDataset({ rows, calendar, provider, synthetic, origins = [], evaluationCutoffs = [], folds = [], evidenceStore, calendarKey, reviewCutoff }) {
@@ -51,6 +52,7 @@ function replayForecastDataset({ rows, calendar, provider, synthetic, origins = 
   return { version: 'forecast_replay_v1', synthetic, research_only: true,
     evaluation_cutoffs: evaluationCutoffs, samples, excluded, outcome_audits: audits,
     baseline_policy: 'review_cutoff_eligible_only; original samples retained; not historical as-issued metrics',
+    models: synthetic ? [1, 5].map(horizon => evaluateForecastModel({ samples: eligibleSamples.filter(sample => sample.status === 'features_available'), folds, horizon })) : [],
     baselines: [1, 5].map(horizon => evaluateForecastBaseline({ samples: eligibleSamples.filter(sample => sample.status === 'features_available'), folds, horizon })) };
 }
 module.exports = { replayForecastDataset };

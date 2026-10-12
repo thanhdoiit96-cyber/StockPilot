@@ -125,3 +125,8 @@ F0 hoàn tất kiểm kê ban đầu và target contract; **chưa đạt trainin
 - [scikit-learn TimeSeriesSplit](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html): chia theo thứ tự thời gian và gap; cần bổ sung purge theo nhãn của dự án.
 - [scikit-learn calibration](https://github.com/scikit-learn/scikit-learn/blob/main/doc/modules/calibration.rst): reliability diagram, Brier/log loss và giới hạn diễn giải calibration.
 - [Forecasting: Principles and Practice](https://otexts.com/fpp3/): đánh giá ngoài mẫu và dự báo có bất định.
+## Implemented synthetic prototype — 2026-10-12
+
+`forecastModel.js` implements a research-only three-class softmax model using basket mean 1/5/20-session returns. The existing frequency baseline supplies identical eligibility and fold manifests. Scaling is fit on training rows only. Fixed optimizer: 300 full-batch steps, learning rate 0.05, L2 0.01 excluding intercept; no test tuning. Output includes training hash, scaling/weights, per-session probabilities, Brier sum and log loss (floor 1e-15), and paired baseline deltas. Class order is declining/balanced/advancing, not the display order of the UI fixture.
+
+Replay runs this prototype only for explicitly synthetic input after evidence audit. Missing features or fewer than two training classes make the fold unavailable. No calibration, market accuracy, live endpoint or UI integration is claimed. Next acceptance step: multi-regime synthetic replay with sufficient training origins for both horizons, followed by an explicit synthetic/unavailable UI contract.

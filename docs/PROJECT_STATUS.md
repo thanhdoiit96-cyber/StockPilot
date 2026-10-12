@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — F2 prototype xác suất synthetic
+
+- Thêm softmax ba lớp, feature là mean return 1/5/20 phiên của rổ; chuẩn hóa trên train, optimizer cố định 300 bước, không tune bằng test. Dùng chính manifest train/test và eligibility sau audit của baseline F1. Replay/CLI synthetic trả models cho horizon 1/5; supplied-evidence không chạy prototype này.
+- Mỗi fold có weights/scaling, training hash, xác suất từng test session, Brier/log-loss và chênh lệch với frequency/persistence trên cùng mẫu. Thiếu feature, dưới hai lớp train hoặc lỗi số học trả unavailable. Không tuyên bố xác suất calibrated hay accuracy thị trường.
+- Kiểm chứng: 39 core tests forecast đạt (gồm 4 F2); 2 CLI tests bị spawn EPERM trong sandbox, chạy lại ngoài sandbox đều đạt. F2 kiểm tra tái lập, tổng xác suất, đối chiếu công thức metric, chống test leakage và late label. Không thay UI/database; Preview giữ card mô phỏng đã build ở bước trước.
+- Tiếp theo: bổ sung fixture replay đa chế độ với đủ origins/lớp cho cả hai horizon, kiểm chứng F2 end-to-end và contract UI synthetic/unavailable trước khi nối card. Fixture F1 chỉ có hai origins, nên model có thể unavailable vì thiếu lớp train; không nới điều kiện để tạo kết quả giả.
+
 ## 2026-10-12 — F1 nghiệm thu research CLI end-to-end
 
 - Thêm summary báo cáo: phạm vi synthetic/supplied-evidence research, số sample/origin bị loại, reason counts, fold đã đo/chưa đo, số mẫu chấm và outcome invalidated theo horizon. CLI giữ status/reasons, origin evidence manifest và exclusions khi rút gọn samples; không tự nhận market_accuracy_verified.
