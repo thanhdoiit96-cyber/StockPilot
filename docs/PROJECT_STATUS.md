@@ -1,5 +1,95 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — F1 nghiệm thu research CLI end-to-end
+
+- Thêm summary báo cáo: phạm vi synthetic/supplied-evidence research, số sample/origin bị loại, reason counts, fold đã đo/chưa đo, số mẫu chấm và outcome invalidated theo horizon. CLI giữ status/reasons, origin evidence manifest và exclusions khi rút gọn samples; không tự nhận market_accuracy_verified.
+- Bài CLI chạy tiến trình Node thật với artifact fixture tạo trong thư mục tạm, hai lần cho output giống hệt; input không đổi, checksum tamper exit 2, calendar revoked có excluded origins và zero scored samples. Fixture gồm 2 origins, 1 mẫu test mỗi horizon, chỉ chứng minh pipeline.
+- Kiểm chứng: 35 core tests đạt; 2 CLI tests bị spawn EPERM trong sandbox rồi đạt khi chạy ngoài sandbox. Không có test hành vi còn fail. Diff check đạt. Không gọi provider/database hoặc thay UI.
+- F1 research pipeline đã có nghiệm thu end-to-end synthetic; F1 dữ liệu thật vẫn chưa đạt do thiếu evidence đầu vào. Điểm tiếp tục: F2 prototype model xác suất trên fixture với nhãn synthetic, dùng cùng folds/baselines, đồng thời xác định nguồn evidence thực để nghiệm thu ngoài mẫu. Không xem kết quả fixture là model performance.
+
+## 2026-10-12 — F1 dependency manifest theo outcome
+
+- Sample builder ghi evidence_ids của đúng 60 phiên lịch sử thuộc các mã được giữ trong rổ; mỗi nhãn ghi IDs của các forward rows thực sự dùng tính outcome. Replay thêm calendar version đã khóa tại origin, không dùng toàn bộ selected revisions để invalidation.
+- Regression forecast 35/35: mã ngoài rổ bị thu hồi không ảnh hưởng outcome; thu hồi tại target t+5 chỉ invalidates nhãn 5 phiên, giữ nhãn 1 phiên. Origin history bị thay đổi vẫn khiến các horizon liên quan bị loại. Input/outcome gốc giữ nguyên.
+- Giới hạn: đây là dependency của rổ và outcome đã khóa, không tự tái xét mã từng bị loại hoặc bổ sung giá missing để thay đổi coverage lịch sử. Tiếp theo: gói nghiệm thu F1 end-to-end với artifact mẫu tái lập, report readiness/exclusion rõ ràng và kiểm tra scope/hash; vẫn chưa có evidence thật để đo accuracy thị trường. Không đổi UI/database.
+
+## 2026-10-12 — F1 audit outcome sau correction/revocation
+
+- Evidence store có audit revision tại cutoff. Replay nhận reviewCutoff (mặc định evaluation cutoff cuối), giữ samples/outcome gốc, xuất outcome_audits riêng và chỉ dùng outcome còn hợp lệ để tính baseline. Revoked/superseded/missing revision có reason rõ; không hồi sinh evidence cũ.
+- Regression forecast 33/33: correction và revocation sau phát hành không thay sample gốc nhưng loại baseline, cutoff review không được trước cửa sổ replay. Đây là eligibility/metric được tính lại tại reviewCutoff, không phải metric lịch sử as-issued hay bằng chứng hiệu quả live.
+- Giới hạn: manifest đang lưu mọi revision được chọn tại cutoff, nên audit có thể loại quá rộng khi thay đổi không liên quan trực tiếp outcome. Tiếp theo thu hẹp dependency manifest theo feature/target/calendar thực sự dùng, kiểm thử sửa mã ngoài rổ không làm mất outcome. F1 chưa đóng; không thay UI/database.
+
+## 2026-10-12 — F1 nhập artifact research
+
+- CLI research hỗ trợ --input <artifact.json> bên cạnh --fixture. Envelope forecast_research_artifact_v1 có payload và SHA-256 canonical theo thứ tự key; kiểm context, row IDs, giới hạn collection, evidence revisions trước replay. File phải regular <=16 MiB, đọc bounded, không sửa file hoặc database.
+- Regression tổng 29/29 trước test file bổ sung; suite artifact sau bổ sung đạt 5/5 (tổng 30 test hiện có). Đã kiểm nhánh CLI file không tồn tại trả ENOENT/exit 2. Test file thành công giữ nguyên nội dung; fixture artifact đi qua evidence → replay. Chưa nhập artifact thị trường thật.
+- Hash bảo vệ tính toàn vẹn payload, không xác minh độ tin cậy của người cấp evidence. Chưa có schema persistence/database. Tiếp theo: kiểm chứng correction/revocation tác động lên outcome đã ghi và chính sách invalidation trước khi đưa dữ liệu thật vào F1. UI không thay đổi.
+
+## 2026-10-12 — F1 evidence revisions nối replay
+
+- Thêm forecastEvidenceStore nhận bundle revision trong bộ nhớ: ID duy nhất, revision liên tiếp, recorded_at tăng dần, chọn version đã biết tại cutoff; revoked không fallback về bản verified cũ. Clone bundle đầu vào tránh mutation bên ngoài.
+- Replay nhận evidenceStore/calendarKey, lấy calendar và giá theo cutoff origin, giữ nguyên lịch sử feature; chỉ forward observations dùng evidence ở evaluation cutoff. Manifest origin/label lưu bundle hash và revision IDs. Adapter tính availability gồm recorded_at để tránh backdate evidence.
+- Regression forecast 25/25, gồm revocation theo cutoff, revision gap, chống mutation và tích hợp adapter → replay. Kho này chưa có persistence database/file hoặc xác minh nguồn độc lập; chưa có dữ liệu live đủ evidence. Calendar version đổi giữa origins được baseline hiện tại coi là khác context và từ chối gộp.
+- Tiếp theo: định dạng bundle import có kiểm tra schema/hash và CLI đọc artifact research, test correction/revocation ảnh hưởng outcome; chỉ sau nguồn evidence thật được xác minh mới đánh giá model thật. F1 chưa đóng, UI chưa thay đổi.
+
+## 2026-10-12 — F1 adapter evidence và exclusions PostgreSQL
+
+- Thêm forecastEvidenceAdapter: bind attestation vào row_id/provider/source_hash; kiểm available_at, verified_at, price_basis và event coverage. Availability là max(publication, verification), nên xác minh đến muộn không đưa dữ liệu vào cutoff quá khứ. Bằng chứng trùng/mismatch/thiếu hoặc đến muộn có reason riêng.
+- `npm run report:forecast-exclusions` đọc PostgreSQL REPEATABLE READ/READ ONLY, giới hạn 100.000 dòng và statement timeout 30 giây. Live 2026-10-12T03:52:16Z: 56.381 daily rows, accepted=0, excluded=56.381 evidence_missing do evidence_source=not_configured. Không suy ra giá sai từ kết quả này; chưa có evidence repository nối vào CLI.
+- Regression toàn phần forecast hiện có 22/22; không ghi database hoặc đổi UI. Adapter mới xác thực cấu trúc/binding của attestation, không xác thực nguồn độc lập hoặc chữ ký. Tiếp theo: thiết kế và triển khai nguồn evidence có version cho calendar/price basis/event coverage, nối adapter với replay theo cutoff; F1 vẫn chưa đạt training readiness.
+
+## 2026-10-12 — F1 so sánh baseline persistence
+
+- Bổ sung `forecast_persistence_baseline_v1` trong mỗi fold: lấy label có target mới nhất trong tập train đã purge và đã available tại fitCutoff, giữ cố định toàn fold. Xác suất quy ước 0,8 cho lớp đó và 0,1 cho hai lớp còn lại; đây là tham số baseline cố định, chưa calibration.
+- Frequency/persistence được chấm cùng test rows bằng Brier/log loss; report chứa source session/target/availability, xác suất, metrics và delta frequency-minus-persistence (âm nghiêng về frequency). Không cập nhật persistence từ outcome test.
+- Regression 19/19; CLI --fixture đã chạy cả horizon 1/5 với hai baseline. Đây chỉ là metric synthetic. Tiếp theo: adapter evidence point-in-time và report exclusions dữ liệu thật; F1 chưa đủ điều kiện đóng vì calendar, adjustment/event và availability history vẫn thiếu. Không thay UI hoặc database.
+
+## 2026-10-12 — F1 replay và CLI research report
+
+- Đã nối sample builder và baseline qua `forecastReplay.js`: origins giữ cutoff cố định, replay evaluationCutoffs tăng dần, khóa nhãn đầu tiên đạt coverage cho từng horizon, kiểm hash membership/input và xuất sample exclusions. Cửa sổ chưa đủ giữ unavailable.
+- CLI `npm run report:forecast-research -- --fixture` chạy hoàn toàn local, xuất JSON synthetic/research_only, manifest và baseline 1/5 phiên; không kết nối database/provider hoặc ghi file. Live mode chưa có và CLI từ chối chạy nếu không có --fixture.
+- Regression 17/17; CLI smoke tạo 18 mẫu synthetic, hai baseline evaluated. Không diễn giải metric fixture thành hiệu suất thật. Tiếp theo: baseline persistence trên cùng folds và adapter evidence/version theo cutoff trước khi chạy dataset thật; F1 chưa đóng. Không đổi UI/Preview.
+
+## 2026-10-12 — F1 thời điểm khả dụng của nhãn
+
+- Label builder lưu `label_available_at` bằng evaluatedAt: đây là thời điểm biết cả giá lẫn quyết định coverage, không backdate về ngày giá. Baseline yêu cầu fitCutoff có timezone và trước ngày test theo giờ Việt Nam; train chỉ nhận nhãn available <= fitCutoff, bên cạnh purge target chồng test.
+- Nhãn thiếu timestamp hoặc timestamp trước đóng cửa target bị loại `label_availability_invalid`; nhãn đến muộn được ghi `late_label_sessions` trong manifest. Regression dataset/baseline đạt 13/13, gồm timezone, missing timestamp và late label dù target đã qua.
+- Tiếp theo: orchestration dataset và CLI research report, replay từng evaluation cutoff để lưu label version lần đầu đủ coverage, baseline persistence. Adapter dữ liệu thật còn phụ thuộc evidence F0; chưa có accuracy thật. Không đổi frontend/database, không cần rebuild Preview.
+
+## 2026-10-12 — F1 baseline và split theo thời gian
+
+- Thêm `forecastBaseline.js`: nhận sample contract và các fold định trước, chia theo ngày, purge mẫu train có target_session >= testStart; xuất train/test/purged sessions và hash split/dataset. Baseline tần suất ba lớp dùng Laplace alpha=1 cố định, metric multiclass Brier (tổng bình phương ba lớp) và log loss.
+- Chặn trộn synthetic/live hoặc khác target/provider/calendar; từ chối ngày trùng và fold test chồng nhau. Outcome unavailable bị loại có reason; train/test rỗng không có metric. Regression baseline + dataset đạt 10/10, gồm kiểm chứng số học metric và thay nhãn test không làm đổi xác suất train.
+- F1 còn thiếu adapter dataset thật, cutoff khả dụng của nhãn và baseline persistence. Core hiện purge theo target date; chưa chứng minh outcome train đã available đúng thời điểm model fit. Bước tiếp theo: bổ sung label_available_at/fit cutoff, orchestration dataset và CLI research report trước khi huấn luyện thật. Không đổi UI hoặc database; không có accuracy thị trường thật.
+
+## 2026-10-12 — F1 bộ tạo mẫu và nhãn dự báo
+
+- Thêm `forecastDataset.js`: target breadth_forward_v1, cửa sổ 60 phiên, membership/hash cố định tại cutoff, feature return 1/5/20 phiên, nhãn đúng ngày t+1/t+5, coverage tối thiểu 95% và reason loại từng mã. Input chuẩn hóa yêu cầu calendar, available_at và bằng chứng price-basis/event; không tự suy ra các bằng chứng đó từ fetched_at.
+- Regression fixture xác nhận future-price invariance, late history, duplicates, exact target/missing coverage, event chưa xác minh và calendar chưa xác minh. Fixture calendar chỉ phục vụ test, không phải lịch thị trường. Audit CLI bổ sung dataset gate unavailable khi evidence chưa được nối; không xuất accuracy hoặc train model từ dữ liệu chưa đạt.
+- F1 mới hoàn thành sample/label core, chưa hoàn tất baseline và split manifest. Tiếp theo: builder toàn dataset và split walk-forward có purge 5 phiên, baseline tần suất chỉ học trên train; báo cáo fixture tách dữ liệu thật. Không đổi UI/Preview hoặc ghi database.
+
+## 2026-10-12 — F0 audit dữ liệu dự báo
+
+- Đã thêm và chạy `backend/npm run audit:forecast-data` trên PostgreSQL development bằng transaction READ ONLY/REPEATABLE READ: 56.381 EOD, 497 mã, trung vị 18 phiên; 117 mã >=250 phiên; tất cả giá đánh dấu chưa điều chỉnh. Không thấy trùng provider/mã/ngày; coverage mới nhất 357 mã. Chi tiết bằng chứng và giới hạn nằm trong [thiết kế forecast](SHORT_TERM_FORECAST_DESIGN.md).
+- Chốt `breadth_forward_v1` research-only, horizon 1/5 phiên, membership cố định tại t, target đúng phiên t+h, coverage outcome >=95%, tối thiểu 50 mã với 60 phiên liên tiếp, lớp breadth 45%/55%. Thiếu calendar hoặc cơ sở adjustment/event hợp lệ phải unavailable.
+- F0 hoàn tất audit ban đầu và contract, chưa đạt training readiness. Tiếp theo F1: triển khai dataset/label builder với fixture chống leakage và báo cáo exclusion trên dữ liệu thật; bổ sung calendar/adjustment/availability trước metric accuracy thật. Không thay UI, không cần build Preview; script live chạy exit 0, không ghi database.
+
+## 2026-10-12 — Định hướng dự báo ngắn hạn
+
+- Theo yêu cầu mới, ưu tiên chuyển từ chấm điểm/xếp hạng sang dự báo xác suất 1/5 phiên. Đã đối chiếu recommendationEngine, riskBacktest và checkpoint dữ liệu; chưa có model xác suất đã kiểm chứng.
+- Thiết kế tại [SHORT_TERM_FORECAST_DESIGN](SHORT_TERM_FORECAST_DESIGN.md) phân định target chỉ số và breadth rổ có membership, dataset point-in-time, baseline, walk-forward/calibration, shadow và UI Tổng quan/lịch sử dự báo. Đây là kế hoạch, chưa triển khai API/schema/model.
+- Bước tiếp tục ưu tiên là F0: audit read-only EOD/coverage/membership/corporate-action/availability timestamp và chốt target contract 1/5 phiên; sau đó F1 dataset + baseline. Lifecycle recommendation 20 phiên tiếp tục lịch hiện có, không chặn nghiên cứu forecast mới. AI Advisor vẫn để sau.
+- Công việc này chỉ cập nhật tài liệu; đã kiểm tra liên kết nội bộ và diff, không chạy lại test/build ứng dụng. Các thay đổi mã chưa commit từ phiên trước được giữ nguyên.
+
+## 2026-10-12 — Lifecycle đề xuất dùng phiên đã hoàn tất
+
+- Sửa calendar gate của recommendation lifecycle: trước 15:00 Asia/Ho_Chi_Minh, preflight dùng phiên giao dịch hoàn tất gần nhất; sau mốc này mới chờ EOD của ngày hiện tại. Thứ Bảy, Chủ nhật và các ngày được khai báo tường minh qua `VNSTOCK_HOLIDAYS` tiếp tục lùi về phiên hợp lệ trước đó. Mốc giờ có thể cấu hình bằng `VNSTOCK_EOD_CUTOFF_HOUR` (mặc định `15`); danh sách holiday là cấu hình vận hành, không phải lịch Sở giao dịch được khẳng định chính thức.
+- Lý do: lúc 09:06 ICT thứ Hai 12/10, contract cũ đòi EOD 12/10 nên che snapshot đã seal ngày 09/10. Sau restart API, `GET /api/recommendations/lifecycle-readiness` và `npm run check:recommendation-lifecycle` trên PostgreSQL development đều trả `ready_to_evaluate` cho run `1743b606-9ef9-42f2-8555-7df91b093dec`, `as_of=2026-10-09`.
+- Đã kiểm chứng targeted backend regression 32/32 (persistence, lifecycle readiness/checkpoint, controller), API health 200 và CLI/API preflight thật. Không chạy evaluator hoặc ghi outcome: snapshot vẫn cần đủ 20 phiên EOD để có forward return; `ready_to_evaluate` là quyền kiểm tra pending, không phải bằng chứng hiệu quả mô hình.
+- Contract lifecycle nay luôn trả `expected_session` và `latest_eod_session`, kể cả snapshot đã seal hoặc lỗi integrity. Thẻ Đề xuất hiển thị gọn phiên lifecycle, EOD mới nhất và ngày snapshot; trạng thái đổi thành “Snapshot sẵn sàng theo dõi” để không gợi ý rằng hệ thống đã có kết quả trước kỳ hạn. Frontend regression 73/73, build và bundle integrity đạt; Preview 4173 đang phục vụ `index-BwcTH2RJ.js`.
+- Lifecycle contract cũng trả `horizon_days` của run đã seal. Thẻ Đề xuất hiển thị “Kỳ theo dõi 20 phiên” cùng session context, giúp phân biệt snapshot đang quan sát với outcome đã đo. API smoke PostgreSQL xác nhận run `1743b606-9ef9-42f2-8555-7df91b093dec` trả `horizon_days=20`; backend 33/33 và frontend 73/73 đạt, Preview 4173 phục vụ `index-BMHpfenu.js`.
+- Điểm tiếp tục: sau EOD của phiên đạt horizon, chạy evaluator một lần rồi audit ledger read-only; chỉ khi có outcome đo được mới trình bày hit-rate hay cân nhắc calibration.
+
 ## 2026-10-09 — Tái cấu trúc Tổng quan theo market pulse
 
 - Tổng quan không còn ưu tiên CTA điều hướng hoặc bốn chỉ số vận hành (quy mô universe, số quote, mã cá nhân, quote mới nhất). Phần đầu trang nay dẫn vào Độ rộng thị trường, với mô tả tập trung vào hướng đi gần đây và bộ lọc sàn/ngành.

@@ -77,10 +77,22 @@ function groupExternalFactorsByStock(stocks, factors) {
   return byStock;
 }
 
-function vietnamSessionDate(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+function holidaySet(value = process.env.VNSTOCK_HOLIDAYS || '') {
+  return new Set(String(value).split(',').map(item => item.trim()).filter(item => /^\d{4}-\d{2}-\d{2}$/.test(item)));
+}
+
+function eodCutoffHour(value = process.env.VNSTOCK_EOD_CUTOFF_HOUR) {
+  const hour = Number(value);
+  return Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : 15;
+}
+
+function vietnamSessionDate(now = new Date(), holidays = holidaySet(), cutoffHour = eodCutoffHour()) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' }).formatToParts(now);
   const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
+  const session = new Date(`${values.year}-${values.month}-${values.day}T00:00:00.000Z`);
+  if (Number(values.hour) < cutoffHour) session.setUTCDate(session.getUTCDate() - 1);
+  while ([0, 6].includes(session.getUTCDay()) || holidays.has(session.toISOString().slice(0, 10))) session.setUTCDate(session.getUTCDate() - 1);
+  return session.toISOString().slice(0, 10);
 }
 
 function latestEodSession(rows = []) {
@@ -181,7 +193,7 @@ async function evaluatePendingRecommendations({ StockPrice, RecommendationRun, R
 
 async function evaluateLatestRecommendations(dependencies = {}) { return evaluatePendingRecommendations(dependencies); }
 
-module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, recommendationEvaluationEventHash, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession };
+module.exports = { generateRecommendationSnapshot, evaluateLatestRecommendations, evaluatePendingRecommendations, recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, recommendationEvaluationEventHash, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, vietnamSessionDate, latestEodSession, holidaySet, eodCutoffHour };
 
 
 

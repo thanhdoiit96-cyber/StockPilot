@@ -67,6 +67,34 @@ M5 progress: quality_gate_v1 now blocks overconfident insight when price history
 
 M5 progress: long-history EOD ingestion is complete for the current prototype symbols; quality_gate_v1 now passes for FPT with 250 observations and verified macro context.
 
+## Ưu tiên mới — Dự báo ngắn hạn (2026-10-12)
+
+F1 research acceptance: pipeline artifact → evidence/cutoff → replay → baselines → CLI report đã nghiệm thu synthetic (35 core + 2 CLI tests). Summary phân biệt scope, exclusions và scored samples. F1 live vẫn chờ evidence thực. Bước tiếp theo F2 prototype xác suất trên fixture dùng chung split/baseline, chưa phát hành dự báo thật.
+
+F1 dependency checkpoint: invalidation đã giới hạn vào calendar và rows thực sự dùng ở origin/từng horizon; regression 35/35, gồm mã ngoài rổ và horizon độc lập. Tiếp theo nghiệm thu artifact/report end-to-end cho F1 research; dữ liệu thật vẫn chưa đủ evidence.
+
+F1 invalidation checkpoint: outcome gốc giữ nguyên, correction/revocation được audit tại reviewCutoff và loại khỏi baseline được tính lại; 33/33 test đạt. Tiếp theo dependency manifest chính xác để tránh invalidation quá rộng; dữ liệu thật vẫn chờ nguồn evidence.
+
+F1 artifact checkpoint: CLI --input đã có envelope/schema checks, canonical payload hash và giới hạn file/collection; input fixture qua evidence replay đạt. Nguồn evidence thật chưa được nhập/xác minh. Tiếp theo audit correction/revocation và outcome invalidation; F1 chưa đóng.
+
+F1 revision checkpoint: đã có evidence bundle view theo cutoff (in-memory), revocation và nối adapter/replay, manifest IDs/hash; regression 25/25. Tiếp theo import artifact có validation và CLI research, rồi nguồn evidence thật. Chưa có persistence hoặc readiness training thật.
+
+F1 evidence checkpoint: adapter kiểm row binding và availability đã triển khai; PostgreSQL exclusion report quét 56.381 dòng, chưa có attestation được cung cấp nên accepted=0. Regression forecast 22/22. Tiếp theo nguồn evidence versioned và nối replay; adapter hiện chỉ validate attestation input, không tự xác minh provider. Chưa đóng F1.
+
+F1 persistence checkpoint: đã có baseline persistence frozen-at-fit và so sánh frequency trên cùng test rows; regression 19/19, CLI synthetic 1/5 phiên đạt. Bước tiếp theo là adapter evidence theo cutoff và báo cáo exclusions dữ liệu thật. Chưa có bằng chứng forecasting performance thực tế.
+
+F1 replay checkpoint: orchestration giữ origin và nhãn đầu tiên đủ coverage, CLI research fixture đã chạy 18 mẫu/2 horizon; regression 17/17. Bước tiếp theo là baseline persistence và adapter evidence point-in-time. Chưa đạt nghiệm thu training dữ liệu thật.
+
+F1 availability checkpoint: label_available_at và fitCutoff đã được kiểm tra; nhãn đến muộn không vào train, có danh sách loại riêng. Dataset/baseline regression 13/13. Tiếp theo orchestration/CLI research report và replay nhãn theo cutoff, baseline persistence; F1 chưa đóng.
+
+F1 baseline checkpoint: đã triển khai split theo ngày với purge target chồng test, manifest/hash và baseline tần suất có smoothing, Brier/log loss. Kiểm thử dataset/baseline 10/10 trên fixture. F1 chưa đóng: cần nhãn available-at tại fit cutoff, adapter/orchestration dataset thật và baseline persistence; điều kiện dữ liệu F0 vẫn áp dụng.
+
+F1 đang triển khai: đã có sample/label builder và regression chống future leakage, membership drift, dữ liệu thiếu/trùng/đến muộn. Bước tiếp theo là split manifest theo thời gian, purge cửa sổ nhãn và baseline; training thật vẫn chờ calendar/availability/price-basis evidence. Chưa hoàn thành F1 toàn bộ.
+
+F0 checkpoint: đã có audit CLI read-only và contract `breadth_forward_v1` 1/5 phiên (chi tiết trong thiết kế). Dữ liệu chưa đạt training readiness do calendar/adjustment/availability evidence còn thiếu; F1 ưu tiên dataset/label builder có exclusion reason và fixture chống leakage. Các bước F2–F5 chưa triển khai.
+
+Theo yêu cầu người dùng, bước tiếp theo chuyển sang F0 audit dữ liệu và target contract cho dự báo 1/5 phiên, tiếp F1 dataset + baseline, F2 model xác suất và kiểm chứng ngoài mẫu, F3 shadow, F4 UI Tổng quan/lịch sử, F5 mở rộng ngành/mã/chỉ số. Phạm vi và tiêu chí nghiệm thu nằm tại [SHORT_TERM_FORECAST_DESIGN](SHORT_TERM_FORECAST_DESIGN.md). Tất cả các bước forecast đang ở trạng thái đề xuất, chưa triển khai. Recommendation 20 phiên tiếp tục theo lịch, không chặn F0/F1; index forecast phụ thuộc chuỗi index phù hợp, còn breadth forecast phải ghi rõ phạm vi rổ. AI Advisor tiếp tục để sau.
+
 ## Recommendation audit checkpoint — 2026-10-09
 
 - Completed: the immutable evaluation ledger now has a read-only per-snapshot audit endpoint at `GET /api/recommendations/history/:id/evaluation-ledger`. It recomputes each canonical payload SHA-256 before reporting `verified` or `invalid`; empty ledgers stay explicit and unknown snapshots return 404. Recommendation regression (71 tests) and the live PostgreSQL empty-ledger smoke passed.
@@ -167,6 +195,12 @@ pm run evaluate:recommendations after the 20-session horizon and inspect /api/re
 - Quote-batch integrity checkpoint (2026-10-09): distinct large quote batches now queue separately in the backend instead of sharing the first batch's pending promise. Targeted regression verifies concurrent universes each receive only their own quotes. After API restart, the 500-symbol local probe observed 357 quotes across batches (195/128/34), rather than the false 195/0/0 result. The serialized path measured quote settlement p50/p95 of 1,899/2,791 ms; retain it for correctness and do not add virtualization or raise limits before an authenticated browser trace identifies an actual UI bottleneck.
 
 - Real EOD lifecycle checkpoint (2026-10-09): current-session EOD preflight became `ready_to_generate`, so a new sealed `short_term_rule_v2` snapshot was generated from 624 symbols with five selected entries (DGW, FRT, GVR, MSB, MSN). Post-generation preflight is `ready_to_evaluate` and the lifecycle verifier passed. Evaluation leaves all five entries pending until the 20-session horizon; the append-only evaluation ledger therefore correctly remains empty and audit has zero findings. Do not interpret this as model performance or calibrate it; rerun evaluator and ledger audit only after sufficient future EOD sessions.
+
+- Completed-session lifecycle gate (2026-10-12): recommendation preflight now uses the latest completed Vietnam session before 15:00 ICT, then requires the current session after that cutoff. Weekends and explicitly configured `VNSTOCK_HOLIDAYS` roll back to the preceding valid session. This prevents an intraday or non-trading calendar date from masking the sealed Friday snapshot; it is not an assertion of an official exchange-holiday calendar. Live Monday-morning PostgreSQL preflight returned `ready_to_evaluate` for the 2026-10-09 run. Keep evaluation and ledger audit deferred until its 20-session horizon produces measurable outcomes.
+
+- Lifecycle UI clarity (2026-10-12): every lifecycle status now carries the expected and latest EOD session, including sealed and integrity-blocked snapshots. The Recommendation status card presents lifecycle session, latest EOD and snapshot date, and labels a sealed pending snapshot as ready for tracking rather than implying an outcome already exists. Backend regression 33/33 and frontend regression 73/73 passed; the rebuilt Preview bundle is live on port 4173.
+
+- Observation-horizon clarity (2026-10-12): sealed lifecycle responses now carry their stored `horizon_days`; the Recommendation card presents the observation horizon beside session and snapshot context. The live 2026-10-09 run reports 20 sessions. This is descriptive only: it does not estimate a completion date, synthesize forward prices, or run evaluation before the required distinct EOD sessions exist.
 
 - Universe UX: search and 25-row pagination are now available before scaling beyond the prototype universe. Add server-side filtering/pagination only when response size makes the current API endpoint a bottleneck.
 
