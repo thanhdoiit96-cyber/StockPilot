@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Materializer và evaluator forecast development
+
+- Prediction history nay giữ `provider` trong artifact đã hash. `materialize:forecast-preview` chỉ đọc artifact qua integrity parser rồi ghi snapshot idempotent; `evaluate:forecast-preview` tra đúng generation key và chỉ append outcome có `outcome_available_at <= now`. Evaluator không tự tạo snapshot thiếu.
+- Cả hai lệnh fail-closed ngoài development hoặc khi `FORECAST_RESEARCH_PREVIEW=false`. Snapshot/outcome conflict tiếp tục bị store từ chối; hai phase tách biệt để không biến inference thành outcome trong cùng bước.
+- PostgreSQL development: lần đầu tạo 14 snapshot và đo 14 outcome synthetic; lần hai `created=0/existing=14` và `measured=0/existing=14`. Không có duplicate, pending hoặc missing snapshot trong artifact hiện tại. Đây là dữ liệu fixture được giữ có chủ ý trong development, không phải market evidence.
+- Kiểm chứng: targeted materializer/history/artifact 10/10; toàn bộ forecast 66/66. Artifact hash của lần chạy: `4c9d933c18f7a53dab99d8a9cce1e1b2ee22261c78da2df98774d59af6e15ad7`.
+- Tiếp theo: chuyển `research-history` development endpoint sang repository pagination (`limit`/opaque cursor), tổng hợp score từ outcome events và giữ response fail-closed khi có row sai integrity. UI cần nút tải thêm, không tải toàn bộ lịch sử.
+
 ## 2026-10-12 — Forecast snapshot store append-only
 
 - Migration 037 tạo `forecast_snapshots` bất biến và `forecast_outcome_events` append-only; trigger PostgreSQL chặn UPDATE/DELETE. Snapshot unique theo generation key provider/model/horizon/as-of, payload hash bao phủ probability cùng split/training provenance.

@@ -18,7 +18,7 @@ function buildForecastHistory({ report, horizon, minimumBinSamples = 5 } = {}) {
     if (Object.values(probabilities).some(value => !Number.isFinite(value) || value < 0 || value > 1) || Math.abs(Object.values(probabilities).reduce((a, b) => a + b, 0) - 1) > 1e-9) continue;
     const ranked = CLASSES.map(name => ({ class: name, value: probabilities[name] })).sort((a, b) => b.value - a.value || a.class.localeCompare(b.class));
     const base = { fold_index: foldIndex, as_of: prediction.session, horizon_sessions: horizon, model_version: model.version,
-      split_hash: model.split_hash, training_hash: fold.training_hash, predicted_class: ranked[0].class, confidence: ranked[0].value,
+      provider: sample.provider, split_hash: model.split_hash, training_hash: fold.training_hash, predicted_class: ranked[0].class, confidence: ranked[0].value,
       probabilities: CLASSES.map(name => ({ class: name, value: probabilities[name] })) };
     if (outcome?.status !== 'available' || !CLASSES.includes(outcome.label)) {
       entries.push({ ...base, outcome_status: 'pending', target_session: outcome?.target_session || null, outcome_available_at: null }); continue;

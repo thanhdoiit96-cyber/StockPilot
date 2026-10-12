@@ -938,3 +938,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành schema/store: snapshot và outcome event bất biến, generation identity idempotent, SHA-256 integrity, pending → measured một chiều, retention không xóa, cursor pagination giới hạn. Migration và PostgreSQL rollback smoke đạt; chưa có scheduler/API production ghi DB.
 - Tiếp theo: materializer development-only đọc artifact đã validate rồi ghi snapshot idempotent; evaluator chỉ append outcome khi target/session evidence đủ điều kiện. Sau đó chuyển research-history API sang repository pagination và giữ file artifact làm nguồn inference/provenance, không làm nguồn lịch sử duy nhất.
+
+## Cập nhật ưu tiên 2026-10-12 — Materializer forecast development
+
+- Hoàn thành import artifact đã validate và evaluator outcome hai phase, development-only. PostgreSQL xác nhận 14 prediction/outcome lần đầu và toàn bộ trả existing khi chạy lại; evaluator không tạo snapshot thiếu và không nhận outcome tương lai.
+- Tiếp theo: `research-history` đọc snapshot repository bằng `limit`/cursor, kiểm integrity từng row và aggregate proper scores từ event. UI bổ sung tải thêm có giới hạn; artifact file tiếp tục phục vụ latest preview/provenance, production route vẫn đóng.

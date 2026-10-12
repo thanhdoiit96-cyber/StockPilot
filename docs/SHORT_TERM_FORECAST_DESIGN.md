@@ -172,3 +172,9 @@ Migration 037 separates immutable prediction snapshots from append-only outcome 
 Pending is the absence of an outcome event; measured is derived from the single integrity-bound event. Outcome time must be at or after 15:00 Asia/Ho_Chi_Minh on the declared target session. Brier/log loss are recomputed from the sealed probabilities and actual class, not accepted from callers. Retention is an immutable `expires_at` query boundary (default 180, bounded 30–730 days); expiration does not delete audit records. History ordering is as-of/id descending with a bounded opaque cursor and maximum 50 rows.
 
 This is currently a persistence foundation only. The development artifact endpoint still reads its materialized file, and no scheduler writes the store. The next step is a development-only materializer that imports validated artifact predictions idempotently and resolves eligible outcomes transactionally; production remains disabled.
+
+## Development artifact materializer — 2026-10-12
+
+The materializer consumes only an artifact that has passed `readForecastPreviewArtifact`. Provider is now carried per prediction alongside model/split/training provenance. Prediction import and outcome evaluation are separate commands: the former creates sealed snapshots, while the latter looks up the exact generation key and appends an event only when `outcome_available_at <= now`. Evaluation never creates a missing snapshot.
+
+The PostgreSQL development run imported 14 predictions (seven for each horizon) and measured 14 eligible outcomes. An immediate second run returned 14 existing snapshots and 14 existing outcomes with zero duplicates. This is synthetic lifecycle evidence only. The file-backed API has not yet switched to database pagination; that is the next boundary so rollout can be tested without changing production availability.

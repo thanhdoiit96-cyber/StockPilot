@@ -44,7 +44,7 @@ function parseForecastPreviewArtifact(text, { now = new Date() } = {}) {
     if (![1, 5].includes(history?.horizon_sessions) || history.status !== 'research_history' || history.synthetic !== true || history.research_only !== true || history.live !== false || history.market_accuracy_verified !== false || history.calibrated !== false || !Array.isArray(history.entries) || !history.entries.length) throw new Error('Invalid history contract');
     if (historyHorizons.has(history.horizon_sessions)) throw new Error('Duplicate history horizon');
     historyHorizons.add(history.horizon_sessions);
-    if (history.entries.some(entry => entry.horizon_sessions !== history.horizon_sessions || !/^\d{4}-\d{2}-\d{2}$/.test(entry.as_of) || !/^[a-f0-9]{64}$/.test(entry.split_hash) || !/^[a-f0-9]{64}$/.test(entry.training_hash)
+    if (history.entries.some(entry => entry.horizon_sessions !== history.horizon_sessions || typeof entry.provider !== 'string' || !entry.provider || !/^\d{4}-\d{2}-\d{2}$/.test(entry.as_of) || !/^[a-f0-9]{64}$/.test(entry.split_hash) || !/^[a-f0-9]{64}$/.test(entry.training_hash)
       || !Array.isArray(entry.probabilities) || entry.probabilities.length !== 3 || entry.probabilities.some(item => !UI_PROBABILITY(item))
       || !['pending', 'measured'].includes(entry.outcome_status) || (entry.outcome_status === 'measured' && (!Number.isFinite(entry.brier_multiclass_sum) || !Number.isFinite(entry.log_loss))))) throw new Error('Invalid history entries');
     const measured = history.entries.filter(entry => entry.outcome_status === 'measured').length;
