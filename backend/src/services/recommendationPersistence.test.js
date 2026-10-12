@@ -3,7 +3,17 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations } = require('./recommendationPersistence');
+const { recommendationSnapshotHash, recommendationInputProvenanceHash, recommendationEvaluationEvent, verifyRecommendationEvaluationEvent, verifyRecommendationSnapshot, recommendationGenerationKey, inputProvenance, generateRecommendationSnapshot, evaluatePendingRecommendations, vietnamSessionDate } = require('./recommendationPersistence');
+
+test('uses the most recent Vietnam trading session on weekends and configured holidays', () => {
+  expect(vietnamSessionDate(new Date('2026-10-11T01:00:00.000Z'), new Set())).toBe('2026-10-09');
+  expect(vietnamSessionDate(new Date('2026-10-12T01:00:00.000Z'), new Set(['2026-10-12']))).toBe('2026-10-09');
+});
+
+test('uses the previous completed trading session before the EOD cutoff', () => {
+  expect(vietnamSessionDate(new Date('2026-10-12T02:00:00.000Z'), new Set())).toBe('2026-10-09');
+  expect(vietnamSessionDate(new Date('2026-10-12T09:00:00.000Z'), new Set())).toBe('2026-10-12');
+});
 
 function sealRun(run) {
   run.input_provenance = { version: 'recommendation_input_v1', eod_session: run.as_of, provider: run.provider };
@@ -20,6 +30,15 @@ function sampleRun() {
     provider: 'vnstock',
     recommendations: [{ rank: 1, stock_id: 'stock-1', stock: { code: 'FPT' }, entry_price: '100', horizon_days: 20, rationale: { factors: ['trend'] } }]
   };
+}
+
+function historicalPrices(stockId = 'stock-1') {
+  return Array.from({ length: 70 }, (_, index) => ({
+    stock_id: stockId,
+    observed_at: new Date(Date.UTC(2025, 10, 22 + index)).toISOString().slice(0, 10),
+    close: 100 + index,
+    toJSON() { return this; }
+  }));
 }
 
 test('accepts evidence when snapshot hash matches', () => {
@@ -65,7 +84,7 @@ test('blocks evaluation when snapshot evidence has been changed', () => {
 
 test('generates a v2 snapshot with verified external evidence', async () => {
   const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', industry: 'Technology', toJSON() { return this; } };
-  const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
+  const prices = historicalPrices();
   const stored = [];
   let persistedRun;
   let savedHash;
@@ -81,7 +100,7 @@ test('generates a v2 snapshot with verified external evidence', async () => {
       findOne: async options => options.where.id ? { ...persistedRun, recommendations: stored.map(item => ({ ...item, stock: { code: stock.code } })) } : null,
       create: async payload => { persistedRun = { id: 'run-v2', ...payload }; return persistedRun; },
       update: async values => { Object.assign(persistedRun, values); if (values.snapshot_sha256) savedHash = values.snapshot_sha256; return [1]; },
-    }, now: new Date('2026-01-31T10:00:00.000Z'),
+    }, now: new Date('2026-01-30T10:00:00.000Z'),
     Recommendation: { bulkCreate: async rows => stored.push(...rows) }
   });
   expect(result).toMatchObject({ model: 'short_term_rule_v2', selected_count: 1 });
@@ -99,43 +118,43 @@ test('generates a v2 snapshot with verified external evidence', async () => {
 
 test('does not create a duplicate scheduled snapshot for the same session contract', async () => {
   const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
-  const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
+  const prices = historicalPrices();
   let created = false;
   const result = await generateRecommendationSnapshot({
-    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] }, now: new Date('2026-01-31T10:00:00.000Z'),
+    Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] }, now: new Date('2026-01-30T10:00:00.000Z'),
     RecommendationRun: { findOne: async () => ({ id: 'existing-run', universe_size: 1, selected_count: 1, model: 'short_term_rule_v2', snapshot_sha256: null }), create: async () => { created = true; } },
     Recommendation: { bulkCreate: async () => { throw new Error('must not write recommendations'); } },
   });
   expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'existing-run' });
-  expect(result.as_of).toBe('2026-01-31');
+  expect(result.as_of).toBe('2026-01-30');
   expect(created).toBe(false);
 });
 
 test('uses a transaction and returns the winner when a concurrent generation claims the contract', async () => {
   const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
-  const prices = Array.from({ length: 70 }, (_, index) => ({ stock_id: 'stock-1', observed_at: `2026-01-${String(index + 1).padStart(2, '0')}`, close: 100 + index, toJSON() { return this; } }));
-  const winner = { id: 'winner', as_of: '2026-01-31', provider: 'vnstock', model: 'short_term_rule_v2', horizon_days: 20, universe_size: 1, selected_count: 1, snapshot_sha256: 'sealed' };
+  const prices = historicalPrices();
+  const winner = { id: 'winner', as_of: '2026-01-30', provider: 'vnstock', model: 'short_term_rule_v2', horizon_days: 20, universe_size: 1, selected_count: 1, snapshot_sha256: 'sealed' };
   let calls = 0; const transaction = { id: 'tx' };
   const result = await generateRecommendationSnapshot({
     Stock: { findAll: async () => [stock] }, StockPrice: { findAll: async () => prices }, ExternalFactor: { findAll: async () => [] },
     sequelize: { transaction: async (...args) => args.at(-1)(transaction) },
     RecommendationRun: { findOne: async () => (++calls === 1 ? null : winner), create: async () => { const error = new Error('duplicate'); error.name = 'SequelizeUniqueConstraintError'; throw error; } },
-    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-31T10:00:00Z'),
+    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-30T10:00:00Z'),
   });
   expect(result).toMatchObject({ status: 'snapshot_exists', run_id: 'winner', snapshot_sha256: 'sealed' });
-  expect(recommendationGenerationKey({ asOf: '2026-01-31', horizonDays: 20, provider: 'vnstock' })).toHaveLength(64);
+  expect(recommendationGenerationKey({ asOf: '2026-01-30', horizonDays: 20, provider: 'vnstock' })).toHaveLength(64);
 });
 
 test.each([null, { recommendations: [{}] }])('does not seal a missing or incomplete persisted snapshot', async persisted => {
   const update = jest.fn();
   await expect(generateRecommendationSnapshot({
     Stock: { findAll: async () => [] },
-    StockPrice: { findAll: async () => [{ stock_id: 's', observed_at: '2026-01-31', close: 100 }] },
+    StockPrice: { findAll: async () => [{ stock_id: 's', observed_at: '2026-01-30', close: 100 }] },
     RecommendationRun: {
       findOne: async options => options.where.id ? persisted : null,
       create: async () => ({ id: 'new-run' }), update,
     },
-    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-31T10:00:00Z'),
+    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-30T10:00:00Z'),
   })).rejects.toThrow('Cannot seal incomplete recommendation snapshot');
   expect(update).not.toHaveBeenCalled();
 });
