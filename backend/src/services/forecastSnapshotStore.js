@@ -122,6 +122,63 @@ async function listForecastSnapshots({ ForecastSnapshot, ForecastOutcomeEvent },
   const page = rows.slice(0, limit).map(item => { const row = plain(item); return { ...row, lifecycle_status: row.outcome ? 'measured' : 'pending', integrity_valid: verifySnapshot(row) }; });
   return { items: page, has_more: rows.length > limit, next_cursor: rows.length > limit ? writeForecastCursor(page.at(-1)) : null };
 }
+async function listForecastCohortRows({ ForecastSnapshot, ForecastOutcomeEvent }, { horizon, modelVersion, dateFrom, dateTo, includeExpired = false, now = new Date(), maximumRows = 5000 } = {}) {
+  if ((horizon !== undefined && ![1, 5].includes(horizon)) || (modelVersion !== undefined && (typeof modelVersion !== 'string' || !modelVersion || modelVersion.length > 120))
+    || (dateFrom !== undefined && !validDate(dateFrom)) || (dateTo !== undefined && !validDate(dateTo)) || (dateFrom && dateTo && dateFrom > dateTo)
+    || !Number.isInteger(maximumRows) || maximumRows < 1 || maximumRows > 10000) throw new Error('Invalid forecast cohort query');
+  const asOf = { ...(dateFrom ? { [Op.gte]: dateFrom } : {}), ...(dateTo ? { [Op.lte]: dateTo } : {}) };
+  const where = { synthetic: true, research_only: true, ...(horizon ? { horizon_sessions: horizon } : {}), ...(modelVersion ? { model_version: modelVersion } : {}),
+    ...(Object.keys(asOf).length ? { as_of: asOf } : {}), ...(includeExpired ? {} : { expires_at: { [Op.gt]: now } }) };
+  const rows = await ForecastSnapshot.findAll({ where, include: [{ model: ForecastOutcomeEvent, as: 'outcome', required: false }], order: [['as_of', 'ASC'], ['id', 'ASC']], limit: maximumRows + 1 });
+  if (rows.length > maximumRows) throw new Error('Forecast cohort row limit exceeded');
+  return rows.map(item => { const row = plain(item); return { ...row, integrity_valid: verifySnapshot(row) }; });
+}
+
+function buildForecastCohortSummary(rows, { minimumSamples = 20 } = {}) {
+  if (!Array.isArray(rows) || !Number.isInteger(minimumSamples) || minimumSamples < 2 || minimumSamples > 1000) throw new Error('Invalid forecast cohort summary');
+  const groups = new Map();
+  const add = (key, dimensions, row) => {
+    if (!groups.has(key)) groups.set(key, { dimensions, rows: [] });
+    groups.get(key).rows.push(row);
+  };
+  for (const row of rows) {
+    if (!row.integrity_valid || !verifySnapshot(row)) throw new Error('Forecast snapshot integrity failed');
+    if (row.outcome) {
+      const outcome = plain(row.outcome);
+      if (!outcome.payload_sha256 || outcome.payload_sha256 !== artifactHash(outcome.payload) || outcome.payload?.snapshot_sha256 !== row.payload_sha256) throw new Error('Forecast outcome integrity failed');
+    }
+    const dimensions = { provider: row.provider, model_version: row.model_version, horizon_sessions: row.horizon_sessions };
+    add(`cohort:${row.provider}:${row.model_version}:${row.horizon_sessions}`, dimensions, row);
+    const month = String(row.as_of).slice(0, 7);
+    add(`month:${row.provider}:${row.model_version}:${row.horizon_sessions}:${month}`, { ...dimensions, month }, row);
+  }
+  const summarize = ({ dimensions, rows: cohortRows }) => {
+    const measured = cohortRows.filter(row => row.outcome);
+    const v1 = cohortRows.filter(row => row.payload.version === 'forecast_snapshot_payload_v1');
+    const v2 = cohortRows.filter(row => row.payload.version === 'forecast_snapshot_payload_v2');
+    const measuredV2 = v2.filter(row => row.outcome);
+    const score = (row, probabilities) => {
+      const actual = row.outcome.payload.actual_class, truth = CLASSES.indexOf(actual);
+      return { brier: probabilities.reduce((sum, item, index) => sum + (item.value - Number(index === truth)) ** 2, 0), log: -Math.log(Math.max(1e-15, probabilities[truth].value)) };
+    };
+    const average = (values, key) => values.length ? values.reduce((sum, value) => sum + value[key], 0) / values.length : null;
+    const modelScores = measuredV2.map(row => score(row, row.payload.probabilities));
+    const frequencyScores = measuredV2.map(row => score(row, row.payload.baseline_snapshot.frequency_probabilities));
+    const persistenceScores = measuredV2.map(row => score(row, row.payload.baseline_snapshot.persistence_probabilities));
+    const eligible = measuredV2.length >= minimumSamples;
+    const comparison = eligible ? { status: 'available', convention: 'model_minus_baseline; negative_favors_model', samples: measuredV2.length,
+      model: { brier_multiclass_sum: average(modelScores, 'brier'), log_loss: average(modelScores, 'log') },
+      frequency: { brier_multiclass_sum: average(frequencyScores, 'brier'), log_loss: average(frequencyScores, 'log'), brier_delta: average(modelScores, 'brier') - average(frequencyScores, 'brier'), log_loss_delta: average(modelScores, 'log') - average(frequencyScores, 'log') },
+      persistence: { brier_multiclass_sum: average(persistenceScores, 'brier'), log_loss: average(persistenceScores, 'log'), brier_delta: average(modelScores, 'brier') - average(persistenceScores, 'brier'), log_loss_delta: average(modelScores, 'log') - average(persistenceScores, 'log') } }
+      : { status: 'insufficient_samples', reason: 'minimum_v2_measured_samples_not_met', samples: measuredV2.length, minimum_samples: minimumSamples };
+    return { dimensions, date_range: { from: cohortRows[0]?.as_of || null, to: cohortRows.at(-1)?.as_of || null }, predictions: cohortRows.length, measured: measured.length,
+      pending: cohortRows.length - measured.length, coverage: { v1: { predictions: v1.length, measured: v1.filter(row => row.outcome).length }, v2: { predictions: v2.length, measured: measuredV2.length }, baseline_eligible_measured: measuredV2.length }, baseline_comparison: comparison };
+  };
+  const values = [...groups.entries()];
+  return { version: 'forecast_cohort_summary_v1', source: 'snapshot_store', synthetic: true, research_only: true, live: false, market_accuracy_verified: false,
+    minimum_samples: minimumSamples, total_rows: rows.length, cohorts: values.filter(([key]) => key.startsWith('cohort:')).map(([, value]) => summarize(value)),
+    monthly_cohorts: values.filter(([key]) => key.startsWith('month:')).map(([, value]) => summarize(value)) };
+}
 function buildStoredForecastHistory(page, horizon, minimumBinSamples = 5) {
   if (![1, 5].includes(horizon) || !Array.isArray(page?.items) || !Number.isInteger(minimumBinSamples) || minimumBinSamples < 2) throw new Error('Invalid stored forecast history');
   const entries = page.items.map(row => {
@@ -165,4 +222,4 @@ function buildStoredForecastHistory(page, horizon, minimumBinSamples = 5) {
     reliability: { minimum_bin_samples: minimumBinSamples, interpretation: 'diagnostic_only_not_calibration', bins }, entries,
     pagination: { has_more: page.has_more === true, next_cursor: page.next_cursor || null } };
 }
-module.exports = { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory };
+module.exports = { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory, listForecastCohortRows, buildForecastCohortSummary };

@@ -14,7 +14,7 @@ const snapshot = { id: '11111111-1111-4111-8111-111111111111', provider: 'fixtur
 const outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
 snapshot.outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
 const listHistory = async () => ({ items: [snapshot], has_more: false, next_cursor: null });
-function app(env, loadArtifact = () => artifact, history = listHistory) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history })); return instance; }
+function app(env, loadArtifact = () => artifact, history = listHistory, cohorts = async () => [snapshot]) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history, listCohorts: cohorts })); return instance; }
 test('development exposes a no-store synthetic research preview for both horizons', async () => {
   for (const horizon of [1, 5]) {
     const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-preview').query({ horizon });
@@ -55,4 +55,19 @@ test('history validates pagination and sanitizes repository integrity failures',
   expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-history?horizon=5&cursor=bad')).status).toBe(400);
   const response = await request(app({ NODE_ENV: 'development' }, () => artifact, async () => { throw new Error('database secret'); })).get('/api/forecast/research-history?horizon=5');
   expect(response.status).toBe(503); expect(response.text).not.toContain('database secret');
+});
+test('development exposes independently aggregated forecast cohorts', async () => {
+  const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-cohorts?horizon=5&model_version=softmax-v1&date_from=2025-03-01&date_to=2025-03-31&minimum_samples=20');
+  expect(response.status).toBe(200);
+  expect(response.headers['cache-control']).toBe('no-store');
+  expect(response.body.data).toMatchObject({ version: 'forecast_cohort_summary_v1', total_rows: 1, minimum_samples: 20,
+    cohorts: [{ dimensions: { model_version: 'softmax-v1', horizon_sessions: 5 }, coverage: { v1: { predictions: 1 }, v2: { predictions: 0 } }, baseline_comparison: { status: 'insufficient_samples' } }] });
+});
+test('cohort endpoint rejects invalid filters and sanitizes repository failures', async () => {
+  expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-cohorts?horizon=2')).status).toBe(400);
+  expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-cohorts?date_from=2025-02-31')).status).toBe(400);
+  expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-cohorts?date_from=2025-04-01&date_to=2025-03-01')).status).toBe(400);
+  const response = await request(app({ NODE_ENV: 'development' }, () => artifact, listHistory, async () => { throw new Error('database secret'); })).get('/api/forecast/research-cohorts');
+  expect(response.status).toBe(503);
+  expect(response.text).not.toContain('database secret');
 });
