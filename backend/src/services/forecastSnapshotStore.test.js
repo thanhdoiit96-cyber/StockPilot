@@ -1,5 +1,5 @@
 const { artifactHash } = require('./forecastArtifact');
-const { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots } = require('./forecastSnapshotStore');
+const { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory } = require('./forecastSnapshotStore');
 const ID1 = '11111111-1111-4111-8111-111111111111', ID2 = '22222222-2222-4222-8222-222222222222';
 const input = () => ({ synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: 5,
   as_of: '2025-03-18', target_session: '2025-03-23', split_hash: 'a'.repeat(64), training_hash: 'b'.repeat(64),
@@ -48,4 +48,13 @@ test('uses bounded opaque cursor pagination and derives pending/measured lifecyc
   expect(readForecastCursor(page.next_cursor)).toEqual({ as_of: '2025-03-18', id: ID1 });
   expect(readForecastCursor(writeForecastCursor(rows[0]))).toEqual({ as_of: '2025-03-19', id: ID2 });
   expect(() => readForecastCursor('invalid')).toThrow('cursor');
+});
+test('builds page scores from integrity-verified outcome events and fails closed on tampering', () => {
+  const snapshot = stored(), outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
+  const outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
+  const history = buildStoredForecastHistory({ items: [{ ...snapshot, outcome, integrity_valid: true }, { ...stored({ id: ID2, as_of: '2025-03-17' }), integrity_valid: true }], has_more: true, next_cursor: 'next' }, 5);
+  expect(history).toMatchObject({ status: 'research_history', source: 'snapshot_store', summary: { predictions: 2, measured: 1, pending: 1 }, pagination: { has_more: true, next_cursor: 'next' } });
+  expect(history.summary.brier_multiclass_sum).toBe(outcomePayload.brier_multiclass_sum);
+  expect(history.summary.baseline_comparison).toMatchObject({ status: 'unavailable' });
+  expect(() => buildStoredForecastHistory({ items: [{ ...snapshot, outcome: { ...outcome, payload: { tampered: true } }, integrity_valid: true }] }, 5)).toThrow('outcome integrity');
 });

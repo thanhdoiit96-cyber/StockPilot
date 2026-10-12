@@ -1,17 +1,19 @@
 const CLASSES = ['advancing', 'balanced', 'declining']
 
-export async function fetchForecastResearchHistory(horizon, { signal } = {}) {
+export async function fetchForecastResearchHistory(horizon, { signal, cursor, limit = 7 } = {}) {
   if (![1, 5].includes(horizon)) throw new Error('invalid_horizon')
-  const response = await fetch(`/api/forecast/research-history?horizon=${horizon}`, { signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new Error('invalid_limit')
+  const query = new URLSearchParams({ horizon: String(horizon), limit: String(limit) }); if (cursor) query.set('cursor', cursor)
+  const response = await fetch(`/api/forecast/research-history?${query}`, { signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
   if (!response.ok) return { status: 'unavailable', reason: response.status === 404 ? 'preview_disabled' : 'request_failed' }
   const data = (await response.json())?.data
   const summary = data?.summary
-  const validArtifact = /^[a-f0-9]{64}$/.test(data?.artifact_sha256 || '') && ['fresh', 'stale'].includes(data?.artifact_freshness)
-  const valid = data?.status === 'research_history' && data.synthetic === true && data.research_only === true && data.live === false
-    && data.market_accuracy_verified === false && data.calibrated === false && data.horizon_sessions === horizon && validArtifact
+  const valid = data?.status === 'research_history' && data.source === 'snapshot_store' && data.synthetic === true && data.research_only === true && data.live === false
+    && data.market_accuracy_verified === false && data.calibrated === false && data.horizon_sessions === horizon
     && Number.isInteger(summary?.predictions) && Number.isInteger(summary?.measured) && Number.isInteger(summary?.pending)
     && summary.predictions === summary.measured + summary.pending && Array.isArray(data.entries) && data.entries.length === summary.predictions
     && Array.isArray(data.reliability?.bins) && data.reliability?.interpretation === 'diagnostic_only_not_calibration'
+    && typeof data.pagination?.has_more === 'boolean' && (!data.pagination.has_more || typeof data.pagination.next_cursor === 'string')
   if (!valid) return { status: 'unavailable', reason: 'invalid_contract' }
   const entriesValid = data.entries.every(entry => entry.horizon_sessions === horizon && /^\d{4}-\d{2}-\d{2}$/.test(entry.as_of)
     && ['pending', 'measured'].includes(entry.outcome_status) && CLASSES.includes(entry.predicted_class)
@@ -21,4 +23,18 @@ export async function fetchForecastResearchHistory(horizon, { signal } = {}) {
     && Math.abs(entry.probabilities.find(item => item.class === entry.predicted_class).value - entry.confidence) < 1e-6
     && (entry.outcome_status === 'pending' || (CLASSES.includes(entry.actual_class) && Number.isFinite(entry.brier_multiclass_sum) && Number.isFinite(entry.log_loss))))
   return entriesValid ? data : { status: 'unavailable', reason: 'invalid_entries' }
+}
+
+export function mergeForecastHistory(current, next) {
+  if (current?.status !== 'research_history' || next?.status !== 'research_history' || current.horizon_sessions !== next.horizon_sessions) return next
+  const entries = [...current.entries, ...next.entries].filter((entry, index, rows) => rows.findIndex(item => (item.id || item.as_of) === (entry.id || entry.as_of)) === index)
+  const measured = entries.filter(entry => entry.outcome_status === 'measured')
+  const mean = key => measured.length ? measured.reduce((sum, entry) => sum + entry[key], 0) / measured.length : null
+  const bins = [[0, .5], [.5, .7], [.7, .85], [.85, 1.0000001]].map(([lower, upper], index) => {
+    const rows = measured.filter(entry => entry.confidence >= lower && entry.confidence < upper)
+    return { bin_index: index, samples: rows.length, status: rows.length >= 5 ? 'observed' : 'insufficient_samples' }
+  })
+  return { ...next, entries, summary: { ...next.summary, predictions: entries.length, measured: measured.length, pending: entries.length - measured.length,
+    brier_multiclass_sum: mean('brier_multiclass_sum'), log_loss: mean('log_loss'), accuracy: measured.length ? measured.filter(entry => entry.correct).length / measured.length : null },
+    reliability: { ...next.reliability, bins } }
 }

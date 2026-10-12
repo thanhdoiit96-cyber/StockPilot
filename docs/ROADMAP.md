@@ -943,3 +943,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành import artifact đã validate và evaluator outcome hai phase, development-only. PostgreSQL xác nhận 14 prediction/outcome lần đầu và toàn bộ trả existing khi chạy lại; evaluator không tạo snapshot thiếu và không nhận outcome tương lai.
 - Tiếp theo: `research-history` đọc snapshot repository bằng `limit`/cursor, kiểm integrity từng row và aggregate proper scores từ event. UI bổ sung tải thêm có giới hạn; artifact file tiếp tục phục vụ latest preview/provenance, production route vẫn đóng.
+
+## Cập nhật ưu tiên 2026-10-12 — Repository history pagination
+
+- Hoàn thành endpoint repository có limit/cursor, integrity fail-closed và score từ measured events; UI lazy-load/tải thêm, gộp unique và giữ dữ liệu cũ khi trang sau lỗi. Live development xác nhận phân trang 4+3 cho bảy snapshot kỳ 5.
+- Baseline của snapshot v1 được báo unavailable vì chưa seal lúc dự báo; không trộn artifact hiện tại vào lịch sử. Tiếp theo: snapshot schema v2 chứa contemporaneous baseline, cohort aggregate độc lập pagination và filter model/date khi đủ quy mô; không sửa row v1.
