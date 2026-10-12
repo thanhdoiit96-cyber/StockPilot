@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Regime ranking 25 phiên, bootstrap và turnover
+
+- Thêm fixture riêng `pre_registered_regime_blocks_v1`: 140 phiên, block 12 phiên tăng/cân bằng/giảm định trước; trong thị trường giảm vẫn có nhóm relative winners để baseline tạo đủ top-5. Fold test cố định 25 origins, không thay fixture F1/F2.
+- Shadow evaluation có paired-session bootstrap 1.000 lần, seed cố định, CI 95%; thêm average turnover, unique symbols, maximum selection share và HHI. Gate yêu cầu >=20 phiên và cận dưới CI của cả mean return delta lẫn positive-rate delta >0. Synthetic chỉ có thể đạt `eligible_for_live_evidence_validation`; `coupling_enabled` luôn false.
+- Kết quả 25 phiên/125 outcomes: baseline mean +2,175%, positive 73,6%; regime mean +2,512%, positive 76,0%. Delta +0,337 điểm % (CI +0,183 đến +0,520), positive delta +2,4 điểm % (CI 0 đến +6,4). Gate fail vì CI positive-rate chạm 0. Turnover tăng 20,0% → 30,83%; HHI giảm 0,0816 → 0,0473 và unique symbols tăng 19 → 30.
+- Test giữ selection bất biến khi đổi outcome cuối, kiểm tra diagnostics/gate và fail-closed. Báo cáo CLI chạy đạt; toàn bộ forecast 53/53 đạt ngoài sandbox (gồm CLI subprocess). Không thay UI/DB; không xem fixture là market performance.
+- Tiếp theo: nhiều walk-forward folds rời nhau và cost sensitivity cho turnover/slippage. Chỉ nếu hiệu quả sau chi phí có CI dương ổn định ở các fold mới chuyển sang đánh giá bằng evidence thật; nếu không đóng hướng coupling.
+
 ## 2026-10-12 — Shadow evaluation regime-aware stock ranking
 
 - Thêm `forecast_regime_ranking_v1`: trên từng test origin, dùng prediction đã fit trước phiên test, tạo pool `short_term_rule_v2` chỉ từ lịch sử đến origin, rồi thử công thức cố định `rule_score + (p_advancing - p_declining) × (momentum - stability) × 0.1`. Baseline và biến thể dùng cùng session/horizon/top-5/outcome.
