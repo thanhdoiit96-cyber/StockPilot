@@ -933,3 +933,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành panel lịch sử lazy-load trên Tổng quan: score so baseline, reliability readiness, timeline outcome và đầy đủ loading/error/empty/mobile. UI không dùng fixture fallback cho performance và vẫn giữ research-only/chưa hiệu chỉnh.
 - Tiếp theo: forecast snapshot store append-only với identity idempotent theo model/horizon/as-of, lifecycle pending → measured, integrity hash, retention và API pagination. Chỉ materialize synthetic development trước; production/live tiếp tục đóng cho tới khi provider/evidence và acceptance gate hợp lệ.
+
+## Cập nhật ưu tiên 2026-10-12 — Snapshot store append-only
+
+- Hoàn thành schema/store: snapshot và outcome event bất biến, generation identity idempotent, SHA-256 integrity, pending → measured một chiều, retention không xóa, cursor pagination giới hạn. Migration và PostgreSQL rollback smoke đạt; chưa có scheduler/API production ghi DB.
+- Tiếp theo: materializer development-only đọc artifact đã validate rồi ghi snapshot idempotent; evaluator chỉ append outcome khi target/session evidence đủ điều kiện. Sau đó chuyển research-history API sang repository pagination và giữ file artifact làm nguồn inference/provenance, không làm nguồn lịch sử duy nhất.

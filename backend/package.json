@@ -19,6 +19,7 @@
     "generate:forecast-preview": "node scripts/generate-forecast-preview.cjs",
     "verify:forecast-preview": "npm run generate:forecast-preview && node scripts/verify-forecast-preview.cjs",
     "report:forecast-regime-ranking": "node scripts/report-forecast-regime-ranking.cjs",
+    "verify:forecast-snapshot-store": "node scripts/verify-forecast-snapshot-store.cjs",
     "lint": "eslint src/**/*.js",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",

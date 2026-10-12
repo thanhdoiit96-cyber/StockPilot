@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Forecast snapshot store append-only
+
+- Migration 037 tạo `forecast_snapshots` bất biến và `forecast_outcome_events` append-only; trigger PostgreSQL chặn UPDATE/DELETE. Snapshot unique theo generation key provider/model/horizon/as-of, payload hash bao phủ probability cùng split/training provenance.
+- Service tạo idempotent và fail nếu cùng identity nhưng khác payload; outcome chỉ append một lần, liên kết snapshot hash, tự tính Brier/log loss từ probability đã seal và actual class. Outcome trước 15:00 Asia/Ho_Chi_Minh của target session bị từ chối.
+- Lịch sử suy ra `pending/measured` từ event, cursor opaque theo as-of/id, limit 1–50. Retention mặc định 180 ngày, cho phép 30–730; row hết hạn bị ẩn mặc định chứ không xóa audit data.
+- Migration development thành công trong 0,220 giây. PostgreSQL rollback smoke xác nhận tạo snapshot/outcome và trigger immutable, `retained:false` nên không để lại fixture. Targeted store 4/4 và full forecast 63/63 đạt trước guard ngày/giờ cuối; targeted được chạy lại sau guard.
+- Chưa nối scheduler/controller vào DB store; research-history hiện vẫn đọc artifact file. Tiếp theo: development-only materializer import prediction artifact idempotent, evaluator append outcome đủ điều kiện và API history chuyển sang repository có pagination; production tiếp tục đóng.
+
 ## 2026-10-12 — UI lịch sử kiểm chứng dự báo
 
 - Tổng quan có panel thu gọn “Lịch sử kiểm chứng dự báo” trong card Triển vọng. Panel mặc định đóng và chỉ gọi `/api/forecast/research-history` khi mở; đổi kỳ 1/5 khi đang mở sẽ hủy request cũ và tải đúng kỳ mới.
