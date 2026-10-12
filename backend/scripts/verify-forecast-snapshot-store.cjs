@@ -9,7 +9,10 @@ const { validateSnapshot, snapshotGenerationKey, validateOutcome } = require('..
   try {
     const payload = validateSnapshot({ synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: 'fixture-verifier', model_version: 'softmax-v1',
       horizon_sessions: 5, as_of: '2025-03-18', target_session: '2025-03-23', split_hash: 'a'.repeat(64), training_hash: 'b'.repeat(64),
-      probabilities: [{ class: 'advancing', value: .6 }, { class: 'balanced', value: .3 }, { class: 'declining', value: .1 }] });
+      probabilities: [{ class: 'advancing', value: .6 }, { class: 'balanced', value: .3 }, { class: 'declining', value: .1 }],
+      baseline_snapshot: { version: 'forecast_frequency_baseline_v1', fit_cutoff: '2025-03-17T23:00:00+07:00',
+        frequency_probabilities: [{ class: 'advancing', value: .4 }, { class: 'balanced', value: .4 }, { class: 'declining', value: .2 }],
+        persistence_version: 'forecast_persistence_baseline_v1', persistence_probabilities: [{ class: 'advancing', value: .8 }, { class: 'balanced', value: .1 }, { class: 'declining', value: .1 }] } });
     const snapshot = await ForecastSnapshot.create({ generation_key: snapshotGenerationKey(payload), schema_version: payload.version, provider: payload.provider, model_version: payload.model_version,
       horizon_sessions: payload.horizon_sessions, as_of: payload.as_of, target_session: payload.target_session, synthetic: true, research_only: true, payload,
       payload_sha256: artifactHash(payload), expires_at: new Date('2027-01-01T00:00:00Z') }, { transaction });
@@ -19,7 +22,7 @@ const { validateSnapshot, snapshotGenerationKey, validateOutcome } = require('..
     let immutable = false;
     try { await snapshot.update({ provider: 'tampered' }, { transaction }); } catch (error) { immutable = /immutable/.test(error.message); }
     assert.equal(immutable, true, 'Database trigger must reject snapshot update');
-    console.log(JSON.stringify({ valid: true, snapshot_id: snapshot.id, outcome: 'measured', immutable: true, retained: false }));
+    console.log(JSON.stringify({ valid: true, schema_version: payload.version, baseline_sealed: Boolean(payload.baseline_snapshot), snapshot_id: snapshot.id, outcome: 'measured', immutable: true, retained: false }));
   } finally {
     await transaction.rollback();
     await sequelize.close();

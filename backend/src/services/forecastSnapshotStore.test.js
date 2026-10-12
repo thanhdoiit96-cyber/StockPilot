@@ -4,6 +4,9 @@ const ID1 = '11111111-1111-4111-8111-111111111111', ID2 = '22222222-2222-4222-82
 const input = () => ({ synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: 5,
   as_of: '2025-03-18', target_session: '2025-03-23', split_hash: 'a'.repeat(64), training_hash: 'b'.repeat(64),
   probabilities: [{ class: 'advancing', value: .6 }, { class: 'balanced', value: .3 }, { class: 'declining', value: .1 }] });
+const inputV2 = () => ({ ...input(), baseline_snapshot: { version: 'forecast_frequency_baseline_v1', fit_cutoff: '2025-03-17T23:00:00+07:00',
+  frequency_probabilities: [{ class: 'advancing', value: .4 }, { class: 'balanced', value: .4 }, { class: 'declining', value: .2 }],
+  persistence_version: 'forecast_persistence_baseline_v1', persistence_probabilities: [{ class: 'advancing', value: .8 }, { class: 'balanced', value: .1 }, { class: 'declining', value: .1 }] } });
 const stored = (overrides = {}) => { const payload = validateSnapshot(input()); return { id: ID1, generation_key: snapshotGenerationKey(payload), schema_version: payload.version, provider: payload.provider,
   model_version: payload.model_version, horizon_sessions: 5, as_of: payload.as_of, target_session: payload.target_session, synthetic: true, research_only: true,
   payload, payload_sha256: artifactHash(payload), expires_at: new Date('2027-01-01T00:00:00Z'), created_at: new Date('2026-10-12T00:00:00Z'), ...overrides }; };
@@ -16,6 +19,13 @@ test('normalizes a synthetic snapshot and hashes its immutable identity', () => 
   expect(verifySnapshot(stored({ payload: { changed: true } }))).toBe(false);
   expect(() => validateSnapshot({ ...input(), live: true })).toThrow('synthetic');
   expect(() => validateSnapshot({ ...input(), as_of: '2025-02-31' })).toThrow('identity');
+});
+test('seals contemporaneous baselines in v2 without rewriting a legacy identity', async () => {
+  const payload = validateSnapshot(inputV2());
+  expect(payload).toMatchObject({ version: 'forecast_snapshot_payload_v2', baseline_snapshot: { version: 'forecast_frequency_baseline_v1', persistence_version: 'forecast_persistence_baseline_v1' } });
+  const legacy = stored();
+  const result = await createForecastSnapshot({ ForecastSnapshot: { findOne: async () => legacy }, sequelize: { transaction: jest.fn() } }, inputV2());
+  expect(result).toMatchObject({ status: 'snapshot_legacy_exists', snapshot: { id: ID1 } });
 });
 test('creates once and returns an identical existing snapshot without mutation', async () => {
   let saved;
@@ -57,4 +67,13 @@ test('builds page scores from integrity-verified outcome events and fails closed
   expect(history.summary.brier_multiclass_sum).toBe(outcomePayload.brier_multiclass_sum);
   expect(history.summary.baseline_comparison).toMatchObject({ status: 'unavailable' });
   expect(() => buildStoredForecastHistory({ items: [{ ...snapshot, outcome: { ...outcome, payload: { tampered: true } }, integrity_valid: true }] }, 5)).toThrow('outcome integrity');
+});
+test('computes sealed baseline comparison only when every measured snapshot is v2', () => {
+  const payload = validateSnapshot(inputV2());
+  const snapshot = { ...stored(), schema_version: payload.version, payload, payload_sha256: artifactHash(payload) };
+  const outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
+  const outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
+  const history = buildStoredForecastHistory({ items: [{ ...snapshot, outcome, integrity_valid: true }], has_more: false }, 5);
+  expect(history.summary.baseline_comparison).toMatchObject({ status: 'available', frequency: { samples: 1 }, persistence: { samples: 1 } });
+  expect(history.summary.baseline_comparison.frequency.brier_delta).toBeCloseTo(outcomePayload.brier_multiclass_sum - .56, 12);
 });

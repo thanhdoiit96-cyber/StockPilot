@@ -46,6 +46,8 @@ function parseForecastPreviewArtifact(text, { now = new Date() } = {}) {
     historyHorizons.add(history.horizon_sessions);
     if (history.entries.some(entry => entry.horizon_sessions !== history.horizon_sessions || typeof entry.provider !== 'string' || !entry.provider || !/^\d{4}-\d{2}-\d{2}$/.test(entry.as_of) || !/^[a-f0-9]{64}$/.test(entry.split_hash) || !/^[a-f0-9]{64}$/.test(entry.training_hash)
       || !Array.isArray(entry.probabilities) || entry.probabilities.length !== 3 || entry.probabilities.some(item => !UI_PROBABILITY(item))
+      || !entry.baseline_snapshot || !Array.isArray(entry.baseline_snapshot.frequency_probabilities) || entry.baseline_snapshot.frequency_probabilities.length !== 3 || entry.baseline_snapshot.frequency_probabilities.some(item => !UI_PROBABILITY(item))
+      || !Array.isArray(entry.baseline_snapshot.persistence_probabilities) || entry.baseline_snapshot.persistence_probabilities.length !== 3 || entry.baseline_snapshot.persistence_probabilities.some(item => !UI_PROBABILITY(item))
       || !['pending', 'measured'].includes(entry.outcome_status) || (entry.outcome_status === 'measured' && (!Number.isFinite(entry.brier_multiclass_sum) || !Number.isFinite(entry.log_loss))))) throw new Error('Invalid history entries');
     const measured = history.entries.filter(entry => entry.outcome_status === 'measured').length;
     if (history.summary?.predictions !== history.entries.length || history.summary?.measured !== measured || history.summary?.pending !== history.entries.length - measured || history.reliability?.interpretation !== 'diagnostic_only_not_calibration' || !Array.isArray(history.reliability?.bins)) throw new Error('Invalid history summary');

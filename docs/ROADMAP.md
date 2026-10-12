@@ -948,3 +948,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành endpoint repository có limit/cursor, integrity fail-closed và score từ measured events; UI lazy-load/tải thêm, gộp unique và giữ dữ liệu cũ khi trang sau lỗi. Live development xác nhận phân trang 4+3 cho bảy snapshot kỳ 5.
 - Baseline của snapshot v1 được báo unavailable vì chưa seal lúc dự báo; không trộn artifact hiện tại vào lịch sử. Tiếp theo: snapshot schema v2 chứa contemporaneous baseline, cohort aggregate độc lập pagination và filter model/date khi đủ quy mô; không sửa row v1.
+
+## Cập nhật ưu tiên 2026-10-12 — Baseline-sealed snapshot v2
+
+- Hoàn thành payload v2 seal frequency/persistence probability và fit cutoff; baseline score được tính với cùng outcome. V1 không bị sửa/nhân đôi, mixed cohort không được so sánh một phần. PostgreSQL rollback smoke và forecast 70/70 đạt.
+- Tiếp theo: endpoint cohort aggregate độc lập pagination, báo coverage v1/v2, nhóm model/horizon/date và minimum-sample gate. UI chỉ mở comparison khi cohort v2 đủ mẫu; filter chỉ thêm khi số cohort thực tế cần đến.

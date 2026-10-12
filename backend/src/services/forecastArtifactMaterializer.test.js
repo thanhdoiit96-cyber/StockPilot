@@ -21,6 +21,7 @@ beforeAll(() => { artifact = parseForecastPreviewArtifact(JSON.stringify(createF
 test('materializes validated predictions and outcomes idempotently', async () => {
   const models = memoryModels(), env = { NODE_ENV: 'development' }, now = new Date('2026-10-12T12:00:00Z');
   expect(await materializeForecastArtifact({ artifact, models, env, now })).toMatchObject({ status: 'materialized', predictions: 14, created: 14, existing: 0 });
+  expect(models.snapshots.every(row => row.schema_version === 'forecast_snapshot_payload_v2' && row.payload.baseline_snapshot)).toBe(true);
   expect(await materializeForecastArtifact({ artifact, models, env, now })).toMatchObject({ predictions: 14, created: 0, existing: 14 });
   expect(await evaluateForecastArtifactOutcomes({ artifact, models, env, now })).toMatchObject({ outcomes: 14, measured: 14, existing: 0, pending: 0, missing_snapshot: 0 });
   expect(await evaluateForecastArtifactOutcomes({ artifact, models, env, now })).toMatchObject({ outcomes: 14, measured: 0, existing: 14 });
