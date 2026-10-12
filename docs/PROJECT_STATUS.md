@@ -4751,3 +4751,9 @@ pm run retry:vnstock-universe, which reads VNSTOCK_RETRY_MANIFEST (default evide
 - UI Đề xuất có báo cáo từng snapshot, bảng mã đã chọn/trạng thái/return và CSV provenance. CSV có BOM UTF-8, chống công thức spreadsheet, chỉ xuất citation đã xác minh và không đưa giá/live quote vào báo cáo.
 - Kiểm chứng: backend Jest **260/260**, frontend unit/contract **71/71**. Chưa có browser smoke mới trong runner vì giới hạn `spawn EPERM` đã được quyết định tạm bỏ qua.
 - Điểm tiếp tục: khi đã có đủ snapshot hoàn tất, bổ sung phân phối return, cohort theo model/horizon và guard cỡ mẫu trước khi dùng kết quả để điều chỉnh model; không diễn giải tỷ lệ dương là cam kết lợi nhuận.
+## 2026-10-12 — UI triển vọng ngắn hạn trên Tổng quan
+
+- Đã commit nền tảng research F1: `56347fb`. Tổng quan bổ sung card “Triển vọng ngắn hạn”, chọn 1/5 phiên, ba kịch bản xác suất và biểu đồ khoảng tỷ lệ mã tăng. Nhãn “Mô phỏng” luôn hiện; giải thích mở bằng chuột/bàn phím. Chọn kỳ giữ trong sessionStorage; bố cục một cột trên mobile.
+- Đây là fixture giao diện cố định, không phải output model, không đại diện VNINDEX và không có dự báo live. Card không gọi API hoặc thay dữ liệu thị trường hiện có.
+- Kiểm chứng: 73 frontend tests đạt; build/integrity đạt; 12 browser regressions Overview với API mock đạt, gồm mobile 390px và chọn kỳ bằng Enter sau khi loading overlay kết thúc. Preview localhost:4173 trả bundle `index-ZpaHwMwZ.js`. Browser mock không kiểm chứng dự báo thực tế.
+- Tiếp tục: F2 prototype model xác suất trên fixture, cùng folds/baselines F1; chỉ nối output vào UI khi có contract phân biệt synthetic/live và unavailable. Evidence thật và nghiệm thu ngoài mẫu vẫn chưa có.

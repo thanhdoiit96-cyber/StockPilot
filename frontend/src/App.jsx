@@ -8,6 +8,7 @@ import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
+import ShortTermOutlook from "./components/ShortTermOutlook.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
@@ -1635,7 +1636,7 @@ function lv() {
               children: profileLanguage === "en" ? "Provider observation time" : uiTextValue("Thời điểm provider ghi nhận")
             })]
           })]
-        }), O.jsxs("div", {
+        }), O.jsx(ShortTermOutlook, { language: profileLanguage }), O.jsxs("div", {
           className: `overview-market-grid ${pt.length && ue?.user ? "has-watchlist-pulse" : ""}`,
           children: [O.jsx(MarketBreadth, {
             stocks: si,

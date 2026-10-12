@@ -68,6 +68,24 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
 
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
 
+test('outlook preview labels simulated data and supports mobile keyboard horizon selection', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await setup(page, { board: false })
+  const card = page.locator('.short-term-outlook')
+  await expect(card).toBeVisible()
+  await expect(card.getByText('Mô phỏng', { exact: false }).first()).toBeVisible()
+  await expect(card.getByRole('button', { name: '5 phiên', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  const one = card.getByRole('button', { name: '1 phiên', exact: true })
+  await expect(page.locator('.market-breadth-panel')).toBeVisible()
+  await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
+  await one.press('Enter')
+  await expect(one).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.locator('.outlook-range-value strong')).toHaveText('40–62%')
+  await card.locator('summary').click()
+  await expect(card.locator('details p')).toBeVisible()
+  expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
+
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {
   const state = await setup(page, { board: false })
   await expect(page.locator('.overview-metrics')).toHaveCount(0)

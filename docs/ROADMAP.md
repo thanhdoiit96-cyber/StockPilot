@@ -890,3 +890,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Đã hoàn tất report lịch sử từng snapshot: selected symbols, pending/measured outcome, stored forward return, tỷ lệ outcome dương có điều kiện và average forward return. Export CSV giữ snapshot/model/provider/reference provenance; không trộn dữ liệu live vào kết quả lịch sử.
 - Bước kế tiếp chỉ mở khi có đủ outcome out-of-sample: cohort model/horizon, return distribution và minimum-sample guard. Không tự động đổi trọng số hoặc quảng bá hit rate thành hiệu suất đầu tư/cam kết lợi nhuận.
+## Cập nhật ưu tiên 2026-10-12 — UI dự báo
+
+- Đã triển khai bản xem trước “Triển vọng ngắn hạn” trên Tổng quan: 1/5 phiên, xác suất và khoảng tỷ lệ mã tăng, nhãn mô phỏng luôn hiển thị, responsive và keyboard regression. Chỉ hoàn tất prototype giao diện, chưa hoàn tất tính năng dự báo thật.
+- Tiếp theo: F2 model xác suất trên fixture, so sánh cùng folds/baselines F1 và contract synthetic/unavailable trước khi nối UI. Nghiệm thu dữ liệu thật và model ngoài mẫu vẫn phụ thuộc evidence hợp lệ; không dùng fixture để công bố hiệu quả dự báo.
