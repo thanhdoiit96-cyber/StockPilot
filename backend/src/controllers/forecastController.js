@@ -3,9 +3,10 @@ const express = require('express');
 const path = require('path');
 const { readForecastPreviewArtifact } = require('../services/forecastPreviewArtifact');
 const models = require('../models');
-const { listForecastSnapshots, buildStoredForecastHistory, readForecastCursor } = require('../services/forecastSnapshotStore');
+const { listForecastSnapshots, buildStoredForecastHistory, readForecastCursor, listForecastCohortRows, buildForecastCohortSummary } = require('../services/forecastSnapshotStore');
+const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 
-function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options) } = {}) {
+function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options), listCohorts = options => listForecastCohortRows(models, options) } = {}) {
   const router = express.Router();
   const load = loadArtifact || (() => readForecastPreviewArtifact(path.resolve(env.FORECAST_PREVIEW_ARTIFACT || path.resolve(__dirname, '../../evidence/forecast-research-preview.json'))));
   router.get('/research-preview', (req, res) => {
@@ -42,6 +43,24 @@ function createForecastController({ env = process.env, loadArtifact, listHistory
       return res.json({ success: true, data: history });
     } catch (_) {
       return res.status(503).json({ success: false, code: 'FORECAST_HISTORY_UNAVAILABLE', message: 'Forecast research history artifact is unavailable.' });
+    }
+  });
+  router.get('/research-cohorts', async (req, res) => {
+    if (env.NODE_ENV !== 'development' || env.FORECAST_RESEARCH_PREVIEW === 'false') return res.status(404).json({ success: false, code: 'FORECAST_PREVIEW_DISABLED', message: 'Forecast research preview is not available.' });
+    const horizon = req.query.horizon === undefined ? undefined : Number(req.query.horizon);
+    const modelVersion = typeof req.query.model_version === 'string' && req.query.model_version ? req.query.model_version : undefined;
+    const dateFrom = typeof req.query.date_from === 'string' && req.query.date_from ? req.query.date_from : undefined;
+    const dateTo = typeof req.query.date_to === 'string' && req.query.date_to ? req.query.date_to : undefined;
+    const minimumSamples = req.query.minimum_samples === undefined ? 20 : Number(req.query.minimum_samples);
+    if ((horizon !== undefined && ![1, 5].includes(horizon)) || (modelVersion && modelVersion.length > 120) || !Number.isInteger(minimumSamples) || minimumSamples < 2 || minimumSamples > 1000
+      || (dateFrom && !validDate(dateFrom)) || (dateTo && !validDate(dateTo)) || (dateFrom && dateTo && dateFrom > dateTo))
+      return res.status(400).json({ success: false, code: 'INVALID_FORECAST_COHORT_QUERY', message: 'Invalid forecast cohort query.' });
+    try {
+      const data = buildForecastCohortSummary(await listCohorts({ horizon, modelVersion, dateFrom, dateTo }), { minimumSamples });
+      res.set('Cache-Control', 'no-store');
+      return res.json({ success: true, data });
+    } catch (_) {
+      return res.status(503).json({ success: false, code: 'FORECAST_COHORTS_UNAVAILABLE', message: 'Forecast research cohorts are unavailable.' });
     }
   });
   return router;

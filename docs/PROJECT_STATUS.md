@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Forecast cohort aggregate độc lập phân trang
+
+- Thêm development-only `GET /api/forecast/research-cohorts`: query repository riêng, không phụ thuộc cursor/limit của timeline; lọc tùy chọn theo horizon, model và khoảng `as_of`, trả cohort provider/model/horizon cùng cohort tháng.
+- Mỗi cohort báo riêng prediction/measured coverage v1 và v2. So sánh model với frequency/persistence baseline chỉ dùng measured v2 đã seal baseline và chỉ mở khi đạt `minimum_samples` (mặc định 20); v1 không bị trộn vào phép so sánh.
+- Query giới hạn 5.000 row, kiểm SHA snapshot/outcome và fail-closed khi vượt giới hạn hoặc integrity sai. PostgreSQL development hiện xác nhận horizon 5 có 7/7 measured v1, 0 v2, nên comparison đúng trạng thái `insufficient_samples`; đây là fixture synthetic, không phải market accuracy.
+- Kiểm chứng targeted store/controller 16/16 đạt. Tiếp theo: nối cohort contract vào panel lịch sử Tổng quan, dùng aggregate làm nguồn score/coverage thay vì summary của các page đã tải; chỉ render comparison khi gate v2 đạt và giữ timeline pagination độc lập.
+
 ## 2026-10-12 — Snapshot v2 seal baseline cùng prediction
 
 - Artifact/history entry nay chứa frequency và frozen-persistence probability, version và fit cutoff của đúng fold. `forecast_snapshot_payload_v2` kiểm đủ 3 class, tổng probability và fit cutoff trước `as_of`; toàn baseline nằm trong snapshot SHA-256.

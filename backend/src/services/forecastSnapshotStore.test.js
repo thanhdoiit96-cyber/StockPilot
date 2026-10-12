@@ -1,5 +1,5 @@
 const { artifactHash } = require('./forecastArtifact');
-const { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory } = require('./forecastSnapshotStore');
+const { validateSnapshot, snapshotGenerationKey, verifySnapshot, validateOutcome, createForecastSnapshot, recordForecastOutcome, writeForecastCursor, readForecastCursor, listForecastSnapshots, buildStoredForecastHistory, buildForecastCohortSummary } = require('./forecastSnapshotStore');
 const ID1 = '11111111-1111-4111-8111-111111111111', ID2 = '22222222-2222-4222-8222-222222222222';
 const input = () => ({ synthetic: true, research_only: true, live: false, market_accuracy_verified: false, provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: 5,
   as_of: '2025-03-18', target_session: '2025-03-23', split_hash: 'a'.repeat(64), training_hash: 'b'.repeat(64),
@@ -76,4 +76,17 @@ test('computes sealed baseline comparison only when every measured snapshot is v
   const history = buildStoredForecastHistory({ items: [{ ...snapshot, outcome, integrity_valid: true }], has_more: false }, 5);
   expect(history.summary.baseline_comparison).toMatchObject({ status: 'available', frequency: { samples: 1 }, persistence: { samples: 1 } });
   expect(history.summary.baseline_comparison.frequency.brier_delta).toBeCloseTo(outcomePayload.brier_multiclass_sum - .56, 12);
+});
+test('cohort summary separates v1/v2 coverage and gates baseline comparison independently from pages', () => {
+  const v1 = stored();
+  const payload = validateSnapshot(inputV2());
+  const v2 = { ...stored({ id: ID2, as_of: '2025-03-17' }), schema_version: payload.version, payload, payload_sha256: artifactHash(payload) };
+  for (const row of [v1, v2]) {
+    const outcomePayload = validateOutcome(row, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
+    row.outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
+  }
+  const summary = buildForecastCohortSummary([{ ...v1, integrity_valid: true }, { ...v2, integrity_valid: true }], { minimumSamples: 2 });
+  expect(summary).toMatchObject({ total_rows: 2, cohorts: [{ predictions: 2, measured: 2, coverage: { v1: { predictions: 1, measured: 1 }, v2: { predictions: 1, measured: 1 }, baseline_eligible_measured: 1 }, baseline_comparison: { status: 'insufficient_samples', samples: 1 } }] });
+  expect(summary.monthly_cohorts).toHaveLength(1);
+  expect(buildForecastCohortSummary([{ ...v2, integrity_valid: true }, { ...v2, id: '33333333-3333-4333-8333-333333333333', integrity_valid: true }], { minimumSamples: 2 }).cohorts[0].baseline_comparison.status).toBe('available');
 });
