@@ -8,7 +8,7 @@ test.each([1, 5])('builds immutable scored research history for horizon %i', hor
   expect(history).toMatchObject({ status: 'research_history', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false,
     horizon_sessions: horizon, summary: { predictions: 7, measured: 7, pending: 0 } });
   expect(history.entries).toHaveLength(7);
-  expect(history.entries.every(entry => entry.outcome_status === 'measured' && entry.training_hash && entry.split_hash && entry.outcome_available_at)).toBe(true);
+  expect(history.entries.every(entry => entry.outcome_status === 'measured' && entry.provider === 'fixture' && entry.training_hash && entry.split_hash && entry.outcome_available_at)).toBe(true);
   expect(history.summary.brier_multiclass_sum).toBeCloseTo(report.models.find(model => model.horizon_sessions === horizon).folds[0].metrics.brier_multiclass_sum, 12);
   expect(history.summary.baseline_comparison.frequency).toMatchObject({ samples: 7 });
   expect(Number.isFinite(history.summary.baseline_comparison.frequency.brier_delta)).toBe(true);
