@@ -70,6 +70,14 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
         reliability: { interpretation: 'diagnostic_only_not_calibration', bins: [{ status: 'insufficient_samples' }, { status: 'insufficient_samples' }] },
         pagination: { has_more: offset === 0, next_cursor: offset === 0 ? 'next-page' : null }, entries }
     }
+    else if (path === '/api/forecast/research-cohorts') {
+      const horizon = Number(url.searchParams.get('horizon'))
+      const cohort = { dimensions: { provider: 'fixture', model_version: 'softmax-v1', horizon_sessions: horizon }, date_range: { from: '2025-03-12', to: '2025-03-18' }, predictions: 7, measured: 7, pending: 0,
+        coverage: { v1: { predictions: 7, measured: 7 }, v2: { predictions: 0, measured: 0 }, baseline_eligible_measured: 0 },
+        baseline_comparison: { status: 'insufficient_samples', reason: 'minimum_v2_measured_samples_not_met', samples: 0, minimum_samples: 20 } }
+      payload.data = { version: 'forecast_cohort_summary_v1', source: 'snapshot_store', synthetic: true, research_only: true, live: false, market_accuracy_verified: false,
+        minimum_samples: 20, total_rows: 7, cohorts: [cohort], monthly_cohorts: [{ ...cohort, dimensions: { ...cohort.dimensions, month: '2025-03' } }] }
+    }
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: [] }
     else if (path === '/api/recommendations/latest') payload.data = { status: recommendationItems.length ? 'generated' : 'unavailable', recommendations: recommendationItems }
     else if (path === '/api/recommendations/history') payload.data = []
@@ -129,7 +137,8 @@ test('outlook lazily opens scored forecast history and stays compact on mobile',
   await card.getByText('Lịch sử kiểm chứng dự báo', { exact: true }).click()
   await expect(card.getByText('Đang tích lũy bằng chứng')).toBeVisible()
   await expect(card.locator('.forecast-history-entry')).toHaveCount(4)
-  await expect(card.locator('.forecast-score-grid')).toContainText('0.900')
+  await expect(card.locator('.forecast-cohort-coverage')).toContainText('0/20')
+  await expect(card.locator('.forecast-score-grid')).toContainText('Mở khi cohort v2 đủ mẫu')
   expect(state.forecastHistoryRequests()).toBe(1)
   await card.getByRole('button', { name: 'Tải thêm' }).click()
   await expect(card.locator('.forecast-history-entry')).toHaveCount(7)
