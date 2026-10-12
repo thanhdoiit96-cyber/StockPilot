@@ -47,6 +47,12 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
       const tx = request.postDataJSON()
       positions = [...positions, { stock_id: tx.symbol, symbol: tx.symbol, quantity: Number(tx.quantity) }]
     } else if (path === '/api/auth/me') payload = { success: true, user: { email: 'e2e@example.com', role: 'user' } }
+    else if (path === '/api/forecast/research-preview') {
+      const horizon = Number(url.searchParams.get('horizon'))
+      payload.data = { version: 'forecast_presentation_v1', status: 'research_preview', source: 'synthetic_replay', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, as_of: '2025-03-18', probabilities: [
+        { class: 'advancing', value: horizon === 1 ? 0.41 : 0.52 }, { class: 'balanced', value: 0.31 }, { class: 'declining', value: horizon === 1 ? 0.28 : 0.17 }
+      ] }
+    }
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: [] }
     else if (path === '/api/recommendations/latest') payload.data = { recommendations: [] }
     else if (path === '/api/recommendations/history') payload.data = []
@@ -74,12 +80,15 @@ test('outlook preview labels simulated data and supports mobile keyboard horizon
   const card = page.locator('.short-term-outlook')
   await expect(card).toBeVisible()
   await expect(card.getByText('Mô phỏng', { exact: false }).first()).toBeVisible()
+  await expect(card.getByText('Mô phỏng nghiên cứu', { exact: false }).first()).toBeVisible()
+  await expect(card.getByText('52%', { exact: true })).toBeVisible()
   await expect(card.getByRole('button', { name: '5 phiên', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const one = card.getByRole('button', { name: '1 phiên', exact: true })
   await expect(page.locator('.market-breadth-panel')).toBeVisible()
   await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
   await one.press('Enter')
   await expect(one).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.getByText('41%', { exact: true })).toBeVisible()
   await expect(card.locator('.outlook-range-value strong')).toHaveText('40–62%')
   await card.locator('summary').click()
   await expect(card.locator('details p')).toBeVisible()
