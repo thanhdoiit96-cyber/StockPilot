@@ -12,6 +12,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
   const watchMutations = []
   const listRequests = []
   let forecastRequests = 0
+  let forecastHistoryRequests = 0
   await page.route('**/api/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -56,6 +57,17 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
         { class: 'advancing', value: horizon === 1 ? 0.41 : 0.52 }, { class: 'balanced', value: 0.31 }, { class: 'declining', value: horizon === 1 ? 0.28 : 0.17 }
       ] }
     }
+    else if (path === '/api/forecast/research-history') {
+      forecastHistoryRequests += 1
+      const horizon = Number(url.searchParams.get('horizon'))
+      const entries = Array.from({ length: 7 }, (_, index) => ({ horizon_sessions: horizon, as_of: `2025-03-${String(12 + index).padStart(2, '0')}`,
+        outcome_status: 'measured', predicted_class: 'advancing', actual_class: index % 3 ? 'balanced' : 'advancing', correct: index % 3 === 0,
+        confidence: .82, brier_multiclass_sum: .9, log_loss: 1.4, probabilities: [{ class: 'advancing', value: .82 }, { class: 'balanced', value: .1 }, { class: 'declining', value: .08 }] }))
+      payload.data = { status: 'research_history', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon,
+        artifact_sha256: 'a'.repeat(64), artifact_freshness: 'fresh', summary: { predictions: 7, measured: 7, pending: 0, brier_multiclass_sum: 1.239, log_loss: 7.532,
+          baseline_comparison: { frequency: { brier_multiclass_sum: .755, log_loss: 1.214, brier_delta: .484, log_loss_delta: 6.318 } } },
+        reliability: { interpretation: 'diagnostic_only_not_calibration', bins: [{ status: 'insufficient_samples' }, { status: 'observed' }] }, entries }
+    }
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: [] }
     else if (path === '/api/recommendations/latest') payload.data = { status: recommendationItems.length ? 'generated' : 'unavailable', recommendations: recommendationItems }
     else if (path === '/api/recommendations/history') payload.data = []
@@ -72,7 +84,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
     await page.locator('.table-sort-btn').first().click()
     await expect(page.locator('.table-panel tbody tr').first()).toContainText('FPT')
   }
-  return { transactions, listRequests, watchMutations, forecastRequests: () => forecastRequests }
+  return { transactions, listRequests, watchMutations, forecastRequests: () => forecastRequests, forecastHistoryRequests: () => forecastHistoryRequests }
 }
 
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
@@ -93,8 +105,8 @@ test('outlook preview labels simulated data and supports mobile keyboard horizon
   await expect(one).toHaveAttribute('aria-pressed', 'true')
   await expect(card.getByText('41%', { exact: true })).toBeVisible()
   await expect(card.locator('.outlook-range-value strong')).toHaveText('40–62%')
-  await card.locator('summary').click()
-  await expect(card.locator('details p')).toBeVisible()
+  await card.locator('.outlook-info summary').click()
+  await expect(card.locator('.outlook-info p')).toBeVisible()
   expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 })
 
@@ -105,6 +117,19 @@ test('outlook falls back safely and retries a missing preview artifact', async (
   await card.getByRole('button', { name: 'Thử lại' }).click()
   await expect(card).toContainText('Mô phỏng nghiên cứu')
   expect(state.forecastRequests()).toBe(2)
+})
+
+test('outlook lazily opens scored forecast history and stays compact on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const state = await setup(page, { board: false })
+  const card = page.locator('.short-term-outlook')
+  expect(state.forecastHistoryRequests()).toBe(0)
+  await card.getByText('Lịch sử kiểm chứng dự báo', { exact: true }).click()
+  await expect(card.getByText('Chưa vượt baseline')).toBeVisible()
+  await expect(card.locator('.forecast-history-entry')).toHaveCount(7)
+  await expect(card.locator('.forecast-score-grid')).toContainText('1.239')
+  expect(state.forecastHistoryRequests()).toBe(1)
+  expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 })
 
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {

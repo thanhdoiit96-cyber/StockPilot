@@ -928,3 +928,8 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành lịch sử artifact bất biến cho kỳ 1/5 phiên, outcome pending/measured, Brier/log loss, accuracy phụ, reliability bin có minimum sample và so sánh frequency/persistence baseline. Endpoint chỉ bật development; synthetic prototype hiện kém frequency baseline ở cả hai kỳ nên không đạt calibration/market-accuracy gate.
 - Tiếp theo: trình bày lịch sử trên UI Tổng quan bằng panel/tab gọn với timeline dự báo → outcome, so sánh proper score với baseline và trạng thái reliability. UI phải ưu tiên cảnh báo research-only/chưa hiệu chỉnh, hỗ trợ loading/error/empty/mobile; không đưa stock ranking overlay đã bị loại trở lại.
+
+## Cập nhật ưu tiên 2026-10-12 — UI kiểm chứng dự báo
+
+- Hoàn thành panel lịch sử lazy-load trên Tổng quan: score so baseline, reliability readiness, timeline outcome và đầy đủ loading/error/empty/mobile. UI không dùng fixture fallback cho performance và vẫn giữ research-only/chưa hiệu chỉnh.
+- Tiếp theo: forecast snapshot store append-only với identity idempotent theo model/horizon/as-of, lifecycle pending → measured, integrity hash, retention và API pagination. Chỉ materialize synthetic development trước; production/live tiếp tục đóng cho tới khi provider/evidence và acceptance gate hợp lệ.

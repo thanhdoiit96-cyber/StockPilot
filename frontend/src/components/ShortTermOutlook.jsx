@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchForecastResearchPreview } from '../services/forecastPreview.mjs'
+import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 
 // Design fixtures only. These values are not outputs of the research baseline.
 const scenarios = {
@@ -51,6 +52,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
       </svg><p className="outlook-note">{copy('Đo tỷ lệ cổ phiếu tăng, không phải mức tăng giá hay lợi nhuận.', 'A share of advancing stocks, not price appreciation or investment return.')}</p></div>
     </div>
     <div className="outlook-basis" role="note"><strong>{copy('Cơ sở nhận định', 'Basis for the outlook')}</strong>{research ? <ul><li>{copy('Đầu vào: lợi suất trung bình 1, 5 và 20 phiên của rổ synthetic.', 'Inputs: mean 1, 5 and 20-session returns of the synthetic basket.')}</li><li>{copy('Phương pháp: softmax ba trạng thái, chuẩn hóa trên train và đánh giá theo time split.', 'Method: three-state softmax, normalized on training data and evaluated with a time split.')}</li><li>{copy(`Bằng chứng: replay ${preview.as_of}, artifact ${preview.artifact_sha256.slice(0, 12)}…, chưa hiệu chỉnh xác suất.`, `Evidence: ${preview.as_of} replay, artifact ${preview.artifact_sha256.slice(0, 12)}…, probabilities are uncalibrated.`)}</li></ul> : <p>{copy('Đang hiển thị fixture cố định vì chưa có artifact research hợp lệ; không có cơ sở để diễn giải như dự báo.', 'Fixed fixtures are shown because no valid research artifact is available; they must not be interpreted as a forecast.')}</p>}</div>
+    <ForecastHistoryPanel horizon={horizon} language={language} />
     <section className="outlook-candidates" aria-labelledby="outlook-candidates-title">
       <div className="outlook-candidates-heading"><div><h3 id="outlook-candidates-title">{copy('Mã cần quan sát cùng kịch bản', 'Symbols to monitor with this scenario')}</h3><p>{copy('Xếp hạng độc lập từ snapshot Đề xuất; mô hình breadth synthetic không trực tiếp chọn cổ phiếu.', 'Ranked independently by the Ideas snapshot; the synthetic breadth model does not directly select stocks.')}</p></div><button type="button" className="ghost-btn small-btn" onClick={onOpenIdeas}>{copy('Mở Đề xuất', 'Open Ideas')}</button></div>
       {candidates.length ? <ol className="outlook-candidate-list">{candidates.map(item => {
