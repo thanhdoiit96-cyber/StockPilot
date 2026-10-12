@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-12 — Cơ sở dự báo, mã quan sát và Watchlist Tổng quan
+
+- Card outlook hiển thị cơ sở nhận định ngay trên UI: feature mean return rổ synthetic 1/5/20 phiên, softmax ba trạng thái, time split, as-of và 12 ký tự đầu artifact hash; ghi rõ chưa calibration. Khi artifact lỗi, phần cơ sở nói rõ chỉ còn fixture và không được diễn giải thành dự báo.
+- “Mã cần quan sát cùng kịch bản” lấy tối đa 3 mã từ snapshot Đề xuất mới nhất (hiện live API có 5 mã, as_of 2026-10-09, short_term_rule_v2), hiển thị rank/score, factors, trend, RSI và số quan sát; có link Chi tiết, Theo dõi và Đề xuất. Danh sách này độc lập với model breadth synthetic, không tuyên bố synthetic forecast đã chọn cổ phiếu thật.
+- Sửa Watchlist Tổng quan: nguyên nhân chỉ hiện 4/6 là hard cap `.slice(0, 4)`. Cap mới là 8 để trường hợp 6 mã hiện đủ; badge ghi visible/total, danh sách >8 có nút “Xem toàn bộ”. Không render hàng trăm mã trên Tổng quan.
+- Workflow: `npm run dev` tự generate artifact qua predev; `npm run verify:forecast-preview` generate rồi xác minh checksum/freshness. UI có nút Thử lại khi artifact/API unavailable.
+- Kiểm chứng: verify artifact đạt; frontend 75/75; build/integrity đạt; Overview browser 13/13 trước bổ sung basis, rồi 3 targeted tests cho outlook/retry/Watchlist 6 mã đều đạt. Preview phục vụ bundle `index-xwY6_z20.js`. Tiếp theo: thiết kế coupling hợp lệ giữa market regime và stock ranking trên synthetic labeled data trước khi cho “dự báo” trực tiếp điều chỉnh điểm từng mã.
+
 ## 2026-10-12 — Materialized forecast preview và freshness
 
 - `npm run generate:forecast-preview` chạy replay synthetic ngoài request, tạo atomic artifact `forecast_research_preview_artifact_v1` cho kỳ 1/5 trong `backend/evidence/forecast-research-preview.json`. Envelope có canonical SHA-256, generated_at, stale window 7 ngày, model/split metadata và hai presentation contracts.

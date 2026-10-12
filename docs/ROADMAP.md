@@ -906,3 +906,7 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 
 - Hoàn thành artifact preview có checksum/generated_at/freshness; endpoint không còn chạy replay trong request. UI hiển thị ngày artifact và stale status, vẫn giữ nhãn research-only/synthetic.
 - Tiếp theo: đưa bước generate/validate vào workflow development và release verification, hoàn thiện retry khi artifact thiếu/hỏng. Không dùng freshness artifact để suy ra độ mới thị trường.
+## Cập nhật ưu tiên 2026-10-12 — Explainable outlook và candidates
+
+- Hoàn thành cơ sở nhận định trên card; bổ sung danh sách mã từ snapshot rule-based có score/factors/indicator evidence và tách bạch khỏi forecast breadth synthetic. Watchlist Tổng quan hiển thị đủ 6/6, giới hạn an toàn 8 mã.
+- Tiếp theo: nghiên cứu regime-aware ranking trên fixture labeled, đo incremental value so với short_term_rule_v2 theo cùng time split. Chỉ nối forecast vào điểm cổ phiếu nếu cải thiện ngoài mẫu và provenance đạt; nếu không giữ hai tín hiệu độc lập.

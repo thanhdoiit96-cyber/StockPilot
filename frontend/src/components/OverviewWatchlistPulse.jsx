@@ -8,6 +8,7 @@ const formatPrice = (value, language) => Number.isFinite(Number(value))
 const formatObservedAt = (value, language) => value && Number.isFinite(Date.parse(value))
   ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value))
   : null
+const OVERVIEW_LIMIT = 8
 
 export default function OverviewWatchlistPulse({ entries = [], stocks = [], quotes = {}, onOpenDetail, onOpenWatchlist, language = 'vi' }) {
   const text = (vi, en) => language === 'en' ? en : vi
@@ -19,7 +20,7 @@ export default function OverviewWatchlistPulse({ entries = [], stocks = [], quot
     const change = Number(quote?.change ?? stock?.change)
     const price = quote?.price ?? stock?.price
     return { entry, stock, symbol, quote, change, price }
-  }).filter(row => row.symbol).sort((left, right) => Math.abs(right.change || 0) - Math.abs(left.change || 0) || left.symbol.localeCompare(right.symbol)).slice(0, 4), [entries, stocks, quotes])
+  }).filter(row => row.symbol).sort((left, right) => Math.abs(right.change || 0) - Math.abs(left.change || 0) || left.symbol.localeCompare(right.symbol)).slice(0, OVERVIEW_LIMIT), [entries, stocks, quotes])
   const liveCount = rows.filter(row => row.quote).length
   const latestObservedAt = rows.reduce((latest, row) => !row.quote?.observed_at || (latest && Date.parse(latest) >= Date.parse(row.quote.observed_at)) ? latest : row.quote.observed_at, null)
 
@@ -28,7 +29,7 @@ export default function OverviewWatchlistPulse({ entries = [], stocks = [], quot
   return <aside className="panel overview-watchlist-pulse" aria-labelledby="overview-watchlist-pulse-title" lang={language}>
     <div className="overview-watchlist-heading">
       <div><span className="eyebrow accent">WATCHLIST</span><h3 id="overview-watchlist-pulse-title">{text('Mã bạn theo dõi', 'Your watchlist')}</h3></div>
-      <span className="chip neutral">{entries.length}</span>
+      <span className="chip neutral" aria-label={text(`Hiển thị ${rows.length} trên ${entries.length} mã`, `Showing ${rows.length} of ${entries.length} symbols`)}>{rows.length}/{entries.length}</span>
     </div>
     <p className="overview-watchlist-intro">{text('Các mã biến động nhiều nhất trong danh sách theo dõi của bạn.', 'The most changed symbols in your personal watchlist.')}</p>
     <p className="overview-watchlist-data-status" role="status">{liveCount ? `${liveCount}/${rows.length} ${text('mã có quote Intraday', 'symbols have intraday quotes')}${latestObservedAt ? ` · ${text('ghi nhận', 'observed')} ${formatObservedAt(latestObservedAt, language)}` : ''}` : text('Đang dùng giá EOD gần nhất cho các mã đang hiển thị.', 'The shown symbols use their latest EOD price.')}</p>
@@ -40,6 +41,6 @@ export default function OverviewWatchlistPulse({ entries = [], stocks = [], quot
         </button>
       </li>)}
     </ul>
-    <button type="button" className="ghost-btn small-btn overview-watchlist-manage" onClick={onOpenWatchlist}>{text('Quản lý Watchlist', 'Manage watchlist')}</button>
+    <button type="button" className="ghost-btn small-btn overview-watchlist-manage" onClick={onOpenWatchlist}>{entries.length > rows.length ? text(`Xem toàn bộ ${entries.length} mã`, `View all ${entries.length} symbols`) : text('Quản lý Watchlist', 'Manage watchlist')}</button>
   </aside>
 }

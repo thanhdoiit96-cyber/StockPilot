@@ -1636,7 +1636,7 @@ function lv() {
               children: profileLanguage === "en" ? "Provider observation time" : uiTextValue("Thời điểm provider ghi nhận")
             })]
           })]
-        }), O.jsx(ShortTermOutlook, { language: profileLanguage }), O.jsxs("div", {
+        }), O.jsx(ShortTermOutlook, { language: profileLanguage, recommendations: nf?.recommendations || [], watchlistSymbols: [...yt], onOpenDetail: openMarketStock, onAddToWatchlist: addToWatchlist, onOpenIdeas: () => Xe("recommendations") }), O.jsxs("div", {
           className: `overview-market-grid ${pt.length && ue?.user ? "has-watchlist-pulse" : ""}`,
           children: [O.jsx(MarketBreadth, {
             stocks: si,

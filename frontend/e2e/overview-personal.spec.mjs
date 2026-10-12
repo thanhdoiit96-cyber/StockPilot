@@ -5,12 +5,13 @@ const stocks = ['AAA', 'BBB', 'FPT', 'ZZZ'].map(code => ({ id: code, code, name:
   sector: code === 'BBB' ? 'banking_finance' : code === 'FPT' ? 'technology' : code === 'ZZZ' ? 'real_estate' : 'other',
   website_url: code === 'AAA' ? 'javascript:alert(1)' : 'https://example.test/company/' + code }))
 
-async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous', watchlist = true } = {}) {
+async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous', watchlist = true, recommendationItems = [], forecastFailures = 0 } = {}) {
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
-  let watch = watchlist ? [{ stock_id: 'FPT', Stock: { code: 'FPT' } }] : []
+  let watch = Array.isArray(watchlist) ? watchlist : watchlist ? [{ stock_id: 'FPT', Stock: { code: 'FPT' } }] : []
   const transactions = []
   const watchMutations = []
   const listRequests = []
+  let forecastRequests = 0
   await page.route('**/api/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -48,13 +49,15 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
       positions = [...positions, { stock_id: tx.symbol, symbol: tx.symbol, quantity: Number(tx.quantity) }]
     } else if (path === '/api/auth/me') payload = { success: true, user: { email: 'e2e@example.com', role: 'user' } }
     else if (path === '/api/forecast/research-preview') {
+      forecastRequests += 1
+      if (forecastRequests <= forecastFailures) return route.fulfill({ status: 503, json: { success: false, code: 'FORECAST_PREVIEW_UNAVAILABLE' } })
       const horizon = Number(url.searchParams.get('horizon'))
       payload.data = { version: 'forecast_presentation_v1', status: 'research_preview', source: 'synthetic_replay', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, calibrated: false, horizon_sessions: horizon, as_of: '2025-03-18', artifact_sha256: 'a'.repeat(64), artifact_generated_at: '2026-10-12T06:00:00Z', artifact_freshness: 'fresh', artifact_age_seconds: 60, probabilities: [
         { class: 'advancing', value: horizon === 1 ? 0.41 : 0.52 }, { class: 'balanced', value: 0.31 }, { class: 'declining', value: horizon === 1 ? 0.28 : 0.17 }
       ] }
     }
     else if (path === '/api/ai-gate') payload.data = { enabled: false, reasons: [] }
-    else if (path === '/api/recommendations/latest') payload.data = { recommendations: [] }
+    else if (path === '/api/recommendations/latest') payload.data = { status: recommendationItems.length ? 'generated' : 'unavailable', recommendations: recommendationItems }
     else if (path === '/api/recommendations/history') payload.data = []
     else if (path === '/api/recommendations/readiness') payload.data = { coverage: [] }
     else if (path.endsWith('/analysis')) payload.data = { observations: 50, indicators: {}, quality: {}, risk_plan: { horizons: {} }, expert_guidance: { score_breakdown: [] }, external_factors: { status: 'available', factors: [{ type: 'macro', title: 'Economic data', source: 'Provider', source_url: 'https://example.test/data', published_at: '2026-09-21' }] } }
@@ -69,7 +72,7 @@ async function setup(page, { rejectTransaction = false, board = true, breadthSta
     await page.locator('.table-sort-btn').first().click()
     await expect(page.locator('.table-panel tbody tr').first()).toContainText('FPT')
   }
-  return { transactions, listRequests, watchMutations }
+  return { transactions, listRequests, watchMutations, forecastRequests: () => forecastRequests }
 }
 
 const symbols = page => page.locator('.table-panel tbody .symbol').evaluateAll(cells => cells.map(cell => cell.firstChild.textContent))
@@ -93,6 +96,15 @@ test('outlook preview labels simulated data and supports mobile keyboard horizon
   await card.locator('summary').click()
   await expect(card.locator('details p')).toBeVisible()
   expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
+
+test('outlook falls back safely and retries a missing preview artifact', async ({ page }) => {
+  const state = await setup(page, { board: false, forecastFailures: 1 })
+  const card = page.locator('.short-term-outlook')
+  await expect(card).toContainText('Research preview không khả dụng')
+  await card.getByRole('button', { name: 'Thử lại' }).click()
+  await expect(card).toContainText('Mô phỏng nghiên cứu')
+  expect(state.forecastRequests()).toBe(2)
 })
 
 test('overview focuses on real market coverage and leaves recommendation history and demo allocation to their own tabs', async ({ page }) => {
@@ -178,6 +190,20 @@ test('watchlist pulse appears only for the signed-in watchlist and links to its 
   await page.getByRole('button', { name: 'Quản lý Watchlist', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Danh mục cá nhân', exact: true })).toHaveClass(/active/)
   await expect(page.getByRole('tab', { name: /Watchlist/ })).toHaveAttribute('aria-selected', 'true')
+})
+
+test('overview shows all six watchlist symbols and evidence-backed candidate context', async ({ page }) => {
+  const watchlist = ['FPT', 'AAA', 'BBB', 'CCC', 'DDD', 'EEE'].map(code => ({ stock_id: code, Stock: { id: code, code, name: `${code} Company` } }))
+  const recommendationItems = [{ id: 'rec-fpt', rank: 1, score: 82.5, stock_id: 'FPT', stock: { id: 'FPT', code: 'FPT', name: 'FPT Company' }, rationale: { trend: 'above_sma20', observations: 60, indicators: { rsi14: 58.2 }, factors: ['Lịch sử giá đủ dài', 'Động lượng và xu hướng được kiểm tra'] } }]
+  await setup(page, { board: false, watchlist, recommendationItems })
+  const pulse = page.locator('.overview-watchlist-pulse')
+  await expect(pulse.locator('li')).toHaveCount(6)
+  await expect(pulse.getByLabel('Hiển thị 6 trên 6 mã')).toBeVisible()
+  const candidates = page.locator('.outlook-candidates')
+  await expect(candidates).toContainText('FPT')
+  await expect(candidates).toContainText('Lịch sử giá đủ dài')
+  await expect(candidates).toContainText('RSI: 58.2')
+  await expect(candidates.getByRole('button', { name: 'Đang theo dõi' })).toBeDisabled()
 })
 
 test('watchlist pulse does not create an empty personal panel', async ({ page }) => {

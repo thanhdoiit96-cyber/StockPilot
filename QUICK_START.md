@@ -332,3 +332,5 @@ npm run generate:forecast-preview
 ```
 
 Lệnh tạo `evidence/forecast-research-preview.json` từ fixture synthetic trước khi backend phục vụ endpoint. File không được commit. Khởi động lại backend sau khi cập nhật mã; Tổng quan sẽ hiển thị ngày tạo và cảnh báo nếu artifact quá 7 ngày. Đây không phải dữ liệu thị trường hay dự báo live.
+
+`npm run dev` đã tự chạy bước generate. Để kiểm tra riêng artifact trước khi bàn giao, dùng `npm run verify:forecast-preview`.
