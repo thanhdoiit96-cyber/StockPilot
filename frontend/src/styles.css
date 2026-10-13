@@ -1188,12 +1188,14 @@ th {
 @media (max-width:800px) { .company-people-grid { grid-template-columns:1fr; } }
 @media (max-width:480px) { .company-people-panel { padding:17px; } .company-person-row { align-items:flex-start; } }
 .company-fundamentals { padding:0; overflow:hidden; scroll-margin-top:88px; }
-.company-tabs { display:flex; gap:3px; padding:8px; border-bottom:1px solid rgba(148,163,184,.14); background:rgba(15,23,42,.24); overflow-x:auto; }
+.company-tabs { display:flex; gap:3px; padding:8px; border-bottom:1px solid rgba(148,163,184,.14); background:rgba(15,23,42,.24); overflow-x:auto; scroll-snap-type:x proximity; scrollbar-width:thin; }
 .company-tabs button { min-height:40px; padding:8px 15px; border:0; border-radius:9px; background:transparent; color:var(--muted); font:inherit; font-weight:750; white-space:nowrap; cursor:pointer; }
 .company-tabs button:hover { color:var(--text); background:rgba(148,163,184,.09); }
 .company-tabs button.active { color:var(--text); background:rgba(59,130,246,.15); box-shadow:inset 0 0 0 1px rgba(96,165,250,.22); }
 .company-tabs button:focus-visible { outline:2px solid var(--primary); outline-offset:1px; }
+.company-tabs button { scroll-snap-align:start; }
 .company-tab-panel { border:0; border-radius:0; box-shadow:none; background:transparent; }
+.company-tab-panel:focus-visible { outline:2px solid var(--primary); outline-offset:-2px; }
 .company-capital-panel { display:grid; gap:18px; padding:22px; }
 .company-capital-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .company-capital-grid>article { min-width:0; border:1px solid rgba(148,163,184,.15); border-radius:13px; overflow:hidden; background:rgba(15,23,42,.25); }

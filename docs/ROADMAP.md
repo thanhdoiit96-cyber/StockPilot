@@ -14,7 +14,7 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 - Audit CLI đã xác nhận database coverage 5/5 vẫn nguyên vẹn sau một chu kỳ provider thành công 5/5 và chu kỳ kế tiếp thất bại 5/5. Gate mở rộng giữ đóng cho tới khi tỷ lệ thành công ổn định qua nhiều lịch chạy độc lập.
 - Pacing/cooldown/circuit breaker đã chặn cascade ở chu kỳ kế tiếp; gate mở rộng vẫn đóng, nhưng scheduler có thể tiếp tục thu thập bằng chứng mà không dồn request khi provider suy giảm.
 - Run ledger PostgreSQL và cohort-matched stability audit đã có. Expansion gate yêu cầu tối thiểu ba run `scheduled` hoàn chỉnh, không circuit-open, cùng cohort; manual probe hoặc cohort khác không được tính. Hiện có 0/3 scheduled run profile 5 mã nên giữ scope/universe bounded; backend runtime đã được restart để nạp scheduler trước chu kỳ kế tiếp.
-- Thứ tự tiếp theo: kiểm chứng provider live → browser UX/accessibility năm tab → chỉ sau đó mới mở rộng ratios/balance/cash flow.
+- Browser UX/accessibility năm tab đã hoàn tất cho điều hướng bàn phím và mobile. Thứ tự tiếp theo: tích lũy gate scheduler/profile → kiểm chứng provider live cho từng dataset → chỉ sau đó mới mở rộng ratios/balance/cash flow.
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety
 
