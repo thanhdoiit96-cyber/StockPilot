@@ -1031,3 +1031,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành evaluator dùng phiên provider thực tế, sealed basket, coverage đầy đủ và outcome event append-only. Snapshot 2026-10-13 kỳ 1/5 vẫn pending đúng vì chưa có phiên sau ngày phát hành.
 - UI đã tách current-data monitoring khỏi replay tháng 3 bằng tab; baseline research được ghi rõ là kiểm thử pipeline, không phải bằng chứng live hay training của prototype hiện tại.
 - Tiếp theo: chạy evaluator sau EOD, xây endpoint/aggregate cohort `synthetic=false` tách biệt hoàn toàn; chỉ hiển thị proper score/baseline current-data khi từng model/horizon đạt tối thiểu 20 outcome và vượt integrity/license gate.
+
+## Cập nhật ưu tiên 2026-10-13 — Live cohort gate
+
+- Hoàn thành endpoint và UI cohort current-data tách biệt; hiện mỗi horizon có một prediction pending, 0/20 outcome. Score không được suy từ replay hoặc page subset.
+- Gate hai tầng: tối thiểu 20 measured outcome mới có model proper score; baseline comparison chỉ mở nếu snapshot mới seal baseline contemporaneous. Hai live snapshot hiện hữu không bị sửa để thêm baseline hồi tố.
+- Tiếp theo: live snapshot schema v2 seal frequency/persistence baseline từ evidence chỉ có tại issuance, sau đó orchestration development phát hành sau EOD và evaluator chạy ở các EOD kế tiếp. Production tiếp tục khóa.

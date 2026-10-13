@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Cohort current-data độc lập trên UI
+
+- Thêm development-only `GET /api/forecast/live-cohort?horizon=1|5&minimum_samples=20`. Query chỉ nhận snapshot `synthetic=false`, `research_only=false`, kiểm integrity snapshot/outcome và tuyệt đối không trộn research fixture.
+- Contract trả prediction/measured/pending cùng sample gate. Proper score bị khóa dưới 20 outcome; khi đủ mẫu chỉ trả model score và vẫn khóa baseline với `contemporaneous_baseline_not_sealed` nếu baseline không được seal tại thời điểm dự báo.
+- Tab “Dữ liệu hiện tại” trên Tổng quan nay đọc endpoint này và hiển thị tiến độ thật. Live PostgreSQL kỳ 5 hiện `1 prediction / 0 measured / 1 pending`, tiến độ `0/20`; replay tháng 3 chỉ còn trong tab “Nghiên cứu mô phỏng”.
+- Kiểm chứng: backend cohort/controller 15/15; frontend 82/82; live endpoint qua Preview 4173 trả 200; build `index-Dn02j5oU.js` đang được phục vụ. Tiếp theo: seal baseline contemporaneous vào live snapshot phiên mới (không sửa hai snapshot v1 hiện có), rồi scheduler issuance/evaluator sau EOD.
+
 ## 2026-10-13 — Tách current-data khỏi replay và evaluator outcome live
 
 - Card Triển vọng có tab “Dữ liệu hiện tại” và “Nghiên cứu mô phỏng”. Tab hiện tại giải thích snapshot 1/5 phiên đang chờ đúng số phiên provider; tab mô phỏng đổi nhãn rõ thành kiểm thử pipeline/replay tháng 3. “Baseline v2” nay ghi rõ là baseline mô phỏng và không huấn luyện hay thay đổi xác suất current-data.

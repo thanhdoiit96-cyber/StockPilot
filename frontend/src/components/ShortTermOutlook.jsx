@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchForecastCurrentPreview, fetchForecastResearchPreview } from '../services/forecastPreview.mjs'
 import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
+import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
 
 // Design fixtures only. These values are not outputs of the research baseline.
 const scenarios = {
@@ -21,10 +22,17 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const [preview, setPreview] = useState({ status: 'loading' })
   const [currentPreview, setCurrentPreview] = useState({ status: 'loading' })
   const [evidenceTab, setEvidenceTab] = useState('current')
+  const [liveCohort, setLiveCohort] = useState({ status: 'loading' })
   const [previewRetry, setPreviewRetry] = useState(0)
   const researchPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_RESEARCH || '' : '')).toLowerCase() === 'true'
   const currentPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_LIVE__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_LIVE || '' : '')).toLowerCase() === 'true'
   useEffect(() => { if (!currentPreviewEnabled) setEvidenceTab('research') }, [currentPreviewEnabled])
+  useEffect(() => {
+    if (!currentPreviewEnabled) { setLiveCohort({ status:'unavailable', reason:'preview_disabled' }); return undefined }
+    const controller = new AbortController(); setLiveCohort({ status:'loading' })
+    fetchForecastLiveCohort(horizon, { signal:controller.signal }).then(setLiveCohort).catch(error => { if (error?.name !== 'AbortError') setLiveCohort({ status:'unavailable', reason:'request_failed' }) })
+    return () => controller.abort()
+  }, [horizon, currentPreviewEnabled, previewRetry])
   useEffect(() => {
     const controller = new AbortController()
     if (currentPreviewEnabled) {
@@ -74,7 +82,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
     <section className="forecast-evidence" aria-labelledby="forecast-evidence-title">
       <div className="forecast-evidence-heading"><div><strong id="forecast-evidence-title">{copy('Bằng chứng và kiểm chứng', 'Evidence and evaluation')}</strong><small>{copy('Dữ liệu hiện tại được tách khỏi replay mô phỏng', 'Current data is isolated from simulated replay')}</small></div><div className="forecast-evidence-tabs" role="tablist" aria-label={copy('Nguồn bằng chứng dự báo', 'Forecast evidence source')}><button type="button" role="tab" aria-selected={evidenceTab === 'current'} className={evidenceTab === 'current' ? 'is-active' : ''} onClick={() => setEvidenceTab('current')}>{copy('Dữ liệu hiện tại', 'Current data')}</button><button type="button" role="tab" aria-selected={evidenceTab === 'research'} className={evidenceTab === 'research' ? 'is-active' : ''} onClick={() => setEvidenceTab('research')}>{copy('Nghiên cứu mô phỏng', 'Simulated research')}</button></div></div>
       <div role="tabpanel" className="forecast-evidence-panel">
-        {evidenceTab === 'current' ? <div className="forecast-current-evidence"><span className="chip neutral">{copy('Đang theo dõi', 'Monitoring')}</span><div><strong>{copy(`Snapshot ${horizon} phiên đang chờ kết quả thực tế`, `${horizon}-session snapshot is awaiting an observed outcome`)}</strong><p>{copy(`Phát hành từ EOD ${currentPreview.as_of || 'hiện tại'}. Chỉ được chấm điểm sau đủ ${horizon} phiên provider distinct; dữ liệu tháng 3 không tham gia phép đo này.`, `Issued from ${currentPreview.as_of || 'current'} EOD. It is scored only after ${horizon} distinct provider sessions; March data is excluded from this measurement.`)}</p></div></div> : <><div className="forecast-research-notice" role="note"><strong>{copy('Kiểm thử pipeline bằng dữ liệu mô phỏng', 'Pipeline test using simulated data')}</strong><p>{copy('Baseline v2 và timeline bên dưới thuộc fixture/replay tháng 3. Chúng kiểm tra lifecycle, scoring và giao diện; không huấn luyện hoặc thay đổi xác suất current-data đang hiển thị.', 'The v2 baseline and timeline below belong to the March fixture/replay. They test lifecycle, scoring, and UI; they do not train or alter the displayed current-data probabilities.')}</p></div><ForecastHistoryPanel horizon={horizon} language={language} /></>}
+        {evidenceTab === 'current' ? <div className="forecast-current-evidence"><span className="chip neutral">{copy('Đang theo dõi', 'Monitoring')}</span><div><strong>{liveCohort.status === 'live_cohort' ? copy(`${liveCohort.measured}/${liveCohort.minimum_samples} outcome current-data đủ điều kiện`, `${liveCohort.measured}/${liveCohort.minimum_samples} eligible current-data outcomes`) : copy(`Snapshot ${horizon} phiên đang chờ kết quả thực tế`, `${horizon}-session snapshot is awaiting an observed outcome`)}</strong><p>{liveCohort.status === 'loading' ? copy('Đang đọc cohort current-data…', 'Loading the current-data cohort…') : liveCohort.status === 'live_cohort' ? copy(`${liveCohort.predictions} dự báo · ${liveCohort.pending} pending. Score bị khóa cho đến đủ ${liveCohort.minimum_samples} outcome; baseline chỉ mở khi được seal đồng thời với dự báo.`, `${liveCohort.predictions} predictions · ${liveCohort.pending} pending. Scores stay locked until ${liveCohort.minimum_samples} outcomes; the baseline also requires contemporaneous sealing.`) : copy(`Phát hành từ EOD ${currentPreview.as_of || 'hiện tại'}. Chỉ được chấm điểm sau đủ ${horizon} phiên provider distinct; dữ liệu tháng 3 không tham gia phép đo này.`, `Issued from ${currentPreview.as_of || 'current'} EOD. It is scored only after ${horizon} distinct provider sessions; March data is excluded from this measurement.`)}</p></div></div> : <><div className="forecast-research-notice" role="note"><strong>{copy('Kiểm thử pipeline bằng dữ liệu mô phỏng', 'Pipeline test using simulated data')}</strong><p>{copy('Baseline v2 và timeline bên dưới thuộc fixture/replay tháng 3. Chúng kiểm tra lifecycle, scoring và giao diện; không huấn luyện hoặc thay đổi xác suất current-data đang hiển thị.', 'The v2 baseline and timeline below belong to the March fixture/replay. They test lifecycle, scoring, and UI; they do not train or alter the displayed current-data probabilities.')}</p></div><ForecastHistoryPanel horizon={horizon} language={language} /></>}
       </div>
     </section>
     <section className="outlook-candidates" aria-labelledby="outlook-candidates-title">

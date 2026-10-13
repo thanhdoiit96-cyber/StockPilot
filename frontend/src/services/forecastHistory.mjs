@@ -1,5 +1,17 @@
 const CLASSES = ['advancing', 'balanced', 'declining']
 
+export async function fetchForecastLiveCohort(horizon, { signal, minimumSamples = 20 } = {}) {
+  if (![1, 5].includes(horizon)) throw new Error('invalid_horizon')
+  const response = await fetch(`/api/forecast/live-cohort?horizon=${horizon}&minimum_samples=${minimumSamples}`, { signal, credentials:'same-origin', headers:{ Accept:'application/json' } })
+  if (!response.ok) return { status:'unavailable', reason:response.status === 404 ? 'preview_disabled' : 'request_failed' }
+  const data = (await response.json())?.data
+  const valid = data?.version === 'forecast_live_cohort_summary_v1' && data.status === 'live_cohort' && data.synthetic === false && data.research_only === false && data.live === true
+    && data.market_accuracy_verified === false && data.horizon_sessions === horizon && data.minimum_samples === minimumSamples
+    && Number.isInteger(data.predictions) && Number.isInteger(data.measured) && Number.isInteger(data.pending) && data.predictions === data.measured + data.pending
+    && ['insufficient_samples','awaiting_baseline'].includes(data.score_gate?.status) && data.score_gate.samples === data.measured
+  return valid ? data : { status:'unavailable', reason:'invalid_contract' }
+}
+
 export async function fetchForecastResearchHistory(horizon, { signal, cursor, limit = 7 } = {}) {
   if (![1, 5].includes(horizon)) throw new Error('invalid_horizon')
   if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new Error('invalid_limit')
