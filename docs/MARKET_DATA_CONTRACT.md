@@ -63,6 +63,7 @@ Mã triển khai nằm trong `backend/src/market-data/`:
 - `marketDataValidator.js`: tách bản ghi hợp lệ/bị từ chối, không làm hỏng cả batch.
 - `adapters/FixtureMarketDataAdapter.js`: đọc fixture và chuẩn hóa symbol, số và UTC timestamp.
 - `adapters/VnstockEodAdapter.js`: boundary cho client/bridge Vnstock Python; chuẩn hóa dòng EOD thành canonical record, ghi `provider`, `upstream`, `license`, `license_url` và một `fetched_at` chung cho mỗi lần lấy.
+- `adapters/VnstockForeignFlowAdapter.js`: boundary riêng cho bốn số mua/bán khối ngoại theo volume/value; không trộn dữ liệu partial vào candle OHLCV.
 - `adapters/EodhdEodAdapter.js`: EOD quotes và corporate-action metadata; `fetchCorporateActions()` đọc split events để gắn phiên trước ngày hiệu lực vào report reconciliation.
 - `coverageProbe.js`: chạy kiểm tra độ phủ theo danh sách mã, số phiên, bản ghi bị từ chối, license và thời gian bắt đầu/kết thúc; kết quả có `status`, `coverage_ratio`, `results` và `errors` để lưu audit.
 - `marketDataIngestionService.js`: transaction, resolve mã, insert/skip/update, hash nguồn và xóa cache.
@@ -70,6 +71,8 @@ Mã triển khai nằm trong `backend/src/market-data/`:
 - `fixtures/valid-daily-quotes.json`: dữ liệu nội bộ, không đại diện dữ liệu thị trường trực tiếp.
 
 `stock_prices` được mở rộng bằng migration `004_expand_market_data_contract.js`. Các cột cũ vẫn được giữ; `price` tương thích với `close`. Unique index logic gồm `stock_id`, `provider`, `interval`, `observed_at`. Migration có thể tiếp tục an toàn nếu một lần chạy trước đã thêm cột nhưng chưa ghi metadata/index. Vì các cột mới nullable để tương thích seed cũ, dữ liệu legacy chưa tự được gán nguồn; không được coi là dữ liệu live.
+
+Foreign flow dùng bảng `foreign_flow_daily` từ migration 038, tách khỏi `stock_prices` vì cadence, quyền truy cập, correction và provenance có thể khác nguồn giá. Bảng lưu buy/sell volume và value gốc; net flow chỉ được dẫn xuất. Thiếu foreign flow không làm mất candle giá và không được quy thành net bằng 0.
 
 ## Ingestion report
 

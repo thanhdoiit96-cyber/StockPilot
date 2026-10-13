@@ -27,6 +27,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | --- | --- |
 | [ARCHITECTURE](ARCHITECTURE.md) | Kiến trúc mục tiêu |
 | [SHORT_TERM_FORECAST_DESIGN](SHORT_TERM_FORECAST_DESIGN.md) | Kế hoạch dự báo xác suất 1/5 phiên, dữ liệu, kiểm chứng và UI |
+| [FOREIGN_FLOW_DESIGN](FOREIGN_FLOW_DESIGN.md) | Audit, contract và lộ trình dòng tiền khối ngoại theo mã/ngành |
 | [PROJECT_STRUCTURE](PROJECT_STRUCTURE.md) | Cấu trúc thư mục dự kiến |
 | [MARKET_BREADTH_DESIGN](MARKET_BREADTH_DESIGN.md) | Org chart và cấu trúc thông tin Độ rộng thị trường |
 | [MARKET_PAGES_SPLIT_DESIGN](MARKET_PAGES_SPLIT_DESIGN.md) | Thiết kế tách page Tổng quan và Bảng giá |
