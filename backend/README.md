@@ -41,6 +41,8 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | GET | /api/stocks/:id/company-news | Tin doanh nghiệp có URL an toàn và provenance; dữ liệu chưa xác minh không dùng để chấm điểm |
 
 Company datasets không cần realtime có thể được đồng bộ vào PostgreSQL bằng `npm run ingest:company-data -- FPT profile,people,capital,financials,news`. Có thể truyền tối đa 20 mã phân cách bằng dấu phẩy; job chỉ lưu response provider ở trạng thái `available/partial`, không thay snapshot tốt bằng lỗi hoặc response rỗng. API ưu tiên snapshot database mới nhất trước cache/provider. Content hash bỏ qua riêng thời điểm fetch để lần chạy cùng nội dung là idempotent nhưng vẫn giữ provider/provenance trong bằng chứng.
+
+Scheduler development là explicit opt-in bằng `COMPANY_DATA_SYNC_ENABLED=true`, mặc định chạy 18:30 thứ Hai–Sáu theo `Asia/Ho_Chi_Minh`. Bắt đầu với `COMPANY_DATA_SCOPES=profile` và universe nhỏ trong `COMPANY_DATA_SYMBOLS`; scheduler chống chạy chồng. Production không tự bật dù biến enabled được đặt, cho đến khi rate limit, quyền phân phối và tỷ lệ thành công được xác minh.
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |
 | GET | /api/cache/stats | Trả trực tiếp totalEntries, expiredEntries, byType |

@@ -20,6 +20,7 @@ const { startVnstockListingJob } = require('./jobs/vnstockListingJob');
 const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
 const { startForecastLiveCycleJob } = require('./jobs/forecastLiveCycleJob');
 const { startForeignFlowJob } = require('./jobs/foreignFlowJob');
+const { startCompanyDataSnapshotJob } = require('./jobs/companyDataSnapshotJob');
 const marketDataController = require('./controllers/marketDataController');
 const authController = require('./controllers/authController');
 const watchlistController = require('./controllers/watchlistController');
@@ -259,6 +260,9 @@ async function start() {
     }
     if (startForeignFlowJob({ logger })) {
       logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
+    }
+    if (startCompanyDataSnapshotJob({ logger })) {
+      logger.info(`[Scheduler] Company data snapshots initialized (${process.env.COMPANY_DATA_CRON || '30 18 * * 1-5'})`);
     }
   } catch (error) {
     logger.error(error.code === 'EADDRINUSE'
