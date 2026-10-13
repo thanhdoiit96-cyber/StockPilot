@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { fetchForecastResearchHistory, fetchForecastResearchCohorts, mergeForecastHistory } from './forecastHistory.mjs'
+import { fetchForecastLiveCohort, fetchForecastResearchHistory, fetchForecastResearchCohorts, mergeForecastHistory } from './forecastHistory.mjs'
 
 const entry = { horizon_sessions: 5, as_of: '2025-01-01', outcome_status: 'measured', predicted_class: 'advancing', actual_class: 'balanced', confidence: .6,
   brier_multiclass_sum: .8, log_loss: 1.2, probabilities: [{ class: 'advancing', value: .6 }, { class: 'balanced', value: .3 }, { class: 'declining', value: .1 }] }
@@ -14,6 +14,15 @@ test('accepts only explicit uncalibrated synthetic history', async t => {
   assert.equal((await fetchForecastResearchHistory(5)).status, 'research_history')
   global.fetch = async () => ({ ok: true, json: async () => ({ data: { ...payload, calibrated: true } }) })
   assert.equal((await fetchForecastResearchHistory(5)).reason, 'invalid_contract')
+})
+test('accepts an isolated current-data cohort with a closed score gate', async t => {
+  const original = global.fetch; t.after(() => { global.fetch = original })
+  const data = { version:'forecast_live_cohort_summary_v1', status:'live_cohort', source:'snapshot_store', synthetic:false, research_only:false, live:true, market_accuracy_verified:false,
+    horizon_sessions:5, minimum_samples:20, predictions:1, measured:0, pending:1, score_gate:{status:'insufficient_samples',samples:0,minimum_samples:20}, model_scores:null }
+  global.fetch = async () => ({ ok:true, json:async()=>({data}) })
+  assert.equal((await fetchForecastLiveCohort(5)).status, 'live_cohort')
+  global.fetch = async () => ({ ok:true, json:async()=>({data:{...data,synthetic:true}}) })
+  assert.equal((await fetchForecastLiveCohort(5)).reason, 'invalid_contract')
 })
 test('merges cursor pages without duplicating entries and recomputes loaded scores', () => {
   const nextEntry = { ...entry, as_of: '2025-01-02', id: 'two', brier_multiclass_sum: .4, log_loss: .8, correct: true }

@@ -9,9 +9,10 @@ const { createVnstockBridgeFetcher } = require('../market-data/adapters/vnstockB
 const VnstockEodAdapter = require('../market-data/adapters/VnstockEodAdapter');
 const models = require('../models');
 const { listForecastSnapshots, buildStoredForecastHistory, readForecastCursor, listForecastCohortRows, buildForecastCohortSummary } = require('../services/forecastSnapshotStore');
+const { listLiveCohortRows, buildLiveCohortSummary } = require('../services/forecastLiveCohort');
 const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 
-function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options), listCohorts = options => listForecastCohortRows(models, options), currentDataFetcher } = {}) {
+function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options), listCohorts = options => listForecastCohortRows(models, options), listLiveCohorts = options => listLiveCohortRows(models, options), currentDataFetcher } = {}) {
   const router = express.Router();
   const load = loadArtifact || (() => readForecastPreviewArtifact(path.resolve(env.FORECAST_PREVIEW_ARTIFACT || path.resolve(__dirname, '../../evidence/forecast-research-preview.json'))));
   const livePreviewEnabled = env.NODE_ENV === 'development' && env.FORECAST_LIVE_PREVIEW === 'true';
@@ -209,6 +210,13 @@ function createForecastController({ env = process.env, loadArtifact, listHistory
         message: error.message || 'Live evaluation is unavailable.'
       });
     }
+  });
+  router.get('/live-cohort', async (req, res) => {
+    if (!livePreviewEnabled) return res.status(404).json({ success: false, code: 'FORECAST_PREVIEW_DISABLED', message: 'Forecast live preview is not available.' });
+    const horizon = Number(req.query.horizon), minimumSamples = req.query.minimum_samples === undefined ? 20 : Number(req.query.minimum_samples);
+    if (![1, 5].includes(horizon) || !Number.isInteger(minimumSamples) || minimumSamples < 2 || minimumSamples > 1000) return res.status(400).json({ success:false, code:'INVALID_FORECAST_COHORT_QUERY', message:'Invalid live forecast cohort query.' });
+    try { const data = buildLiveCohortSummary(await listLiveCohorts({ horizon }), { horizon, minimumSamples }); res.set('Cache-Control','no-store'); return res.json({ success:true, data }); }
+    catch (_) { return res.status(503).json({ success:false, code:'FORECAST_COHORTS_UNAVAILABLE', message:'Current-data forecast cohort is unavailable.' }); }
   });
   router.get('/research-history', async (req, res) => {
     if (env.NODE_ENV !== 'development' || env.FORECAST_RESEARCH_PREVIEW === 'false') return res.status(404).json({ success: false, code: 'FORECAST_PREVIEW_DISABLED', message: 'Forecast research preview is not available.' });

@@ -82,6 +82,8 @@ Nếu worker Vnstock trả HTTP lỗi cho EOD/intraday, bridge giữ lại tối
 
 `NODE_ENV=development FORECAST_LIVE_PREVIEW=true npm run evaluate:forecast-live-shadow` kiểm tra các snapshot pending. Evaluator chỉ chọn phiên EOD chung thứ N sau `as_of` của đúng rổ mã đã seal, yêu cầu coverage đầy đủ rồi mới append outcome có evidence hash. Thiếu phiên giữ `pending`; không lấy replay synthetic làm outcome và không sửa snapshot đã phát hành.
 
+`GET /api/forecast/live-cohort?horizon=1|5&minimum_samples=20` tổng hợp riêng snapshot current-data. Endpoint khóa score dưới cỡ mẫu tối thiểu và không công bố baseline comparison nếu baseline chưa được seal đồng thời trong snapshot; không ghép baseline research tháng 3 vào cohort live.
+
 CLI một lần này đặt `disableWorker` để không phụ thuộc worker HTTP đang chạy; adapter runtime không thay đổi hành vi ưu tiên `VNSTOCK_WORKER_URL`. Snapshot current-data được tách khỏi history/cohort research synthetic. License provider vẫn phải được xác nhận trước khi dùng ngoài local development hoặc diễn giải kết quả như hiệu suất thị trường.
 
 Python worker dùng một semaphore chung cho listing, EOD, intraday và price board. `VNSTOCK_WORKER_MAX_CONCURRENCY` mặc định là 1 và bị chặn trong khoảng 1–4; tăng giá trị chỉ khi đã đo upstream ổn định. HTTP server vẫn nhận request đồng thời nhưng provider calls được xếp hàng qua gate này. Client ngắt kết nối không tạo traceback BrokenPipe/ConnectionAborted trong log; health trả `max_concurrency` đang cấu hình.

@@ -14,7 +14,7 @@ const snapshot = { id: '11111111-1111-4111-8111-111111111111', provider: 'fixtur
 const outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
 snapshot.outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
 const listHistory = async () => ({ items: [snapshot], has_more: false, next_cursor: null });
-function app(env, loadArtifact = () => artifact, history = listHistory, cohorts = async () => [snapshot], currentDataFetcher) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history, listCohorts: cohorts, currentDataFetcher })); return instance; }
+function app(env, loadArtifact = () => artifact, history = listHistory, cohorts = async () => [snapshot], currentDataFetcher, liveCohorts = async () => []) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history, listCohorts: cohorts, listLiveCohorts: liveCohorts, currentDataFetcher })); return instance; }
 test('development exposes a no-store synthetic research preview for both horizons', async () => {
   for (const horizon of [1, 5]) {
     const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-preview').query({ horizon });
@@ -91,6 +91,11 @@ test('development exposes a live evaluation summary only when current data is va
   expect(response.status).toBe(200);
   expect(response.body.data).toMatchObject({ status: 'live_evaluation_ready', mode: 'live', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, decision: 'ready_for_shadow_evaluation' });
   expect(response.body.data.summary.by_class.length).toBe(3);
+});
+test('development exposes an isolated current-data cohort with a minimum sample gate', async () => {
+  const response = await request(app({ NODE_ENV:'development', FORECAST_LIVE_PREVIEW:'true' })).get('/api/forecast/live-cohort?horizon=5&minimum_samples=20');
+  expect(response.status).toBe(200); expect(response.headers['cache-control']).toBe('no-store');
+  expect(response.body.data).toMatchObject({ status:'live_cohort', synthetic:false, research_only:false, live:true, predictions:0, measured:0, pending:0, score_gate:{status:'insufficient_samples',samples:0,minimum_samples:20} });
 });
 test('production and an explicit development disable return 404 without building a report', async () => {
   const buildReport = jest.fn();
