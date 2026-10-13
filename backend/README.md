@@ -27,6 +27,7 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | Method | Đường dẫn | Hành vi |
 | --- | --- | --- |
 | GET | /api/health | success, message, timestamp; không kiểm tra lại database theo request |
+| GET | /api/market-data/foreign-flow | Snapshot khối ngoại theo phiên, tùy chọn `date`, `symbol`, `sector`, `limit`; trả coverage và `unavailable/partial/available`, không biến thiếu dữ liệu thành số 0 |
 | GET | /api/stocks | Danh sách cổ phiếu, lọc sàn/ngành/trạng thái niêm yết, giá gần nhất, cache 5 phút |
 | GET | /api/stocks/export.csv | CSV EOD read-only theo cùng q/sector/exchange/coverage/sort/direction/pinned, tối đa 2.000 dòng, không cache |
 | GET | /api/stocks/breadth/history | Chuỗi A/D và volume breadth EOD theo 1–60 session, tùy chọn sàn/ngành, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |

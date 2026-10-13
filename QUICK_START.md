@@ -361,3 +361,11 @@ npm.cmd run ingest:vnstock-foreign-flow
 ```
 
 Luồng bình thường gọi endpoint `/foreign-flow` của worker, vì vậy phải restart worker sau khi cập nhật mã. Chỉ dùng `VNSTOCK_FOREIGN_FLOW_DIRECT=true` để chẩn đoán bridge một lần. Scheduler development chạy 17:00 ICT các ngày trong tuần khi flag được bật; production không khởi tạo job. Lỗi `foreign_flow capability is unavailable` nghĩa là entitlement/package setup chưa đáp ứng và không có dòng nào được ghi.
+
+Sau backfill, chạy audit read-only:
+
+```powershell
+npm.cmd run audit:foreign-flow
+```
+
+Exit 0 chỉ khi coverage phiên mới nhất đạt ngưỡng mặc định 80%; `unavailable` hoặc `partial` trả exit khác 0 để automation không vô tình mở UI/scoring. Có thể chọn phiên bằng `FOREIGN_FLOW_AUDIT_DATE=YYYY-MM-DD`.
