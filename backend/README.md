@@ -76,6 +76,12 @@ Trạng thái lần chạy gần nhất có ở `GET /api/market-data/ingestion/
 
 Nếu worker Vnstock trả HTTP lỗi cho EOD/intraday, bridge giữ lại tối đa 400 ký tự mô tả upstream trong log để hỗ trợ chẩn đoán; query parameter chứa `api_key`, `token` hoặc `key` được che trước khi ghi log.
 
+### Current-data forecast shadow
+
+`npm run materialize:forecast-live-shadow` là lệnh development-only lấy EOD Vnstock hiện tại qua bridge Python và phát hành hai snapshot pending cho kỳ 1/5 phiên. Lệnh không dùng fixture tháng 3, không ghi outcome, không bật dự báo production và luôn giữ `market_accuracy_verified=false`. Snapshot có provenance/hash evidence và định danh provider/model/horizon/as-of; chạy lại cùng phiên trả bản phát hành đầu tiên thay vì ghi đè.
+
+CLI một lần này đặt `disableWorker` để không phụ thuộc worker HTTP đang chạy; adapter runtime không thay đổi hành vi ưu tiên `VNSTOCK_WORKER_URL`. Snapshot current-data được tách khỏi history/cohort research synthetic. License provider vẫn phải được xác nhận trước khi dùng ngoài local development hoặc diễn giải kết quả như hiệu suất thị trường.
+
 Python worker dùng một semaphore chung cho listing, EOD, intraday và price board. `VNSTOCK_WORKER_MAX_CONCURRENCY` mặc định là 1 và bị chặn trong khoảng 1–4; tăng giá trị chỉ khi đã đo upstream ổn định. HTTP server vẫn nhận request đồng thời nhưng provider calls được xếp hàng qua gate này. Client ngắt kết nối không tạo traceback BrokenPipe/ConnectionAborted trong log; health trả `max_concurrency` đang cấu hình.
 
 Compose build worker từ `Dockerfile.worker`, bind nội bộ `0.0.0.0:8787`, không publish cổng host và truyền `VNSTOCK_WORKER_URL=http://worker:8787` cho backend. Worker/backend/frontend/PostgreSQL có healthcheck và restart policy; EOD scheduler không tự bật chỉ vì worker tồn tại.

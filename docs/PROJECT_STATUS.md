@@ -1,5 +1,14 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Phát hành shadow forecast bằng dữ liệu hiện tại
+
+- Đã thay fixture tháng 3 khỏi bước phát hành mới: CLI `materialize:forecast-live-shadow` lấy EOD trực tiếp từ Vnstock cho FPT/HPG/VHM, tính feature 1/5/20 phiên theo từng mã rồi phát hành snapshot pending cho kỳ 1 và 5 phiên.
+- PostgreSQL development đã lưu hai snapshot bất biến có `as_of=2026-10-13`, `synthetic=false`, `live=true`, `market_accuracy_verified=false`; cùng evidence SHA-256 `c019d27cdd0d9eaa68a28649430f1e3c9de8d51a711c069c9fb232c712abe683`. Đây là shadow monitor bằng dữ liệu hiện tại, chưa phải tín hiệu đầu tư đã kiểm chứng.
+- CLI một lần chủ động bỏ qua worker URL và gọi bridge Python trực tiếp; runtime dài hạn vẫn ưu tiên worker như trước. Lần chạy lại trả `snapshot_exists` cho cả hai kỳ, giữ nguyên ID và payload phát hành đầu tiên dù thời điểm tải lại thay đổi.
+- Provenance giữ provider, trạng thái license đang chờ xác nhận, tập mã, khoảng quan sát, số quan sát và hash evidence. Outcome chưa được tạo; target sẽ do evaluator chọn theo phiên provider thứ N sau `as_of`, không suy diễn từ dự đoán.
+- Kiểm chứng mục tiêu: 4 suite, 11/11 test đạt. Toàn bộ forecast 20 suite, 97/97 đạt sau khi chạy lại riêng CLI ngoài sandbox (lần chạy trong sandbox bị Windows chặn `spawnSync EPERM`, không phải lỗi nghiệp vụ). Live materializer chạy thật lần đầu `created`, lần hai `snapshot_exists` cho cả horizon 1/5.
+- Tiếp theo: triển khai evaluator current-data chỉ append outcome sau khi có đủ 1/5 phiên EOD distinct từ provider, kiểm evidence/cutoff và giữ pending nếu chưa đủ; sau đó mới tổng hợp cohort live riêng với fixture research.
+
 ## 2026-10-13 — Hoàn thiện ranh giới current-data forecast
 
 - Đã rà toàn bộ thay đổi forecast/UI chưa commit từ phiên trước. Full forecast ban đầu đạt 91/91 nhưng phát hiện phép “live evaluation” dùng lớp dự đoán làm truth để tính Brier/log loss; kết quả đó không hợp lệ về thống kê và đã bị loại bỏ.
