@@ -38,6 +38,7 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | GET | /api/stocks/:id/company-people | Cổ đông lớn và lãnh đạo từ provider, contract độc lập và trạng thái unavailable/partial; cache 360 phút |
 | GET | /api/stocks/:id/company-capital | Lịch sử vốn và thông báo sự kiện provider; không tự ghi hoặc xác nhận portfolio event ledger |
 | GET | /api/stocks/:id/company-financials | KPI báo cáo kết quả kinh doanh năm/quý, tải riêng và cache theo trạng thái provider |
+| GET | /api/stocks/:id/company-news | Tin doanh nghiệp có URL an toàn và provenance; dữ liệu chưa xác minh không dùng để chấm điểm |
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |
 | GET | /api/cache/stats | Trả trực tiếp totalEntries, expiredEntries, byType |
