@@ -20,7 +20,7 @@ Mỗi observation giữ bốn số gốc không âm: `buy_volume`, `sell_volume`
 ## Tác động dự kiến và thứ tự triển khai
 
 1. **F-flow-1 — Persistence (đã triển khai):** schema, model, adapter boundary, hash provenance, idempotent ingestion, aggregation mã/ngành và coverage policy.
-2. **F-flow-2 — Provider job:** bridge riêng gọi foreign-flow sponsor API, batch/pacing độc lập với OHLCV, CLI backfill có giới hạn và scheduler sau EOD. Nghiệm thu bằng đối chiếu field semantics và coverage; ghi rõ matched/total value và đơn vị.
+2. **F-flow-2 — Provider job (đã triển khai code, chờ entitlement):** bridge/worker endpoint riêng gọi foreign-flow sponsor API, CLI backfill giới hạn 50 mã và 366 ngày, scheduler development opt-in lúc 17:00 ICT. Probe FPT ngày 13/10 fail-closed với `foreign_flow capability is unavailable`; database không bị ghi. Nghiệm thu dữ liệu vẫn chờ đối chiếu field semantics và coverage.
 3. **F-flow-3 — Read API/UI:** endpoint theo phiên, top mua/bán ròng và drill-down ngành/mã. UI hiển thị phiên, coverage, nguồn và trạng thái quyền; không render số 0 khi unavailable.
 4. **F-flow-4 — Feature research:** tạo các feature khóa trước như net value/traded value, net volume/volume, z-score 20 phiên, persistence 5 phiên và breadth số mã mua ròng. Winsorize theo train, không dùng dữ liệu sau cutoff.
 5. **F-flow-5 — Forecast/recommendation validation:** challenger walk-forward so với baseline không có foreign flow. Chỉ model version mới được dùng feature này nếu Brier/log-loss ngoài mẫu cải thiện ổn định và coverage đạt gate. Recommendation chỉ thêm điểm sau ablation; trước đó chỉ hiển thị evidence quan sát.

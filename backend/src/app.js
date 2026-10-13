@@ -19,6 +19,7 @@ const startRecommendationLifecycleCheckpointJob = require('./jobs/recommendation
 const { startVnstockListingJob } = require('./jobs/vnstockListingJob');
 const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
 const { startForecastLiveCycleJob } = require('./jobs/forecastLiveCycleJob');
+const { startForeignFlowJob } = require('./jobs/foreignFlowJob');
 const marketDataController = require('./controllers/marketDataController');
 const authController = require('./controllers/authController');
 const watchlistController = require('./controllers/watchlistController');
@@ -255,6 +256,9 @@ async function start() {
     }
     if (startForecastLiveCycleJob({ logger })) {
       logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
+    }
+    if (startForeignFlowJob({ logger })) {
+      logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
     }
   } catch (error) {
     logger.error(error.code === 'EADDRINUSE'
