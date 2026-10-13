@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 const SECTIONS = [
   { id: 'detail-overview', label: 'Tổng quan' },
+  { id: 'detail-chart', label: 'Lịch sử giá' },
   { id: 'detail-company', label: 'Doanh nghiệp' },
-  { id: 'detail-chart', label: 'Biểu đồ' },
   { id: 'detail-analysis', label: 'Phân tích' }
 ]
 
