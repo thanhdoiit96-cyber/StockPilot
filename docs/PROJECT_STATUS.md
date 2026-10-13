@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Tab Tin tức doanh nghiệp
+
+- Probe tài chính FPT trực tiếp mất hơn 35 giây rồi lỗi connection reset cho cả năm/quý; không mở rộng balance sheet/ratio bằng mapping chưa kiểm chứng.
+- Thêm worker/API `company-news`, contract `company_news_v1` và tab Tin tức tải riêng. URL chỉ chấp nhận HTTP/HTTPS, tin chưa xác minh không được cộng điểm forecast/recommendation và không có tin không được diễn giải thành tín hiệu.
+- Backend targeted đạt 19/19; frontend regression/encoding/error-contract đạt 85/85; build/bundle integrity đạt với `index-C7D0GBuI.js`.
+- Điểm tiếp tục: kiểm chứng provider live cho toàn bộ company endpoints; nếu ổn định, bổ sung unit metadata và ratios. Nếu chưa, ưu tiên browser UX/accessibility của năm tab hiện có thay vì thêm empty panels.
+
 ## 2026-10-13 — Tab Tài chính doanh nghiệp
 
 - Thêm worker `POST /company-financials`, API `GET /api/stocks/:id/company-financials` và contract `company_financials_v1`; chuẩn hóa kỳ, doanh thu, lợi nhuận hoạt động, lợi nhuận sau thuế và EPS từ income statement năm/quý.

@@ -1,0 +1,3 @@
+const {normalizeCompanyNews}=require('./companyNewsService');
+test('normalizes news and removes unsafe links',()=>{const data=normalizeCompanyNews({symbol:'fpt',providerPayload:{provider:'kbs',news:[{title:'Kết quả quý','publish_date':'2026-10-01',content:'Tóm tắt',url:'https://example.com/a'},{title:'Unsafe',url:'javascript:alert(1)'}]}});expect(data).toMatchObject({status:'available',news:[{title:'Kết quả quý',source_url:'https://example.com/a'},{title:'Unsafe',source_url:null}],semantics:{informational_only:true,unverified_news_excluded_from_scoring:true}})});
+test('keeps unavailable news explicit',()=>expect(normalizeCompanyNews({symbol:'FPT'})).toMatchObject({status:'unavailable',news:[],summary:{count:0},provenance:{provider:null}}));

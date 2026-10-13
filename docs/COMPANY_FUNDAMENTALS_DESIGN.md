@@ -14,12 +14,14 @@ Giai đoạn 3 đã triển khai `Vốn & cổ tức` gồm lịch sử vốn v�
 
 Giai đoạn 4 đã triển khai `Tài chính` bằng dữ liệu báo cáo kết quả kinh doanh năm/quý. UI ưu tiên biểu đồ doanh thu/lợi nhuận và bảng KPI gọn; chỉ tab này mới tải endpoint tài chính. Contract giữ nguyên đơn vị provider thay vì tự quy đổi khi metadata đơn vị chưa được xác minh.
 
+Giai đoạn 5 đã triển khai `Tin tức` thành tab tải riêng. URL chỉ giữ giao thức HTTP/HTTPS; tin là thông tin tham khảo và chưa được xác minh thì không tham gia scoring dự báo/đề xuất. Sự kiện quyền lợi vẫn thuộc tab Vốn & cổ tức để tránh trùng nội dung.
+
 Các giai đoạn kế tiếp:
 
 1. `Cổ đông`: đã có snapshot cổ đông lớn và ban lãnh đạo; thay đổi sở hữu theo thời gian còn chờ nguồn ổn định.
 2. `Vốn & cổ tức`: đã có lịch sử vốn/thông báo provider và ranh giới event ledger; mapping live còn chờ provider ổn định.
 3. `Tài chính`: đã có doanh thu, lợi nhuận, EPS năm/quý; tỷ số, bảng cân đối và dòng tiền còn chờ mapping/provider validation.
-4. `Tin tức & sự kiện`: bước kế tiếp; timeline có nguồn, tách sự kiện doanh nghiệp khỏi nhận định.
+4. `Tin tức & sự kiện`: đã có tin doanh nghiệp; sự kiện quyền lợi dùng chung contract Vốn & cổ tức, không tạo timeline trùng.
 
 Khi số section tăng, nội dung doanh nghiệp sẽ dùng tab con trong trang Chi tiết mã. Tab giữ lựa chọn trong URL và chỉ tải panel đang mở để tránh tăng thời gian tải đầu trang.
 
@@ -32,6 +34,8 @@ Khi số section tăng, nội dung doanh nghiệp sẽ dùng tab con trong trang
 `GET /api/stocks/:id/company-capital` trả `company_capital_v1` từ `capital_history` và `events`, cùng semantics machine-readable khẳng định disclosure chưa phải portfolio event. Hai capability cũng fail độc lập và dùng cùng chính sách cache.
 
 `GET /api/stocks/:id/company-financials` trả `company_financials_v1`, hiện chuẩn hóa báo cáo kết quả kinh doanh năm/quý. Endpoint cache 360 phút khi có dữ liệu và fail-soft 15 phút khi provider không khả dụng.
+
+`GET /api/stocks/:id/company-news` trả `company_news_v1`, cache 60 phút khi có dữ liệu. Contract loại URL không an toàn và công bố rõ tin chưa xác minh không tham gia scoring.
 
 Mọi nhóm dữ liệu mở rộng phải có endpoint/cache riêng, ngày quan sát và license status. Không gọi đồng thời toàn bộ profile/shareholders/financials khi mở trang. Production chỉ công bố trường được quyền phân phối; UI nhỏ gọn nhưng provenance luôn truy cập được.
 
