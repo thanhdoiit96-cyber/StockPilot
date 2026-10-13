@@ -11,7 +11,7 @@ os.environ.setdefault("VNSTOCK_TELEMETRY", "off")
 for _proxy_key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
     if str(os.environ.get(_proxy_key, "")).lower() in {"http://127.0.0.1:9", "http://localhost:9"}:
         os.environ.pop(_proxy_key, None)
-from vnstock import Listing, Market
+from vnstock import Listing, Market, Reference
 from vnstock.api.quote import Quote
 from vnstock_price_board import price_board as fetch_price_board
 
@@ -117,6 +117,21 @@ def foreign_flow(request):
     return {"rows": rows, "errors": errors}
 
 
+def company_profile(request):
+    symbol = str(request.get("symbol") or "").strip().upper()
+    source = str(request.get("source") or "vci").strip().lower()
+    if not symbol:
+        return {"profile": None, "errors": [{"error": "symbol is required"}]}
+    try:
+        with PROVIDER_GATE:
+            with contextlib.redirect_stdout(io.StringIO()):
+                frame = Reference().company(symbol).info(source=source)
+        records = frame.to_dict(orient="records")
+        return {"profile": records[0] if records else None, "provider": str(frame.attrs.get("source") or source).lower(), "route": str(frame.attrs.get("route") or "company.info"), "errors": [] if records else [{"error": "provider returned no profile"}]}
+    except Exception as error:
+        return {"profile": None, "provider": source, "route": "company.info", "errors": [{"error": str(error)}]}
+
+
 def intraday(request):
     """Return the latest intraday trades for one or more symbols."""
     source = str(request.get("source") or "VCI").upper()
@@ -181,7 +196,7 @@ class Handler(BaseHTTPRequestHandler):
         is_partial = False
         try:
             length = int(self.headers.get("Content-Length", "0")); request = json.loads(self.rfile.read(length) or b"{}")
-            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
+            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else company_profile(request) if self.path == "/company-profile" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
             is_partial = bool(payload.get("errors"))

@@ -1,7 +1,10 @@
 // Source keys bridge the existing Detail components' translate prop.
 // Only UI-owned strings belong here; provider narrative is kept in its original language.
 const entries = [
-  ['Tổng quan', 'Overview'], ['Biểu đồ', 'Chart'], ['Phân tích', 'Analysis'],
+  ['Tổng quan', 'Overview'], ['Doanh nghiệp', 'Company'], ['Biểu đồ', 'Chart'], ['Phân tích', 'Analysis'],
+  ['DOANH NGHIỆP', 'COMPANY'], ['Hồ sơ doanh nghiệp', 'Company profile'], ['Thông tin nền tảng để đánh giá doanh nghiệp bên cạnh diễn biến giá và kỹ thuật.', 'Core company information to complement price and technical analysis.'],
+  ['Đủ dữ liệu provider', 'Provider data available'], ['Dữ liệu cơ bản', 'Basic data'], ['Đang tải hồ sơ doanh nghiệp…', 'Loading company profile…'], ['Chưa tải được hồ sơ doanh nghiệp.', 'Unable to load the company profile.'], ['Thử lại', 'Retry'],
+  ['Sàn', 'Exchange'], ['Ngành', 'Industry'], ['Ngày niêm yết', 'Listing date'], ['Vốn hóa', 'Market capitalization'], ['Vốn điều lệ', 'Charter capital'], ['Cổ phiếu phát hành', 'Issued shares'], ['Nhân sự', 'Employees'], ['Giới thiệu', 'Overview'], ['Thông tin liên hệ', 'Contact information'], ['Địa chỉ', 'Address'], ['Website', 'Website'], ['Mã số thuế', 'Tax ID'], ['Nguồn', 'Source'], ['Cập nhật', 'Updated'], ['Provider chưa khả dụng; đang hiển thị dữ liệu tham chiếu đã lưu.', 'The provider is unavailable; stored reference data is shown.'],
   ['Điều hướng nội dung Chi tiết mã', 'Stock detail sections'],
   ['Mã cổ phiếu', 'Stock symbol'], ['Nhập mã, ví dụ: HPG', 'Enter a symbol, e.g. HPG'], ['Xem mã', 'View stock'],
   ['Đang tải chi tiết cổ phiếu', 'Loading stock details'], ['Không thể tải chi tiết cổ phiếu', 'Unable to load stock details'], ['Thử lại chi tiết', 'Retry details'],

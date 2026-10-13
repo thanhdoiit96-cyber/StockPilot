@@ -34,6 +34,7 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | GET | /api/stocks/export.csv | CSV EOD read-only theo cùng q/sector/exchange/coverage/sort/direction/pinned, tối đa 2.000 dòng, không cache |
 | GET | /api/stocks/breadth/history | Chuỗi A/D và volume breadth EOD theo 1–60 session, tùy chọn sàn/ngành, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |
 | GET | /api/stocks/:id | Chi tiết, sàn/trạng thái niêm yết và tối đa 20 giá, mới nhất trước; cache 5 phút |
+| GET | /api/stocks/:id/company-profile | Hồ sơ doanh nghiệp local-first, bổ sung từ Vnstock khi khả dụng; cache provider 360 phút/fallback 15 phút |
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |
 | GET | /api/cache/stats | Trả trực tiếp totalEntries, expiredEntries, byType |

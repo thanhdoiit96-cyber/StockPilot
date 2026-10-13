@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Hồ sơ doanh nghiệp trên trang Chi tiết mã
+
+- Triển khai phase 1 `Hồ sơ doanh nghiệp` ngay sau hero của trang Chi tiết mã: danh tính, sàn/ngành/ngày niêm yết, metric vốn hóa/vốn điều lệ/cổ phiếu phát hành/nhân sự, giới thiệu, liên hệ và provenance. Section dùng style/token chung, responsive và có mục điều hướng riêng; không đưa sang Tổng quan.
+- Thêm worker `POST /company-profile` dùng `Reference().company(symbol).info` và API `GET /api/stocks/:id/company-profile`. Contract `company_profile_v1` hợp nhất dữ liệu provider với stock local, cache provider 360 phút và fallback 15 phút; provider lỗi vẫn trả `partial` thay vì làm hỏng trang.
+- Mapping/service backend và controller regression đạt 19/19; frontend encoding/error-contract và regression đạt 85/85; production build/bundle integrity đạt với `index-BV9Y8KC8.js`.
+- Provider VCI/KBS chưa trả thành công trong probe development, nên hiện chưa tuyên bố các trường enrichment đã được kiểm chứng live. Điểm tiếp tục: kiểm chứng mapping provider/entitlement, sau đó triển khai Cổ đông theo endpoint tải riêng; chưa tải đồng loạt Tài chính khi mở trang.
+
 ## 2026-10-13 — Làm rõ độ tươi hiệu suất danh mục
 
 - Xác minh live qua Preview: giá trị danh mục có thể đổi theo quote intraday, nhưng PostgreSQL mới nhất vẫn là EOD `2026-10-12`, coverage `340/551` (61,7%). Vì history endpoint chỉ dùng giá đóng cửa đã lưu, TWR/MWR và biểu đồ không đổi trong ngày 13/10 là hành vi đúng, không phải phép tính bỏ qua biến động giá.
