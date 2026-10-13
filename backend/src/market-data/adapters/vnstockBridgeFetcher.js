@@ -107,3 +107,26 @@ function createVnstockIntradayFetcher(options = {}) {
 }
 
 module.exports.createVnstockIntradayFetcher = createVnstockIntradayFetcher;
+
+function createVnstockForeignFlowFetcher({ python = 'python', bridge = path.resolve(__dirname, '../../../scripts/vnstock_foreign_flow_bridge.py'), cwd = path.resolve(__dirname, '../../../..'), env = {}, timeoutMs = Number(process.env.VNSTOCK_FOREIGN_FLOW_TIMEOUT_MS || 45000), fetchImpl = fetch, disableWorker = false } = {}) {
+  return async request => {
+    const workerUrl = process.env.VNSTOCK_WORKER_URL;
+    if (workerUrl && !disableWorker) {
+      const response = await fetchImpl(`${workerUrl.replace(/\/$/, '')}/foreign-flow`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(request), signal: AbortSignal.timeout(timeoutMs) });
+      if (!response.ok) throw new Error(`vnstock foreign-flow worker HTTP ${response.status}: ${await workerErrorDetail(response)}`);
+      const payload = await response.json();
+      if (!payload.rows?.length && payload.errors?.length) throw new Error(`vnstock foreign-flow unavailable: ${String(payload.errors[0].error || 'provider returned no rows').slice(0, 300)}`);
+      return payload.rows || [];
+    }
+    return new Promise((resolve, reject) => {
+      const child = spawn(python, [bridge], { cwd, env: { ...process.env, ...env, VNSTOCK_TELEMETRY: 'off' } });
+      let stdout = ''; let stderr = '';
+      const timer = setTimeout(() => { child.kill(); reject(new Error(`vnstock foreign-flow bridge timed out after ${timeoutMs}ms`)); }, timeoutMs);
+      child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; }); child.on('error', reject);
+      child.on('close', code => { clearTimeout(timer); if (code !== 0) return reject(new Error(`vnstock foreign-flow bridge exited ${code}: ${stderr.trim()}`)); try { const payload = JSON.parse(stdout); if (!payload.rows?.length && payload.errors?.length) return reject(new Error(`vnstock foreign-flow unavailable: ${String(payload.errors[0].error).slice(0, 300)}`)); resolve(payload.rows || []); } catch (error) { reject(new Error(`invalid vnstock foreign-flow response: ${error.message}`)); } });
+      child.stdin.end(JSON.stringify(request));
+    });
+  };
+}
+
+module.exports.createVnstockForeignFlowFetcher = createVnstockForeignFlowFetcher;

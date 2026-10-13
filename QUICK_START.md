@@ -346,3 +346,18 @@ npm.cmd run cycle:forecast-live
 ```
 
 Lệnh phát hành snapshot cho phiên mới trước, sau đó mới đánh giá snapshot cũ. Sau một phiên mới, horizon 1 phải chuyển sang `measured`; horizon 5 chỉ chuyển sau đủ năm phiên distinct. `target_session_not_observed` cùng `sessions_observed: 0` nghĩa là provider chưa có phiên tương lai, không phải yêu cầu tạo outcome thủ công. Kiểm tra contract UI đang đọc tại `http://localhost:4173/api/forecast/live-cohort?horizon=1&minimum_samples=20`. Không dùng `127.0.0.1` nếu auth/CORS development đang cấu hình cho `localhost`.
+
+### Backfill dòng tiền khối ngoại (development, sponsor-only)
+
+Sau khi tài khoản Vnstock đã có capability `foreign_flow` và quyền sử dụng phù hợp, cấu hình một nhóm tối đa 50 mã và cửa sổ tối đa 366 ngày:
+
+```powershell
+cd D:\MyProject\backend
+$env:VNSTOCK_FOREIGN_FLOW_ENABLED='true'
+$env:VNSTOCK_FOREIGN_FLOW_SYMBOLS='FPT,HPG,VHM'
+$env:VNSTOCK_FOREIGN_FLOW_FROM='2026-10-01'
+$env:VNSTOCK_FOREIGN_FLOW_TO='2026-10-13'
+npm.cmd run ingest:vnstock-foreign-flow
+```
+
+Luồng bình thường gọi endpoint `/foreign-flow` của worker, vì vậy phải restart worker sau khi cập nhật mã. Chỉ dùng `VNSTOCK_FOREIGN_FLOW_DIRECT=true` để chẩn đoán bridge một lần. Scheduler development chạy 17:00 ICT các ngày trong tuần khi flag được bật; production không khởi tạo job. Lỗi `foreign_flow capability is unavailable` nghĩa là entitlement/package setup chưa đáp ứng và không có dòng nào được ghi.

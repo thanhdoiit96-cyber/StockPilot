@@ -2,12 +2,14 @@
 
 ## 2026-10-13 — Audit và nền tảng dòng tiền khối ngoại
 
+- Hoàn thành F-flow-2 ở mức code: worker `/foreign-flow`, direct Python bridge, fetcher timeout/error contract, CLI bounded 1–50 mã/cửa sổ tối đa 366 ngày và scheduler development opt-in 17:00 ICT. Production không tự bật.
+- Probe thật FPT/13-10 qua direct bridge trả đúng `foreign_flow capability is unavailable`; probe worker trước restart trả 404. Không có row được ghi. Sau khi entitlement được mở cần restart worker rồi chạy lại CLI; không coi 404 hoặc thiếu capability là flow bằng 0.
 - Bổ sung runbook `cycle:forecast-live` trong QUICK_START để chạy sau EOD; trạng thái `target_session_not_observed` tiếp tục giữ pending, không tạo outcome thủ công.
 - Audit PostgreSQL development: 56.735 `stock_prices`, phạm vi 02/01/2025–12/10/2026, nhưng không có observation foreign buy/sell volume/value. Rule đề xuất, forecast return 1/5/20 và breadth hiện chưa dùng khối ngoại; tác động hiện tại bằng không.
 - Triển khai migration 038 với bảng `foreign_flow_daily` độc lập, model, Vnstock adapter boundary, ingestion idempotent, provenance hash và aggregation theo mã/ngành có coverage gate. Dữ liệu thiếu không được coi là trung tính; output giữ `scored=false` cho tới khi có kiểm chứng ngoài mẫu.
 - Migration development đạt; schema thực có 17 cột và row count bằng 0. Runtime cài `vnstock 4.0.8` nhưng chưa expose `Market().equity(...).foreign_flow()` trong entitlement hiện tại, nên chưa chạy backfill và không thay bằng ranking top-N vốn không đại diện toàn universe.
 - Kiểm chứng targeted đạt 3 suite, 18/18 test. `test:postgres` xác nhận isolated core migrations rồi dừng ở lỗi schema development có sẵn `users.theme_preference` chưa tồn tại; lỗi này không thuộc migration 038 và chưa được che giấu hoặc sửa bằng cách xóa dữ liệu.
-- Tiếp theo: nối bridge sponsor `foreign_flow`, chạy backfill bounded để đo coverage/semantics và xác nhận quyền display; sau đó mới mở read API/UI. Chỉ đưa feature vào model/recommendation version mới nếu walk-forward/ablation vượt baseline.
+- Tiếp theo: sau khi mở sponsor entitlement, chạy backfill bounded để đo coverage/semantics và xác nhận quyền display; sau đó mới mở read API/UI. Chỉ đưa feature vào model/recommendation version mới nếu walk-forward/ablation vượt baseline.
 
 ## 2026-10-13 — Live snapshot v2 và chu kỳ EOD tự động
 

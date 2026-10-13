@@ -34,6 +34,7 @@
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "seed": "sequelize-cli db:seed:all",
     "ingest:vnstock": "node scripts/ingest-vnstock-eod.cjs",
+    "ingest:vnstock-foreign-flow": "node scripts/ingest-vnstock-foreign-flow.cjs",
     "reconcile:vnstock": "node scripts/reconcile-vnstock-eod.cjs",
     "reconcile:eodhd": "node scripts/reconcile-eodhd-vnstock.cjs",
     "verify:eodhd": "node scripts/verify-eodhd.cjs"

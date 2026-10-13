@@ -11,7 +11,7 @@ os.environ.setdefault("VNSTOCK_TELEMETRY", "off")
 for _proxy_key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
     if str(os.environ.get(_proxy_key, "")).lower() in {"http://127.0.0.1:9", "http://localhost:9"}:
         os.environ.pop(_proxy_key, None)
-from vnstock import Listing
+from vnstock import Listing, Market
 from vnstock.api.quote import Quote
 from vnstock_price_board import price_board as fetch_price_board
 
@@ -81,6 +81,42 @@ def eod(request):
     return {"rows": rows, "errors": errors}
 
 
+def first_value(row, *keys):
+    for key in keys:
+        value = row.get(key)
+        if value is not None:
+            return value
+    return None
+
+
+def foreign_flow(request):
+    rows, errors = [], []
+    for symbol in request.get("symbols") or []:
+        symbol = str(symbol).strip().upper()
+        if not symbol:
+            continue
+        try:
+            with PROVIDER_GATE:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    equity = Market().equity(symbol)
+                    method = getattr(equity, "foreign_flow", None)
+                    if not callable(method):
+                        raise PermissionError("foreign_flow capability is unavailable; verify sponsor entitlement and vnstock package setup")
+                    frame = method(start=request.get("from"), end=request.get("to"))
+            for row in frame.to_dict(orient="records"):
+                rows.append({
+                    "symbol": symbol,
+                    "trading_date": first_value(row, "trading_date", "time", "date"),
+                    "buy_volume": first_value(row, "buy_volume", "foreign_buy_volume", "fr_buy_volume"),
+                    "sell_volume": first_value(row, "sell_volume", "foreign_sell_volume", "fr_sell_volume"),
+                    "buy_value": first_value(row, "buy_value", "foreign_buy_value", "fr_buy_value_matched"),
+                    "sell_value": first_value(row, "sell_value", "foreign_sell_value", "fr_sell_value_matched"),
+                })
+        except Exception as error:
+            errors.append({"symbol": symbol, "error": str(error)})
+    return {"rows": rows, "errors": errors}
+
+
 def intraday(request):
     """Return the latest intraday trades for one or more symbols."""
     source = str(request.get("source") or "VCI").upper()
@@ -145,7 +181,7 @@ class Handler(BaseHTTPRequestHandler):
         is_partial = False
         try:
             length = int(self.headers.get("Content-Length", "0")); request = json.loads(self.rfile.read(length) or b"{}")
-            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
+            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
             is_partial = bool(payload.get("errors"))

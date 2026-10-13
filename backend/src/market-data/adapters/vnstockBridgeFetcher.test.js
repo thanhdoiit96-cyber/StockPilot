@@ -1,4 +1,4 @@
-const { createVnstockBridgeFetcher, createVnstockIntradayFetcher } = require('./vnstockBridgeFetcher');
+const { createVnstockBridgeFetcher, createVnstockIntradayFetcher, createVnstockForeignFlowFetcher } = require('./vnstockBridgeFetcher');
 
 describe('Vnstock worker HTTP failures', () => {
   const previousWorkerUrl = process.env.VNSTOCK_WORKER_URL;
@@ -21,6 +21,11 @@ describe('Vnstock worker HTTP failures', () => {
 
     await expect(fetch(request)).rejects.toThrow('vnstock worker HTTP 500: connect failed at https://feed.test/quote?api_key=[redacted]&symbol=FPT');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  test('foreign-flow fetcher fails clearly when sponsor capability is unavailable', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ rows: [], errors: [{ symbol: 'FPT', error: 'foreign_flow capability is unavailable' }] }) });
+    await expect(createVnstockForeignFlowFetcher({ timeoutMs: 1000, fetchImpl })({ symbols: ['FPT'] })).rejects.toThrow('foreign-flow unavailable');
   });
 });
 
