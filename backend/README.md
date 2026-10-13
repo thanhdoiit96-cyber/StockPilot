@@ -14,6 +14,7 @@ Hồ sơ: migration 026 bổ sung `full_name`, `phone`, `date_of_birth` nullable
 | [src/services/cacheService.js](src/services/cacheService.js) | Cache JSONB trong PostgreSQL |
 | [src/services/foreignFlow.js](src/services/foreignFlow.js) | Tổng hợp foreign buy/sell volume/value theo mã hoặc ngành, kèm coverage gate; hiện chưa chấm điểm forecast/recommendation |
 | [src/services/foreignFlowFeatures.js](src/services/foreignFlowFeatures.js) | Feature research khóa theo cutoff: tỷ lệ net value/volume, z-score 20 phiên, persistence 5 phiên và breadth; output luôn `scored=false` |
+| [src/services/vnstockEntitlement.js](src/services/vnstockEntitlement.js) | Phân loại preflight Community/Sponsor cho foreign-flow mà không đưa API key vào output |
 | [src/market-data/foreignFlowIngestion.js](src/market-data/foreignFlowIngestion.js) | Ghi idempotent observation khối ngoại có provenance vào `foreign_flow_daily` |
 | [src/jobs/cacheCleanupJob.js](src/jobs/cacheCleanupJob.js) | Dọn cache mỗi giờ ở phút 00 |
 | [src/middleware/requireAdmin.js](src/middleware/requireAdmin.js) | Kiểm tra khóa quản trị |

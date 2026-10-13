@@ -36,6 +36,7 @@
     "ingest:vnstock": "node scripts/ingest-vnstock-eod.cjs",
     "ingest:vnstock-foreign-flow": "node scripts/ingest-vnstock-foreign-flow.cjs",
     "audit:foreign-flow": "node scripts/audit-foreign-flow.cjs",
+    "check:foreign-flow-entitlement": "node scripts/check-vnstock-foreign-flow-entitlement.cjs",
     "reconcile:vnstock": "node scripts/reconcile-vnstock-eod.cjs",
     "reconcile:eodhd": "node scripts/reconcile-eodhd-vnstock.cjs",
     "verify:eodhd": "node scripts/verify-eodhd.cjs"
