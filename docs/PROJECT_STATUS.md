@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Run ledger cho đồng bộ dữ liệu doanh nghiệp
+
+- Migration 040 tạo `company_data_ingestion_runs`; mọi chu kỳ mới lưu trigger, cohort, counts, duration, circuit state và report JSON. Audit chỉ tổng hợp tối đa 20 run của đúng cùng universe/scope để không trộn bằng chứng khác cohort.
+- Chu kỳ ledger đầu cho cohort 5 mã/profile đạt completed 5/5, 7.187 giây, 5 duplicate skip. Probe CLI FPT/profile sau sửa precedence đạt completed trong 994 ms, provider 732 ms; đối số CLI nay override `.env` đúng như tài liệu.
+- Migration development và targeted control/audit/scheduler/run-ledger 6/6 test đạt. Run ledger chỉ bắt đầu từ migration 040, nên các chu kỳ lỗi trước đó vẫn được ghi trong PROJECT_STATUS nhưng không được hồi tạo vào database.
+- Điểm tiếp tục: tích lũy tối thiểu vài run scheduled cùng cohort; không mở scope mới chỉ dựa trên hai run completed thủ công.
+
 ## 2026-10-13 — Snapshot PostgreSQL cho dữ liệu doanh nghiệp
 
 - Thêm migration 039 và bảng append-only `company_data_snapshots` cho profile/people/capital/financials/news, gồm provider, schema version, status, JSONB payload, content hash và fetched time. Migration development đã chạy thành công.

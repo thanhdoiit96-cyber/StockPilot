@@ -13,6 +13,7 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 - Scheduler snapshot development đã có overlap guard và universe/scope bounded; bước đầu chỉ profile của 5 mã lúc 18:30 ngày thường. Cần audit nhiều chu kỳ trước khi tăng scope hoặc universe.
 - Audit CLI đã xác nhận database coverage 5/5 vẫn nguyên vẹn sau một chu kỳ provider thành công 5/5 và chu kỳ kế tiếp thất bại 5/5. Gate mở rộng giữ đóng cho tới khi tỷ lệ thành công ổn định qua nhiều lịch chạy độc lập.
 - Pacing/cooldown/circuit breaker đã chặn cascade ở chu kỳ kế tiếp; gate mở rộng vẫn đóng, nhưng scheduler có thể tiếp tục thu thập bằng chứng mà không dồn request khi provider suy giảm.
+- Run ledger PostgreSQL và cohort-matched stability audit đã có. Quyết định mở scope/universe phải dựa trên nhiều scheduled runs cùng cohort, không trộn manual probe hoặc cohort khác.
 - Thứ tự tiếp theo: kiểm chứng provider live → browser UX/accessibility năm tab → chỉ sau đó mới mở rộng ratios/balance/cash flow.
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety

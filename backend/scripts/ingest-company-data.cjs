@@ -7,6 +7,7 @@ const { fetchCompanyFinancials, normalizeCompanyFinancials } = require('../src/s
 const { fetchCompanyNews, normalizeCompanyNews } = require('../src/services/companyNewsService');
 const { saveCompanySnapshot } = require('../src/services/companySnapshotStore');
 const { companyIngestionLimits, wait } = require('../src/services/companyIngestionControl');
+const { saveCompanyIngestionRun } = require('../src/services/companyIngestionRun');
 
 const adapters = {
   profile: async stock => normalizeCompanyProfile({ stock, providerPayload: await fetchCompanyProfile(stock.code) }),
@@ -17,9 +18,9 @@ const adapters = {
 };
 
 async function run() {
-  const started = Date.now();
-  const symbols = String(process.env.COMPANY_DATA_SYMBOLS || process.argv[2] || 'FPT').split(',').map(value => value.trim().toUpperCase()).filter(Boolean).slice(0, 20);
-  const scopes = String(process.env.COMPANY_DATA_SCOPES || process.argv[3] || 'profile,people,capital,financials,news').split(',').map(value => value.trim()).filter(value => adapters[value]);
+  const startedAt = new Date(); const started = startedAt.getTime();
+  const symbols = String(process.argv[2] || process.env.COMPANY_DATA_SYMBOLS || 'FPT').split(',').map(value => value.trim().toUpperCase()).filter(Boolean).slice(0, 20);
+  const scopes = String(process.argv[3] || process.env.COMPANY_DATA_SCOPES || 'profile,people,capital,financials,news').split(',').map(value => value.trim()).filter(value => adapters[value]);
   const limits = companyIngestionLimits();
   const rows = await models.Stock.findAll({ where: { code: symbols } });
   const bySymbol = new Map(rows.map(row => [row.code.toUpperCase(), row.toJSON()]));
@@ -49,6 +50,7 @@ async function run() {
     }
   }
   report.duration_ms = Date.now() - started;
+  await saveCompanyIngestionRun({ CompanyDataIngestionRun: models.CompanyDataIngestionRun, report, startedAt, trigger: process.env.COMPANY_DATA_TRIGGER || 'manual' });
   console.log(JSON.stringify(report, null, 2));
   if (!report.valid) process.exitCode = 2;
 }

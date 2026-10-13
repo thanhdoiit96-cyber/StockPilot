@@ -47,6 +47,8 @@ Scheduler development là explicit opt-in bằng `COMPANY_DATA_SYNC_ENABLED=true
 Mỗi request được giãn mặc định 750 ms. Sau lỗi transport, job cooldown 10 giây; hai lỗi liên tiếp mở circuit breaker và đánh dấu các task còn lại `provider_circuit_open` thay vì tiếp tục gây tải/cascade. Điều chỉnh bằng `COMPANY_DATA_REQUEST_DELAY_MS`, `COMPANY_DATA_FAILURE_COOLDOWN_MS`, `COMPANY_DATA_MAX_CONSECUTIVE_FAILURES` trong các giới hạn được code cưỡng chế.
 
 `npm run audit:company-data -- FPT,HPG,SSI,VCB,VNM profile` đọc PostgreSQL, không gọi provider và báo ma trận coverage/độ tươi cho từng mã–dataset. Exit code khác 0 nếu còn ô thiếu, phù hợp làm quality gate trước khi tăng universe hoặc scope.
+
+Mỗi lần ingestion ghi một run ledger gồm trigger manual/scheduled, counts, duration, circuit state và report đầy đủ. Audit tổng hợp tối đa 20 run gần nhất của đúng cùng universe/scope thành `run_stability`; chỉ coverage hiện tại không đủ để kết luận provider ổn định.
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |
 | GET | /api/cache/stats | Trả trực tiếp totalEntries, expiredEntries, byType |
