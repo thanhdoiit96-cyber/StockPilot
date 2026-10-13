@@ -33,6 +33,7 @@ import DetailExpertGuidance from "./components/DetailExpertGuidance.jsx";
 import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
+import CompanyProfilePanel from "./components/CompanyProfilePanel.jsx";
 import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 import { sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
@@ -2182,6 +2183,10 @@ function lv() {
               onAddToWatchlist: addToWatchlist,
               watched: yt.has(String(Ee.data.code || "").toUpperCase())
             })
+          }), O.jsx(CompanyProfilePanel, {
+            stockId: me.id,
+            language: profileLanguage,
+            translate: detailText
           }), O.jsxs("div", {
             id: "detail-chart",
             className: "detail-content-grid",

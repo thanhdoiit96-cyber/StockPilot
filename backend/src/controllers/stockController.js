@@ -13,6 +13,7 @@ const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory');
 const { serializeStockCsv } = require('../services/stockCsv');
 const { httpError } = require('../utils/httpError');
+const { normalizeCompanyProfile, fetchCompanyProfile } = require('../services/companyProfileService');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -435,6 +436,24 @@ module.exports = function(cacheService) {
       const factors = await ExternalFactor.findAll({ where: { [Op.or]: [{ symbol: stock.code }, { symbol: null }] }, order: [['published_at', 'DESC']], limit: 50 });
       return res.json({ success: true, data: factors.map(item => item.toJSON()), verified: factors.filter(item => item.status === 'verified').length });
     } catch (error) { console.error('[Stock Controller] Error fetching external factors:', error); return httpError(res, 500, 'market_external_factors_failed', 'Error fetching external factors'); }
+  });
+
+  router.get('/:id/company-profile', async (req, res) => {
+    try {
+      const stock = await Stock.findByPk(req.params.id);
+      if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
+      const cacheKey = `v1:company-profile:${stock.id}`;
+      const cached = await cacheService.get(cacheKey);
+      if (cached) return res.json({ success:true, data:cached, source:'cache' });
+      let providerPayload = null;
+      try { providerPayload = await fetchCompanyProfile(stock.code); } catch (_) { /* local profile remains usable */ }
+      const data = normalizeCompanyProfile({ stock: stock.toJSON ? stock.toJSON() : stock, providerPayload });
+      await cacheService.set(cacheKey, data, providerPayload ? 360 : 15, 'company_profile');
+      return res.json({ success:true, data, source:providerPayload ? 'provider' : 'local_reference' });
+    } catch (error) {
+      console.error('[Stock Controller] Company profile failed:', error.message);
+      return httpError(res, 500, 'market_company_profile_failed', 'Unable to load company profile');
+    }
   });
 
   router.get('/:id', async (req, res) => {

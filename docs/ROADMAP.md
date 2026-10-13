@@ -2,6 +2,12 @@
 
 Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả.
 
+## Cập nhật 2026-10-13 — Dữ liệu nền tảng doanh nghiệp
+
+- Phase 1 Hồ sơ doanh nghiệp đã hoàn thành ở trang Chi tiết mã bằng contract local-first, provider enrichment có cache và trạng thái partial rõ ràng.
+- Thứ tự tiếp theo: Cổ đông/lãnh đạo → Vốn & cổ tức → Tài chính → Tin tức/sự kiện. Mỗi nhóm tải riêng, có ngày dữ liệu/provenance và chỉ mở production khi quyền phân phối được xác nhận.
+- Khi có từ ba nhóm trở lên, chuyển vùng doanh nghiệp thành tab con giữ state trong URL; không tăng tải đầu trang bằng cách gọi mọi endpoint cùng lúc.
+
 ## Cập nhật 2026-10-13 — Current-data forecast safety
 
 - M2/F-flow: persistence, provider job, API/audit, panel data-driven và feature-research contract cutoff-safe đã có. API key đã cấu hình nhưng tài khoản vẫn free, không package/capability `foreign_flow`; PDF `license-2026.09` chỉ là giấy phép phần mềm và không cấp quyền dữ liệu upstream. Audit 0/551 nên UI ẩn. Sau khi nâng quyền và xác minh upstream: backfill → audit → browser smoke → walk-forward/ablation.
