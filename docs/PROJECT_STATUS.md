@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Snapshot PostgreSQL cho dữ liệu doanh nghiệp
+
+- Thêm migration 039 và bảng append-only `company_data_snapshots` cho profile/people/capital/financials/news, gồm provider, schema version, status, JSONB payload, content hash và fetched time. Migration development đã chạy thành công.
+- CLI `ingest:company-data` giới hạn 20 mã, chỉ lưu contract `available/partial`; lỗi, timeout và unavailable không ghi đè snapshot tốt. Hash bỏ `fetched_at` nhưng giữ provider/provenance để đồng bộ cùng nội dung idempotent.
+- Các API company ưu tiên snapshot PostgreSQL mới nhất trước cache/provider. Ingestion thật FPT: profile VCI `available` đã lưu 1 snapshot; people/capital timeout; financials/news unavailable nên bị bỏ qua đúng gate. Không có dữ liệu rỗng được ghi.
+- Backend đã restart; live API FPT trả `source=database_snapshot`, status available, provider VCI. Hai lần chạy profile sau hash v2 lần lượt lưu snapshot chuẩn hóa rồi skip đúng cùng `source_hash`, xác nhận idempotency. CLI xem duplicate hợp lệ là thành công, chỉ nonzero khi không quan sát được dataset hợp lệ nào.
+- Điểm tiếp tục: lên lịch định kỳ ngoài giờ cho universe bounded sau khi đo rate limit/tỷ lệ thành công; people/capital/financials/news chưa được phép suy diễn từ profile đã thành công.
+
 ## 2026-10-13 — Đồng bộ điều hướng Chi tiết mã
 
 - Sửa `detail-section-nav` theo đúng thứ tự DOM/tác vụ hiện tại: Tổng quan → Lịch sử giá → Doanh nghiệp → Phân tích. Nhãn “Biểu đồ” được đổi thành “Lịch sử giá” để khớp tiêu đề section và giảm mơ hồ.
