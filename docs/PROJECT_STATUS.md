@@ -1,5 +1,10 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Đồng bộ điều hướng Chi tiết mã
+
+- Sửa `detail-section-nav` theo đúng thứ tự DOM/tác vụ hiện tại: Tổng quan → Lịch sử giá → Doanh nghiệp → Phân tích. Nhãn “Biểu đồ” được đổi thành “Lịch sử giá” để khớp tiêu đề section và giảm mơ hồ.
+- Chưa kết luận VCI không cung cấp company/financial/news data: probe hiện chỉ chứng minh connection reset/timeout trước khi có response, không phải provider trả capability unavailable hoặc dataset rỗng.
+
 ## 2026-10-13 — Tab Tin tức doanh nghiệp
 
 - Probe tài chính FPT trực tiếp mất hơn 35 giây rồi lỗi connection reset cho cả năm/quý; không mở rộng balance sheet/ratio bằng mapping chưa kiểm chứng.
