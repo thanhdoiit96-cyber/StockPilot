@@ -2,6 +2,8 @@
 
 ## 2026-10-13 — Audit và nền tảng dòng tiền khối ngoại
 
+- Tích hợp `ForeignFlowPanel` vào Tổng quan theo data-driven visibility: loading/error/unavailable đều không chiếm chỗ; partial/available có observation mới render metrics và ranking. Copy Việt/Anh, mobile 2→1 cột, màu luôn đi cùng dấu số và có disclaimer không suy diễn nhân quả/scoring.
+- Frontend regression 85/85, production build đạt với `index-B2MOhus0.js`; Preview 4173 đang phục vụ bundle này. Live API vẫn `unavailable`, observed 0 nên smoke xác nhận panel không render—đúng thiết kế, không phải lỗi UI.
 - Hoàn thành read contract `GET /api/market-data/foreign-flow` theo phiên/mã/ngành, gồm totals, ranking, provenance và coverage gate. Thêm `audit:foreign-flow` read-only dùng cùng snapshot builder để API và vận hành không lệch semantics.
 - Audit development thực tế trả `unavailable`, `session_date=null`, coverage `0/551`, `totals=null`, `missing_is_neutral=false`, `scored=false`; lệnh kết thúc nonzero đúng gate. Chưa thêm UI section rỗng trước khi có dữ liệu hoặc entitlement.
 - Đã restart backend/worker và smoke qua đúng Preview proxy 4173: health backend/worker đạt, endpoint mới trả `unavailable`, 0/551, totals null và scored false. Worker `/foreign-flow` không còn 404; probe FPT đi qua endpoint mới rồi fail đúng tại entitlement, không ghi database.
@@ -12,7 +14,7 @@
 - Triển khai migration 038 với bảng `foreign_flow_daily` độc lập, model, Vnstock adapter boundary, ingestion idempotent, provenance hash và aggregation theo mã/ngành có coverage gate. Dữ liệu thiếu không được coi là trung tính; output giữ `scored=false` cho tới khi có kiểm chứng ngoài mẫu.
 - Migration development đạt; schema thực có 17 cột và row count bằng 0. Runtime cài `vnstock 4.0.8` nhưng chưa expose `Market().equity(...).foreign_flow()` trong entitlement hiện tại, nên chưa chạy backfill và không thay bằng ranking top-N vốn không đại diện toàn universe.
 - Kiểm chứng targeted đạt 3 suite, 18/18 test. `test:postgres` xác nhận isolated core migrations rồi dừng ở lỗi schema development có sẵn `users.theme_preference` chưa tồn tại; lỗi này không thuộc migration 038 và chưa được che giấu hoặc sửa bằng cách xóa dữ liệu.
-- Tiếp theo: sau khi mở sponsor entitlement, restart worker và chạy backfill bounded + audit để đo coverage/semantics, rồi tích hợp UI khi contract có dữ liệu. Chỉ đưa feature vào model/recommendation version mới nếu walk-forward/ablation vượt baseline.
+- Tiếp theo: sau khi mở sponsor entitlement, restart worker và chạy backfill bounded + audit để đo coverage/semantics; UI sẽ tự xuất hiện khi có observation. Sau đó kiểm chứng browser/mobile bằng dữ liệu thật. Chỉ đưa feature vào model/recommendation version mới nếu walk-forward/ablation vượt baseline.
 
 ## 2026-10-13 — Live snapshot v2 và chu kỳ EOD tự động
 
