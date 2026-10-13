@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Preview 4173 chuyển sang current-data forecast
+
+- Nguyên nhân UI vẫn hiện replay 2025-03-18: bundle trước chỉ bật `VITE_ENABLE_FORECAST_RESEARCH`, còn backend runtime thiếu `FORECAST_LIVE_PREVIEW=true`; vì vậy live endpoint trả 404 và card rơi về research artifact đúng thiết kế.
+- Đã build lại frontend với cả research và current-data opt-in, bundle `index-DB71L3vD.js`; khởi động lại backend development với live-preview gate và Preview tại `127.0.0.1:4173`.
+- Kiểm tra qua đúng proxy Preview: `/api/forecast/live-preview?horizon=5&symbols=FPT,HPG,VHM` trả 200, `as_of=2026-10-13`, provider `vnstock`, `synthetic=false`, `live=true`, `market_accuracy_verified=false`. UI phải hiện “Xác suất prototype trên dữ liệu hiện tại”, không còn dùng replay tháng 3 làm trạng thái chính.
+- Đây vẫn là current-data monitor/prototype chưa hiệu chỉnh, không phải dự báo live chính thức. Research replay chỉ còn là fallback nếu endpoint current-data không khả dụng.
+
 ## 2026-10-13 — Phát hành shadow forecast bằng dữ liệu hiện tại
 
 - Đã thay fixture tháng 3 khỏi bước phát hành mới: CLI `materialize:forecast-live-shadow` lấy EOD trực tiếp từ Vnstock cho FPT/HPG/VHM, tính feature 1/5/20 phiên theo từng mã rồi phát hành snapshot pending cho kỳ 1 và 5 phiên.
