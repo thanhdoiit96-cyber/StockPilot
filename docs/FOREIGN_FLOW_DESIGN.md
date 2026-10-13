@@ -8,6 +8,7 @@ Ngày audit: 2026-10-13. Phạm vi hiện tại là nền tảng ingestion và a
 - Recommendation hiện chỉ chấm kỹ thuật, momentum, RSI, stability và liquidity. Forecast current-data chỉ dùng return 1/5/20 phiên. Market breadth dùng A/D và volume breadth. Không luồng nào đang nhận dữ liệu khối ngoại; vì vậy ảnh hưởng hiện tại bằng không.
 - Vnstock công bố `Market().equity(symbol).foreign_flow()` ở nhóm tính năng tài trợ. Nguồn có thể trả volume/value mua và bán theo ngày, nhưng quyền truy cập API không đồng nghĩa quyền hiển thị lại trên production. License và coverage phải được lưu cùng dữ liệu.
 - Runtime development đang dùng `vnstock 4.0.8`; kiểm tra ngày 13/10 chưa thấy method `foreign_flow` trên equity client với entitlement hiện tại. Do đó bảng mới vẫn rỗng và F-flow-2 phụ thuộc quyền sponsor/API tương ứng; không có fixture nào được ghi vào PostgreSQL như dữ liệu thật.
+- API key sau đó đã được bổ sung vào `backend/.env` và license endpoint chấp nhận request, nhưng tài khoản vẫn trả `userType=free`, không có package khả dụng và equity client vẫn không expose `foreign_flow`. Việc có key hợp lệ không đồng nghĩa có sponsor capability; cần nâng quyền/package trên tài khoản trước khi chạy ingestion.
 
 ## Contract đã triển khai
 
