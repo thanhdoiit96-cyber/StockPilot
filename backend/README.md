@@ -12,6 +12,8 @@ Hồ sơ: migration 026 bổ sung `full_name`, `phone`, `date_of_birth` nullable
 | [src/models/index.js](src/models/index.js) | Nạp models và thiết lập associations trên Sequelize instance của models |
 | [src/controllers/stockController.js](src/controllers/stockController.js) | Router nhận cacheService qua factory; query models và kiểm tra dữ liệu cập nhật bằng Joi |
 | [src/services/cacheService.js](src/services/cacheService.js) | Cache JSONB trong PostgreSQL |
+| [src/services/foreignFlow.js](src/services/foreignFlow.js) | Tổng hợp foreign buy/sell volume/value theo mã hoặc ngành, kèm coverage gate; hiện chưa chấm điểm forecast/recommendation |
+| [src/market-data/foreignFlowIngestion.js](src/market-data/foreignFlowIngestion.js) | Ghi idempotent observation khối ngoại có provenance vào `foreign_flow_daily` |
 | [src/jobs/cacheCleanupJob.js](src/jobs/cacheCleanupJob.js) | Dọn cache mỗi giờ ở phút 00 |
 | [src/middleware/requireAdmin.js](src/middleware/requireAdmin.js) | Kiểm tra khóa quản trị |
 | [src/migrations](src/migrations) | Schema migration; portfolio provenance ở 012, mã sàn/trạng thái niêm yết ở 013, thời điểm kiểm tra ở 014 |

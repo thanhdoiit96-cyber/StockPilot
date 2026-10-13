@@ -2,6 +2,7 @@
 
 const INTERVALS = new Set(['1m', '5m', '15m', '1h', '1d']);
 const COMPLETENESS = new Set(['full', 'partial', 'unknown']);
+const DECIMAL_QUOTE_FIELDS = ['open', 'high', 'low', 'close', 'volume', 'trade_count', 'traded_value', 'reference_price', 'ceiling_price', 'floor_price'];
 
 function isCanonicalQuote(value) {
   return Boolean(value && typeof value === 'object'
@@ -10,7 +11,7 @@ function isCanonicalQuote(value) {
     && (value.low == null || typeof value.low === 'string')
     && (value.close == null || typeof value.close === 'string')
     && (value.volume == null || typeof value.volume === 'string')
-    && ['trade_count', 'traded_value', 'reference_price', 'ceiling_price', 'floor_price'].every(field => value[field] == null || typeof value[field] === 'string')
+    && DECIMAL_QUOTE_FIELDS.every(field => value[field] == null || typeof value[field] === 'string')
     && typeof value.currency === 'string'
     && typeof value.price_unit === 'string');
 }
@@ -27,7 +28,7 @@ function validateMarketRecord(record) {
   if (!record.source || typeof record.source.provider !== 'string' || !record.source.provider.trim()) errors.push('source.provider is required');
   if (!INTERVALS.has(record.interval)) errors.push(`interval must be one of ${[...INTERVALS].join(', ')}`);
   if (record.quality?.completeness && !COMPLETENESS.has(record.quality.completeness)) errors.push('quality.completeness is invalid');
-  for (const field of ['open', 'high', 'low', 'close', 'volume', 'trade_count', 'traded_value', 'reference_price', 'ceiling_price', 'floor_price']) {
+  for (const field of DECIMAL_QUOTE_FIELDS) {
     const value = record.quote?.[field];
     if (value != null && (typeof value !== 'string' || !/^\d+(\.\d+)?$/.test(value))) errors.push(`quote.${field} must be a non-negative decimal string or null`);
   }
@@ -35,4 +36,4 @@ function validateMarketRecord(record) {
   return errors;
 }
 
-module.exports = { INTERVALS, validateMarketRecord };
+module.exports = { INTERVALS, DECIMAL_QUOTE_FIELDS, validateMarketRecord };

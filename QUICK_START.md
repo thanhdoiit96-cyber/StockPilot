@@ -334,3 +334,15 @@ npm run generate:forecast-preview
 Lệnh tạo `evidence/forecast-research-preview.json` từ fixture synthetic trước khi backend phục vụ endpoint. File không được commit. Khởi động lại backend sau khi cập nhật mã; Tổng quan sẽ hiển thị ngày tạo và cảnh báo nếu artifact quá 7 ngày. Đây không phải dữ liệu thị trường hay dự báo live.
 
 `npm run dev` đã tự chạy bước generate. Để kiểm tra riêng artifact trước khi bàn giao, dùng `npm run verify:forecast-preview`.
+
+### Checkpoint forecast sau EOD
+
+Chỉ chạy sau khi provider đã công bố phiên mới hơn `as_of` của snapshot đang chờ. Trong `backend`:
+
+```powershell
+$env:NODE_ENV='development'
+$env:FORECAST_LIVE_PREVIEW='true'
+npm.cmd run cycle:forecast-live
+```
+
+Lệnh phát hành snapshot cho phiên mới trước, sau đó mới đánh giá snapshot cũ. Sau một phiên mới, horizon 1 phải chuyển sang `measured`; horizon 5 chỉ chuyển sau đủ năm phiên distinct. `target_session_not_observed` cùng `sessions_observed: 0` nghĩa là provider chưa có phiên tương lai, không phải yêu cầu tạo outcome thủ công. Kiểm tra contract UI đang đọc tại `http://localhost:4173/api/forecast/live-cohort?horizon=1&minimum_samples=20`. Không dùng `127.0.0.1` nếu auth/CORS development đang cấu hình cho `localhost`.
