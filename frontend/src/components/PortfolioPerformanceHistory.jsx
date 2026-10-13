@@ -87,6 +87,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
   const geometry = useMemo(() => chartGeometry(points), [points])
   const coverage = data?.coverage || { sessions: 0, complete_sessions: 0, incomplete_sessions: 0 }
   const eventCoverage = data?.event_coverage || { applied_events: 0, pending_events: 0, unsupported_events: 0 }
+  const cashReconciliation = data?.cash_reconciliation
   const unresolvedEvents = Number(eventCoverage.pending_events || 0) + Number(eventCoverage.unsupported_events || 0)
   const cashDeficitSessions = points.filter(point => point.incomplete_reasons?.includes('negative_cash_balance') || Number(point.cash_balance) < -0.01).length
   const missingPriceSessions = points.filter(point => point.incomplete_reasons?.includes('missing_prices') || point.missing_stock_ids?.length).length
@@ -144,6 +145,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
         missingPriceSessions ? `${missingPriceSessions} ${t('portfolio.history.missingClose')}` : '',
         unresolvedEventSessions ? `${unresolvedEventSessions} ${t('portfolio.history.pendingEvent')}` : ''
       ].filter(Boolean).join(' · ') || `${coverage.incomplete_sessions} ${t('portfolio.history.incomplete')}`}. {t('portfolio.history.warning')}</p>}
+      {cashReconciliation?.status === 'funding_required' && <aside className="performance-funding-gap" role="note"><strong>{t('portfolio.history.fundingTitle')}</strong><span>{t('portfolio.history.fundingDetail', { amount: money(cashReconciliation.minimum_deposit_amount), date: longDate(cashReconciliation.first_deficit_date) })}</span><small>{t('portfolio.history.fundingPolicy')}</small></aside>}
       <p className="performance-note">{t('portfolio.history.note')}</p>
     </>}
   </section>

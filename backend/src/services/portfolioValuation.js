@@ -103,6 +103,15 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     previousValue = complete ? portfolioValue : null;
   }
   const completePoints = points.filter(point => point.status === 'complete').length;
+  const cashDeficitPoints = points.filter(point => Number(point.cash_balance) < -0.01);
+  const minimumCashBalance = cashDeficitPoints.length ? Math.min(...cashDeficitPoints.map(point => Number(point.cash_balance))) : 0;
+  const cashReconciliation = cashDeficitPoints.length ? {
+    status: 'funding_required',
+    first_deficit_date: cashDeficitPoints[0].date,
+    minimum_cash_balance: Number(minimumCashBalance.toFixed(2)),
+    minimum_deposit_amount: Number(Math.abs(minimumCashBalance).toFixed(2)),
+    policy: 'ledger_implied_minimum_v1'
+  } : { status: 'balanced', first_deficit_date: null, minimum_cash_balance: 0, minimum_deposit_amount: 0, policy: 'ledger_implied_minimum_v1' };
   const canPublishTwr = points.length >= 2 && completePoints === points.length && points.every(point => point.cash_balance >= -0.01) && points.some(point => point.daily_return_pct != null);
   if (!canPublishTwr) points.forEach(point => { point.daily_return_pct = null; point.cumulative_twr_pct = null; });
   const terminalPoint = points.at(-1);
@@ -119,6 +128,7 @@ function buildDailyValuationSeries({ transactions = [], cashFlows = [], portfoli
     cumulative_twr_pct: canPublishTwr ? points.at(-1).cumulative_twr_pct : null,
     mwr,
     event_coverage: { applied_events: appliedEvents, pending_events: pendingEvents, unsupported_events: unsupportedEvents },
+    cash_reconciliation: cashReconciliation,
     points,
     fractional_share_policy: 'whole_share_only_v1_cash_in_lieu_not_inferred',
     event_application_order: 'corporate_actions_before_same_day_trades',
