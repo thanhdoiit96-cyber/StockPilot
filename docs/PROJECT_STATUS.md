@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Vốn, cổ tức và tab thông tin doanh nghiệp
+
+- Thêm worker `POST /company-capital`, API `GET /api/stocks/:id/company-capital` và contract `company_capital_v1` cho `capital_history/events`; hai capability fail độc lập, có provenance/cache và không biến dữ liệu thiếu thành số 0.
+- UI Chi tiết mã nay gom Hồ sơ, Cổ đông & lãnh đạo, Vốn & cổ tức thành tab responsive. Tab giữ trong query `companyTab`, điều khiển được bằng Left/Right và chỉ tải endpoint của tab đang mở.
+- Panel Vốn & cổ tức tách lịch sử vốn khỏi thông báo quyền lợi và ghi rõ provider disclosure không tự tác động danh mục. Chỉ event ledger CONFIRMED hiện có mới được portfolio valuation áp vào cash/quantity/cost basis/performance.
+- Backend targeted đạt 23/23; frontend regression/encoding/error-contract đạt 85/85; build/bundle integrity đạt với `index-Dl54oyoc.js`.
+- Điểm tiếp tục: kiểm chứng schema live khi KBS ổn định; sau đó triển khai tab Tài chính theo endpoint tải riêng, ưu tiên KPI có thể so sánh năm/quý và không tải báo cáo thô lúc mở trang.
+
 ## 2026-10-13 — Cổ đông và lãnh đạo trên Chi tiết mã
 
 - Thêm worker `POST /company-people` gọi độc lập `Reference().company(symbol).shareholders/officers` và API `GET /api/stocks/:id/company-people`; contract `company_people_v1` chuẩn hóa tên, vai trò, tỷ lệ/số lượng sở hữu, ngày công bố và provenance. Một capability lỗi vẫn giữ kết quả capability còn lại ở trạng thái `partial`.

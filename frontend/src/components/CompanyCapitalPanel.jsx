@@ -1,0 +1,23 @@
+import { useEffect, useState } from 'react'
+import { requestJson } from '../services/api.mjs'
+import { formatDateOnly, formatNumber } from '../services/userLocale.mjs'
+
+export default function CompanyCapitalPanel({ stockId, language='vi', translate=value=>value, embedded=false }) {
+  const [state,setState]=useState({ status:'idle', data:null, error:'' }); const [retry,setRetry]=useState(0)
+  useEffect(()=>{ if(!stockId)return; let active=true; const controller=new AbortController(); setState(previous=>({status:'loading',data:previous.data,error:''})); requestJson(`/api/stocks/${encodeURIComponent(stockId)}/company-capital`,{signal:controller.signal}).then(payload=>{if(active)setState({status:'success',data:payload.data,error:''})}).catch(error=>{if(active&&!controller.signal.aborted)setState(previous=>({status:'error',data:previous.data,error:error.message}))}); return()=>{active=false;controller.abort()} },[stockId,retry])
+  const data=state.data, unavailable=translate('Chưa công bố')
+  const date=value=>value?formatDateOnly(value,language,{day:'2-digit',month:'2-digit',year:'numeric'}):unavailable
+  const amount=value=>value==null?unavailable:`${formatNumber(value,language,{maximumFractionDigits:0})} ₫`
+  const shares=value=>value==null?unavailable:formatNumber(value,language,{maximumFractionDigits:0})
+  return <section className={`${embedded?'company-tab-panel':'panel'} company-capital-panel`} aria-labelledby="company-capital-title" aria-busy={state.status==='loading'}>
+    <header className="company-profile-heading"><div><span className="eyebrow accent">{translate('VỐN & QUYỀN LỢI')}</span><h3 id="company-capital-title">{translate('Vốn và sự kiện doanh nghiệp')}</h3><p>{translate('Lịch sử vốn và thông báo quyền lợi từ nhà cung cấp dữ liệu.')}</p></div>{data&&<span className={`chip ${data.status==='available'?'success':'warning'}`}>{translate(data.status==='available'?'Dữ liệu khả dụng':data.status==='partial'?'Dữ liệu một phần':'Chưa có dữ liệu')}</span>}</header>
+    {!data&&state.status==='loading'&&<div className="company-profile-state">{translate('Đang tải lịch sử vốn và sự kiện…')}</div>}
+    {!data&&state.status==='error'&&<div className="company-profile-state error" role="alert"><span>{translate('Chưa tải được lịch sử vốn và sự kiện.')}</span><button type="button" className="ghost-btn" onClick={()=>setRetry(value=>value+1)}>{translate('Thử lại')}</button></div>}
+    {data?.status==='unavailable'&&<div className="company-people-empty"><strong>{translate('Chưa có lịch sử vốn hoặc sự kiện phù hợp')}</strong><span>{translate('Hệ thống không tự tạo quyền lợi khi nguồn chưa công bố dữ liệu.')}</span></div>}
+    {data&&data.status!=='unavailable'&&<div className="company-capital-grid">
+      <article><div className="company-people-subhead"><h4>{translate('Lịch sử vốn')}</h4><span>{data.summary?.capital_records||0} {translate('bản ghi')}</span></div><div className="company-capital-list">{data.capital_history?.length?data.capital_history.map((item,index)=><div className="company-capital-row" key={`${item.date}-${index}`}><time>{date(item.date)}</time><div><strong>{amount(item.charter_capital)}</strong><small>{shares(item.issued_shares)} {translate('cổ phiếu phát hành')}</small></div></div>):<p className="company-people-inline-empty">{translate('Chưa có lịch sử vốn.')}</p>}</div></article>
+      <article><div className="company-people-subhead"><h4>{translate('Thông báo quyền lợi')}</h4><span>{data.summary?.event_records||0} {translate('bản ghi')}</span></div><div className="company-capital-list">{data.events?.length?data.events.map((item,index)=><div className="company-event-row" key={`${item.date}-${item.title}-${index}`}><time>{date(item.date)}</time><div><strong>{item.title||unavailable}</strong><small>{[item.value,item.description].filter(Boolean).join(' · ')||unavailable}</small></div></div>):<p className="company-people-inline-empty">{translate('Chưa có thông báo quyền lợi.')}</p>}</div></article>
+    </div>}
+    {data&&<><div className="company-ledger-note" role="note"><strong>{translate('Không tự động ghi vào danh mục')}</strong><span>{translate('Thông báo provider chỉ để tham khảo. Cổ tức hoặc corporate action chỉ ảnh hưởng tiền, số lượng và hiệu suất sau khi có event ledger được xác nhận trong Danh mục.')}</span></div><footer className="company-profile-provenance"><span>{translate('Nguồn')}: {data.provenance?.provider||unavailable}</span><span>{translate('Cập nhật')}: {data.provenance?.fetched_at?new Intl.DateTimeFormat(language==='en'?'en-US':'vi-VN',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(data.provenance.fetched_at)):unavailable}</span></footer></>}
+  </section>
+}

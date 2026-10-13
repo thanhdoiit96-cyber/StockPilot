@@ -4,7 +4,7 @@ import { formatDateOnly, formatNumber } from '../services/userLocale.mjs'
 
 const safeUrl = value => { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.href : null } catch { return null } }
 
-export default function CompanyProfilePanel({ stockId, language = 'vi', translate = value => value }) {
+export default function CompanyProfilePanel({ stockId, language = 'vi', translate = value => value, embedded = false }) {
   const [state, setState] = useState({ status:'idle', data:null, error:'' })
   const [retry, setRetry] = useState(0)
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function CompanyProfilePanel({ stockId, language = 'vi', translat
   const value = input => input == null || input === '' ? unavailable : input
   const number = input => input == null ? unavailable : formatNumber(input, language, { maximumFractionDigits:0 })
   const date = input => input ? formatDateOnly(input, language, { day:'2-digit', month:'2-digit', year:'numeric' }) : unavailable
-  return <section id="detail-company" className="panel company-profile-panel" tabIndex="-1" aria-labelledby="company-profile-title" aria-busy={state.status === 'loading'} lang={language}>
+  return <section className={`${embedded ? 'company-tab-panel' : 'panel'} company-profile-panel`} aria-labelledby="company-profile-title" aria-busy={state.status === 'loading'} lang={language}>
     <div className="company-profile-heading"><div><span className="eyebrow accent">{translate('DOANH NGHIỆP')}</span><h3 id="company-profile-title">{translate('Hồ sơ doanh nghiệp')}</h3><p>{translate('Thông tin nền tảng để đánh giá doanh nghiệp bên cạnh diễn biến giá và kỹ thuật.')}</p></div>{data && <span className={`chip ${data.status === 'available' ? 'success' : 'warning'}`}>{translate(data.status === 'available' ? 'Đủ dữ liệu provider' : 'Dữ liệu cơ bản')}</span>}</div>
     {!data && state.status === 'loading' && <div className="company-profile-state">{translate('Đang tải hồ sơ doanh nghiệp…')}</div>}
     {!data && state.status === 'error' && <div className="company-profile-state error" role="alert"><span>{translate('Chưa tải được hồ sơ doanh nghiệp.')}</span><button type="button" className="ghost-btn" onClick={() => setRetry(value => value + 1)}>{translate('Thử lại')}</button></div>}
