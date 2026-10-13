@@ -1,5 +1,11 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Làm rõ độ tươi hiệu suất danh mục
+
+- Xác minh live qua Preview: giá trị danh mục có thể đổi theo quote intraday, nhưng PostgreSQL mới nhất vẫn là EOD `2026-10-12`, coverage `340/551` (61,7%). Vì history endpoint chỉ dùng giá đóng cửa đã lưu, TWR/MWR và biểu đồ không đổi trong ngày 13/10 là hành vi đúng, không phải phép tính bỏ qua biến động giá.
+- UI lịch sử nay hiển thị chip ngày EOD gần nhất và giải thích rõ ranh giới với giá trị intraday phía trên. Thêm nút “Làm mới EOD”, tự tải lại mỗi 5 phút khi tab hoạt động và khi cửa sổ nhận focus; không đưa quote intraday vào chuỗi `daily_close_twr_v1`.
+- Frontend regression 85/85, encoding/error-contract đạt; production build và bundle integrity đạt với `index-Dh7Pa4uT.js`. Điểm tiếp tục: sau EOD mới, kiểm tra ingestion coverage cho các mã thực sự đang nắm giữ và xác nhận điểm mới/TWR thay đổi; coverage toàn thị trường chưa đạt nên không suy diễn dữ liệu hoàn chỉnh.
+
 ## 2026-10-13 — Audit và nền tảng dòng tiền khối ngoại
 
 - Kiểm tra lại `backend/.env`: `VNSTOCK_API_KEY` đã tồn tại (chỉ xác nhận presence/length, không log secret). License endpoint chính thức trả HTTP 200 nhưng trạng thái hiện là `userType=free`, `availablePackages=0`, device chưa đăng ký; inject key trực tiếp vào Python vẫn cho `FOREIGN_FLOW_CALLABLE=False`. Runtime có `vnstock 4.0.8`, `vnai 2.6.0`, không có package `vnstock_data`.
