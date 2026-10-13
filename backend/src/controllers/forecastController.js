@@ -21,7 +21,10 @@ function createForecastController({ env = process.env, loadArtifact, listHistory
       python: env.VNSTOCK_PYTHON || 'python',
       bridge: env.VNSTOCK_EOD_BRIDGE || path.resolve(__dirname, '../../scripts/vnstock_eod_bridge.py'),
       cwd: path.resolve(__dirname, '../..'),
-      env: { VNSTOCK_SOURCE: env.VNSTOCK_SOURCE || 'vci' }
+      env: { VNSTOCK_SOURCE: env.VNSTOCK_SOURCE || 'vci' },
+      // Current-data preview is a bounded development probe. Keep it independent
+      // from an optional long-running worker so a stale worker cannot hide fresh EOD.
+      disableWorker: true
     });
     const adapter = new VnstockEodAdapter({
       fetcher: bridgeFetcher,

@@ -6,6 +6,7 @@
 - Đã build lại frontend với cả research và current-data opt-in, bundle `index-DB71L3vD.js`; khởi động lại backend development với live-preview gate và Preview tại `127.0.0.1:4173`.
 - Kiểm tra qua đúng proxy Preview: `/api/forecast/live-preview?horizon=5&symbols=FPT,HPG,VHM` trả 200, `as_of=2026-10-13`, provider `vnstock`, `synthetic=false`, `live=true`, `market_accuracy_verified=false`. UI phải hiện “Xác suất prototype trên dữ liệu hiện tại”, không còn dùng replay tháng 3 làm trạng thái chính.
 - Đây vẫn là current-data monitor/prototype chưa hiệu chỉnh, không phải dự báo live chính thức. Research replay chỉ còn là fallback nếu endpoint current-data không khả dụng.
+- URL development chuẩn là `http://localhost:4173/`: CORS allowlist và auth cookie dùng hostname này. `127.0.0.1:4173` không tương đương về origin/cookie và bị từ chối 403. Current-data preview dùng bridge trực tiếp có giới hạn để không bị worker EOD lỗi che mất dữ liệu mới; các runtime market-data khác vẫn giữ worker như cũ.
 
 ## 2026-10-13 — Phát hành shadow forecast bằng dữ liệu hiện tại
 
