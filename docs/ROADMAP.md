@@ -11,6 +11,7 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 - Phase 5 Tin tức đã có contract/tab riêng, URL an toàn và policy loại tin chưa xác minh khỏi scoring. Sự kiện quyền lợi tiếp tục dùng tab Vốn & cổ tức để tránh trùng.
 - Nền tảng snapshot PostgreSQL đã có migration/CLI và DB-first reads. Probe FPT đã lưu được profile VCI; mọi capability lỗi/rỗng bị fail-closed. Chưa mở lịch toàn universe trước khi đo rate limit và tỷ lệ thành công.
 - Scheduler snapshot development đã có overlap guard và universe/scope bounded; bước đầu chỉ profile của 5 mã lúc 18:30 ngày thường. Cần audit nhiều chu kỳ trước khi tăng scope hoặc universe.
+- Audit CLI đã xác nhận database coverage 5/5 vẫn nguyên vẹn sau một chu kỳ provider thành công 5/5 và chu kỳ kế tiếp thất bại 5/5. Gate mở rộng giữ đóng cho tới khi tỷ lệ thành công ổn định qua nhiều lịch chạy độc lập.
 - Thứ tự tiếp theo: kiểm chứng provider live → browser UX/accessibility năm tab → chỉ sau đó mới mở rộng ratios/balance/cash flow.
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety
