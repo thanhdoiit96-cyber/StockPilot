@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Tách current-data khỏi replay và evaluator outcome live
+
+- Card Triển vọng có tab “Dữ liệu hiện tại” và “Nghiên cứu mô phỏng”. Tab hiện tại giải thích snapshot 1/5 phiên đang chờ đúng số phiên provider; tab mô phỏng đổi nhãn rõ thành kiểm thử pipeline/replay tháng 3. “Baseline v2” nay ghi rõ là baseline mô phỏng và không huấn luyện hay thay đổi xác suất current-data.
+- Thêm evaluator `evaluate:forecast-live-shadow`: chỉ dùng đúng rổ symbol đã seal, tìm phiên EOD chung thứ N sau `as_of`, yêu cầu coverage 100%, phân lớp breadth theo ngưỡng 45%/55% và append outcome có hash evidence một lần. Không cập nhật snapshot bất biến và không dùng fixture research.
+- Chạy thật ngày 2026-10-13: cả snapshot horizon 1 và 5 đều `pending`, `sessions_observed=0`, lý do `target_session_not_observed`; không có outcome giả được ghi. Target chỉ xuất hiện sau các phiên EOD tiếp theo.
+- Kiểm chứng: frontend 81/81; Overview E2E 15/15; backend targeted evaluator/shadow/controller 17/17; production build đạt với bundle `index-CMA914vH.js` và Preview 4173 đã phục vụ bundle này. Tiếp theo: chạy evaluator sau mỗi EOD, thêm API/cohort current-data riêng khi có outcome và chỉ thay baseline chính sau tối thiểu 20 measured samples cho từng horizon.
+
 ## 2026-10-13 — Preview 4173 chuyển sang current-data forecast
 
 - Nguyên nhân UI vẫn hiện replay 2025-03-18: bundle trước chỉ bật `VITE_ENABLE_FORECAST_RESEARCH`, còn backend runtime thiếu `FORECAST_LIVE_PREVIEW=true`; vì vậy live endpoint trả 404 và card rơi về research artifact đúng thiết kế.

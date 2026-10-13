@@ -6,7 +6,7 @@ const stocks = ['AAA', 'BBB', 'FPT', 'ZZZ'].map(code => ({ id: code, code, name:
   website_url: code === 'AAA' ? 'javascript:alert(1)' : 'https://example.test/company/' + code }))
 
 async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous', watchlist = true, recommendationItems = [], forecastFailures = 0 } = {}) {
-  await page.addInitScript(() => { globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = 'true' })
+  await page.addInitScript(() => { globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = 'true'; globalThis.__VITE_ENABLE_FORECAST_LIVE__ = 'false' })
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
   let watch = Array.isArray(watchlist) ? watchlist : watchlist ? [{ stock_id: 'FPT', Stock: { code: 'FPT' } }] : []
   const transactions = []
@@ -135,7 +135,8 @@ test('outlook lazily opens scored forecast history and stays compact on mobile',
   const state = await setup(page, { board: false })
   const card = page.locator('.short-term-outlook')
   expect(state.forecastHistoryRequests()).toBe(0)
-  await card.getByText('Lịch sử kiểm chứng dự báo', { exact: true }).click()
+  await card.getByRole('tab', { name: 'Nghiên cứu mô phỏng' }).click()
+  await card.getByText('Replay mô phỏng tháng 3', { exact: true }).click()
   await expect(card.getByText('Đang tích lũy bằng chứng')).toBeVisible()
   await expect(card.locator('.forecast-history-entry')).toHaveCount(4)
   await expect(card.locator('.forecast-cohort-coverage')).toContainText('0/20')
