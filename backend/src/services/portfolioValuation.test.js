@@ -38,6 +38,20 @@ test('marks legacy portfolios without funding as partial instead of publishing f
   expect(result.twr_available).toBe(false);
   expect(result.cumulative_twr_pct).toBeNull();
   expect(result.points[0]).toMatchObject({ status: 'partial', cash_balance: -100000, portfolio_value: null, daily_return_pct: null });
+  expect(result.cash_reconciliation).toEqual({ status: 'funding_required', first_deficit_date: '2026-10-01', minimum_cash_balance: -100000, minimum_deposit_amount: 100000, policy: 'ledger_implied_minimum_v1' });
+});
+
+test('reports the maximum ledger funding gap without creating a cash flow', () => {
+  const result = buildDailyValuationSeries({
+    transactions: [
+      { stock_id: 's', side: 'BUY', quantity: 5, price: 10000, fees: 1000, traded_at: '2026-10-01T02:00:00Z' },
+      { stock_id: 's', side: 'BUY', quantity: 2, price: 10000, fees: 0, traded_at: '2026-10-02T02:00:00Z' }
+    ],
+    cashFlows: [{ type: 'DEPOSIT', amount: 40000, occurred_at: '2026-10-01T01:00:00Z' }],
+    priceRows: prices
+  });
+  expect(result.cash_reconciliation).toEqual({ status: 'funding_required', first_deficit_date: '2026-10-01', minimum_cash_balance: -31000, minimum_deposit_amount: 31000, policy: 'ledger_implied_minimum_v1' });
+  expect(result.points.every(point => point.external_cash_flow !== 31000)).toBe(true);
 });
 
 test('starts history at first portfolio activity and identifies an unfunded purchase', () => {
