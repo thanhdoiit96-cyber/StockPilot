@@ -28,8 +28,9 @@ async function main() {
   const symbols = parseSymbols(argMap.symbols || process.env.FORECAST_CURRENT_SYMBOLS || process.env.VNSTOCK_SYMBOLS);
   const horizon = Number(argMap.horizon || process.env.FORECAST_LIVE_HORIZON || 5);
   const fetcher = createVnstockBridgeFetcher({
+    disableWorker: true,
     python: process.env.VNSTOCK_PYTHON || 'python',
-    bridge: process.env.VNSTOCK_EOD_BRIDGE || path.resolve(__dirname, '../../scripts/vnstock_eod_bridge.py'),
+    bridge: process.env.VNSTOCK_EOD_BRIDGE || path.resolve(__dirname, 'vnstock_eod_bridge.py'),
     cwd: path.resolve(__dirname, '..'),
     env: { VNSTOCK_SOURCE: process.env.VNSTOCK_SOURCE || 'vci' }
   });

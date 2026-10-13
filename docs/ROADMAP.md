@@ -1019,3 +1019,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành inference EOD tách khỏi replay scoring, lọc label theo cutoff, bắt buộc target session đã xác định, seal baseline v2 và materialize pending idempotent bằng ngày fixture tường minh. PostgreSQL có proof hợp lệ 2025-03-18 cho horizon 1/5. Hai snapshot thử 2025-03-19 trước gate được giữ bất biến; horizon 5 thiếu target nên evaluator sau phải loại rõ ràng.
 - Không tự động tăng ngày, không ghi outcome và không bật production. Cohort v2 measured vẫn 0/20 nên UI không hiển thị performance.
 - Tiếp theo: evaluator riêng cho rolling snapshot pending, chỉ tìm actual class từ evidence sau target-session cutoff, kiểm provenance và append outcome bất biến khi đủ dữ liệu; thiếu target/evidence tiếp tục pending.
+
+## Cập nhật ưu tiên 2026-10-13 — Current-data shadow issuance
+
+- Hoàn thành materializer development-only bằng EOD Vnstock hiện tại, snapshot append-only cho horizon 1/5, provenance/hash evidence và nhãn `synthetic=false`, `market_accuracy_verified=false`. Hai snapshot phiên 2026-10-13 đã được tạo trong PostgreSQL development; chạy lại idempotent theo nguyên tắc first issuance wins.
+- Fixture tháng 3 không còn là nguồn của bước phát hành current-data. Nó vẫn được giữ riêng cho regression/replay lịch sử và không được trộn vào cohort live.
+- Tiếp theo: evaluator current-data xác định target bằng phiên EOD distinct thực tế của provider sau ngày phát hành, append outcome một lần khi đủ cutoff, và không chấm điểm pending. Sau đó bổ sung aggregate live cohort tách biệt; production/UI chính thức tiếp tục khóa đến khi đủ license, cỡ mẫu, calibration và audit gate.

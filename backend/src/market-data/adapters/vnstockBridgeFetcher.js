@@ -19,10 +19,10 @@ async function workerErrorDetail(response) {
   return detail.replace(/<[^>]*>/g, ' ').replace(/[\r\n\t]+/g, ' ').replace(/([?&](?:api_key|token|key)=)[^&\s"'<>]+/gi, '$1[redacted]').trim().slice(0, 400);
 }
 
-function createVnstockBridgeFetcher({ python = 'python', bridge = path.resolve(__dirname, '../../../scripts/vnstock_eod_bridge.py'), cwd = path.resolve(__dirname, '../../../..'), env = {}, retries = Number(process.env.VNSTOCK_RETRIES || 2), timeoutMs = Number(process.env.VNSTOCK_TIMEOUT_MS || 45000), backoffMs = Number(process.env.VNSTOCK_BACKOFF_MS || 500), workerBatchSize = Number(process.env.VNSTOCK_WORKER_EOD_BATCH_SIZE || 2), fetchImpl = fetch } = {}) {
+function createVnstockBridgeFetcher({ python = 'python', bridge = path.resolve(__dirname, '../../../scripts/vnstock_eod_bridge.py'), cwd = path.resolve(__dirname, '../../../..'), env = {}, retries = Number(process.env.VNSTOCK_RETRIES || 2), timeoutMs = Number(process.env.VNSTOCK_TIMEOUT_MS || 45000), backoffMs = Number(process.env.VNSTOCK_BACKOFF_MS || 500), workerBatchSize = Number(process.env.VNSTOCK_WORKER_EOD_BATCH_SIZE || 2), fetchImpl = fetch, disableWorker = false } = {}) {
   const runOnce = async ({ symbols, from, to, source }) => {
     const workerUrl = process.env.VNSTOCK_WORKER_URL;
-    if (workerUrl) {
+    if (workerUrl && !disableWorker) {
       const requestBatch = async batch => {
         const response = await fetchImpl(`${workerUrl.replace(/\/$/, '')}/eod`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ symbols: batch, from, to, source }), signal: AbortSignal.timeout(timeoutMs) });
         if (!response.ok) {
