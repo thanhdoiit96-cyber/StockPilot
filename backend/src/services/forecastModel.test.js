@@ -1,4 +1,4 @@
-const { evaluateForecastModel } = require('./forecastModel');
+const { evaluateForecastModel, summarizeForecastModel } = require('./forecastModel');
 const sample = (day, value, label) => ({ as_of: `2026-01-${day}`, target_version: 'breadth_forward_v1', provider: 'fixture', synthetic: true,
   calendar_version: 'v1', calendar_source: 'fixture', status: 'features_available',
   features: [{ stock_id: 'A', return_1: value, return_5: value * 2, return_20: 0 }],
@@ -33,4 +33,16 @@ test('late labels are excluded using the same baseline manifest', () => {
   const fold = run(data).folds[0];
   expect(fold.train_sessions).toEqual(['2026-01-02']);
   expect(fold.reason).toBe('insufficient_training_classes');
+});
+
+test('prototype summary keeps research-only metrics explicit and comparable', () => {
+  const summary = summarizeForecastModel(run(samples()));
+  expect(summary.version).toBe('forecast_softmax_prototype_v1');
+  expect(summary.research_only).toBe(true);
+  expect(summary.market_accuracy_verified).toBe(false);
+  expect(summary.status).toBe('evaluated');
+  expect(summary.available_folds).toBeGreaterThan(0);
+  expect(summary.metric_summary.brier_multiclass_sum).toBeGreaterThanOrEqual(0);
+  expect(summary.probability_summary.classes).toEqual(['declining', 'balanced', 'advancing']);
+  expect(summary.probability_summary.total_predictions).toBeGreaterThan(0);
 });

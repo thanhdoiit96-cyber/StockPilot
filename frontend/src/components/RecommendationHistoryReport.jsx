@@ -9,6 +9,13 @@ const percentage = value => value == null ? '—' : `${Number(value).toFixed(2)}
 export default function RecommendationHistoryReport({ history = [], token, language = 'vi' }) {
   const en = language === 'en'
   const copy = (vi, english) => en ? english : vi
+  const historicalCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+  const containsHistoricalOnlyRuns = history.some(run => {
+    const raw = run?.as_of || run?.created_at
+    if (!raw) return false
+    const parsed = Date.parse(raw)
+    return Number.isFinite(parsed) && parsed < historicalCutoff
+  })
   const [selectedId, setSelectedId] = useState('')
   const [visibleRuns, setVisibleRuns] = useState(8)
   const reportRequest = useRef(0)
@@ -70,6 +77,7 @@ export default function RecommendationHistoryReport({ history = [], token, langu
       <div><span className="eyebrow accent">{copy('BÁO CÁO LỊCH SỬ', 'HISTORICAL REPORT')}</span><h3 id="recommendation-history-report-title">{copy('Đánh giá từng snapshot đề xuất', 'Evaluate each recommendation snapshot')}</h3><p className="muted-text">{copy('Chọn một đợt để xem mã đã chọn, phần đã đo và phần đang chờ. Giữ nguyên kết quả gốc; điều kiện thống kê được đối chiếu với bằng chứng hiện có. Hiển thị tối đa 50 đợt gần nhất.', 'Choose a run to review its selected symbols, measured outcomes and pending rows. Original results are preserved; statistical eligibility is checked against available evidence. Shows up to 50 recent runs.')}</p></div>
       {report && <button type="button" className="ghost-btn small-btn recommendation-export-btn" onClick={exportReport}>{copy('Xuất CSV báo cáo', 'Export report CSV')}</button>}
     </div>
+    {containsHistoricalOnlyRuns && <div className="recommendation-history-archive-banner" role="note"><strong>{copy('Lưu ý:', 'Note:')}</strong> {copy('Bảng dưới đây là lịch sử snapshot đã lưu; đây không phải dự báo thị trường hiện tại và không thể được xem như tín hiệu live.', 'This table is a historical snapshot archive; it is not a current market forecast and should not be interpreted as a live signal.')}</div>}
     {history.length ? <div className="table-wrap recommendation-history-table"><table><thead><tr><th>{copy('Ngày', 'Date')}</th><th>{copy('Đủ bằng chứng / chọn', 'Eligible / selected')}</th><th>{copy('Tỷ lệ dương', 'Positive rate')}</th><th>{copy('Lợi nhuận TB', 'Average return')}</th><th><span className="sr-only">{copy('Thao tác', 'Action')}</span></th></tr></thead><tbody>{history.slice(0, visibleRuns).map(run => <tr key={run.id} className={selectedId === run.id ? 'is-selected' : ''}><td>{run.as_of}</td><td>{run.measured_count}/{run.selected_count}<small>{run.pending_count ? ` · ${run.pending_count} ${copy('chờ', 'pending')}` : ''}</small>{run.excluded_count > 0 && <small> · {run.excluded_count} {copy('không tính thống kê', 'excluded')}</small>}</td><td>{percentage(run.hit_rate_pct)}</td><td>{percentage(run.average_forward_return_pct)}</td><td><button type="button" className="ghost-btn small-btn" onClick={() => openReport(run.id)} disabled={state === 'loading' && selectedId === run.id}>{state === 'loading' && selectedId === run.id ? copy('Đang tải…', 'Loading…') : copy('Xem báo cáo', 'View report')}</button></td></tr>)}</tbody></table></div> : <p className="muted-text">{copy('Chưa có snapshot đề xuất để lập báo cáo.', 'There are no recommendation snapshots to report yet.')}</p>}
     {history.length > visibleRuns && <button type="button" className="ghost-btn small-btn" onClick={() => setVisibleRuns(count => count + 8)}>{copy('Xem thêm đợt đề xuất', 'Show more runs')}</button>}
     {error && <p role="alert" className="error-text">{error}</p>}

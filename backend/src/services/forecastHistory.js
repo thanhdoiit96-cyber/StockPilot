@@ -1,9 +1,37 @@
 'use strict';
+const { assertForecastModeGate } = require('./forecastModeGate');
 const CLASSES = ['declining', 'balanced', 'advancing'];
 const BINS = [[0, .5], [.5, .7], [.7, .85], [.85, 1.0000000001]];
 
 function buildForecastHistory({ report, horizon, minimumBinSamples = 5 } = {}) {
   const unavailable = reason => ({ version: 'forecast_history_v1', status: 'unavailable', reason, horizon_sessions: horizon ?? null });
+  const localLivePreview = Boolean(report?.local_only) && report?.live === true && !report?.research_only && !report?.synthetic && report?.mode === 'live';
+  try {
+    assertForecastModeGate({
+      mode: report?.mode ?? (report?.live ? 'live' : 'research'),
+      provider: report?.provider,
+      synthetic: report?.synthetic,
+      research_only: report?.research_only,
+      live: report?.live,
+      local_only: report?.local_only,
+      license: report?.license,
+      evidence_integrity: report?.evidence_integrity ?? report?.evidenceIntegrity,
+      coverage: report?.coverage ?? report?.coverage_ratio,
+      sample_count: report?.sample_count ?? report?.sampleCount ?? (Array.isArray(report?.samples) ? report.samples.length : 0),
+      minimum_samples: report?.minimum_samples ?? 20
+    });
+  } catch (error) {
+    return unavailable(error.code || 'live_forecast_gate_not_passed');
+  }
+  if (localLivePreview) {
+    const previewRecord = { version: 'forecast_history_v1', status: 'local_live_preview_history', synthetic: false, research_only: false, live: true,
+      market_accuracy_verified: false, calibrated: false, local_only: true, license_status: 'pending_local_preview',
+      horizon_sessions: horizon, provider: report.provider, notice: 'Local live preview only; license pending and market accuracy is not verified.' };
+    if (![1, 5].includes(horizon) || !Number.isInteger(minimumBinSamples) || minimumBinSamples < 2) return unavailable('invalid_request');
+    const model = report.models?.find(item => item.horizon_sessions === horizon);
+    if (!model || model.status !== 'evaluated' || model.classes?.join('|') !== CLASSES.join('|')) return unavailable('model_unavailable');
+    return { ...previewRecord, model_version: model.version, split_hash: model.split_hash, summary: { predictions: model.folds.reduce((sum, fold) => sum + (fold.predictions || []).length, 0), measured: 0, pending: 0 }, entries: [] };
+  }
   if (report?.synthetic !== true || report?.research_only !== true) return unavailable('verified_live_history_not_available');
   if (![1, 5].includes(horizon) || !Number.isInteger(minimumBinSamples) || minimumBinSamples < 2) return unavailable('invalid_request');
   const model = report.models?.find(item => item.horizon_sessions === horizon);

@@ -1,5 +1,34 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Hoàn thiện ranh giới current-data forecast
+
+- Đã rà toàn bộ thay đổi forecast/UI chưa commit từ phiên trước. Full forecast ban đầu đạt 91/91 nhưng phát hiện phép “live evaluation” dùng lớp dự đoán làm truth để tính Brier/log loss; kết quả đó không hợp lệ về thống kê và đã bị loại bỏ.
+- `/api/forecast/current-preview`, `/live-preview` và `/live-evaluation` nay chỉ mở khi backend development có `FORECAST_LIVE_PREVIEW=true`; production/unconfigured trả 404 trước khi gọi provider. Frontend cũng cần `VITE_ENABLE_FORECAST_LIVE=true`; research cần opt-in riêng.
+- Current-data fetch dùng cửa sổ 120 ngày. Feature 1/5/20 phiên được tính độc lập theo từng symbol có ít nhất 21 quan sát rồi mới lấy trung bình rổ, không nối giá của các mã khác nhau thành một time series. UI live mode gọi `/live-preview` theo horizon và dùng probability contract đã kiểm tra.
+- Shadow evaluation hiện chỉ báo readiness/issuance; `baseline_comparison` là unavailable với lý do `outcomes_not_observed`. Brier/log loss chỉ được phép xuất hiện sau khi outcome tương lai liên kết với đúng immutable snapshot. Live activation tiếp tục bị chặn và `market_accuracy_verified=false`.
+- Kiểm chứng: backend forecast 19 suite, 94/94; frontend 81/81; Overview E2E 15/15; production build research-opt-in đạt với bundle `index-Ic6k4UGq.js`. Chưa chạy provider live thật do license/evidence chưa hoàn chỉnh.
+- Tiếp theo: materialize current-data shadow issuance vào snapshot append-only với provider/license/evidence provenance; evaluator chỉ append outcome sau target session. Sau đó mới tích lũy cohort ngoài mẫu và xem xét calibration, tuyệt đối chưa bật production.
+
+## 2026-10-12 — Tóm tắt tiến độ hiện tại
+
+- Dự án đang ở giai đoạn chuyển từ prototype research sang chuẩn hóa lifecycle, evidence và data contract cho forecast ngắn hạn. Đây vẫn là môi trường research-only, chưa mở model thật ra production.
+- Recommendation lifecycle đã được sửa để dựa trên phiên EOD hoàn tất gần nhất trước cutoff 15:00 ICT, đồng thời chờ đủ 20 phiên trước khi đánh giá. Snapshot live ngày 2026-10-09 đang ở trạng thái `ready_to_evaluate`, không được diễn giải như hiệu suất mô hình đã xác thực.
+- Market breadth/overview, lifecycle status và Recommendation status card đã đạt kiểm chứng backend 33/33 và frontend 73/73; Preview bundle đang phục vụ trên cổng 4173.
+- F0 audit dữ liệu và contract `breadth_forward_v1` đã hoàn tất ở mức read-only và validation đầu vào. F1 dataset + baseline đã có bằng chứng trên fixture, nhưng dữ liệu thật vẫn chưa đủ nguồn evidence/attestation để xác nhận training readiness.
+- Bước tiếp theo: đóng hoàn toàn F0/F1 ở mức dữ liệu thật, duy trì forecast ở chế độ research-only, rồi mới mở F2 (model xác suất), F3 (shadow), F4 (UI sản phẩm) và F5 (mở rộng phạm vi).
+- Đã bắt đầu F3 shadow evaluation ở mode live trên dữ liệu current-data hợp lệ: service đánh giá trên dữ liệu fresh, fail-closed nếu stale hoặc thiếu evidence, và giữ `market_accuracy_verified: false` cho tới khi provider/license/audit gate hoàn tất.
+
+## 2026-10-12 — Research/live boundary và kế hoạch chuyển live
+
+- Điểm mấu chốt: các module forecast hiện đang chạy trên fixture synthetic; phần lớn output vẫn có `synthetic: true`, `research_only: true` và `market_accuracy_verified: false`. Đây là trạng thái đúng với giai đoạn nghiên cứu, không phải dữ liệu hiện tại.
+- Đã hoàn thiện mô hình research-safe mode và local live-preview mode: kỹ thuật vẫn theo chuẩn production-grade với gate rõ ràng cho provider/license/integrity/coverage/sample size, nhưng semantic mode được gắn nhãn `research` hoặc `local_live_preview` và giữ `live: false/true` theo ngữ nghĩa đúng. Khi license chưa bổ sung, hệ thống vẫn giữ `license_status: "pending_local_preview"` nếu đang chạy local live preview và không nâng thành market-accuracy-verified forecast.
+- Các điểm hardcoded fixture còn rõ ràng trong [backend/src/services/forecastResearchFixture.js](../backend/src/services/forecastResearchFixture.js), [backend/src/services/forecastRegimeRankingFixture.js](../backend/src/services/forecastRegimeRankingFixture.js) và các CLI report tương ứng. Vẫn chưa có live evidence adapter được cắm vào orchestration forecast mặc định.
+- Adapter live Vnstock đã tồn tại ở [backend/src/market-data/adapters/VnstockEodAdapter.js](../backend/src/market-data/adapters/VnstockEodAdapter.js), nhưng chưa được nâng lên mode `live` trong forecast pipeline. Điều này tạo ranh giới rõ: research dùng fixture/replay, live phải qua gate riêng và không được bật nếu chưa có evidence, license và coverage đủ.
+- Kế hoạch cắt ranh giới rõ hơn: thêm `mode: 'research' | 'live'`, kiểm tra `provider`, `license`, `coverage`, `timezone cutoff`, `reviewCutoff` và `evidence integrity` trước khi phép chạy live. Mọi output live đều phải báo `live: true`, `research_only: false` và chỉ được mở nếu qua gate.
+- Bước mới được thêm vào giao thức: live/current-data mode còn phải kiểm tra freshness (`as_of` gần đây, `maximum_staleness_days`) và từ chối dữ liệu lịch sử cũ như phiên March 2026 khi hệ thống đang yêu cầu current-data hoặc local live preview. Đây là fail-closed guard để ngăn nhầm lẫn giữa historical replay và current market session.
+- Kế hoạch chuyển live khi hợp lý: 1) tách contract research/live; 2) chuẩn hóa live evidence bundle với `synthetic: false`; 3) chạy shadow evaluation trên live nhưng vẫn giữ `market_accuracy_verified: false`; 4) chỉ khi đủ backtest + calibration + audit mới bật live forecast cho UI/production.
+- Tại thời điểm này, dự án vẫn đang ở research gate, không phát hành live forecast và không dùng fixture như dữ liệu thị trường thật.
+
 ## 2026-10-12 — Rolling forecast issuance development
 
 - Thêm rolling inference riêng với replay evaluator: origin dùng feature của phiên đã hoàn tất, training chỉ nhận label có `label_available_at <= cutoff` và target trước origin. Optimizer cố định; frequency/persistence baseline dùng cùng tập train và được seal trong snapshot v2.
@@ -14,6 +43,14 @@
 - UI chọn cohort cùng model của entry mới nhất, báo tiến độ measured v2/minimum gate và coverage measured v1/v2. Score để trống cho tới khi comparison `available`; lỗi aggregate không lấy page summary làm performance fallback. Reliability được đổi nhãn rõ là chẩn đoán trên page đã tải.
 - Frontend service kiểm chặt synthetic/research-only contract, count/coverage và minimum-sample gate. Frontend 79/79, Overview E2E 15/15 và production build đạt; Preview 4173 đang phục vụ `index-Coj8VUe9.js`. Live API trả 7 measured v1, 0 v2, gate `insufficient_samples`, nên UI đúng trạng thái 0/20.
 - Tiếp theo: tạo lifecycle rolling cho prediction as-of mới để snapshot v2 thực sự tích lũy qua thời gian; giữ fixture hiện tại làm test, không sửa 14 identity v1 và không mở production trước khi có evidence hợp lệ.
+
+## Ghi chú nhanh 2026-10-12 — Dự đoán: thay đổi và giới hạn hiện tại
+
+- Đã thay đổi cơ chế mặc định của UI: research preview chỉ được bật khi biến môi trường `VITE_ENABLE_FORECAST_RESEARCH=true`, còn live/current-data chỉ được bật khi `VITE_ENABLE_FORECAST_LIVE=true`. Đây là ranh giới bắt buộc để tránh nhầm lẫn giữa synthetic replay, archive lịch sử và current-data.
+- Dữ liệu tháng 3 hiện vẫn xuất hiện ở các report/history là dữ liệu lịch sử đã lưu, không phải dữ liệu thị trường hiện tại; các snapshot này bị gắn nhãn rõ là `historical archive` và `not a live signal`.
+- Phần `ShortTermOutlook` và `RecommendationHistoryReport` hiện không còn hiện thị dữ liệu giả như current forecast nếu không có opt-in rõ ràng. Khi có live opt-in, UI gọi `/api/forecast/live-preview` theo horizon, nhưng vẫn giữ `market_accuracy_verified=false` và trạng thái giám sát, không phải official forecast.
+- Hạn chế đang còn: chưa đủ provider validation/license, chưa có fresh evidence và coverage đủ, chưa qua audit gate; bởi vậy mọi output live hiện tại đều `monitor-only` và không được kết luận là dự báo thật.
+- Cảnh báo quan trọng: mô hình dự báo hiện tại vẫn là research-safe / local live preview. Không phát hành kết quả như sản phẩm, không thể dùng để đầu tư hoặc xác nhận hiệu suất thị trường. Kiểm tra nhanh nhất là xem `forecastPreview.mjs`, `ShortTermOutlook.jsx`, `RecommendationHistoryReport.jsx` và các endpoint `/api/forecast/research-preview`, `/api/forecast/live-preview`.
 
 ## 2026-10-12 — Forecast cohort aggregate độc lập phân trang
 

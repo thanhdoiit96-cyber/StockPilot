@@ -1,6 +1,45 @@
-﻿# Lá»™ trÃ¬nh hoÃ n thiá»‡n dá»± Ã¡n
+﻿# Lộ trình hoàn thiện dự án
 
-Cáº­p nháº­t: 2026-09-19. Má»¥c tiÃªu lÃ  xÃ¢y dá»±ng á»©ng dá»¥ng phÃ¢n tÃ­ch chá»©ng khoÃ¡n Viá»‡t Nam cÃ³ dá»¯ liá»‡u truy xuáº¥t Ä‘Æ°á»£c nguá»“n, tÃ i khoáº£n, danh má»¥c theo dÃµi vÃ  phÃ¢n tÃ­ch AI cÃ³ kiá»ƒm soÃ¡t.
+Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả.
+
+## Cập nhật 2026-10-13 — Current-data forecast safety
+
+- Hoàn thành opt-in kép backend/frontend cho local live preview; production và development chưa cấu hình không được gọi provider. Current-data dùng lịch sử bounded, feature theo từng symbol và probability contract fail-closed.
+- Loại bỏ proper-score giả từng dùng predicted class làm outcome. Shadow evaluation chỉ báo readiness cho tới khi cùng immutable issuance có future outcome; market accuracy và live activation tiếp tục false/blocked.
+- Research build/UI vẫn hoạt động bằng opt-in riêng và không bị current-data fallback ngầm. Backend 94/94, frontend 81/81, Overview E2E 15/15.
+- Tiếp theo: append-only shadow issuance cho current data, provenance provider/license/evidence hash, target-session evaluator và cohort ngoài mẫu. Chỉ sau minimum sample, calibration và audit mới cân nhắc production UI.
+
+## Cập nhật 2026-10-12 — Tiến độ và ưu tiên tiếp theo
+
+- M0–M5: nền tảng demo, dữ liệu thị trường, tài khoản/watchlist, recommendation lifecycle và analytics đã có bằng chứng prototype rõ ràng trên development. Các hạn chế còn lại nằm ở `provider evidence`, `data readiness`, `forecast live validation` và `quality gate` chứ chưa phải ở UI cơ bản.
+- F0: audit dữ liệu EOD/coverage/membership và target contract `breadth_forward_v1` 1/5 phiên đã hoàn tất ở mức read-only. Đây là nền tảng để đi vào F1 nhưng chưa đủ để gọi là training-ready.
+- F1: dataset/label builder và baseline trên fixture đã được triển khai và test xanh. Bước tiếp theo là nối nguồn evidence thật theo cutoff, attestation và exclusion report trước khi khởi động model thật.
+- F2: model xác suất dự báo ngắn hạn vẫn giữ ở chế độ research-only, không phát hành ra UI/production khi chưa có evidence ngoài mẫu và xác nhận chất lượng.
+- F3–F5: vẫn để sau khi có đủ data readiness và validation thật. Chưa triển khai mở rộng ngành/mã/chỉ số hoặc AI Advisor trên nền tảng live.
+- Mục tiêu ngay tiếp theo: hoàn tất F1 live evidence + baseline persistence; sau đó chạy F2 validation out-of-sample, F3 shadow evaluation, F4 UI history/overview và F5 případ mở rộng theo chuẩn ràng buộc nguồn dữ liệu.
+
+## 2026-10-12 — Ranh giới research/live và lộ trình chuyển dữ liệu thật
+
+- Trong hiện trạng, forecast F2/F3 đang chạy trên fixture synthetic và không được biểu diễn như dữ liệu hiện tại. Code path đang hardcoded ở các fixture generator và report CLI, nên dữ liệu được hiển thị chỉ là `research_only` / `synthetic` và không được dùng cho quyết định live.
+- Nguồn live đã có adapter Vnstock ở [backend/src/market-data/adapters/VnstockEodAdapter.js](../backend/src/market-data/adapters/VnstockEodAdapter.js), nhưng adapter ấy chưa kết nối vào orchestration forecast production. Chuyển sang live data cần một mode gate rõ ràng và không được thực hiện bằng fallback ngầm từ fixture.
+- Trình tự chuyển live nên theo 5 giai đoạn: (1) tách contract research/live; (2) chuẩn hóa bundle evidence và provider metadata; (3) chạy shadow evaluation live mà không thay đổi recommendation/UI; (4) kiểm tra calibration, turnover, coverage và audit gate; (5) mở live forecast cho UI chỉ khi qua tất cả gate.
+- Tiêu chí cần đạt trước khi mở live: `mode=live`, `synthetic=false`, `research_only=false`, `market_accuracy_verified` chỉ được true sau pass gate, provider license hợp lệ, coverage đủ, integrity hash hợp lệ, và không có fixture fallback.
+- Bước bổ sung mới: local live preview và live mode phải kiểm tra độ tươi của dữ liệu (`as_of`, `maximum_staleness_days`). Nếu `as_of` vượt ngưỡng hoặc là dữ liệu lịch sử cũ, hệ thống phải trả lỗi `live_forecast_gate_not_passed:staleness` thay vì tiến hành đánh giá như dữ liệu hiện tại. Đây là ranh giới bắt buộc để không lẫn historical replay và current-data forecast.
+- Bản hiện tại đã thêm `research-safe mode` và `local live-preview mode` theo chuẩn production-grade: các gate kỹ thuật vẫn được thực thi mạnh, nhưng semantic mode được giữ ở `research` hoặc `local_live_preview` với `live` tương ứng và `license_status` ở `pending`/`pending_local_preview` cho đến khi license/provider được bổ sung. Điều này cho phép chạy nghiên cứu an toàn và chạy local live preview mà không buột ngắn thành live signal được xác nhận market accuracy.
+- Phạm vi hiện tại vẫn ở research-only; tất cả issue tracking và milestone tiếp theo cần giữ ranh giới này cho đến khi có bằng chứng live đầy đủ.
+- Bước F3 đã được bắt đầu ở dạng shadow evaluation live, nhưng chỉ trên current-data hợp lệ và fresh. Nếu `as_of` quá cũ hoặc thiếu evidence/provider validation thì hệ thống trả `live_forecast_gate_not_passed` thay vì chuyển sang đánh giá live giả định.
+
+## Mốc lớn và trạng thái
+
+- M0 — Khởi phục nền tảng: Hoàn thành.
+- M1 — Cổng demo: Hoàn thành một phần; còn kiểm chứng Compose và triển khai môi trường.
+- M2 — Dữ liệu thị trường: Hoàn thành cho prototype nội bộ; cần kiểm chứng provider và provenance thực tế.
+- M3 — Tài khoản và watchlist: Hoàn thành cho prototype nội bộ.
+- M4 — Danh mục theo dõi: Hoàn thành cho prototype nội bộ.
+- M5 — Phân tích kỹ thuật và AI: cơ bản hoàn thiện và có quality gate, nhưng còn provider extension và validation ngoài mẫu.
+- M6 — Phát hành: chưa triển khai.
+
+## 2026-10-12 — Rolling forecast issuance development
 
 ## CÃ¡c má»‘c
 
@@ -276,6 +315,15 @@ pm run evaluate:recommendations after the 20-session horizon and inspect /api/re
 - UI copy rule: all user-facing Vietnamese labels, placeholders, tooltips and disclaimers must use complete Vietnamese spelling with diacritics; review rendered strings in source and production bundle before UI work is accepted.
 
 - Copy review gate: before UI acceptance, scan every frontend source/public/index file for mojibake, missing diacritics, abbreviations and spelling errors; verify the built bundle and run unit/E2E tests.
+
+## Ghi chú nhanh 2026-10-12 — Dự đoán: thay đổi và giới hạn hiện tại
+
+- Đã chặn luồng nhầm lẫn giữa dữ liệu lịch sử và dữ liệu hiện tại: research preview chỉ bật khi có flag rõ ràng `VITE_ENABLE_FORECAST_RESEARCH=true`, live/current-data chỉ bật khi có `VITE_ENABLE_FORECAST_LIVE=true`, và UI hiện đang ưu tiên `current-preview` khi ở mode live.
+- Dữ liệu tháng 3/`March` xuất hiện trong báo cáo lịch sử hoặc artifact synthetic được giữ nguyên là `historical archive` và không được diễn giải như forecast hiện tại. Phần `RecommendationHistoryReport` đã được gắn nhãn rõ là lịch sử snapshot, không phải tín hiệu live.
+- Vị trí hiển thị chính của dự báo hiện tại vẫn là chế độ `monitor-only`: `current_data_preview` có thể load được nếu dữ liệu fresh và hợp lệ, nhưng `market_accuracy_verified` vẫn bằng `false` cho tới khi provider/license/audit/coverage gate đạt chuẩn.
+- Luồng research-only vẫn là mặc định an toàn cho development; nó không được xem là dữ liệu thị trường thật, không có xác nhận hiệu suất live và không được dùng làm cam kết đầu tư hay giao dịch.
+- Hạn chế lớn hiện tại: chưa có evidence/provider validation đầy đủ, chưa có license thực tế để chuyển sang live forecast chính thức, và chưa có calibration/coverage/audit gate đủ để khẳng định `live=true` là official prediction. Tất cả dữ liệu forecast hiện đang ở trạng thái nghiên cứu, live preview giám sát, hoặc archive lịch sử; không có forecast production đã được mở.
+- Dấu vết để kiểm tra nhanh: [docs/PROJECT_STATUS.md](PROJECT_STATUS.md), [docs/ROADMAP.md](ROADMAP.md), và các component/UI `ShortTermOutlook`, `RecommendationHistoryReport`, `forecastPreview.mjs`.
 
 
 ## UI copy and encoding audit - 2026-09-20
