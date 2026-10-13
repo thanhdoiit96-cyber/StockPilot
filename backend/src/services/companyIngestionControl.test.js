@@ -1,0 +1,2 @@
+const{companyIngestionLimits}=require('./companyIngestionControl');
+test('bounds pacing and circuit breaker settings',()=>{expect(companyIngestionLimits({})).toEqual({request_delay_ms:750,failure_cooldown_ms:10000,max_consecutive_failures:2});expect(companyIngestionLimits({COMPANY_DATA_REQUEST_DELAY_MS:'-1',COMPANY_DATA_FAILURE_COOLDOWN_MS:'999999',COMPANY_DATA_MAX_CONSECUTIVE_FAILURES:'0'})).toEqual({request_delay_ms:0,failure_cooldown_ms:120000,max_consecutive_failures:1})});
