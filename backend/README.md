@@ -44,6 +44,8 @@ Company datasets không cần realtime có thể được đồng bộ vào Post
 
 Scheduler development là explicit opt-in bằng `COMPANY_DATA_SYNC_ENABLED=true`, mặc định chạy 18:30 thứ Hai–Sáu theo `Asia/Ho_Chi_Minh`. Bắt đầu với `COMPANY_DATA_SCOPES=profile` và universe nhỏ trong `COMPANY_DATA_SYMBOLS`; scheduler chống chạy chồng. Production không tự bật dù biến enabled được đặt, cho đến khi rate limit, quyền phân phối và tỷ lệ thành công được xác minh.
 
+Mỗi request được giãn mặc định 750 ms. Sau lỗi transport, job cooldown 10 giây; hai lỗi liên tiếp mở circuit breaker và đánh dấu các task còn lại `provider_circuit_open` thay vì tiếp tục gây tải/cascade. Điều chỉnh bằng `COMPANY_DATA_REQUEST_DELAY_MS`, `COMPANY_DATA_FAILURE_COOLDOWN_MS`, `COMPANY_DATA_MAX_CONSECUTIVE_FAILURES` trong các giới hạn được code cưỡng chế.
+
 `npm run audit:company-data -- FPT,HPG,SSI,VCB,VNM profile` đọc PostgreSQL, không gọi provider và báo ma trận coverage/độ tươi cho từng mã–dataset. Exit code khác 0 nếu còn ô thiếu, phù hợp làm quality gate trước khi tăng universe hoặc scope.
 | GET | /api/stocks/:id/price | Giá gần nhất; cache 1 phút |
 | PUT | /api/stocks/:id | Cập nhật name/code/industry/market_cap, xóa cache liên quan; cần khóa quản trị |

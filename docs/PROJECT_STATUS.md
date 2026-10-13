@@ -9,6 +9,7 @@
 - Đo profile FPT gần nhất: provider 881 ms, toàn job 1.149 giây, valid 1, failed 0 và duplicate được skip. Thêm scheduler development explicit opt-in lúc 18:30 thứ Hai–Sáu, chống overlap; cấu hình local giới hạn FPT/HPG/SSI/VCB/VNM và chỉ scope `profile`. Production luôn không tự bật.
 - Bổ sung audit database-only theo ma trận mã–dataset. Chu kỳ bounded 5 mã đầu đạt 5/5, 615–770 ms/mã, 3.612 giây toàn job; 4 snapshot mới và FPT idempotent. Audit PostgreSQL đạt 5/5, coverage 100%.
 - Chu kỳ lặp ngay sau đó thất bại 5/5 (hai timeout 7 giây rồi ba `fetch failed`) trong khi worker health vẫn OK. Audit sau lỗi vẫn 5/5 và snapshot không đổi, xác nhận provider capability có tính chập chờn và fail-closed/DB-first hoạt động đúng. Chưa tăng scope hoặc universe dựa trên chỉ một chu kỳ thành công.
+- Gia cố ingestion bằng pacing 750 ms, cooldown lỗi 10 giây và circuit breaker sau hai lỗi transport liên tiếp. Chu kỳ kiểm chứng: FPT thành công/idempotent 875 ms, HPG/SSI `fetch failed`, VCB/VNM bị skip bởi circuit; job dừng gây tải tiếp và PostgreSQL coverage vẫn được bảo toàn. Targeted scheduler/audit/control 4/4 test đạt.
 - Điểm tiếp tục: theo dõi vài chu kỳ bounded và audit snapshot coverage/latency trước khi mở scope people/capital/financials/news; các capability này chưa được phép suy diễn từ profile đã thành công.
 
 ## 2026-10-13 — Đồng bộ điều hướng Chi tiết mã
