@@ -7,6 +7,7 @@ import * as D from "react";
 import * as O from "react/jsx-runtime";
 import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
+import ForeignFlowPanel from "./components/ForeignFlowPanel.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
 import ShortTermOutlook from "./components/ShortTermOutlook.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
@@ -1593,7 +1594,7 @@ function lv() {
               children: profileLanguage === "en" ? "Open Ideas" : uiTextValue("Đến tab đề xuất")
             })]
           })]
-        }), false && O.jsxs("section", {
+        }), O.jsx(ForeignFlowPanel, { language: profileLanguage }), false && O.jsxs("section", {
           className: "overview-metrics",
           "aria-label": profileLanguage === "en" ? "Market summary" : uiTextValue("Tóm tắt thị trường"),
           children: [O.jsxs("article", {
