@@ -18,6 +18,7 @@ const { normalizeCompanyPeople, fetchCompanyPeople } = require('../services/comp
 const { normalizeCompanyCapital, fetchCompanyCapital } = require('../services/companyCapitalService');
 const { normalizeCompanyFinancials, fetchCompanyFinancials } = require('../services/companyFinancialService');
 const { normalizeCompanyNews, fetchCompanyNews } = require('../services/companyNewsService');
+const { readLatestCompanySnapshot } = require('../services/companySnapshotStore');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -37,7 +38,7 @@ const sectorCondition = sector => {
 const finiteEvidenceNumber = value => value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 
 module.exports = function(cacheService) {
-  const { Stock, StockPrice, ExternalFactor } = require('../models');
+  const { Stock, StockPrice, ExternalFactor, CompanyDataSnapshot } = require('../models');
   const router = express.Router();
   const liveQuoteService = require('../services/liveQuoteService').liveQuoteService;
   const loadQuotes = symbols => liveQuoteService.load(symbols, { waitMs: 11000 });
@@ -446,6 +447,8 @@ module.exports = function(cacheService) {
     try {
       const stock = await Stock.findByPk(req.params.id);
       if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
+      const stored = CompanyDataSnapshot ? await readLatestCompanySnapshot({ CompanyDataSnapshot, stockId:stock.id, dataset:'profile' }) : null;
+      if (stored) return res.json({ success:true, data:stored, source:'database_snapshot' });
       const cacheKey = `v1:company-profile:${stock.id}`;
       const cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success:true, data:cached, source:'cache' });
@@ -464,6 +467,8 @@ module.exports = function(cacheService) {
     try {
       const stock = await Stock.findByPk(req.params.id);
       if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
+      const stored = CompanyDataSnapshot ? await readLatestCompanySnapshot({ CompanyDataSnapshot, stockId:stock.id, dataset:'people' }) : null;
+      if (stored) return res.json({ success:true, data:stored, source:'database_snapshot' });
       const cacheKey = `v1:company-people:${stock.id}`;
       const cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success:true, data:cached, source:'cache' });
@@ -482,6 +487,8 @@ module.exports = function(cacheService) {
     try {
       const stock = await Stock.findByPk(req.params.id);
       if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
+      const stored = CompanyDataSnapshot ? await readLatestCompanySnapshot({ CompanyDataSnapshot, stockId:stock.id, dataset:'capital' }) : null;
+      if (stored) return res.json({ success:true, data:stored, source:'database_snapshot' });
       const cacheKey = `v1:company-capital:${stock.id}`;
       const cached = await cacheService.get(cacheKey);
       if (cached) return res.json({ success:true, data:cached, source:'cache' });
@@ -495,8 +502,8 @@ module.exports = function(cacheService) {
       return httpError(res, 500, 'market_company_capital_failed', 'Unable to load company capital and events');
     }
   });
-  router.get('/:id/company-financials', async (req,res)=>{try{const stock=await Stock.findByPk(req.params.id);if(!stock)return httpError(res,404,'market_stock_not_found','Stock not found');const cacheKey=`v1:company-financials:${stock.id}`;const cached=await cacheService.get(cacheKey);if(cached)return res.json({success:true,data:cached,source:'cache'});let providerPayload=null;try{providerPayload=await fetchCompanyFinancials(stock.code)}catch(_){}const data=normalizeCompanyFinancials({symbol:stock.code,providerPayload});await cacheService.set(cacheKey,data,data.status==='unavailable'?15:360,'company_financials');return res.json({success:true,data,source:providerPayload?'provider':'provider_unavailable'})}catch(error){console.error('[Stock Controller] Company financials failed:',error.message);return httpError(res,500,'market_company_financials_failed','Unable to load company financials')}});
-  router.get('/:id/company-news',async(req,res)=>{try{const stock=await Stock.findByPk(req.params.id);if(!stock)return httpError(res,404,'market_stock_not_found','Stock not found');const cacheKey=`v1:company-news:${stock.id}`;const cached=await cacheService.get(cacheKey);if(cached)return res.json({success:true,data:cached,source:'cache'});let providerPayload=null;try{providerPayload=await fetchCompanyNews(stock.code)}catch(_){}const data=normalizeCompanyNews({symbol:stock.code,providerPayload});await cacheService.set(cacheKey,data,data.status==='unavailable'?15:60,'company_news');return res.json({success:true,data,source:providerPayload?'provider':'provider_unavailable'})}catch(error){console.error('[Stock Controller] Company news failed:',error.message);return httpError(res,500,'market_company_news_failed','Unable to load company news')}});
+  router.get('/:id/company-financials', async (req,res)=>{try{const stock=await Stock.findByPk(req.params.id);if(!stock)return httpError(res,404,'market_stock_not_found','Stock not found');const stored=CompanyDataSnapshot?await readLatestCompanySnapshot({CompanyDataSnapshot,stockId:stock.id,dataset:'financials'}):null;if(stored)return res.json({success:true,data:stored,source:'database_snapshot'});const cacheKey=`v1:company-financials:${stock.id}`;const cached=await cacheService.get(cacheKey);if(cached)return res.json({success:true,data:cached,source:'cache'});let providerPayload=null;try{providerPayload=await fetchCompanyFinancials(stock.code)}catch(_){}const data=normalizeCompanyFinancials({symbol:stock.code,providerPayload});await cacheService.set(cacheKey,data,data.status==='unavailable'?15:360,'company_financials');return res.json({success:true,data,source:providerPayload?'provider':'provider_unavailable'})}catch(error){console.error('[Stock Controller] Company financials failed:',error.message);return httpError(res,500,'market_company_financials_failed','Unable to load company financials')}});
+  router.get('/:id/company-news',async(req,res)=>{try{const stock=await Stock.findByPk(req.params.id);if(!stock)return httpError(res,404,'market_stock_not_found','Stock not found');const stored=CompanyDataSnapshot?await readLatestCompanySnapshot({CompanyDataSnapshot,stockId:stock.id,dataset:'news'}):null;if(stored)return res.json({success:true,data:stored,source:'database_snapshot'});const cacheKey=`v1:company-news:${stock.id}`;const cached=await cacheService.get(cacheKey);if(cached)return res.json({success:true,data:cached,source:'cache'});let providerPayload=null;try{providerPayload=await fetchCompanyNews(stock.code)}catch(_){}const data=normalizeCompanyNews({symbol:stock.code,providerPayload});await cacheService.set(cacheKey,data,data.status==='unavailable'?15:60,'company_news');return res.json({success:true,data,source:providerPayload?'provider':'provider_unavailable'})}catch(error){console.error('[Stock Controller] Company news failed:',error.message);return httpError(res,500,'market_company_news_failed','Unable to load company news')}});
 
   router.get('/:id', async (req, res) => {
     try {
