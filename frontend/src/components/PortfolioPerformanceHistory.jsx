@@ -92,6 +92,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
   const missingPriceSessions = points.filter(point => point.incomplete_reasons?.includes('missing_prices') || point.missing_stock_ids?.length).length
   const unresolvedEventSessions = points.filter(point => point.incomplete_reasons?.includes('unresolved_event') || point.unresolved_event_ids?.length).length
   const latest = [...points].reverse().find(point => point.status === 'complete')
+  const latestSession = points.at(-1)
   const mwr = describeMwr(data?.mwr, percent, t)
 
   return <section className="panel performance-history-panel" aria-labelledby={titleId} aria-busy={state.status === 'loading'} lang={language}>
@@ -100,7 +101,7 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
         <span className="eyebrow accent">{t('portfolio.history.eyebrow')}</span>
         <h3 id={titleId}>{t('portfolio.history.title')}</h3>
         <p className="muted-text">{t('portfolio.history.subtitle')}</p>
-        {latest && <p className="performance-history-cutoff"><span className="chip neutral">EOD · {longDate(latest.date)}</span><span>{t('portfolio.history.cutoff')}</span></p>}
+        {latestSession && <p className="performance-history-cutoff"><span className="chip neutral">EOD · {longDate(latestSession.date)}</span><span>{latest && latest.date !== latestSession.date ? t('portfolio.history.lastComplete', { date: longDate(latest.date) }) : t('portfolio.history.cutoff')}</span></p>}
       </div>
       <div className="performance-history-actions">
         <button type="button" className="ghost-btn performance-history-refresh" onClick={() => setRetry(value => value + 1)} disabled={state.status === 'loading'}>{state.status === 'loading' ? t('portfolio.history.refreshing') : t('portfolio.history.refresh')}</button>
