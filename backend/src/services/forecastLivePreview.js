@@ -71,7 +71,11 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
   }));
 
   const topClass = [...uiProbabilities].sort((a, b) => b.value - a.value)[0].class;
-  const recommended = uiProbabilities.map(item => ({ class: item.class, value: Number(item.value.toFixed(6)) }));
+  // Seal display probabilities at six decimals while preserving the simplex.
+  // Independent rounding can produce 0.999999/1.000001 and break immutable issuance.
+  const rounded = uiProbabilities.slice(0, -1).map(item => Number(item.value.toFixed(6)));
+  rounded.push(Number((1 - rounded.reduce((sum, value) => sum + value, 0)).toFixed(6)));
+  const recommended = uiProbabilities.map((item, index) => ({ class: item.class, value: rounded[index] }));
 
   return {
     version: 'forecast_live_preview_v1',

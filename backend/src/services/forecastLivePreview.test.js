@@ -8,7 +8,7 @@ test('builds basket features per symbol instead of treating different symbols as
   expect(preview).toMatchObject({ status: 'live_preview', synthetic: false, research_only: false, market_accuracy_verified: false, horizon_sessions: 5,
     model: { type: 'current-data-softmax-prototype', history_window: 21 } });
   expect(preview.probabilities).toHaveLength(3);
-  expect(preview.probabilities.reduce((sum, item) => sum + item.value, 0)).toBeCloseTo(1, 5);
+  expect(Math.abs(preview.probabilities.reduce((sum, item) => sum + item.value, 0) - 1)).toBeLessThan(1e-12);
 });
 test('rejects a basket when no symbol has a complete 21-session history', () => {
   expect(() => buildLiveForecastPreview({ currentData: { provider: 'vnstock', rows: rows('AAA', 100, 1).slice(0, 20) } })).toThrow('insufficient_history');
