@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Live snapshot v2 và chu kỳ EOD tự động
+
+- Thêm baseline current-data không leakage: từ các outcome breadth lịch sử đã hoàn tất trước issuance, frequency dùng Laplace smoothing và persistence đóng băng theo outcome gần nhất. Training window/hash, fit cutoff và probability được seal trong `forecast_live_shadow_payload_v2`.
+- Phát hành thành công hai snapshot v2 kỳ 1/5 cho `as_of=2026-10-13`, model identity `forecast_current_softmax_prototype_v2`; snapshot v1 cũ được giữ nguyên. Chạy lại trả `snapshot_exists` cho cả hai v2.
+- Thêm `cycle:forecast-live` và scheduler development opt-in `FORECAST_LIVE_CYCLE_ENABLED=true`, mặc định 16:30 thứ Hai–Sáu, múi giờ Asia/Ho_Chi_Minh. Chu kỳ luôn materialize trước rồi mới evaluate; issuance lỗi thì không chạy evaluator.
+- Chạy chu kỳ thật đạt: bốn snapshot v1/v2 vẫn pending vì chưa có phiên sau 13/10, không ghi outcome giả. Targeted backend 6 suite, 24/24 đạt.
+- Tiếp theo: sau EOD kế tiếp xác nhận horizon 1 chuyển measured cho cả v1/v2; theo dõi scheduler log và tích lũy v2 cohort đến 20 outcome trước khi mở score/baseline comparison.
+
 ## 2026-10-13 — Cohort current-data độc lập trên UI
 
 - Thêm development-only `GET /api/forecast/live-cohort?horizon=1|5&minimum_samples=20`. Query chỉ nhận snapshot `synthetic=false`, `research_only=false`, kiểm integrity snapshot/outcome và tuyệt đối không trộn research fixture.

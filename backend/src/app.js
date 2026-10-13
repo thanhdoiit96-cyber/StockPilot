@@ -18,6 +18,7 @@ const startRecommendationEvaluationJob = require('./jobs/recommendationEvaluatio
 const startRecommendationLifecycleCheckpointJob = require('./jobs/recommendationLifecycleCheckpointJob');
 const { startVnstockListingJob } = require('./jobs/vnstockListingJob');
 const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
+const { startForecastLiveCycleJob } = require('./jobs/forecastLiveCycleJob');
 const marketDataController = require('./controllers/marketDataController');
 const authController = require('./controllers/authController');
 const watchlistController = require('./controllers/watchlistController');
@@ -251,6 +252,9 @@ async function start() {
     }
     if (startQuoteFreshnessJob({ logger })) {
       logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
+    }
+    if (startForecastLiveCycleJob({ logger })) {
+      logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
     }
   } catch (error) {
     logger.error(error.code === 'EADDRINUSE'

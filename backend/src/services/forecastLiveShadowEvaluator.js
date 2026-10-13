@@ -6,7 +6,7 @@ const plain = value => value?.get ? value.get({ plain: true }) : value;
 
 function evaluateLiveShadowEvidence(snapshotInput, rows = [], now = new Date()) {
   const snapshot = plain(snapshotInput);
-  if (!snapshot || !verifySnapshot(snapshot) || snapshot.synthetic !== false || snapshot.research_only !== false || snapshot.payload?.version !== 'forecast_live_shadow_payload_v1') throw new Error('Invalid live shadow snapshot');
+  if (!snapshot || !verifySnapshot(snapshot) || snapshot.synthetic !== false || snapshot.research_only !== false || !['forecast_live_shadow_payload_v1','forecast_live_shadow_payload_v2'].includes(snapshot.payload?.version)) throw new Error('Invalid live shadow snapshot');
   const horizon = snapshot.horizon_sessions, symbols = snapshot.payload.provenance?.symbols || [];
   if (![1, 5].includes(horizon) || !symbols.length || !Number.isFinite(now.getTime())) throw new Error('Invalid live shadow policy');
   const normalized = rows.map(row => ({ symbol: String(row.instrument?.symbol || '').toUpperCase(), session: String(row.observed_at || '').slice(0, 10), close: Number(row.quote?.close),

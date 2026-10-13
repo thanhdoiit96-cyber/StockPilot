@@ -6,6 +6,7 @@ const { createVnstockBridgeFetcher } = require('../src/market-data/adapters/vnst
 const { fetchCurrentForecastData } = require('../src/services/forecastCurrentData');
 const { buildLiveForecastPreview } = require('../src/services/forecastLivePreview');
 const { createLiveShadowSnapshot } = require('../src/services/forecastLiveShadow');
+const { buildContemporaneousLiveBaseline } = require('../src/services/forecastLiveBaseline');
 
 (async () => {
   const symbols = String(process.env.FORECAST_CURRENT_SYMBOLS || 'FPT,HPG,VHM').split(',').map(value => value.trim().toUpperCase()).filter(Boolean);
@@ -18,8 +19,9 @@ const { createLiveShadowSnapshot } = require('../src/services/forecastLiveShadow
     localOnly: true, license: process.env.VNSTOCK_LICENSE || '', minimumSamples: 21, coverage: 1, evidenceIntegrity: true });
   const results = [];
   for (const horizon of [1, 5]) {
-    const preview = buildLiveForecastPreview({ currentData, horizon, modelVersion: 'forecast_current_softmax_prototype_v1' });
-    const result = await createLiveShadowSnapshot({ models, preview, currentData, license, env: { ...process.env, NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' } });
+    const preview = buildLiveForecastPreview({ currentData, horizon, modelVersion: 'forecast_current_softmax_prototype_v2' });
+    const baseline = buildContemporaneousLiveBaseline(currentData, horizon);
+    const result = await createLiveShadowSnapshot({ models, preview, currentData, baseline, license, env: { ...process.env, NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' } });
     results.push({ horizon_sessions: horizon, status: result.status, id: result.snapshot.id, as_of: result.snapshot.as_of, evidence_sha256: result.snapshot.payload.provenance.evidence_sha256 });
   }
   console.log(JSON.stringify({ status: 'live_shadow_materialized', provider: currentData.provider, as_of: currentData.as_of, synthetic: false, market_accuracy_verified: false, results }, null, 2));
