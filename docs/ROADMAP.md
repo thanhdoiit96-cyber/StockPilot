@@ -5,6 +5,7 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 ## Cập nhật 2026-10-13 — Current-data forecast safety
 
 - M2/F-flow: persistence, provider job, API/audit, panel data-driven và feature-research contract cutoff-safe đã có. API key đã cấu hình nhưng tài khoản vẫn free, không package/capability `foreign_flow`; PDF `license-2026.09` chỉ là giấy phép phần mềm và không cấp quyền dữ liệu upstream. Audit 0/551 nên UI ẩn. Sau khi nâng quyền và xác minh upstream: backfill → audit → browser smoke → walk-forward/ablation.
+- Entitlement automation: `check:foreign-flow-entitlement` là gate bắt buộc trước backfill; chỉ `eligible` mới tiếp tục. Community/no-package dừng nonzero mà không gọi ingestion hoặc hiển thị secret.
 - Checkpoint EOD đã chạy lại trên provider ngày 13/10: issuance v2 bất biến và evaluator giữ cả horizon 1/5 ở `pending` do chưa quan sát phiên tương lai. Chuẩn hóa xác suất đã được gia cố để tổng vẫn bằng 1 sau khi làm tròn 6 chữ số; không mở score hoặc outcome trước hạn.
 - Hoàn thành opt-in kép backend/frontend cho local live preview; production và development chưa cấu hình không được gọi provider. Current-data dùng lịch sử bounded, feature theo từng symbol và probability contract fail-closed.
 - Loại bỏ proper-score giả từng dùng predicted class làm outcome. Shadow evaluation chỉ báo readiness cho tới khi cùng immutable issuance có future outcome; market accuracy và live activation tiếp tục false/blocked.

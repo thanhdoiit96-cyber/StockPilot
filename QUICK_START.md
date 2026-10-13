@@ -353,6 +353,13 @@ Sau khi tài khoản Vnstock đã có capability `foreign_flow` và quyền sử
 
 ```powershell
 cd D:\MyProject\backend
+npm.cmd run check:foreign-flow-entitlement
+```
+
+Chỉ tiếp tục khi preflight trả `status: eligible`. Community/no-package trả exit khác 0 và không in API key.
+
+```powershell
+cd D:\MyProject\backend
 $env:VNSTOCK_FOREIGN_FLOW_ENABLED='true'
 $env:VNSTOCK_FOREIGN_FLOW_SYMBOLS='FPT,HPG,VHM'
 $env:VNSTOCK_FOREIGN_FLOW_FROM='2026-10-01'
