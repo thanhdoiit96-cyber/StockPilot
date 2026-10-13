@@ -1170,6 +1170,23 @@ th {
 .company-profile-provenance { display:flex; flex-wrap:wrap; gap:8px 16px; padding-top:12px; border-top:1px solid rgba(148,163,184,.13); color:var(--muted); font-size:11px; }
 @media (max-width:800px) { .company-profile-heading,.company-profile-identity { flex-direction:column; } .company-profile-identity dl,.company-profile-metrics { width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); } .company-profile-body { grid-template-columns:1fr; } }
 @media (max-width:480px) { .company-profile-panel { padding:17px; } .company-profile-identity dl,.company-profile-metrics { grid-template-columns:1fr; } }
+.company-people-panel { display:grid; gap:18px; padding:22px; }
+.company-people-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.company-people-grid>article { min-width:0; border:1px solid rgba(148,163,184,.15); border-radius:13px; overflow:hidden; background:rgba(15,23,42,.25); }
+.company-people-subhead { padding:15px 17px; border-bottom:1px solid rgba(148,163,184,.13); }
+.company-people-subhead h4 { margin:0 0 3px; }
+.company-people-subhead span,.company-person-row small,.company-people-inline-empty,.company-people-empty span { color:var(--muted); font-size:12px; }
+.company-people-list { display:grid; }
+.company-person-row { display:flex; justify-content:space-between; align-items:center; gap:14px; min-height:68px; padding:12px 17px; border-bottom:1px solid rgba(148,163,184,.1); }
+.company-person-row:last-child { border-bottom:0; }
+.company-person-row>div:first-child { min-width:0; display:grid; gap:4px; }
+.company-person-row strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.company-person-values { flex:none; display:grid; justify-items:end; gap:4px; }
+.company-person-values>span { font-weight:800; font-variant-numeric:tabular-nums; }
+.company-people-inline-empty { margin:0; padding:22px 17px; }
+.company-people-empty { min-height:120px; display:grid; place-content:center; justify-items:center; gap:7px; padding:22px; text-align:center; border:1px dashed rgba(148,163,184,.22); border-radius:13px; }
+@media (max-width:800px) { .company-people-grid { grid-template-columns:1fr; } }
+@media (max-width:480px) { .company-people-panel { padding:17px; } .company-person-row { align-items:flex-start; } }
 
 .message-bubble > p { margin: 0; }
 .advisor-context { display: grid; grid-template-columns: auto minmax(180px, 320px) 1fr; align-items: center; gap: 10px; }

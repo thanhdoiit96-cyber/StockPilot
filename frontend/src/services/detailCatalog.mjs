@@ -1,6 +1,10 @@
 // Source keys bridge the existing Detail components' translate prop.
 // Only UI-owned strings belong here; provider narrative is kept in its original language.
 const entries = [
+  ['SỞ HỮU & QUẢN TRỊ', 'OWNERSHIP & GOVERNANCE'], ['Cổ đông và lãnh đạo', 'Shareholders and leadership'], ['Cơ cấu sở hữu công bố và đội ngũ điều hành hiện có từ nhà cung cấp dữ liệu.', 'Published ownership structure and current leadership available from the data provider.'],
+  ['Dữ liệu khả dụng', 'Data available'], ['Dữ liệu một phần', 'Partial data'], ['Đang tải thông tin cổ đông và lãnh đạo…', 'Loading shareholders and leadership…'], ['Chưa tải được thông tin cổ đông và lãnh đạo.', 'Unable to load shareholders and leadership.'],
+  ['Chưa công bố', 'Not disclosed'], ['Chưa có dữ liệu công bố phù hợp', 'No suitable published data'], ['Hồ sơ giá và phân tích kỹ thuật vẫn hoạt động bình thường. Hệ thống không tự suy diễn danh sách cổ đông hoặc lãnh đạo.', 'Price history and technical analysis remain available. The system does not infer shareholders or leadership.'],
+  ['Cổ đông lớn', 'Major shareholders'], ['Ban lãnh đạo', 'Leadership'], ['bản ghi', 'records'], ['Chưa có dữ liệu cổ đông.', 'No shareholder data.'], ['Chưa có dữ liệu lãnh đạo.', 'No leadership data.'], ['Thông tin sở hữu có thể trễ so với giao dịch thực tế.', 'Ownership disclosures may lag actual transactions.'],
   ['Tổng quan', 'Overview'], ['Doanh nghiệp', 'Company'], ['Biểu đồ', 'Chart'], ['Phân tích', 'Analysis'],
   ['DOANH NGHIỆP', 'COMPANY'], ['Hồ sơ doanh nghiệp', 'Company profile'], ['Thông tin nền tảng để đánh giá doanh nghiệp bên cạnh diễn biến giá và kỹ thuật.', 'Core company information to complement price and technical analysis.'],
   ['Đủ dữ liệu provider', 'Provider data available'], ['Dữ liệu cơ bản', 'Basic data'], ['Đang tải hồ sơ doanh nghiệp…', 'Loading company profile…'], ['Chưa tải được hồ sơ doanh nghiệp.', 'Unable to load the company profile.'], ['Thử lại', 'Retry'],

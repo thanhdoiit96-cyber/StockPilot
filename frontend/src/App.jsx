@@ -34,6 +34,7 @@ import DetailRiskPlan from "./components/DetailRiskPlan.jsx";
 import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
 import CompanyProfilePanel from "./components/CompanyProfilePanel.jsx";
+import CompanyPeoplePanel from "./components/CompanyPeoplePanel.jsx";
 import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 import { sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
@@ -2184,6 +2185,10 @@ function lv() {
               watched: yt.has(String(Ee.data.code || "").toUpperCase())
             })
           }), O.jsx(CompanyProfilePanel, {
+            stockId: me.id,
+            language: profileLanguage,
+            translate: detailText
+          }), O.jsx(CompanyPeoplePanel, {
             stockId: me.id,
             language: profileLanguage,
             translate: detailText
