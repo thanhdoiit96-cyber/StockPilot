@@ -1,6 +1,7 @@
 export const catalogs = {
   vi: {
     'portfolio.history.cutoff': 'TWR/MWR chỉ thay đổi sau khi có phiên EOD đầy đủ mới; giá trị hiện tại phía trên có thể thay đổi theo quote intraday.',
+    'portfolio.history.lastComplete': 'Dữ liệu thị trường đã tới phiên này, nhưng phiên định giá đầy đủ gần nhất là {date}. Kiểm tra cảnh báo bên dưới để bổ sung dòng tiền hoặc dữ liệu còn thiếu.',
     'portfolio.history.refresh': 'Làm mới EOD',
     'portfolio.history.refreshing': 'Đang làm mới…',
     'portfolio.ledger.scrollHint': 'Vuốt ngang trong bảng để xem thêm giá, nguồn và thao tác.',
@@ -52,6 +53,7 @@ export const catalogs = {
   },
   en: {
     'portfolio.history.cutoff': 'TWR/MWR changes only after a new complete EOD session; the current value above may move with intraday quotes.',
+    'portfolio.history.lastComplete': 'Market data reaches this session, but the latest complete valuation is {date}. Review the warning below for missing cash flows or data.',
     'portfolio.history.refresh': 'Refresh EOD',
     'portfolio.history.refreshing': 'Refreshing…',
     'portfolio.ledger.scrollHint': 'Swipe horizontally in the table to see price, source and actions.',

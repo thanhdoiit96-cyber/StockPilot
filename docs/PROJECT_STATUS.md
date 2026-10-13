@@ -3,8 +3,9 @@
 ## 2026-10-13 — Làm rõ độ tươi hiệu suất danh mục
 
 - Xác minh live qua Preview: giá trị danh mục có thể đổi theo quote intraday, nhưng PostgreSQL mới nhất vẫn là EOD `2026-10-12`, coverage `340/551` (61,7%). Vì history endpoint chỉ dùng giá đóng cửa đã lưu, TWR/MWR và biểu đồ không đổi trong ngày 13/10 là hành vi đúng, không phải phép tính bỏ qua biến động giá.
+- Audit theo từng portfolio xác nhận trường hợp có 15 giao dịch chỉ hoàn chỉnh tới `2026-10-02`; sáu phiên `05/10–12/10` đều có đủ giá nhưng bị khóa vì `negative_cash_balance`, không phải thiếu EOD. UI trước đó dùng ngày complete làm chip EOD nên gây hiểu nhầm. Chip nay hiển thị phiên thị trường mới nhất `12/10` và nêu riêng phiên định giá đầy đủ gần nhất `02/10`; người dùng cần ghi nhận khoản nạp vốn trước hoặc cùng ngày mua, hệ thống không tự tạo dòng tiền giả.
 - UI lịch sử nay hiển thị chip ngày EOD gần nhất và giải thích rõ ranh giới với giá trị intraday phía trên. Thêm nút “Làm mới EOD”, tự tải lại mỗi 5 phút khi tab hoạt động và khi cửa sổ nhận focus; không đưa quote intraday vào chuỗi `daily_close_twr_v1`.
-- Frontend regression 85/85, encoding/error-contract đạt; production build và bundle integrity đạt với `index-Dh7Pa4uT.js`. Điểm tiếp tục: sau EOD mới, kiểm tra ingestion coverage cho các mã thực sự đang nắm giữ và xác nhận điểm mới/TWR thay đổi; coverage toàn thị trường chưa đạt nên không suy diễn dữ liệu hoàn chỉnh.
+- Frontend regression 85/85, encoding/error-contract đạt; production build và bundle integrity đạt với `index-BuWOjnmQ.js`. Điểm tiếp tục: sau khi bổ sung dòng tiền có ngày đúng thực tế, xác nhận các phiên 05–12/10 chuyển complete và TWR/MWR được công bố; không sửa ledger thay người dùng.
 
 ## 2026-10-13 — Audit và nền tảng dòng tiền khối ngoại
 
