@@ -1025,3 +1025,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành materializer development-only bằng EOD Vnstock hiện tại, snapshot append-only cho horizon 1/5, provenance/hash evidence và nhãn `synthetic=false`, `market_accuracy_verified=false`. Hai snapshot phiên 2026-10-13 đã được tạo trong PostgreSQL development; chạy lại idempotent theo nguyên tắc first issuance wins.
 - Fixture tháng 3 không còn là nguồn của bước phát hành current-data. Nó vẫn được giữ riêng cho regression/replay lịch sử và không được trộn vào cohort live.
 - Tiếp theo: evaluator current-data xác định target bằng phiên EOD distinct thực tế của provider sau ngày phát hành, append outcome một lần khi đủ cutoff, và không chấm điểm pending. Sau đó bổ sung aggregate live cohort tách biệt; production/UI chính thức tiếp tục khóa đến khi đủ license, cỡ mẫu, calibration và audit gate.
+
+## Cập nhật ưu tiên 2026-10-13 — Current-data outcome evaluator
+
+- Hoàn thành evaluator dùng phiên provider thực tế, sealed basket, coverage đầy đủ và outcome event append-only. Snapshot 2026-10-13 kỳ 1/5 vẫn pending đúng vì chưa có phiên sau ngày phát hành.
+- UI đã tách current-data monitoring khỏi replay tháng 3 bằng tab; baseline research được ghi rõ là kiểm thử pipeline, không phải bằng chứng live hay training của prototype hiện tại.
+- Tiếp theo: chạy evaluator sau EOD, xây endpoint/aggregate cohort `synthetic=false` tách biệt hoàn toàn; chỉ hiển thị proper score/baseline current-data khi từng model/horizon đạt tối thiểu 20 outcome và vượt integrity/license gate.

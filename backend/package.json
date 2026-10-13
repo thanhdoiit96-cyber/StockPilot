@@ -26,6 +26,7 @@
     "materialize:forecast-preview": "node scripts/materialize-forecast-preview.cjs",
     "materialize:forecast-rolling": "node scripts/materialize-forecast-rolling.cjs",
     "materialize:forecast-live-shadow": "node scripts/materialize-forecast-live-shadow.cjs",
+    "evaluate:forecast-live-shadow": "node scripts/evaluate-forecast-live-shadow.cjs",
     "evaluate:forecast-preview": "node scripts/evaluate-forecast-preview.cjs",
     "lint": "eslint src/**/*.js",
     "migrate": "sequelize-cli db:migrate",
