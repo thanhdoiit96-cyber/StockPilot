@@ -6,8 +6,8 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 
 - Phase 1 Hồ sơ doanh nghiệp đã hoàn thành ở trang Chi tiết mã bằng contract local-first, provider enrichment có cache và trạng thái partial rõ ràng.
 - Phase 2 Cổ đông/lãnh đạo đã có contract và UI tải riêng, hỗ trợ partial/unavailable mà không tạo dữ liệu giả; kiểm chứng record live còn phụ thuộc độ ổn định provider.
-- Thứ tự tiếp theo: Vốn & cổ tức → Tài chính → Tin tức/sự kiện. Mỗi nhóm tải riêng, có ngày dữ liệu/provenance và chỉ mở production khi quyền phân phối được xác nhận.
-- Khi có từ ba nhóm trở lên, chuyển vùng doanh nghiệp thành tab con giữ state trong URL; không tăng tải đầu trang bằng cách gọi mọi endpoint cùng lúc.
+- Phase 3 Vốn & cổ tức đã có contract/UI và ranh giới rõ giữa disclosure provider với event ledger đã xác nhận. Ba nhóm đã chuyển thành tab con giữ state trong URL, chỉ tải tab đang mở.
+- Thứ tự tiếp theo: Tài chính → Tin tức/sự kiện. Mỗi nhóm tải riêng, có ngày dữ liệu/provenance và chỉ mở production khi quyền phân phối được xác nhận.
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety
 

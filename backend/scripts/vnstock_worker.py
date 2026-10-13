@@ -150,6 +150,24 @@ def company_people(request):
     return result
 
 
+def company_capital(request):
+    symbol = str(request.get("symbol") or "").strip().upper()
+    source = str(request.get("source") or "kbs").strip().lower()
+    if not symbol:
+        return {"capital_history": [], "events": [], "errors": [{"error": "symbol is required"}]}
+    result = {"capital_history": [], "events": [], "provider": source, "route": "company.capital_history+events", "errors": []}
+    company = Reference().company(symbol)
+    for scope in ("capital_history", "events"):
+        try:
+            with PROVIDER_GATE:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    frame = getattr(company, scope)(source=source)
+            result[scope] = frame.to_dict(orient="records")
+        except Exception as error:
+            result["errors"].append({"scope": scope, "error": str(error)})
+    return result
+
+
 def intraday(request):
     """Return the latest intraday trades for one or more symbols."""
     source = str(request.get("source") or "VCI").upper()
@@ -214,7 +232,7 @@ class Handler(BaseHTTPRequestHandler):
         is_partial = False
         try:
             length = int(self.headers.get("Content-Length", "0")); request = json.loads(self.rfile.read(length) or b"{}")
-            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else company_profile(request) if self.path == "/company-profile" else company_people(request) if self.path == "/company-people" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
+            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else company_profile(request) if self.path == "/company-profile" else company_people(request) if self.path == "/company-people" else company_capital(request) if self.path == "/company-capital" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
             is_partial = bool(payload.get("errors"))
