@@ -3,6 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { artifactHash } = require('./forecastArtifact');
+const { replayForecastDataset } = require('./forecastReplay');
 const { forecastResearchFixture } = require('./forecastResearchFixture');
 const script = path.resolve(__dirname, '../../scripts/report-forecast-research.cjs');
 function fixtureArtifact() {
@@ -62,4 +63,15 @@ test('valid artifact with revoked calendar reports exclusions, not success metri
     expect(report.summary.origin_exclusion_reasons).toEqual({ calendar_unverified: 2 });
     expect(report.summary.horizons.every(h => h.status === 'unavailable' && h.scored_samples === 0)).toBe(true);
   } finally { fs.unlinkSync(file); fs.rmdirSync(dir); }
+});
+
+test('fixture report exposes a research-only F2 model summary for each horizon', () => {
+  const report = replayForecastDataset(forecastResearchFixture());
+  const summary = require('./forecastReport').summarizeForecastReport(report);
+  expect(summary.horizons.length).toBe(2);
+  expect(summary.horizons.every(h => h.model.status === 'evaluated' || h.model.status === 'unavailable')).toBe(true);
+  expect(summary.horizons.every(h => h.model.summary && h.model.summary.research_only === true)).toBe(true);
+  expect(summary.horizons.every(h => h.model.summary && h.model.summary.market_accuracy_verified === false)).toBe(true);
+  expect(summary.horizons.every(h => h.model.summary && Array.isArray(h.model.summary.probability_summary.by_class))).toBe(true);
+  expect(summary.horizons[0].model.summary.probability_summary.classes).toEqual(['declining', 'balanced', 'advancing']);
 });

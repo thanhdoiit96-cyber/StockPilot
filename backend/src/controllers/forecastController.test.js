@@ -14,7 +14,7 @@ const snapshot = { id: '11111111-1111-4111-8111-111111111111', provider: 'fixtur
 const outcomePayload = validateOutcome(snapshot, { actual_class: 'balanced', target_session: '2025-03-23', outcome_available_at: '2025-03-23T19:00:00+07:00' });
 snapshot.outcome = { payload: outcomePayload, payload_sha256: artifactHash(outcomePayload) };
 const listHistory = async () => ({ items: [snapshot], has_more: false, next_cursor: null });
-function app(env, loadArtifact = () => artifact, history = listHistory, cohorts = async () => [snapshot]) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history, listCohorts: cohorts })); return instance; }
+function app(env, loadArtifact = () => artifact, history = listHistory, cohorts = async () => [snapshot], currentDataFetcher) { const instance = express(); instance.use('/api/forecast', createForecastController({ env, loadArtifact, listHistory: history, listCohorts: cohorts, currentDataFetcher })); return instance; }
 test('development exposes a no-store synthetic research preview for both horizons', async () => {
   for (const horizon of [1, 5]) {
     const response = await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-preview').query({ horizon });
@@ -24,12 +24,87 @@ test('development exposes a no-store synthetic research preview for both horizon
     expect(response.body.data.artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
   }
 }, 15000);
+test('development exposes a current-data preview only when the live gate passes freshness checks', async () => {
+  const currentDataFetcher = jest.fn(async () => ({
+    status: 'current_data_ready',
+    provider: 'vnstock',
+    as_of: '2026-10-12T02:00:00.000Z',
+    fetched_at: '2026-10-12T06:00:00.000Z',
+    staleness_days: 0.5,
+    maximum_staleness_days: 7,
+    live: true,
+    synthetic: false,
+    research_only: false,
+    market_accuracy_verified: false,
+    rows: [{ instrument: { symbol: 'FPT' }, observed_at: '2026-10-12T02:00:00.000Z', quote: { close: '123.45', volume: '1000', currency: 'VND' } }]
+  }));
+  const response = await request(app({ NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' }, () => artifact, listHistory, async () => [snapshot], currentDataFetcher)).get('/api/forecast/current-preview').query({ symbols: 'FPT,HPG', maximum_staleness_days: 7 });
+  expect(response.status).toBe(200);
+  expect(response.headers['cache-control']).toBe('no-store');
+  expect(response.body.data).toMatchObject({ status: 'current_data_preview', mode: 'live', provider: 'vnstock', live: true, synthetic: false, research_only: false, market_accuracy_verified: false });
+  expect(currentDataFetcher).toHaveBeenCalled();
+});
+test('development exposes a normalized live-preview response using current data and softmax model probabilities', async () => {
+  const currentDataFetcher = jest.fn(async () => ({
+    status: 'current_data_ready',
+    provider: 'vnstock',
+    as_of: '2026-10-12T02:00:00.000Z',
+    fetched_at: '2026-10-12T06:00:00.000Z',
+    staleness_days: 0.5,
+    maximum_staleness_days: 7,
+    live: true,
+    synthetic: false,
+    research_only: false,
+    market_accuracy_verified: false,
+    rows: Array.from({ length: 25 }, (_, index) => ({
+      instrument: { symbol: 'FPT' },
+      observed_at: new Date(Date.UTC(2026, 9, 12 - (24 - index))).toISOString(),
+      quote: { close: String(100 + index), volume: '1000', currency: 'VND' }
+    }))
+  }));
+  const response = await request(app({ NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' }, () => artifact, listHistory, async () => [snapshot], currentDataFetcher)).get('/api/forecast/live-preview').query({ symbols: 'FPT', maximum_staleness_days: 7, horizon: 5 });
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({ status: 'live_preview', mode: 'live', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: 5 });
+  expect(Array.isArray(response.body.data.probabilities)).toBe(true);
+  expect(response.body.data.probabilities.length).toBe(3);
+  expect(response.body.data.model.summary.top_class).toBeTruthy();
+});
+test('development exposes a live evaluation summary only when current data is valid and fresh', async () => {
+  const currentDataFetcher = jest.fn(async () => ({
+    status: 'current_data_ready',
+    provider: 'vnstock',
+    as_of: '2026-10-12T02:00:00.000Z',
+    fetched_at: '2026-10-12T06:00:00.000Z',
+    staleness_days: 0.4,
+    maximum_staleness_days: 7,
+    live: true,
+    synthetic: false,
+    research_only: false,
+    market_accuracy_verified: false,
+    rows: Array.from({ length: 25 }, (_, index) => ({
+      instrument: { symbol: 'FPT' },
+      observed_at: new Date(Date.UTC(2026, 9, 12 - (24 - index))).toISOString(),
+      quote: { close: String(100 + index), volume: '1000', currency: 'VND' }
+    }))
+  }));
+  const response = await request(app({ NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' }, () => artifact, listHistory, async () => [snapshot], currentDataFetcher)).get('/api/forecast/live-evaluation').query({ symbols: 'FPT', maximum_staleness_days: 7, horizon: 5 });
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({ status: 'live_evaluation_ready', mode: 'live', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, decision: 'ready_for_shadow_evaluation' });
+  expect(response.body.data.summary.by_class.length).toBe(3);
+});
 test('production and an explicit development disable return 404 without building a report', async () => {
   const buildReport = jest.fn();
   for (const env of [{ NODE_ENV: 'production' }, { NODE_ENV: 'development', FORECAST_RESEARCH_PREVIEW: 'false' }]) {
     expect((await request(app(env, buildReport)).get('/api/forecast/research-preview?horizon=5')).status).toBe(404);
   }
   expect(buildReport).not.toHaveBeenCalled();
+});
+test('live forecast routes require an explicit development-only backend opt-in', async () => {
+  const currentDataFetcher = jest.fn();
+  for (const env of [{ NODE_ENV: 'production', FORECAST_LIVE_PREVIEW: 'true' }, { NODE_ENV: 'development' }]) {
+    expect((await request(app(env, () => artifact, listHistory, async () => [snapshot], currentDataFetcher)).get('/api/forecast/live-preview?horizon=5')).status).toBe(404);
+  }
+  expect(currentDataFetcher).not.toHaveBeenCalled();
 });
 test('invalid input is rejected and report generation failures are sanitized', async () => {
   expect((await request(app({ NODE_ENV: 'development' })).get('/api/forecast/research-preview?horizon=2')).status).toBe(400);

@@ -6,6 +6,7 @@ const stocks = ['AAA', 'BBB', 'FPT', 'ZZZ'].map(code => ({ id: code, code, name:
   website_url: code === 'AAA' ? 'javascript:alert(1)' : 'https://example.test/company/' + code }))
 
 async function setup(page, { rejectTransaction = false, board = true, breadthStatus = 'continuous', watchlist = true, recommendationItems = [], forecastFailures = 0 } = {}) {
+  await page.addInitScript(() => { globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = 'true' })
   let positions = [{ stock_id: 'ZZZ', symbol: 'ZZZ', quantity: 10 }, { stock_id: 'BBB', symbol: 'BBB', quantity: 0 }]
   let watch = Array.isArray(watchlist) ? watchlist : watchlist ? [{ stock_id: 'FPT', Stock: { code: 'FPT' } }] : []
   const transactions = []

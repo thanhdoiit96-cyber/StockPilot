@@ -67,4 +67,48 @@ function evaluateForecastModel({ samples = [], folds = [], horizon = 5 } = {}) {
     split_hash: baseline.split_hash, excluded: baseline.excluded, folds: results,
     status: results.some(f => f.status === 'available') ? 'evaluated' : 'unavailable' };
 }
-module.exports = { evaluateForecastModel };
+
+function summarizeForecastModel(report) {
+  if (!report || report.version !== 'forecast_softmax_prototype_v1') {
+    throw new Error('Forecast report must be a softmax prototype result');
+  }
+  const folds = Array.isArray(report.folds) ? report.folds : [];
+  const availableFolds = folds.filter(fold => fold.status === 'available');
+  const predictions = availableFolds.flatMap(fold => Array.isArray(fold.predictions) ? fold.predictions : []);
+  const classNames = Array.isArray(report.classes) ? report.classes : CLASSES;
+  const totalProbabilities = predictions.length ? predictions.reduce((sum, item) => sum + item.probabilities.reduce((acc, value) => acc + value, 0), 0) : 0;
+  const probabilitySummary = classNames.map((name, index) => {
+    const avg = predictions.length ? predictions.reduce((sum, item) => sum + (Number(item.probabilities?.[index]) || 0), 0) / predictions.length : 0;
+    return { class: name, average_probability: avg };
+  });
+  const metrics = availableFolds.map(fold => fold.metrics || { brier_multiclass_sum: 0, log_loss: 0 });
+  const metricSummary = metrics.length ? {
+    brier_multiclass_sum: metrics.reduce((sum, item) => sum + Number(item.brier_multiclass_sum || 0), 0) / metrics.length,
+    log_loss: metrics.reduce((sum, item) => sum + Number(item.log_loss || 0), 0) / metrics.length,
+    samples: metrics.reduce((sum, item) => sum + Number(item.samples || 0), 0)
+  } : { brier_multiclass_sum: null, log_loss: null, samples: 0 };
+  return {
+    version: report.version,
+    status: report.status,
+    research_only: report.research_only,
+    synthetic: report.synthetic,
+    calibrated: report.calibrated,
+    market_accuracy_verified: report.market_accuracy_verified,
+    horizon_sessions: report.horizon_sessions,
+    classes: classNames,
+    available_folds: availableFolds.length,
+    total_folds: folds.length,
+    metric_summary: metricSummary,
+    probability_summary: {
+      classes: classNames,
+      total_predictions: predictions.length,
+      expected_probability_total: totalProbabilities / Math.max(predictions.length, 1),
+      by_class: probabilitySummary
+    },
+    feature_summary: {
+      features: Array.isArray(report.features) ? report.features : KEYS.map(k => `basket_mean_${k}`),
+      optimizer: report.optimizer || null
+    }
+  };
+}
+module.exports = { evaluateForecastModel, summarizeForecastModel };

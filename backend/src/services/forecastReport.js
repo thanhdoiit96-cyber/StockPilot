@@ -1,4 +1,6 @@
 'use strict';
+const { summarizeForecastModel } = require('./forecastModel');
+
 function summarizeForecastReport(report) {
   const countReasons = items => items.reduce((counts, reason) => { counts[reason] = (counts[reason] || 0) + 1; return counts; }, {});
   return {
@@ -22,8 +24,9 @@ function summarizeForecastReport(report) {
         version: model.version, status: model.status, calibrated: model.calibrated,
         evaluated_folds: model.folds.filter(fold => fold.status === 'available').length,
         unavailable_reasons: countReasons(model.folds.filter(fold => fold.status !== 'available').map(fold => fold.reason)),
-        scored_samples: model.folds.reduce((sum, fold) => sum + (fold.metrics?.samples || 0), 0)
-      } : { status: 'not_run', evaluated_folds: 0, scored_samples: 0 }
+        scored_samples: model.folds.reduce((sum, fold) => sum + (fold.metrics?.samples || 0), 0),
+        summary: summarizeForecastModel(model)
+      } : { status: 'not_run', evaluated_folds: 0, scored_samples: 0, summary: null }
       });
     })
   };
