@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Tab Tài chính doanh nghiệp
+
+- Thêm worker `POST /company-financials`, API `GET /api/stocks/:id/company-financials` và contract `company_financials_v1`; chuẩn hóa kỳ, doanh thu, lợi nhuận hoạt động, lợi nhuận sau thuế và EPS từ income statement năm/quý.
+- Tab Tài chính chỉ mount khi được chọn qua `companyTab=financials`, hiển thị biểu đồ doanh thu/lợi nhuận và bảng KPI responsive; dữ liệu/đơn vị giữ theo provider và không ước tính trường thiếu.
+- Backend targeted đạt 19/19; frontend regression/encoding/error-contract đạt 85/85; build/bundle integrity đạt với `index-DBAA1M36.js`.
+- Probe trực tiếp bị proxy development chặn và provider chưa được kiểm chứng live. Điểm tiếp tục: xác nhận mapping/đơn vị trên response thật, sau đó mở rộng balance sheet/cash flow/ratios hoặc chuyển sang Tin tức & sự kiện nếu capability chưa ổn định.
+
 ## 2026-10-13 — Ưu tiên Lịch sử giá trên Chi tiết mã
 
 - Đổi thứ tự nội dung trang Chi tiết mã: hero → Lịch sử giá/nhận định nhanh → tab thông tin doanh nghiệp → Phân tích chuyên sâu. Dữ liệu giá phục vụ tác vụ chính được nhìn thấy trước, còn Hồ sơ/Cổ đông/Vốn vẫn ở cùng vùng tab và giữ lazy loading theo `companyTab`.

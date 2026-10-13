@@ -11,7 +11,7 @@ os.environ.setdefault("VNSTOCK_TELEMETRY", "off")
 for _proxy_key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
     if str(os.environ.get(_proxy_key, "")).lower() in {"http://127.0.0.1:9", "http://localhost:9"}:
         os.environ.pop(_proxy_key, None)
-from vnstock import Listing, Market, Reference
+from vnstock import Finance, Listing, Market, Reference
 from vnstock.api.quote import Quote
 from vnstock_price_board import price_board as fetch_price_board
 
@@ -168,6 +168,30 @@ def company_capital(request):
     return result
 
 
+def frame_records(frame, limit=8):
+    frame = frame.copy()
+    frame.columns = [" | ".join(str(part) for part in column if str(part) not in ("", "None")) if isinstance(column, tuple) else str(column) for column in frame.columns]
+    return frame.head(limit).to_dict(orient="records")
+
+
+def company_financials(request):
+    symbol = str(request.get("symbol") or "").strip().upper()
+    source = str(request.get("source") or "VCI").strip().upper()
+    if not symbol:
+        return {"annual": [], "quarterly": [], "errors": [{"error": "symbol is required"}]}
+    result = {"annual": [], "quarterly": [], "provider": source.lower(), "route": "finance.income_statement", "errors": []}
+    for period, target in (("year", "annual"), ("quarter", "quarterly")):
+        try:
+            with PROVIDER_GATE:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    finance = Finance(source=source, symbol=symbol, period=period, get_all=True, show_log=False)
+                    frame = finance.income_statement(period=period, lang="vi", dropna=True)
+            result[target] = frame_records(frame, 8)
+        except Exception as error:
+            result["errors"].append({"scope": target, "error": str(error)})
+    return result
+
+
 def intraday(request):
     """Return the latest intraday trades for one or more symbols."""
     source = str(request.get("source") or "VCI").upper()
@@ -232,7 +256,7 @@ class Handler(BaseHTTPRequestHandler):
         is_partial = False
         try:
             length = int(self.headers.get("Content-Length", "0")); request = json.loads(self.rfile.read(length) or b"{}")
-            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else company_profile(request) if self.path == "/company-profile" else company_people(request) if self.path == "/company-people" else company_capital(request) if self.path == "/company-capital" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
+            payload = listing(request) if self.path == "/listing" else eod(request) if self.path == "/eod" else foreign_flow(request) if self.path == "/foreign-flow" else company_profile(request) if self.path == "/company-profile" else company_people(request) if self.path == "/company-people" else company_capital(request) if self.path == "/company-capital" else company_financials(request) if self.path == "/company-financials" else intraday(request) if self.path == "/intraday" else price_board(request) if self.path == "/price-board" else None
             if payload is None:
                 self.send_error(404); return
             is_partial = bool(payload.get("errors"))

@@ -1207,6 +1207,18 @@ th {
 .company-ledger-note span { color:var(--muted); font-size:12px; line-height:1.5; }
 @media (max-width:800px) { .company-capital-grid { grid-template-columns:1fr; } .company-ledger-note { align-items:flex-start; flex-direction:column; } }
 @media (max-width:480px) { .company-tabs { padding:6px; } .company-tabs button { padding-inline:11px; } .company-capital-panel { padding:17px; } .company-capital-row,.company-event-row { grid-template-columns:1fr; gap:5px; } }
+.company-financial-panel { display:grid; gap:18px; padding:22px; }
+.financial-period-label,.financial-legend { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.financial-period-label span,.financial-legend { color:var(--muted); font-size:12px; }
+.financial-chart { height:210px; display:flex; align-items:stretch; gap:10px; padding:18px 14px 8px; border:1px solid rgba(148,163,184,.15); border-radius:13px; background:rgba(15,23,42,.25); }
+.financial-period { flex:1; min-width:36px; display:grid; grid-template-rows:1fr auto; gap:8px; text-align:center; font-size:11px; color:var(--muted); }
+.financial-bars { display:flex; align-items:flex-end; justify-content:center; gap:4px; min-height:0; }
+.financial-bars span { width:min(18px,40%); max-height:100%; border-radius:4px 4px 2px 2px; transition:height .25s ease; }
+.financial-bars .revenue,.financial-legend i.revenue { background:#3b82f6; }.financial-bars .profit,.financial-legend i.profit { background:#22c55e; }.financial-bars .profit.negative { background:#ef4444; }
+.financial-legend { justify-content:flex-start; gap:18px; }.financial-legend span { display:flex; align-items:center; gap:6px; }.financial-legend i { width:9px; height:9px; border-radius:3px; }
+.financial-table { display:grid; overflow-x:auto; border:1px solid rgba(148,163,184,.15); border-radius:12px; }
+.financial-table>div { min-width:620px; display:grid; grid-template-columns:1fr repeat(3,1.25fr); gap:12px; padding:11px 15px; border-bottom:1px solid rgba(148,163,184,.1); font-variant-numeric:tabular-nums; }.financial-table>div:last-child { border-bottom:0; }.financial-table span:not(:first-child) { text-align:right; }.financial-table-head { color:var(--muted); font-size:11px; font-weight:700; }
+@media(max-width:480px){.company-financial-panel{padding:17px}.financial-chart{height:180px;gap:5px;padding-inline:8px}.financial-period{min-width:28px}.financial-bars span{width:10px}}
 
 .message-bubble > p { margin: 0; }
 .advisor-context { display: grid; grid-template-columns: auto minmax(180px, 320px) 1fr; align-items: center; gap: 10px; }
