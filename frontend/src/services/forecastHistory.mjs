@@ -8,7 +8,7 @@ export async function fetchForecastLiveCohort(horizon, { signal, minimumSamples 
   const valid = data?.version === 'forecast_live_cohort_summary_v1' && data.status === 'live_cohort' && data.synthetic === false && data.research_only === false && data.live === true
     && data.market_accuracy_verified === false && data.horizon_sessions === horizon && data.minimum_samples === minimumSamples
     && Number.isInteger(data.predictions) && Number.isInteger(data.measured) && Number.isInteger(data.pending) && data.predictions === data.measured + data.pending
-    && ['insufficient_samples','awaiting_baseline'].includes(data.score_gate?.status) && data.score_gate.samples === data.measured
+    && ['insufficient_samples','awaiting_baseline','available'].includes(data.score_gate?.status) && Number.isInteger(data.score_gate.samples)
   return valid ? data : { status:'unavailable', reason:'invalid_contract' }
 }
 

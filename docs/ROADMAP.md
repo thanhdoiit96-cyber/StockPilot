@@ -1037,3 +1037,9 @@ Checkpoint post-ingest coverage 2026-10-08: auto-generation chỉ được phép
 - Hoàn thành endpoint và UI cohort current-data tách biệt; hiện mỗi horizon có một prediction pending, 0/20 outcome. Score không được suy từ replay hoặc page subset.
 - Gate hai tầng: tối thiểu 20 measured outcome mới có model proper score; baseline comparison chỉ mở nếu snapshot mới seal baseline contemporaneous. Hai live snapshot hiện hữu không bị sửa để thêm baseline hồi tố.
 - Tiếp theo: live snapshot schema v2 seal frequency/persistence baseline từ evidence chỉ có tại issuance, sau đó orchestration development phát hành sau EOD và evaluator chạy ở các EOD kế tiếp. Production tiếp tục khóa.
+
+## Cập nhật ưu tiên 2026-10-13 — Live snapshot v2 và EOD cycle
+
+- Hoàn thành snapshot v2 seal baseline frequency/persistence contemporaneous từ outcome lịch sử hoàn tất, có training hash/cutoff và model identity mới; v1 bất biến. PostgreSQL development đã có v2 kỳ 1/5 ngày 2026-10-13 và rerun idempotent.
+- Hoàn thành chu kỳ materialize → evaluate cùng scheduler development opt-in lúc 16:30 ICT ngày làm việc. Production không được phép bật job này.
+- Tiếp theo: quan sát lần chạy sau EOD đầu tiên, xác nhận outcome horizon 1 append-only và live cohort baseline-eligible tăng; tiếp tục tích lũy tối thiểu 20 measured v2 mỗi horizon trước khi hiển thị proper score.

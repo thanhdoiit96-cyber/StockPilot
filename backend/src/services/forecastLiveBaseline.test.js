@@ -1,0 +1,4 @@
+const { buildContemporaneousLiveBaseline }=require('./forecastLiveBaseline');
+const rows=[]; for(let day=1;day<=30;day+=1) for(const symbol of ['FPT','HPG','VHM']) rows.push({instrument:{symbol},observed_at:`2026-09-${String(day).padStart(2,'0')}T00:00:00Z`,quote:{close:100+day+(symbol==='VHM'?-day*.1:day*.1)}});
+const data={rows,fetched_at:'2026-09-30T10:00:00Z'};
+test('seals frequency and persistence only from completed pre-issuance outcomes',()=>{const result=buildContemporaneousLiveBaseline(data,5,{minimumOutcomes:20}); expect(result).toMatchObject({version:'forecast_live_baseline_v1',horizon_sessions:5,completed_outcomes:25,training_to:'2026-09-30'}); expect(result.frequency_probabilities.reduce((sum,item)=>sum+item.value,0)).toBeCloseTo(1); expect(result.training_hash).toMatch(/^[a-f0-9]{64}$/);});

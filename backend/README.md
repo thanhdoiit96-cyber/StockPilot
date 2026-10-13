@@ -84,6 +84,8 @@ Nếu worker Vnstock trả HTTP lỗi cho EOD/intraday, bridge giữ lại tối
 
 `GET /api/forecast/live-cohort?horizon=1|5&minimum_samples=20` tổng hợp riêng snapshot current-data. Endpoint khóa score dưới cỡ mẫu tối thiểu và không công bố baseline comparison nếu baseline chưa được seal đồng thời trong snapshot; không ghép baseline research tháng 3 vào cohort live.
 
+Snapshot live mới dùng schema v2: frequency baseline Laplace và frozen persistence chỉ học từ breadth outcome đã hoàn tất trước issuance; toàn bộ probability, training window/hash và fit cutoff được seal cùng prediction. V1 cũ không được sửa. Chạy thủ công cả chu kỳ bằng `npm run cycle:forecast-live`. Scheduler chỉ hoạt động khi development và `FORECAST_LIVE_CYCLE_ENABLED=true`; mặc định `30 16 * * 1-5`, timezone `Asia/Ho_Chi_Minh`, có thể đổi bằng `FORECAST_LIVE_CYCLE_CRON` và `FORECAST_LIVE_CYCLE_TIMEZONE`.
+
 CLI một lần này đặt `disableWorker` để không phụ thuộc worker HTTP đang chạy; adapter runtime không thay đổi hành vi ưu tiên `VNSTOCK_WORKER_URL`. Snapshot current-data được tách khỏi history/cohort research synthetic. License provider vẫn phải được xác nhận trước khi dùng ngoài local development hoặc diễn giải kết quả như hiệu suất thị trường.
 
 Python worker dùng một semaphore chung cho listing, EOD, intraday và price board. `VNSTOCK_WORKER_MAX_CONCURRENCY` mặc định là 1 và bị chặn trong khoảng 1–4; tăng giá trị chỉ khi đã đo upstream ổn định. HTTP server vẫn nhận request đồng thời nhưng provider calls được xếp hàng qua gate này. Client ngắt kết nối không tạo traceback BrokenPipe/ConnectionAborted trong log; health trả `max_concurrency` đang cấu hình.
