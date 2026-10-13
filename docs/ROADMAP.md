@@ -4,6 +4,7 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety
 
+- Checkpoint EOD đã chạy lại trên provider ngày 13/10: issuance v2 bất biến và evaluator giữ cả horizon 1/5 ở `pending` do chưa quan sát phiên tương lai. Chuẩn hóa xác suất đã được gia cố để tổng vẫn bằng 1 sau khi làm tròn 6 chữ số; không mở score hoặc outcome trước hạn.
 - Hoàn thành opt-in kép backend/frontend cho local live preview; production và development chưa cấu hình không được gọi provider. Current-data dùng lịch sử bounded, feature theo từng symbol và probability contract fail-closed.
 - Loại bỏ proper-score giả từng dùng predicted class làm outcome. Shadow evaluation chỉ báo readiness cho tới khi cùng immutable issuance có future outcome; market accuracy và live activation tiếp tục false/blocked.
 - Research build/UI vẫn hoạt động bằng opt-in riêng và không bị current-data fallback ngầm. Backend 94/94, frontend 81/81, Overview E2E 15/15.
