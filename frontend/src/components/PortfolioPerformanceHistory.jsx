@@ -74,6 +74,14 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
     return () => { mounted = false; controller.abort() }
   }, [active, token, refreshKey, sessions, retry])
 
+  useEffect(() => {
+    if (!active) return undefined
+    const refresh = () => { if (document.visibilityState === 'visible') setRetry(value => value + 1) }
+    const timer = window.setInterval(refresh, 5 * 60 * 1000)
+    window.addEventListener('focus', refresh)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [active])
+
   const data = state.data
   const points = Array.isArray(data?.points) ? data.points : []
   const geometry = useMemo(() => chartGeometry(points), [points])
@@ -92,9 +100,13 @@ export default function PortfolioPerformanceHistory({ token, active, refreshKey,
         <span className="eyebrow accent">{t('portfolio.history.eyebrow')}</span>
         <h3 id={titleId}>{t('portfolio.history.title')}</h3>
         <p className="muted-text">{t('portfolio.history.subtitle')}</p>
+        {latest && <p className="performance-history-cutoff"><span className="chip neutral">EOD · {longDate(latest.date)}</span><span>{t('portfolio.history.cutoff')}</span></p>}
       </div>
-      <div className="performance-history-ranges" role="group" aria-label={t('portfolio.history.range')}>
-        {[20, 30, 60, 120].map(value => <button key={value} type="button" className={sessions === value ? 'active' : ''} aria-pressed={sessions === value} onClick={() => setSessions(value)}>{value} {t('portfolio.history.sessions')}</button>)}
+      <div className="performance-history-actions">
+        <button type="button" className="ghost-btn performance-history-refresh" onClick={() => setRetry(value => value + 1)} disabled={state.status === 'loading'}>{state.status === 'loading' ? t('portfolio.history.refreshing') : t('portfolio.history.refresh')}</button>
+        <div className="performance-history-ranges" role="group" aria-label={t('portfolio.history.range')}>
+          {[20, 30, 60, 120].map(value => <button key={value} type="button" className={sessions === value ? 'active' : ''} aria-pressed={sessions === value} onClick={() => setSessions(value)}>{value} {t('portfolio.history.sessions')}</button>)}
+        </div>
       </div>
     </div>
 

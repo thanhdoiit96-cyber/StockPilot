@@ -1248,6 +1248,10 @@ th {
 .performance-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .performance-history-heading h3 { margin: 5px 0 4px; font-size: clamp(19px, 2vw, 24px); }
 .performance-history-heading p { margin: 0; }
+.performance-history-heading .performance-history-cutoff { display:flex; align-items:center; gap:8px; margin-top:10px; max-width:720px; color:var(--muted); font-size:12px; line-height:1.45; }
+.performance-history-cutoff .chip { flex:0 0 auto; }
+.performance-history-actions { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.performance-history-refresh { min-height:34px; }
 .performance-history-ranges { display: inline-flex; flex-wrap: wrap; gap: 5px; padding: 4px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 11px; background: rgba(15, 23, 42, .44); }
 .performance-history-ranges button { min-height: 34px; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 750; cursor: pointer; }
 .performance-history-ranges button:hover, .performance-history-ranges button:focus-visible { color: var(--text); background: rgba(148, 163, 184, .1); }
@@ -1281,7 +1285,7 @@ th {
 .performance-history-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border: 1px solid rgba(248, 113, 113, .3); border-radius: 10px; background: rgba(248, 113, 113, .08); color: #fecaca; }
 .performance-history-warning { margin: 0; padding: 10px 12px; border: 1px solid rgba(251, 191, 36, .24); border-radius: 9px; background: rgba(251, 191, 36, .07); color: #fde68a; font-size: 12px; line-height: 1.5; }
 @media (max-width: 1050px) { .performance-history-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .performance-history-heading { flex-direction: column; } .performance-history-ranges { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .performance-history-summary { grid-template-columns: 1fr; } .performance-history-chart,.performance-history-chart-stage { height: 180px; } .performance-history-y-axis { padding: 27px 0 18px; font-size: 9px; } .performance-history-error { align-items: stretch; flex-direction: column; } }
+@media (max-width: 700px) { .performance-history-heading { flex-direction: column; } .performance-history-heading .performance-history-cutoff { align-items:flex-start; flex-direction:column; } .performance-history-actions { width:100%; align-items:stretch; } .performance-history-ranges { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .performance-history-summary { grid-template-columns: 1fr; } .performance-history-chart,.performance-history-chart-stage { height: 180px; } .performance-history-y-axis { padding: 27px 0 18px; font-size: 9px; } .performance-history-error { align-items: stretch; flex-direction: column; } }
 @media (max-width: 700px) { .portfolio-section-tabs { position: static; margin-right: -2px; margin-left: -2px; } .portfolio-section-tabs [role="tablist"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } .portfolio-section-tabs button { padding: 9px 10px; } }
 .cash-flow-panel { grid-column: 1 / -1; display: grid; gap: 16px; }
 .cash-flow-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
