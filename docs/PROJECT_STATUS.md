@@ -1,5 +1,10 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Ưu tiên Lịch sử giá trên Chi tiết mã
+
+- Đổi thứ tự nội dung trang Chi tiết mã: hero → Lịch sử giá/nhận định nhanh → tab thông tin doanh nghiệp → Phân tích chuyên sâu. Dữ liệu giá phục vụ tác vụ chính được nhìn thấy trước, còn Hồ sơ/Cổ đông/Vốn vẫn ở cùng vùng tab và giữ lazy loading theo `companyTab`.
+- Không thay đổi API hoặc semantics dữ liệu; frontend regression/build được chạy lại và Preview 4173 được cập nhật sau thay đổi.
+
 ## 2026-10-13 — Vốn, cổ tức và tab thông tin doanh nghiệp
 
 - Thêm worker `POST /company-capital`, API `GET /api/stocks/:id/company-capital` và contract `company_capital_v1` cho `capital_history/events`; hai capability fail độc lập, có provenance/cache và không biến dữ liệu thiếu thành số 0.

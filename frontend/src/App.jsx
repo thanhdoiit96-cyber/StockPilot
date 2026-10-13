@@ -2183,10 +2183,6 @@ function lv() {
               onAddToWatchlist: addToWatchlist,
               watched: yt.has(String(Ee.data.code || "").toUpperCase())
             })
-          }), O.jsx(CompanyFundamentalsTabs, {
-            stockId: me.id,
-            language: profileLanguage,
-            translate: detailText
           }), O.jsxs("div", {
             id: "detail-chart",
             className: "detail-content-grid",
@@ -2248,6 +2244,10 @@ function lv() {
                 })]
               })]
             })]
+          }), O.jsx(CompanyFundamentalsTabs, {
+            stockId: me.id,
+            language: profileLanguage,
+            translate: detailText
           }), O.jsxs("section", {
             id: "detail-analysis",
             className: "panel technical-panel",
