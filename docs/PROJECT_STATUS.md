@@ -7,6 +7,8 @@
 - Các API company ưu tiên snapshot PostgreSQL mới nhất trước cache/provider. Ingestion thật FPT: profile VCI `available` đã lưu 1 snapshot; people/capital timeout; financials/news unavailable nên bị bỏ qua đúng gate. Không có dữ liệu rỗng được ghi.
 - Backend đã restart; live API FPT trả `source=database_snapshot`, status available, provider VCI. Hai lần chạy profile sau hash v2 lần lượt lưu snapshot chuẩn hóa rồi skip đúng cùng `source_hash`, xác nhận idempotency. CLI xem duplicate hợp lệ là thành công, chỉ nonzero khi không quan sát được dataset hợp lệ nào.
 - Đo profile FPT gần nhất: provider 881 ms, toàn job 1.149 giây, valid 1, failed 0 và duplicate được skip. Thêm scheduler development explicit opt-in lúc 18:30 thứ Hai–Sáu, chống overlap; cấu hình local giới hạn FPT/HPG/SSI/VCB/VNM và chỉ scope `profile`. Production luôn không tự bật.
+- Bổ sung audit database-only theo ma trận mã–dataset. Chu kỳ bounded 5 mã đầu đạt 5/5, 615–770 ms/mã, 3.612 giây toàn job; 4 snapshot mới và FPT idempotent. Audit PostgreSQL đạt 5/5, coverage 100%.
+- Chu kỳ lặp ngay sau đó thất bại 5/5 (hai timeout 7 giây rồi ba `fetch failed`) trong khi worker health vẫn OK. Audit sau lỗi vẫn 5/5 và snapshot không đổi, xác nhận provider capability có tính chập chờn và fail-closed/DB-first hoạt động đúng. Chưa tăng scope hoặc universe dựa trên chỉ một chu kỳ thành công.
 - Điểm tiếp tục: theo dõi vài chu kỳ bounded và audit snapshot coverage/latency trước khi mở scope people/capital/financials/news; các capability này chưa được phép suy diễn từ profile đã thành công.
 
 ## 2026-10-13 — Đồng bộ điều hướng Chi tiết mã
