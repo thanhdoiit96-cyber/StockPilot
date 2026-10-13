@@ -4,6 +4,7 @@
 
 - Hoàn thành read contract `GET /api/market-data/foreign-flow` theo phiên/mã/ngành, gồm totals, ranking, provenance và coverage gate. Thêm `audit:foreign-flow` read-only dùng cùng snapshot builder để API và vận hành không lệch semantics.
 - Audit development thực tế trả `unavailable`, `session_date=null`, coverage `0/551`, `totals=null`, `missing_is_neutral=false`, `scored=false`; lệnh kết thúc nonzero đúng gate. Chưa thêm UI section rỗng trước khi có dữ liệu hoặc entitlement.
+- Đã restart backend/worker và smoke qua đúng Preview proxy 4173: health backend/worker đạt, endpoint mới trả `unavailable`, 0/551, totals null và scored false. Worker `/foreign-flow` không còn 404; probe FPT đi qua endpoint mới rồi fail đúng tại entitlement, không ghi database.
 - Hoàn thành F-flow-2 ở mức code: worker `/foreign-flow`, direct Python bridge, fetcher timeout/error contract, CLI bounded 1–50 mã/cửa sổ tối đa 366 ngày và scheduler development opt-in 17:00 ICT. Production không tự bật.
 - Probe thật FPT/13-10 qua direct bridge trả đúng `foreign_flow capability is unavailable`; probe worker trước restart trả 404. Không có row được ghi. Sau khi entitlement được mở cần restart worker rồi chạy lại CLI; không coi 404 hoặc thiếu capability là flow bằng 0.
 - Bổ sung runbook `cycle:forecast-live` trong QUICK_START để chạy sau EOD; trạng thái `target_session_not_observed` tiếp tục giữ pending, không tạo outcome thủ công.
