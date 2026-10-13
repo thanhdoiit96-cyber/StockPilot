@@ -14,6 +14,7 @@ const { buildMarketBreadthHistory } = require('../services/marketBreadthHistory'
 const { serializeStockCsv } = require('../services/stockCsv');
 const { httpError } = require('../utils/httpError');
 const { normalizeCompanyProfile, fetchCompanyProfile } = require('../services/companyProfileService');
+const { normalizeCompanyPeople, fetchCompanyPeople } = require('../services/companyPeopleService');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -453,6 +454,24 @@ module.exports = function(cacheService) {
     } catch (error) {
       console.error('[Stock Controller] Company profile failed:', error.message);
       return httpError(res, 500, 'market_company_profile_failed', 'Unable to load company profile');
+    }
+  });
+
+  router.get('/:id/company-people', async (req, res) => {
+    try {
+      const stock = await Stock.findByPk(req.params.id);
+      if (!stock) return httpError(res, 404, 'market_stock_not_found', 'Stock not found');
+      const cacheKey = `v1:company-people:${stock.id}`;
+      const cached = await cacheService.get(cacheKey);
+      if (cached) return res.json({ success:true, data:cached, source:'cache' });
+      let providerPayload = null;
+      try { providerPayload = await fetchCompanyPeople(stock.code); } catch (_) { /* explicit unavailable contract below */ }
+      const data = normalizeCompanyPeople({ symbol:stock.code, providerPayload });
+      await cacheService.set(cacheKey, data, data.status === 'unavailable' ? 15 : 360, 'company_people');
+      return res.json({ success:true, data, source:providerPayload ? 'provider' : 'provider_unavailable' });
+    } catch (error) {
+      console.error('[Stock Controller] Company people failed:', error.message);
+      return httpError(res, 500, 'market_company_people_failed', 'Unable to load company shareholders and officers');
     }
   });
 

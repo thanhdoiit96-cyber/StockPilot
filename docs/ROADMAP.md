@@ -5,7 +5,8 @@ Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tản
 ## Cập nhật 2026-10-13 — Dữ liệu nền tảng doanh nghiệp
 
 - Phase 1 Hồ sơ doanh nghiệp đã hoàn thành ở trang Chi tiết mã bằng contract local-first, provider enrichment có cache và trạng thái partial rõ ràng.
-- Thứ tự tiếp theo: Cổ đông/lãnh đạo → Vốn & cổ tức → Tài chính → Tin tức/sự kiện. Mỗi nhóm tải riêng, có ngày dữ liệu/provenance và chỉ mở production khi quyền phân phối được xác nhận.
+- Phase 2 Cổ đông/lãnh đạo đã có contract và UI tải riêng, hỗ trợ partial/unavailable mà không tạo dữ liệu giả; kiểm chứng record live còn phụ thuộc độ ổn định provider.
+- Thứ tự tiếp theo: Vốn & cổ tức → Tài chính → Tin tức/sự kiện. Mỗi nhóm tải riêng, có ngày dữ liệu/provenance và chỉ mở production khi quyền phân phối được xác nhận.
 - Khi có từ ba nhóm trở lên, chuyển vùng doanh nghiệp thành tab con giữ state trong URL; không tăng tải đầu trang bằng cách gọi mọi endpoint cùng lúc.
 
 ## Cập nhật 2026-10-13 — Current-data forecast safety

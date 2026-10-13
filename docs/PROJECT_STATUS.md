@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-13 — Cổ đông và lãnh đạo trên Chi tiết mã
+
+- Thêm worker `POST /company-people` gọi độc lập `Reference().company(symbol).shareholders/officers` và API `GET /api/stocks/:id/company-people`; contract `company_people_v1` chuẩn hóa tên, vai trò, tỷ lệ/số lượng sở hữu, ngày công bố và provenance. Một capability lỗi vẫn giữ kết quả capability còn lại ở trạng thái `partial`.
+- UI mới đặt Cổ đông lớn và Ban lãnh đạo thành hai khối cạnh nhau, xếp dọc trên mobile, hỗ trợ Việt/Anh và dark/light. Không có dữ liệu được thể hiện bằng empty state giải thích rõ, không suy diễn người/tỷ lệ và không ảnh hưởng chart hoặc phân tích kỹ thuật.
+- Backend targeted đạt 21/21; frontend regression/encoding/error-contract đạt 85/85; production build/bundle integrity đạt với `index-0m6PG-9f.js`.
+- Provider development chưa được xác nhận trả record thực vì KBS đang lỗi kết nối/chứng thư ở probe trước đó. Điểm tiếp tục: kiểm chứng mapping thật khi provider ổn định, sau đó xây dựng `Vốn & cổ tức` bằng cách liên kết capital history với event ledger hiện có.
+
 ## 2026-10-13 — Hồ sơ doanh nghiệp trên trang Chi tiết mã
 
 - Triển khai phase 1 `Hồ sơ doanh nghiệp` ngay sau hero của trang Chi tiết mã: danh tính, sàn/ngành/ngày niêm yết, metric vốn hóa/vốn điều lệ/cổ phiếu phát hành/nhân sự, giới thiệu, liên hệ và provenance. Section dùng style/token chung, responsive và có mục điều hướng riêng; không đưa sang Tổng quan.
