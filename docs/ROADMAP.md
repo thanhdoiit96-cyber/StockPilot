@@ -2,6 +2,13 @@
 
 Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả.
 
+## Cập nhật 2026-10-14 — Trạng thái gate company data và visibility
+
+- Bổ sung `readCompanyExpansionGate` và endpoint vận hành `/api/ops/company-data/gate` để truy vấn nhanh trạng thái mở rộng company data mà không mở access ngầm.
+- Logic fail-closed vẫn giữ nguyên: chỉ khi đủ 3 run `scheduled` hoàn tất sạch, không circuit-open, mới trả `allowed: true`; trạng thái hiện tại vẫn ở `profile`-only.
+- Dùng endpoint này như điểm check cho vòng đời scheduler và handoff vận hành trước khi tăng `people/capital/financials/news` qua cron.
+- Bước tiếp theo vẫn là tích lũy lịch chạy `scheduled` sạch liên tiếp và xác nhận provider coverage trước khi mở rộng scope hay universe.
+
 ## Cập nhật 2026-10-13 — Dữ liệu nền tảng doanh nghiệp
 
 - Phase 1 Hồ sơ doanh nghiệp đã hoàn thành ở trang Chi tiết mã bằng contract local-first, provider enrichment có cache và trạng thái partial rõ ràng.

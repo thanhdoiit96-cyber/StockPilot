@@ -90,7 +90,7 @@ function SectorBreadth({ rows, selectedSector, onSelect, language }) {
   if (!sectors.length) return null
 
   return <section className="breadth-sector-pulse" aria-labelledby="breadth-sector-pulse-heading">
-    <div className="breadth-sector-pulse-heading"><div><strong id="breadth-sector-pulse-heading">{text('Độ rộng theo ngành', 'Sector breadth')}</strong><small>{text('Chọn ngành để áp dụng bộ lọc cho toàn bộ phần Độ rộng.', 'Choose a sector to apply the filter across Market breadth.')}</small></div><span>{text('Theo số mã', 'By symbols')}</span></div>
+    <div className="breadth-sector-pulse-heading"><div><strong id="breadth-sector-pulse-heading">{text('Top ngành', 'Sector leaders')}</strong><small>{text('So sánh nhanh trong phạm vi đang lọc; bộ lọc chính nằm ở đầu section.', 'Fast comparison in the active scope; the main filter stays at the top.')}</small></div><span>{text('Theo số mã', 'By symbols')}</span></div>
     <div className="breadth-sector-list">
       {sectors.map(item => <button type="button" className={`breadth-sector-row${selectedSector === item.key ? ' is-selected' : ''}`} data-sector-key={item.key} aria-pressed={selectedSector === item.key} key={item.key} onClick={() => onSelect(item.key)}>
         <span className="breadth-sector-name"><strong>{labelForSector(item.key) || text('Khác / chưa phân loại', 'Other / uncategorized')}</strong><small>{item.quoted}/{item.total} {text('quote Intraday', 'intraday quotes')}</small></span>
