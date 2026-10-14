@@ -1,5 +1,14 @@
 ﻿# Lộ trình hoàn thiện dự án
 
+Cập nhật: 2026-10-14. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả, đồng thời giữ các view chính của app ở mức production-grade trong khi không gia tăng dữ liệu hoặc feature ngoài phạm vi.
+
+## Cập nhật 2026-10-14 — UI views chính của app được giữ làm tầng sản phẩm chính
+
+- Tổng quan, Bảng giá và Danh mục cá nhân được đặt ở vị trí là các view chính của app và được đồng bộ design language theo premium trading dashboard.
+- Chỉ thực hiện polish UI trên layout, panel, tab và bảng hiện có; không thay đổi model dữ liệu, contract hoặc flow nghiệp vụ của ứng dụng.
+- Mục đích là duy trì app-native feel mà không làm mất tính ổn định của dữ liệu/pipeline hiện có; đây là bước polish ứng dụng chính thay vì mở rộng feature mới.
+- Bài kiểm tra hiện tại: build frontend và bundle integrity pass; tiếp tục giữ chính sách fail-closed và không gắn dữ liệu research/live vào view chính nếu chưa đủ evidence.
+
 Cập nhật: 2026-10-13. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả.
 
 ## Cập nhật 2026-10-14 — Trạng thái gate company data và visibility

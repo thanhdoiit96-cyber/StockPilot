@@ -1,5 +1,12 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-14 — Main app views được giữ ở trạng thái view chính và định dạng premium
+
+- Phần chính của ứng dụng tiếp tục được giữ ở dạng "views chính" của app: Tổng quan, Bảng giá và Danh mục cá nhân đã được làm lại để dùng cùng hệ thống thẻ/panel/tab premium theo ngôn ngữ trading dashboard, nhưng không mở rộng schema, API hay feature mới.
+- Scope sửa đổi hiện tại là trực quan hóa và sự nhất quán của hierarchy, không phải thay đổi dữ liệu, logic lấy quote/live data hay tiến trình lịch chạy. Điều này phù hợp với chính sách fail-closed và ranh giới research/live đang duy trì.
+- Bằng chứng kiểm tra gần đây: frontend build từ [frontend](../frontend) đã chạy thành công, bundle integrity pass và không có regression trong runtime view chính.
+- Điểm tiếp tục: làm mịn lại các panel còn lại trong Danh mục (tab/heading/chuyển đổi view) và duy trì cùng hệ thống design language, nhưng không bỏ qua fail-closed gate cho dữ liệu company/live.
+
 ## 2026-10-14 — Provider instability vẫn còn, gate profile-only tiếp tục khóa
 
 - Chạy kiểm chứng mới nhất trên FPT với scope profile-only trong 3 scheduled clean runs: 1 run thành công, 2 run thất bại với timeout/connection reset. Đây là bằng chứng nâng cấp trạng thái hiện tại: lỗi không nằm ở scheduler hoặc ledger, mà ở đầu vào provider (Vnstock worker/remote host trả `ConnectionResetError(10054)` và `The operation was aborted due to timeout`).

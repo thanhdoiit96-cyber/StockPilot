@@ -171,11 +171,16 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const rows = useMemo(() => stocks.map(stock => {
     const symbol = getSymbol(stock)
     const quote = quoteFor(mergedQuotes, symbol)
+    const changeValue = Number(quote?.change ?? stock.change)
+    const rag = Number.isFinite(changeValue)
+      ? (changeValue > 0 ? 'positive' : changeValue < 0 ? 'negative' : 'neutral')
+      : 'neutral'
     return {
       stock, symbol, quote,
       price: quote?.price ?? stock.price,
       change: quote?.change ?? stock.change,
       volume: quote?.volume ?? stock.volume,
+      rag,
       pinned: pinned.includes(symbol),
       inPortfolio: portfolioSet.has(symbol),
       inWatchlist: watchlistSet.has(symbol)
@@ -311,8 +316,8 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
           <td>{validHttpUrl(row.stock.website_url)
             ? <a href={row.stock.website_url} target="_blank" rel="noreferrer" title={row.stock.website_url} onClick={event => event.stopPropagation()}>{row.stock.name || row.symbol}</a>
             : row.stock.name || row.symbol}</td>
-          <td>{formatPrice(row.price, language)}</td>
-          <td className={Number(row.change) > 0 ? 'positive' : Number(row.change) < 0 ? 'negative' : ''}>{formatChange(row.change)}</td>
+          <td className={row.rag}>{formatPrice(row.price, language)}</td>
+          <td className={row.rag}>{formatChange(row.change)}</td>
           <td><span className="volume-context" title={`${t('market.tradingVolume')} ${row.quote ? 'Intraday' : 'EOD'}`} tabIndex="0">{formatVolume(row.volume, language)}</span></td>
           <td className="data-time"><span>{observedLabel(row.quote, language, t)}</span></td>
           <td className="overview-assessment overview-analysis-action"><button type="button" className="ghost-btn small-btn" aria-label={t('market.openAnalysis')} onClick={event => { event.stopPropagation(); onOpenDetail?.(row.stock, { analyze: true }) }}>{t('market.deepAnalysis')}</button></td>
