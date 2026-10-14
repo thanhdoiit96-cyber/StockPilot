@@ -21,6 +21,7 @@ const { startQuoteFreshnessJob } = require('./jobs/quoteFreshnessJob');
 const { startForecastLiveCycleJob } = require('./jobs/forecastLiveCycleJob');
 const { startForeignFlowJob } = require('./jobs/foreignFlowJob');
 const { startCompanyDataSnapshotJob } = require('./jobs/companyDataSnapshotJob');
+const { readCompanyExpansionGate } = require('./services/companyIngestionRun');
 const marketDataController = require('./controllers/marketDataController');
 const authController = require('./controllers/authController');
 const watchlistController = require('./controllers/watchlistController');
@@ -167,6 +168,21 @@ app.get('/api/ai-gate', (req, res) => {
     return res.json({ success: true, data: { ...artifact, artifact: files[0], status: artifact.enabled ? 'enabled' : 'disabled' } });
   } catch (error) {
     return res.status(500).json({ success: false, message: `Không thể đọc trạng thái AI Gate: ${error.message}` });
+  }
+});
+
+app.get('/api/ops/company-data/gate', async (req, res) => {
+  try {
+    const { CompanyDataIngestionRun } = require('./models');
+    const gate = await readCompanyExpansionGate({
+      CompanyDataIngestionRun,
+      requiredScopes: ['people', 'capital', 'financials', 'news'],
+      currentScopes: process.env.COMPANY_DATA_SCOPES || 'profile'
+    });
+    return res.json({ success: true, data: gate });
+  } catch (error) {
+    logger.error('[Ops] Company expansion gate read failed:', error);
+    return res.status(500).json({ success: false, message: `Không thể đọc trạng thái gate company data: ${error.message}` });
   }
 });
 

@@ -1,5 +1,23 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-14 — Provider instability vẫn còn, gate profile-only tiếp tục khóa
+
+- Chạy kiểm chứng mới nhất trên FPT với scope profile-only trong 3 scheduled clean runs: 1 run thành công, 2 run thất bại với timeout/connection reset. Đây là bằng chứng nâng cấp trạng thái hiện tại: lỗi không nằm ở scheduler hoặc ledger, mà ở đầu vào provider (Vnstock worker/remote host trả `ConnectionResetError(10054)` và `The operation was aborted due to timeout`).
+- Gate runtime vẫn ở trạng thái blocked: `allowed=false`, `expansion_gate.status='blocked'`, `reason='requires_three_completed_scheduled_runs_without_circuit_open'`; lịch sử gần nhất cho thấy `circuit_open_runs=1` và `scheduled_completed < scheduled_runs`, nên chưa đủ evidence để mở rộng `people/capital/financials/news`.
+- Chính sách hiện tại là giữ `COMPANY_DATA_SCOPES=profile`, duy trì pacing `COMPANY_DATA_REQUEST_DELAY_MS=750` và cooldown `COMPANY_DATA_FAILURE_COOLDOWN_MS=10000`, đồng thời tiếp tục tích lũy scheduled clean runs cho tới khi có 3 chu kỳ hoàn tất liên tiếp không circuit open.
+- Controlled retry duy nhất trên FPT với scope mở rộng hiện chưa được phép thực hiện cho tới khi gate chuyển sang `ready`. Đây là trạng thái fail-closed đúng với yêu cầu an toàn dữ liệu và ranh giới research/live.
+
+## 2026-10-14 — Scheduler fail-closed cho mở rộng company data
+
+- Gate runtime đã được triển khai trong [backend/src/jobs/companyDataSnapshotJob.js](backend/src/jobs/companyDataSnapshotJob.js): nếu `COMPANY_DATA_SCOPES` yêu cầu mở rộng `people/capital/financials/news`, job sẽ kiểm tra tổng hợp run từ [backend/src/services/companyIngestionRun.js](backend/src/services/companyIngestionRun.js) trước khi bắt đầu.
+- Điều kiện bắt buộc là tối thiểu 3 run `scheduled` hoàn tất liên tiếp, không có circuit mở và không có dữ liệu thiếu chứng thực từ quá trình cron. Nếu không đủ, job tự chặn, báo lý do và lưu run vào ledger với trigger `scheduled` thay vì tiếp tục chạy.
+- Manual probe vẫn được phép làm kiểm chứng provider; đây là đường tách biệt với cron tự động để không nhầm lẫn giữa kiểm thử thủ công và chu kỳ production được phép.
+- Bổ sung `readCompanyExpansionGate` cho phép vận hành đọc trạng thái gate không cần mở rộng logic chạy: helper trả `allowed`, `required_scopes`, `current_scopes`, `summary` và lý do chặn, đồng thời endpoint `/api/ops/company-data/gate` công khai trạng thái một cách an toàn và fail-closed.
+- Kiểm chứng hiện tại: targeted scheduler regression pass với 4/4 test và node parse app sạch. Đây là bằng chứng code-level, không thay thế cho chu kỳ scheduler thật khi có dữ liệu live đủ điều kiện.
+- Kiểm chứng kiểm soát mở rộng 2026-10-14 trên `FPT` với scope `people,capital,financials,news`: 2 dataset timeout, 2 dataset bị cắt bởi circuit breaker, `valid=0`, `circuit_open=true`, và `readCompanyExpansionGate` trả `allowed=false`. Gate vẫn bị khóa; không tiếp tục mở rộng thêm cho tới khi tích lũy đủ 3 scheduled clean run liên tiếp.
+- Bản ghi chứng cứ đầy đủ đã được lưu tại [backend/evidence/controlled-fpt-expansion/run.json](../backend/evidence/controlled-fpt-expansion/run.json) và [backend/evidence/controlled-fpt-expansion/gate.json](../backend/evidence/controlled-fpt-expansion/gate.json). Kết luận hiện tại: expansion có kiểm soát cho `FPT` chưa thành công; dữ liệu provider không đủ ổn định để mở rộng tiếp.
+- Điểm tiếp tục: tích lũy 3 run `scheduled` sạch liên tiếp và xác nhận không có circuit/coverage gap; chỉ sau đó mới mở rộng scope ngoài `profile` cho chu kỳ tự động.
+
 ## 2026-10-13 — Run ledger cho đồng bộ dữ liệu doanh nghiệp
 
 - Migration 040 tạo `company_data_ingestion_runs`; mọi chu kỳ mới lưu trigger, cohort, counts, duration, circuit state và report JSON. Audit chỉ tổng hợp tối đa 20 run của đúng cùng universe/scope để không trộn bằng chứng khác cohort.
