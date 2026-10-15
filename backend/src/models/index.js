@@ -7,12 +7,25 @@ const dbConfig = require('../config/config.js');
 const env = process.env.NODE_ENV || 'development';
 const cfg = dbConfig[env];
 
-const sequelize = new Sequelize(cfg.database, cfg.username, cfg.password, {
-  host: cfg.host,
-  port: cfg.port,
-  dialect: cfg.dialect,
-  logging: false
-});
+const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
+const isLocalDatabase = databaseUrl ? /@(localhost|127\.0\.0\.1|postgres)(:|\/)/.test(databaseUrl) : true;
+
+const sharedOptions = {
+  dialect: 'postgres',
+  // Explicit require so Vercel's bundler includes pg (Sequelize loads it dynamically).
+  dialectModule: require('pg'),
+  logging: false,
+  ...(isLocalDatabase ? {} : { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } })
+};
+
+const sequelize = databaseUrl
+  ? new Sequelize(databaseUrl, sharedOptions)
+  : new Sequelize(cfg.database, cfg.username, cfg.password, {
+      ...sharedOptions,
+      host: cfg.host,
+      port: cfg.port,
+      dialect: cfg.dialect
+    });
 
 const models = {};
 

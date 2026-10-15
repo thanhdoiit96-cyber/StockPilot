@@ -109,6 +109,8 @@ const sequelize = new Sequelize(
     host: dbConfig.host,
     port: dbConfig.port,
     dialect: dbConfig.dialect,
+    // Explicit require so Vercel's bundler includes pg (Sequelize loads it dynamically).
+    dialectModule: require('pg'),
     logging: false
   }
 );
