@@ -74,9 +74,10 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Database configuration
+const primaryDatabaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
 const dbConfig = (() => {
-  if (process.env.DATABASE_URL) {
-    const parsedUrl = new URL(process.env.DATABASE_URL);
+  if (primaryDatabaseUrl) {
+    const parsedUrl = new URL(primaryDatabaseUrl);
     return {
       host: parsedUrl.hostname,
       port: Number(parsedUrl.port || 5432),
@@ -101,9 +102,9 @@ const dbConfig = (() => {
 
 // Initialize Sequelize
 const sequelize = new Sequelize(
-  process.env.DATABASE_URL || dbConfig.database,
-  process.env.DATABASE_URL ? undefined : dbConfig.username,
-  process.env.DATABASE_URL ? undefined : dbConfig.password,
+  primaryDatabaseUrl || dbConfig.database,
+  primaryDatabaseUrl ? undefined : dbConfig.username,
+  primaryDatabaseUrl ? undefined : dbConfig.password,
   {
     host: dbConfig.host,
     port: dbConfig.port,
