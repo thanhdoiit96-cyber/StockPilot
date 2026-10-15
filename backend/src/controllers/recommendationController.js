@@ -4,7 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const router = express.Router();
-const { RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice } = require('../models');
+const { RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice, Recommendation, ExternalFactor } = require('../models');
 const { SavedRecommendation } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { buildPersonalizedRecommendations, DEFAULT_CRITERIA } = require('../services/recommendationEngine');
@@ -12,7 +12,7 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
-const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent } = require('../services/recommendationPersistence');
+const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent, generateRecommendationSnapshot, vietnamSessionDate } = require('../services/recommendationPersistence');
 const { assessRuns } = require('../services/recommendationEligibility');
 const { readRecommendationLifecycleCheckpoint } = require('../services/recommendationLifecycleCheckpoint');
 const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
@@ -202,7 +202,7 @@ router.post('/personalized', async (req, res) => {
     const prices = await StockPrice.findAll({ order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000 });
     const byStock = new Map();
     for (const row of prices) { const item = row.toJSON ? row.toJSON() : row; const id = String(item.stock_id); if (!byStock.has(id)) byStock.set(id, []); byStock.get(id).push(item); }
-    const runs = await assessRuns(await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
+    const runs = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(runs);
     const stockData = stocks.map(item => item.toJSON());
     const baseline = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays: req.body?.horizon_days || 20 });
@@ -213,11 +213,39 @@ router.post('/personalized', async (req, res) => {
   } catch (error) { console.error('[Recommendation Controller] Error generating personalized recommendations:', error); return httpError(res, 500, 'recommendation_personalized_failed', 'Không thể tạo đề xuất theo tiêu chí hiện tại'); }
 });
 
+async function refreshLatestRunIfStale({ provider = 'vnstock', horizonDays = 20 } = {}) {
+  const currentSession = vietnamSessionDate(new Date());
+  const run = await RecommendationRun.findOne({
+    where: { provider, model: 'short_term_rule_v2' },
+    order: [['as_of', 'DESC'], ['created_at', 'DESC']],
+    include: historyInclude,
+  });
+  if (!run || !currentSession || run.as_of === currentSession) return run;
+  const snapshot = await generateRecommendationSnapshot({
+    Stock,
+    StockPrice,
+    ExternalFactor,
+    RecommendationRun,
+    Recommendation,
+    sequelize: Stock.sequelize || StockPrice.sequelize || RecommendationRun.sequelize || undefined,
+    provider,
+    limit: 5,
+    horizonDays,
+    useIntradayReference: false,
+    now: new Date(),
+  });
+  if (!snapshot || !snapshot.run_id) return run;
+  return RecommendationRun.findOne({
+    where: { id: snapshot.run_id },
+    include: historyInclude,
+  });
+}
+
 router.get('/latest', async (req, res) => {
   try {
-    const run = await RecommendationRun.findOne({ order: [['created_at', 'DESC']], include: [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }] });
+    const run = await refreshLatestRunIfStale({ provider: 'vnstock', horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
     if (!run) return res.json({ success: true, data: { status: 'unavailable', recommendations: [] } });
-    const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ limit: 40, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
+    const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(calibrationRuns);
     return res.json({ success: true, data: { status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning, recommendations: (run.recommendations || []).map(item => ({ id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock })) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return httpError(res, 500, 'recommendation_latest_failed', 'Error fetching recommendations'); }
@@ -226,7 +254,7 @@ router.get('/latest', async (req, res) => {
 router.get('/history', async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)));
-    const runs = await assessRuns(await RecommendationRun.findAll({ limit, order: [['created_at', 'DESC']], include: historyInclude }), StockPrice);
+    const runs = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
     return res.json({ success: true, data: runs.map(run => ({
       id: run.id, as_of: run.as_of, created_at: run.created_at, horizon_days: run.horizon_days,
       provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count,
@@ -238,8 +266,9 @@ router.get('/history', async (req, res) => {
 router.get('/history/summary', async (req, res) => {
   try {
     const runs = await assessRuns(await RecommendationRun.findAll({
+      where: { provider: 'vnstock', model: 'short_term_rule_v2' },
       limit: 250,
-      order: [['created_at', 'DESC']],
+      order: [['as_of', 'DESC'], ['created_at', 'DESC']],
       include: historyInclude,
     }), StockPrice);
     const minimumSamples = 15;

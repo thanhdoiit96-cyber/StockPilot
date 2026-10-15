@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { requestJson } from '../services/api.mjs'
 import { localizeApiError } from '../services/apiErrorCatalog.mjs'
+import { DEFAULT_MARKET_BREADTH_HISTORY_RANGE, MARKET_BREADTH_HISTORY_RANGES } from '../services/marketBreadthRange.mjs'
 
-const RANGES = [1, 5, 20]
+const RANGES = MARKET_BREADTH_HISTORY_RANGES
 const WIDTH = 640
 const HEIGHT = 180
 const VOLUME_HEIGHT = 84
@@ -47,15 +48,19 @@ function plotVolume(points) {
   })
 }
 
-export default function MarketBreadthHistory({ exchange = '', sector = '', sectorLabel = null, language = 'vi' }) {
+export default function MarketBreadthHistory({ exchange = '', sector = '', sectorLabel = null, language = 'vi', enabled = true, fallbackMode = false }) {
   const en = language === 'en'
   const text = (vi, english) => en ? english : vi
-  const [range, setRange] = useState(5)
+  const [range, setRange] = useState(DEFAULT_MARKET_BREADTH_HISTORY_RANGE)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState({ status: 'loading', data: null, error: null })
   const [selectedSession, setSelectedSession] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ status: 'idle', data: null, error: null })
+      return undefined
+    }
     const controller = new AbortController()
     setState({ status: 'loading', data: null, error: null })
     const params = new URLSearchParams({ sessions: String(range) })
@@ -72,7 +77,7 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
         if (!controller.signal.aborted) setState({ status: 'error', data: null, error: localizeApiError(error, language) })
       })
     return () => controller.abort()
-  }, [range, exchange, sector, attempt])
+  }, [range, exchange, sector, attempt, enabled])
 
   const plotted = useMemo(() => plot(state.data?.points || []), [state.data])
   const volumeBars = useMemo(() => plotVolume(plotted), [plotted])
@@ -110,7 +115,9 @@ export default function MarketBreadthHistory({ exchange = '', sector = '', secto
         {RANGES.map(value => <button type="button" key={value} aria-pressed={range === value} className={range === value ? 'active' : ''} onClick={() => { setSelectedSession(''); setRange(value) }}>{value}D</button>)}
       </div>
     </div>
-    {state.status === 'loading' && <p className="muted-text" role="status">{text('Đang tải lịch sử độ rộng…', 'Loading breadth history…')}</p>}
+    {!enabled && !fallbackMode && <p className="muted-text" role="status">{text('Đang chờ dữ liệu EOD hoàn tất để hiển thị lịch sử A/D.', 'Waiting for the latest EOD session to finish before displaying the A/D history.')}</p>}
+    {fallbackMode && <p className="breadth-history-fallback" role="status">{text('Phiên hiện tại đang cập nhật EOD · hiển thị dữ liệu xác minh gần nhất.', 'Current session is refreshing EOD · displaying the latest verified snapshot.')}</p>}
+    {state.status === 'loading' && enabled && <p className="muted-text" role="status">{text('Đang tải lịch sử độ rộng…', 'Loading breadth history…')}</p>}
     {state.status === 'error' && <div className="breadth-history-state" role="alert"><span>{state.error}</span><button type="button" onClick={() => setAttempt(value => value + 1)}>{text('Thử lại', 'Retry')}</button></div>}
     {state.status === 'success' && !continuous && <div className="breadth-history-state" role="status"><strong>{text('Chưa đủ chuỗi phiên liên tục', 'Continuous session series unavailable')}</strong><span>{text('Đã có', 'Received')} {state.data.returned_sessions}/{state.data.requested_sessions} {text('phiên · trạng thái', 'sessions · status')} {state.data.continuity.status}. {text('Biểu đồ không nối các điểm thiếu.', 'The chart does not connect missing points.')}</span></div>}
     {state.status === 'success' && continuous && latest && <>

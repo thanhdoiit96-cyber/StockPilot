@@ -1,15 +1,27 @@
 jest.mock('../models', () => ({
   User: { findByPk: jest.fn(async () => ({ password_version: 0 })) },
   RecommendationRun: { findOne: jest.fn(), findAll: jest.fn() },
+  Recommendation: { bulkCreate: jest.fn(), update: jest.fn(), findOne: jest.fn() },
+  ExternalFactor: { findAll: jest.fn() },
   Stock: { findAll: jest.fn() },
   StockPrice: { findAll: jest.fn(), findOne: jest.fn() },
   SavedRecommendation: { findAll: jest.fn(), create: jest.fn(), destroy: jest.fn() },
   RecommendationEvaluationEvent: { findAll: jest.fn() }
 }));
+jest.mock('../services/recommendationPersistence', () => ({
+  verifyRecommendationSnapshot: jest.fn((run) => ({ valid: Boolean(run?.snapshot_sha256), expected: run?.snapshot_sha256 || null, actual: run?.snapshot_sha256 || null, reason: run?.snapshot_sha256 ? null : 'snapshot_monitor_evidence_missing' })),
+  verifyRecommendationEvaluationEvent: jest.fn(() => ({ valid: true })),
+  generateRecommendationSnapshot: jest.fn(),
+  recommendationSnapshotHash: jest.fn(run => `hash-${run?.id || 'snapshot'}`),
+  recommendationEvaluationEvent: jest.fn(({ recommendation, run, now }) => ({ recommendation_id: recommendation.id, run_id: run.id, event_type: 'evaluation_recorded', schema_version: 'recommendation_evaluation_event_v1', payload: { version: 'recommendation_evaluation_event_v1', recommendation_id: recommendation.id, run_id: run.id, outcome: recommendation.outcome, evaluated_at: recommendation.evaluated_at, forward_return_pct: recommendation.forward_return_pct, evaluation_evidence: recommendation.evaluation_evidence, recorded_at: new Date(now).toISOString() }, payload_sha256: `hash-${recommendation.id}` })),
+  vietnamSessionDate: jest.fn(() => '2026-10-15'),
+  latestEodSession: jest.fn(() => '2026-10-08')
+}));
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { SavedRecommendation, RecommendationRun, RecommendationEvaluationEvent, StockPrice } = require('../models');
+const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 const createRouter = require('./recommendationController');
 
 describe('saved recommendation API', () => {
@@ -55,6 +67,30 @@ describe('saved recommendation API', () => {
     expect(response.body.data.recommendations[0]).toEqual(expect.objectContaining({ outcome: 'positive', forward_return_pct: 3.25, statistics_eligible: false, measurement_status: 'excluded', exclusion_reasons: expect.arrayContaining(['snapshot_unverified']) }));
     expect(response.body.data.recommendations[1]).toEqual(expect.objectContaining({ outcome: 'pending', forward_return_pct: null }));
     expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'run-1' } }));
+  });
+
+  test('picks the latest EOD snapshot by as_of, not the most recently created run', async () => {
+    const run = { id: 'run-latest', as_of: '2026-10-14', created_at: '2026-10-15T09:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
+    RecommendationRun.findOne.mockResolvedValue(run);
+    RecommendationRun.findAll.mockResolvedValue([]);
+    const response = await request(app).get('/api/recommendations/latest');
+    expect(response.status).toBe(200);
+    expect(response.body.data.run).toMatchObject({ id: 'run-latest', as_of: '2026-10-14' });
+    expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, order: [['as_of', 'DESC'], ['created_at', 'DESC']] }));
+  });
+
+  test('regenerates the default latest snapshot when the stored run is stale relative to the current session', async () => {
+    const stale = { id: 'stale-run', as_of: '2026-10-14', created_at: '2026-10-15T09:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
+    const fresh = { id: 'fresh-run', as_of: '2026-10-15', created_at: '2026-10-15T10:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
+    RecommendationRun.findOne.mockResolvedValueOnce(stale).mockResolvedValueOnce(fresh);
+    RecommendationRun.findAll.mockResolvedValue([]);
+    generateRecommendationSnapshot.mockResolvedValue({ run_id: 'fresh-run' });
+
+    const response = await request(app).get('/api/recommendations/latest');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.run).toMatchObject({ id: 'fresh-run', as_of: '2026-10-15' });
+    expect(generateRecommendationSnapshot).toHaveBeenCalledWith(expect.objectContaining({ provider: 'vnstock', limit: 5, horizonDays: 20 }));
   });
 
   test('returns a distinct not-found response for an unknown history snapshot', async () => {

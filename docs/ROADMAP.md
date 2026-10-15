@@ -1,5 +1,7 @@
 ﻿# Lộ trình hoàn thiện dự án
 
+Cập nhật: 2026-10-15. Mục tiêu hiện tại là hoàn thiện tiếp view chính của app với market basket data-driven, tab có nguồn và giao diện premium hơn mà vẫn giữ ranh giới dữ liệu live/research rõ ràng. Kết quả code hiện tại: API server-side cho basket đã được thêm và overview đã đổi sang tab-driven layout.
+
 Cập nhật: 2026-10-14. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả, đồng thời giữ các view chính của app ở mức production-grade trong khi không gia tăng dữ liệu hoặc feature ngoài phạm vi.
 
 ## Cập nhật 2026-10-14 — UI views chính của app được giữ làm tầng sản phẩm chính

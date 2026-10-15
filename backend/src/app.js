@@ -260,10 +260,10 @@ async function start() {
       logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
     }
     if (startRecommendationEvaluationJob({ logger })) {
-      logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5'})`);
+      logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5'})`);
     }
     if (startRecommendationLifecycleCheckpointJob({ logger })) {
-      logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '40 16 * * 1-5'})`);
+      logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5'})`);
     }
     if (startVnstockListingJob({ cacheService, logger })) {
       logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);

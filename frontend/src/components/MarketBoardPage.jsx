@@ -168,13 +168,19 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const symbols = useMemo(() => stocks.map(getSymbol).filter(Boolean), [stocks])
   const quoteState = useLiveQuotes(symbols, { enabled: active, requestParam: 'board_refresh' })
   const mergedQuotes = useMemo(() => ({ ...sharedQuotes, ...overviewQuotes, ...quoteState.data }), [sharedQuotes, overviewQuotes, quoteState.data])
+  const getStockPriceRag = changePercent => {
+    if (!Number.isFinite(changePercent)) return 'neutral'
+    if (changePercent > 6.7) return 'purple'
+    if (changePercent > 0) return 'green'
+    if (changePercent === 0) return 'yellow'
+    if (changePercent > -6.7) return 'red'
+    return 'deep-red'
+  }
   const rows = useMemo(() => stocks.map(stock => {
     const symbol = getSymbol(stock)
     const quote = quoteFor(mergedQuotes, symbol)
     const changeValue = Number(quote?.change ?? stock.change)
-    const rag = Number.isFinite(changeValue)
-      ? (changeValue > 0 ? 'positive' : changeValue < 0 ? 'negative' : 'neutral')
-      : 'neutral'
+    const rag = getStockPriceRag(changeValue)
     return {
       stock, symbol, quote,
       price: quote?.price ?? stock.price,

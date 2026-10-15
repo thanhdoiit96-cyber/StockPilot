@@ -12,7 +12,7 @@ async function main() {
   const report = {
     generated_at: new Date().toISOString(),
     enabled: process.env.RECOMMENDATION_EVALUATION_ENABLED === 'true',
-    cron: process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5',
+    cron: process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5',
     timezone: process.env.RECOMMENDATION_EVALUATION_TIMEZONE || 'Asia/Ho_Chi_Minh',
     snapshot: run ? { id: run.id, as_of: run.as_of, created_at: run.created_at, selected_count: run.selected_count, integrity } : null,
     ready: Boolean(run && integrity.valid && process.env.RECOMMENDATION_EVALUATION_ENABLED === 'true')

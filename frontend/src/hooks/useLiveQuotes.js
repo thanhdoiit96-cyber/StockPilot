@@ -23,11 +23,11 @@ export default function useLiveQuotes(symbols, { enabled = true, stockId = null,
       let providerStatus = null
       const quoteUrl = stockId ? url : `${url}&${encodeURIComponent(requestParam)}=${++quoteRequestSequence}-${pollCount++}`
       try {
-        const [quoteResult, statusResult] = await Promise.allSettled([
-          requestJson(quoteUrl, { signal: controller.signal, timeoutMs: 0 }),
-          requestJson('/api/stocks/quotes/status', { signal: controller.signal, timeoutMs: 0 })
-        ])
-        if (statusResult.status === 'fulfilled') providerStatus = statusResult.value?.data || null
+        const shouldCheckStatus = pollCount % 2 === 0
+        const requests = [requestJson(quoteUrl, { signal: controller.signal, timeoutMs: 0 })]
+        if (shouldCheckStatus) requests.push(requestJson('/api/stocks/quotes/status', { signal: controller.signal, timeoutMs: 0 }))
+        const [quoteResult, statusResult] = await Promise.allSettled(requests)
+        if (statusResult?.status === 'fulfilled') providerStatus = statusResult.value?.data || null
         if (quoteResult.status === 'rejected') throw quoteResult.reason
         const payload = quoteResult.value
         const quote = stockId ? stockQuote(payload) : null
@@ -47,7 +47,7 @@ export default function useLiveQuotes(symbols, { enabled = true, stockId = null,
       if (cancelled) return
       setState({ url, data, loading: false, error, providerStatus })
       const expected = stockId ? 1 : key.split(',').filter(Boolean).length
-      poll = setTimeout(load, Object.keys(data).length < expected || error ? 5000 : 30000)
+      poll = setTimeout(load, Object.keys(data).length < expected || error ? 15000 : 45000)
     }
     load()
     return () => { cancelled = true; clearTimeout(poll); controller?.abort() }

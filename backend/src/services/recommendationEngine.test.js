@@ -86,6 +86,20 @@ test('uses current intraday quote as recommendation reference price when availab
   expect(result[0].rationale.technical_confirmation).toHaveProperty('bollinger');
 });
 
+test('falls back to the newest EOD observation when intraday quotes are stale', () => {
+  const rows = Array.from({ length: 70 }, (_, index) => {
+    const timestamp = new Date(Date.UTC(2026, 9, 1 + index, 7, 0, 0));
+    return { observed_at: timestamp.toISOString(), close: 100 + index, price: 100 + index };
+  });
+  const result = buildShortTermRecommendations({
+    stocks: [{ id: 'a', code: 'AAA', name: 'A' }],
+    priceRowsByStock: new Map([['a', rows]]),
+    currentQuotes: new Map([['AAA', { price: 105, observed_at: '2026-10-08T09:00:00+07:00' }]])
+  });
+  expect(result[0].entry_price).toBe(169);
+  expect(result[0].rationale.reference_plan).toMatchObject({ buy_price: 169, price_source: 'eod', observed_at: '2026-12-09T07:00:00.000Z' });
+});
+
 test('uses Ichimoku cloud confirmation in recommendation scoring', () => {
   const above = analyzePrices(rows().map(row => ({ ...row })));
   const below = analyzePrices(rows().map((row, index) => ({ ...row, close: 200 - index })));

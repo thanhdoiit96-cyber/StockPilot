@@ -223,6 +223,77 @@ module.exports = function(cacheService) {
     }
   });
 
+  router.get('/basket', async (req, res) => {
+    try {
+      const scope = ['market', 'sector', 'portfolio'].includes(String(req.query.scope || 'market')) ? String(req.query.scope || 'market') : 'market';
+      const requestedExchange = String(req.query.exchange || '').trim().toUpperCase();
+      const exchange = ['HSX', 'HNX', 'UPCOM'].includes(requestedExchange) ? requestedExchange : null;
+      const requestedSector = String(req.query.sector || '').trim();
+      const sector = Object.prototype.hasOwnProperty.call(SECTOR_CODES, requestedSector) || requestedSector === 'other' ? requestedSector : null;
+      const limit = Number.isFinite(Number(req.query.limit)) ? Math.min(12, Math.max(3, Number(req.query.limit))) : 6;
+      const requestedSymbols = String(req.query.symbols || '').split(',').map(value => value.trim().toUpperCase()).filter(Boolean);
+
+      let where = { listing_status: 'listed' };
+      if (exchange) where.exchange = exchange;
+      if (scope === 'sector' && sector) {
+        Object.assign(where, sectorCondition(sector));
+      }
+      if (scope === 'portfolio' && requestedSymbols.length) {
+        where.code = { [Op.in]: requestedSymbols };
+      }
+      if (scope === 'portfolio' && !requestedSymbols.length) {
+        return res.json({ success: true, data: { scope, generated_at: new Date().toISOString(), items: [], summary: { leaders: 0, laggards: 0, neutral: 0, total: 0, average_return: 0 }, meta: { source: 'server', requested_limit: limit, total_candidates: 0 } } });
+      }
+
+      const stocks = await Stock.findAll({
+        attributes: ['id', 'code', 'name', 'exchange', 'industry'],
+        where,
+        order: [['code', 'ASC']],
+        limit: 250
+      });
+
+      const basketItems = [];
+      for (const stock of stocks) {
+        const prices = await StockPrice.findAll({
+          where: { stock_id: stock.id, provider: 'vnstock', interval: '1d' },
+          attributes: ['close', 'price', 'volume', 'observed_at', 'provider'],
+          order: [['observed_at', 'DESC'], ['id', 'DESC']],
+          limit: 2
+        });
+        const latest = prices[0] || null;
+        const previous = prices[1] || null;
+        const latestPrice = Number(latest?.close ?? latest?.price ?? 0);
+        const previousPrice = Number(previous?.close ?? previous?.price ?? latestPrice);
+        const changePct = previousPrice > 0 && latestPrice > 0 ? Number((((latestPrice - previousPrice) / previousPrice) * 100).toFixed(2)) : 0;
+        const signal = changePct > 0 ? 'leader' : changePct < 0 ? 'laggard' : 'neutral';
+        basketItems.push({
+          symbol: stock.code,
+          name: stock.name || stock.code,
+          exchange: stock.exchange,
+          sector: sectorForStock(stock),
+          price: latestPrice,
+          change_pct: changePct,
+          volume: Number(latest?.volume ?? 0),
+          signal,
+          trend: signal === 'leader' ? 'up' : signal === 'laggard' ? 'down' : 'flat',
+          source: latest?.provider || 'vnstock',
+          observed_at: latest?.observed_at || null
+        });
+      }
+
+      const sorted = basketItems.sort((left, right) => right.change_pct - left.change_pct || right.volume - left.volume || left.symbol.localeCompare(right.symbol));
+      const items = sorted.slice(0, limit).map((item, index) => ({ ...item, rank: index + 1, display_change: `${item.change_pct > 0 ? '+' : ''}${item.change_pct.toFixed(2)}%` }));
+      const leaders = items.filter(item => item.signal === 'leader').length;
+      const laggards = items.filter(item => item.signal === 'laggard').length;
+      const neutral = items.filter(item => item.signal === 'neutral').length;
+      const averageReturn = items.length ? Number((items.reduce((sum, item) => sum + item.change_pct, 0) / items.length).toFixed(2)) : 0;
+      return res.json({ success: true, data: { scope, generated_at: new Date().toISOString(), summary: { leaders, laggards, neutral, total: items.length, average_return: averageReturn }, items, meta: { source: 'server', requested_limit: limit, total_candidates: basketItems.length } } });
+    } catch (error) {
+      console.error('[Stock Controller] Error building market basket:', error);
+      return httpError(res, 500, 'market_basket_failed', 'Unable to generate market basket');
+    }
+  });
+
   const normalizeStock = (stock, latestSessionDate = null) => {
     const priceRecord = stock.prices?.[0];
     const latestPrice = priceRecord?.close != null ? Number(priceRecord.close) : priceRecord?.price != null ? Number(priceRecord.price) : null;

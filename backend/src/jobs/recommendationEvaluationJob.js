@@ -8,7 +8,7 @@ const { evaluatePendingRecommendations } = require('../services/recommendationPe
  * Re-evaluates every integrity-verified pending recommendation as future market sessions arrive.
  * Pending recommendations remain pending until their configured horizon is available.
  */
-function startRecommendationEvaluationJob({ logger = console, schedule = process.env.RECOMMENDATION_EVALUATION_CRON || '45 16 * * 1-5' } = {}) {
+function startRecommendationEvaluationJob({ logger = console, schedule = process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5' } = {}) {
   if (process.env.RECOMMENDATION_EVALUATION_ENABLED !== 'true') return null;
   const task = cron.schedule(schedule, async () => {
     try {

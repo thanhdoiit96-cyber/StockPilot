@@ -1,5 +1,20 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-15 — Khôi phục saved proposal mới nhất và đồng bộ lịch chạy về 15:00 ICT
+
+- Đã sửa luồng tải đề xuất đã lưu ở [frontend/src/components/RecommendationWorkbench.jsx](../frontend/src/components/RecommendationWorkbench.jsx) để sắp xếp theo thời gian tạo mới nhất trước, ưu tiên snapshot gần nhất và tự load lại bản mới nhất nếu chưa có lựa chọn hiện tại.
+- Đã điều chỉnh cron mặc định recommendation/EOD về mốc 15:00 Asia/Ho_Chi_Minh trong [backend/src/jobs/recommendationEvaluationJob.js](../backend/src/jobs/recommendationEvaluationJob.js), [backend/src/jobs/recommendationLifecycleCheckpointJob.js](../backend/src/jobs/recommendationLifecycleCheckpointJob.js), [backend/src/app.js](../backend/src/app.js) và [.env](../backend/.env) để tránh chạy sau phiên đóng cửa.
+- Bằng chứng kiểm tra gần đây: targeted scheduler test và recommendation lifecycle test đang chạy đúng với cron mới, đồng thời tiến độ UI saved proposal không còn bị rơi vào snapshot cũ khi khởi động lại.
+- Điểm tiếp tục: xác nhận tác vụ cron thật trên server/production và kiểm tra các job phụ khác còn chạy sau 15:00 nếu có cấu hình override ngoài file mặc định.
+
+## 2026-10-15 — Basket API cho Overview đã được đưa lên server-side và tab mới hoạt động
+
+- Đã thêm endpoint server-side `GET /api/stocks/basket` tại [backend/src/controllers/stockController.js](../backend/src/controllers/stockController.js) để render rổ thị trường từ dữ liệu backend và không phụ thuộc hoàn toàn vào logic client-only.
+- Overview panel trong [frontend/src/components/MarketBreadth.jsx](../frontend/src/components/MarketBreadth.jsx) hiện hỗ trợ 3 tab: `Top movers`, `Theo ngành`, `Danh mục cá nhân` và giữ fallback khi dữ liệu chưa sẵn sàng.
+- Đã giữ same design language của app, chỉ mở rộng giao diện panel theo layout premium hơn mà không phá cấu trúc dữ liệu hiện có.
+- Bằng chứng kiểm tra gần đây: build frontend hoàn tất thành công, bundle integrity đạt, và syntax check backend controller không phát sinh lỗi.
+- Điểm tiếp tục: xác thực dữ liệu live của market breadth endpoint và đánh giá thêm các tab/priority data source khi `basketTab` chuyển qua `sector` hoặc `portfolio`.
+
 ## 2026-10-14 — Main app views được giữ ở trạng thái view chính và định dạng premium
 
 - Phần chính của ứng dụng tiếp tục được giữ ở dạng "views chính" của app: Tổng quan, Bảng giá và Danh mục cá nhân đã được làm lại để dùng cùng hệ thống thẻ/panel/tab premium theo ngôn ngữ trading dashboard, nhưng không mở rộng schema, API hay feature mới.

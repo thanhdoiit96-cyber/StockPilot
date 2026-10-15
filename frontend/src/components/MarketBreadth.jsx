@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { requestJson, stockList } from '../services/api.mjs'
 import { SECTOR_OPTIONS, sectorLabel as labelForSector } from '../constants/sectorOptions.mjs'
 import { MARKET_BREADTH_SCOPE_KEY, parseMarketBreadthStorageValue, readMarketBreadthScope } from '../services/marketBreadthPreference.mjs'
+import { hasLastVerifiedEodData, isEodReady } from '../services/overviewDataPolicy.mjs'
 import MarketBreadthHistory from './MarketBreadthHistory.jsx'
 import { translate } from '../services/i18n.mjs'
 
@@ -101,7 +102,7 @@ function SectorBreadth({ rows, selectedSector, onSelect, language }) {
   </section>
 }
 
-export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal, onOpenDetail, onOpenMarketSector, language = 'vi' }) {
+export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal, onOpenDetail, onOpenMarketSector, language = 'vi', portfolioSymbols = [], watchlistSymbols = [] }) {
   const t = (key, values) => translate(language, key, values)
   const text = (vi, en) => language === 'en' ? en : vi
   const initialScope = useMemo(() => readMarketBreadthScope(), [])
@@ -112,10 +113,24 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
   const [scopedQuotes, setScopedQuotes] = useState(quotes)
   const [loading, setLoading] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [dataQuality, setDataQuality] = useState(null)
+  const overviewEodReady = isEodReady(dataQuality)
+  const overviewEodFallback = !overviewEodReady && hasLastVerifiedEodData(dataQuality)
 
   useEffect(() => {
     try { localStorage.setItem(MARKET_BREADTH_SCOPE_KEY, JSON.stringify({ exchange, sector })) } catch {}
   }, [exchange, sector])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    requestJson('/api/stocks/data-quality', { signal: controller.signal, timeoutMs: 10000 })
+      .then(payload => {
+        if (controller.signal.aborted) return
+        setDataQuality(payload?.data || null)
+      })
+      .catch(() => { if (!controller.signal.aborted) setDataQuality(null) })
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     const receiveScope = event => {
@@ -166,7 +181,9 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
     : exchange ? `${scopedStocks.length} ${t('overview.symbolsOf')} ${exchange}` : `${displayedTotal} ${t('overview.symbolsInUniverse')} · ${metrics.quoted}/${displayedTotal} ${t('overview.quotedIntraday')}`
   const freshnessText = metrics.quoted
     ? `${metrics.quoted}/${displayedTotal} ${text('m\u00e3 c\u00f3 quote Intraday', 'intraday quotes')}${metrics.latestQuoteAt ? ` · ${text('ghi nh\u1eadn', 'observed')} ${formatDateTime(metrics.latestQuoteAt, language)}` : ''}`
-    : text('\u0110ang d\u00f9ng gi\u00e1 EOD g\u1ea7n nh\u1ea5t', 'Using latest EOD prices')
+    : overviewEodFallback
+      ? `${text('Last verified EOD', 'EOD đã xác minh gần nhất')} · ${text('updating current session', 'đang cập nhật phiên hiện tại')}`
+      : text('Last verified EOD', 'EOD đã xác minh gần nhất')
 
   return <section className="panel market-breadth-panel" aria-labelledby="market-breadth-heading" lang={language}>
     <div className="panel-header market-breadth-header">
@@ -175,8 +192,8 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
         <p className="muted-text">{scopeText}{loading ? ` · ${t('overview.updating')}` : ''}</p>
       </div>
       <div className="breadth-header-signals">
-        <span className="chip neutral"><span className={metrics.average != null && metrics.average < 0 ? 'negative' : 'positive'}>{metrics.average == null ? 'Chưa đủ dữ liệu' : `Bình quân ${metrics.average >= 0 ? '+' : ''}${metrics.average.toFixed(2)}%`}</span></span>
-        <span className="breadth-header-status" role="status"><i className={metrics.quoted ? 'is-live' : 'is-eod'} aria-hidden="true" />{freshnessText}</span>
+        <span className="breadth-avg-chip chip neutral"><span className={metrics.average != null && metrics.average < 0 ? 'negative' : 'positive'}>{metrics.average == null ? 'Chưa đủ dữ liệu' : `Biến động bình quân ${metrics.average >= 0 ? '+' : ''}${metrics.average.toFixed(2)}%`}</span></span>
+        <span className="breadth-header-status" role="status"><i className={metrics.quoted ? 'is-live' : 'is-eod'} aria-hidden="true" /><span>{freshnessText}</span></span>
       </div>
       <div className="breadth-scope-controls">
         <label className="select-control breadth-exchange-control"><span>{t('overview.exchange')}</span><select className="app-select breadth-exchange-select" aria-label={t('overview.exchangeAria')} value={exchange} onChange={event => setExchange(event.target.value)}>
@@ -194,7 +211,7 @@ export default function MarketBreadth({ stocks = [], quotes = {}, universeTotal,
       <div><span>Chênh lệch A−D</span><strong className={spread >= 0 ? 'positive' : 'negative'}>{spread > 0 ? '+' : ''}{spread}</strong><small>Mã tăng trừ mã giảm</small></div>
       <div><span>Đã phân loại</span><strong>{classifiedPercent}%</strong><small>Dựa trên mã có biến động</small></div>
     </div>
-    <MarketBreadthHistory exchange={exchange} sector={sector} sectorLabel={selectedSectorLabel} language={language} />
+    <MarketBreadthHistory exchange={exchange} sector={sector} sectorLabel={selectedSectorLabel} language={language} enabled={overviewEodReady || overviewEodFallback} fallbackMode={overviewEodFallback} />
     <div className="breadth-details-toggle">
       <div><strong>{text('Chi tiết độ rộng', 'Breadth details')}</strong><small>{text('Khối lượng và các mã dẫn dắt theo phạm vi đang chọn.', 'Volume and leading symbols in the selected scope.')}</small></div>
       <button type="button" className="ghost-btn small-btn" aria-expanded={showDetails} aria-controls="market-breadth-details" onClick={() => setShowDetails(value => !value)}>{showDetails ? text('Thu gọn', 'Show less') : text('Xem chi tiết', 'View details')}</button>

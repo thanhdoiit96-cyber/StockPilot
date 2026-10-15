@@ -29,7 +29,15 @@ export default function PortfolioAllocation({ allocations = [], positions = [], 
   const previousTotal = positions.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.previous_market_price || 0), 0)
   const change = previousTotal > 0 ? total - previousTotal : null
   const percent = change == null ? null : change / previousTotal * 100
-  const rag = change == null || change === 0 ? 'amber' : change > 0 ? 'green' : 'red'
+  const getStockPriceRag = value => {
+    if (!Number.isFinite(value)) return 'red'
+    if (value > 6.7) return 'purple'
+    if (value > 0) return 'green'
+    if (value === 0) return 'yellow'
+    if (value > -6.7) return 'red'
+    return 'deep-red'
+  }
+  const rag = getStockPriceRag(percent ?? 0)
   const signedMoney = change == null ? '' : `${change >= 0 ? '+' : '-'}${money(Math.abs(change))}`
   const signedPercent = percent == null ? '' : `${percent >= 0 ? '+' : '-'}${formatNumber(Math.abs(percent), language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
   let cursor = 0
@@ -44,7 +52,7 @@ export default function PortfolioAllocation({ allocations = [], positions = [], 
     <div className="allocation-panel-heading"><div><h3>{t('portfolio.allocation.title')}</h3><p className="muted-text">{t('portfolio.allocation.subtitle')}</p></div><span className="chip neutral">{allocations.length} {t('portfolio.common.symbols')}</span></div>
     {allocations.length ? <div className="allocation-visual">
       <div className="allocation-donut" aria-label={t('portfolio.allocation.chart')} style={{ background: `conic-gradient(${slices.map(slice => `${COLORS[slice.index % COLORS.length]} ${slice.start.toFixed(2)}% ${slice.end.toFixed(2)}%`).join(', ')})` }}>
-        <div><small className="allocation-total-label">{t('portfolio.allocation.total')}</small><strong className="allocation-total-value">{money(total)}</strong><small className="allocation-day-change" data-rag={rag} data-data-quality={quoteCount < positionCount ? 'partial' : 'complete'}>{t('portfolio.allocation.dayChange')} <span data-rag={rag} className={rag === 'green' ? 'positive' : rag === 'red' ? 'negative' : 'neutral'}>{change == null ? t('portfolio.common.noData') : `${signedMoney} ${signedPercent}`}</span></small></div>
+        <div><small className="allocation-total-label">{t('portfolio.allocation.total')}</small><strong className="allocation-total-value">{money(total)}</strong><small className="allocation-day-change" data-rag={rag} data-data-quality={quoteCount < positionCount ? 'partial' : 'complete'}>{t('portfolio.allocation.dayChange')} <span data-rag={rag} className={rag === 'purple' || rag === 'green' ? 'positive' : rag === 'deep-red' || rag === 'red' ? 'negative' : 'neutral'}>{change == null ? t('portfolio.common.noData') : `${signedMoney} ${signedPercent}`}</span></small></div>
         <svg className="allocation-donut-interaction-svg" viewBox="0 0 100 100" aria-label={t('portfolio.allocation.slices')}>
           {slices.map(slice => {
             const label = `${slice.symbol}: ${Number(slice.weight).toFixed(1)}%, ${money(slice.market_value)}`

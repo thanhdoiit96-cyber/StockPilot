@@ -9,6 +9,8 @@ import RecommendationHistoryReport from './RecommendationHistoryReport.jsx'
 import RecommendationSectionTabs from './RecommendationSectionTabs.jsx'
 import QuickWatchlistButton from './QuickWatchlistButton.jsx'
 import StockDetailLink from './StockDetailLink.jsx'
+import { deriveRecommendationView } from '../services/recommendationView.mjs'
+import { resolveLatestSavedSnapshot } from '../services/recommendationSavedSelection.mjs'
 
 const defaults = { trend: 30, momentum: 25, rsi: 15, stability: 15, liquidity: 15 }
 const criteria = [
@@ -87,9 +89,17 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
       for (const snapshot of pending) {
         try { const saved = await requestJson('/api/recommendations/saved', { method: 'POST', body: { criteria: snapshot.criteria, result: snapshot.result }, token }); if (saved.data?.id) migrated.push(saved.data) } catch {}
       }
-      const next = [...migrated, ...response.data].slice(0, 20)
+      const next = [...migrated, ...response.data]
+        .filter(Boolean)
+        .sort((left, right) => new Date(right.createdAt || right.created_at || 0) - new Date(left.createdAt || left.created_at || 0))
+        .slice(0, 20)
       setSavedProposals(next)
       localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next))
+      const latest = resolveLatestSavedSnapshot(next, selectedProposalId)
+      if (latest) {
+        setSelectedProposalId(latest.id)
+        loadProposal(latest)
+      }
     }).catch(() => {})
   }, [token])
 
@@ -102,11 +112,22 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
       setCriteriaCollapsed(true)
       try {
         const saved = await requestJson('/api/recommendations/saved', { method: 'POST', body: { criteria: weights, result: response.data }, token })
-        if (saved.data?.id) { setSavedProposals(current => { const next = [saved.data, ...current].slice(0, 20); localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next)); return next }); setSelectedProposalId(saved.data.id) }
+        if (saved.data?.id) {
+          const optimistic = [saved.data, ...savedProposals].slice(0, 20)
+          setSavedProposals(optimistic)
+          localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(optimistic))
+          const latest = resolveLatestSavedSnapshot(optimistic, saved.data.id)
+          setSelectedProposalId(latest?.id || saved.data.id)
+          if (latest) loadProposal(latest)
+        }
       } catch {
         const snapshot = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, createdAt: new Date().toISOString(), criteria: { ...weights }, result: response.data }
-        setSavedProposals(current => { const next = [snapshot, ...current].slice(0, 20); localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(next)); return next })
-        setSelectedProposalId(snapshot.id)
+        const optimistic = [snapshot, ...savedProposals].slice(0, 20)
+        setSavedProposals(optimistic)
+        localStorage.setItem('stockpilot.recommendation.saved', JSON.stringify(optimistic))
+        const latest = resolveLatestSavedSnapshot(optimistic, snapshot.id)
+        setSelectedProposalId(latest?.id || snapshot.id)
+        if (latest) loadProposal(latest)
       }
     } catch (requestError) { setError(localizeApiError(requestError, language)) } finally { setLoading(false) }
   }
@@ -128,11 +149,12 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     })
   }
 
-  const recommendations = result?.recommendations || initialData?.recommendations || []
+  const recommendationView = deriveRecommendationView({ result, initialData })
+  const recommendations = recommendationView.recommendations
   const watched = new Set(watchlistSymbols.map(symbol => String(symbol).toUpperCase()))
   const learning = result?.learning || initialData?.learning
   function exportRecommendations() {
-    const generatedAt = result?.generated_at || initialData?.run?.created_at || initialData?.run?.as_of || new Date().toISOString()
+    const generatedAt = result?.generated_at || recommendationView.generatedAt || new Date().toISOString()
     const csv = serializeRecommendationCsv({ recommendations, criteriaWeights: result?.criteria, criteriaDefinitions: criteria, generatedAt, model: result?.model || initialData?.run?.model, horizonDays: initialData?.run?.horizon_days, language })
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')

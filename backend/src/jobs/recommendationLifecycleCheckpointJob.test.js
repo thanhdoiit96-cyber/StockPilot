@@ -15,7 +15,7 @@ describe('recommendation lifecycle checkpoint scheduler', () => {
     const readCheckpoint = jest.fn().mockResolvedValue({ status: 'ready_to_generate' });
     const logger = { info: jest.fn(), error: jest.fn() };
     const task = startRecommendationLifecycleCheckpointJob({ logger, readCheckpoint });
-    expect(cron.schedule).toHaveBeenCalledWith('40 16 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
+    expect(cron.schedule).toHaveBeenCalledWith('0 15 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
     await task.callback();
     expect(readCheckpoint).toHaveBeenCalledTimes(1);
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('ready_to_generate'));
