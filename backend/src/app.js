@@ -111,7 +111,10 @@ const sequelize = new Sequelize(
     dialect: dbConfig.dialect,
     // Explicit require so Vercel's bundler includes pg (Sequelize loads it dynamically).
     dialectModule: require('pg'),
-    logging: false
+    logging: false,
+    ...(primaryDatabaseUrl && !/@(localhost|127\.0\.0\.1|postgres)(:|\/)/.test(primaryDatabaseUrl)
+      ? { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } }
+      : {})
   }
 );
 
