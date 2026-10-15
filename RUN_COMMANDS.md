@@ -1,29 +1,29 @@
-# Lệnh build và chạy dự án
+﻿# Lá»‡nh build vÃ  cháº¡y dá»± Ã¡n
 
-Tài liệu này là bảng lệnh PowerShell ngắn gọn để build, kiểm thử và chạy PostgreSQL, Vnstock worker, backend và frontend. Hướng dẫn cấu hình đầy đủ, quyền database và xử lý lỗi nằm trong [QUICK_START](QUICK_START.md).
+TÃ i liá»‡u nÃ y lÃ  báº£ng lá»‡nh PowerShell ngáº¯n gá»n Ä‘á»ƒ build, kiá»ƒm thá»­ vÃ  cháº¡y PostgreSQL, Vnstock worker, backend vÃ  frontend. HÆ°á»›ng dáº«n cáº¥u hÃ¬nh Ä‘áº§y Ä‘á»§, quyá»n database vÃ  xá»­ lÃ½ lá»—i náº±m trong [QUICK_START](QUICK_START.md).
 
-## Thứ tự khởi động
+## Thá»© tá»± khá»Ÿi Ä‘á»™ng
 
 1. PostgreSQL.
-2. Vnstock worker — `127.0.0.1:8787`.
-3. Backend — `127.0.0.1:5000`.
-4. Frontend — `127.0.0.1:4173` khi preview production hoặc `127.0.0.1:5173` khi phát triển.
+2. Vnstock worker â€” `127.0.0.1:8787`.
+3. Backend â€” `127.0.0.1:5000`.
+4. Frontend â€” `127.0.0.1:4173` khi preview production hoáº·c `127.0.0.1:5173` khi phÃ¡t triá»ƒn.
 
-Worker, backend và frontend cần ba terminal PowerShell riêng.
+Worker, backend vÃ  frontend cáº§n ba terminal PowerShell riÃªng.
 
-## Cài dependency lần đầu
+## CÃ i dependency láº§n Ä‘áº§u
 
 ### Backend
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd ci
 ```
 
 ### Frontend
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd ci
 ```
 
@@ -35,29 +35,29 @@ py -m pip install -U "vnstock>=4.0.6" "vnai>=2.5.7"
 py -c "import vnstock; print('vnstock OK')"
 ```
 
-## Chuẩn bị database
+## Chuáº©n bá»‹ database
 
-Chạy migrations sau khi `backend/.env` đã trỏ đúng PostgreSQL:
+Cháº¡y migrations sau khi `backend/.env` Ä‘Ã£ trá» Ä‘Ãºng PostgreSQL:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd run migrate
 ```
 
-Chỉ seed một lần trên database demo chưa có dữ liệu:
+Chá»‰ seed má»™t láº§n trÃªn database demo chÆ°a cÃ³ dá»¯ liá»‡u:
 
 ```powershell
 npm.cmd run seed
 ```
 
-Không seed lặp và không xóa database hiện hữu để xử lý lỗi setup.
+KhÃ´ng seed láº·p vÃ  khÃ´ng xÃ³a database hiá»‡n há»¯u Ä‘á»ƒ xá»­ lÃ½ lá»—i setup.
 
-## Chạy Vnstock worker
+## Cháº¡y Vnstock worker
 
-Mở terminal thứ nhất:
+Má»Ÿ terminal thá»© nháº¥t:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 $env:HTTP_PROXY = ''
 $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
@@ -65,123 +65,123 @@ $env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
 py scripts/vnstock_worker.py
 ```
 
-Kiểm tra worker:
+Kiá»ƒm tra worker:
 
 ```powershell
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8787/health
 ```
 
-Hoặc dùng kiểm tra tích hợp của backend:
+Hoáº·c dÃ¹ng kiá»ƒm tra tÃ­ch há»£p cá»§a backend:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd run check:vnstock-runtime
 ```
 
-Probe read-only một nhóm mã qua listing, price board và lịch sử EOD (tối đa 100 mã):
+Probe read-only má»™t nhÃ³m mÃ£ qua listing, price board vÃ  lá»‹ch sá»­ EOD (tá»‘i Ä‘a 100 mÃ£):
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 $env:VNSTOCK_PROBE_SYMBOLS = 'FPT,SSI'
 $env:VNSTOCK_PROBE_FROM = '2026-09-01'
 $env:VNSTOCK_PROBE_TO = '2026-10-02'
 npm.cmd run probe:vnstock-history-gaps
 ```
 
-Lệnh ghi evidence cục bộ nhưng không ghi giá vào PostgreSQL.
+Lá»‡nh ghi evidence cá»¥c bá»™ nhÆ°ng khÃ´ng ghi giÃ¡ vÃ o PostgreSQL.
 
-## Chạy backend
+## Cháº¡y backend
 
-Mở terminal thứ hai:
+Má»Ÿ terminal thá»© hai:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd start
 ```
 
-Kiểm tra backend:
+Kiá»ƒm tra backend:
 
 ```powershell
 Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5000/api/health
 ```
 
-Khi phát triển và cần tự reload:
+Khi phÃ¡t triá»ƒn vÃ  cáº§n tá»± reload:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd run dev
 ```
 
-Backend chạy JavaScript CommonJS trực tiếp nên không có bước build riêng.
+Backend cháº¡y JavaScript CommonJS trá»±c tiáº¿p nÃªn khÃ´ng cÃ³ bÆ°á»›c build riÃªng.
 
 ## Build frontend
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run build
 ```
 
-Build production được ghi vào `frontend/dist`; lệnh build đồng thời kiểm tra bundle integrity.
+Build production Ä‘Æ°á»£c ghi vÃ o `frontend/dist`; lá»‡nh build Ä‘á»“ng thá»i kiá»ƒm tra bundle integrity.
 
-## Chạy frontend production preview
+## Cháº¡y frontend production preview
 
-Mở terminal thứ ba sau khi build:
+Má»Ÿ terminal thá»© ba sau khi build:
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd start -- --host 127.0.0.1 --port 4173 --strictPort
 ```
 
-Mở <http://127.0.0.1:4173/>.
+Má»Ÿ <http://127.0.0.1:4173/>.
 
-## Chạy frontend development
+## Cháº¡y frontend development
 
-Dùng lệnh này thay cho production preview khi sửa frontend:
+DÃ¹ng lá»‡nh nÃ y thay cho production preview khi sá»­a frontend:
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Mở <http://127.0.0.1:5173/>.
+Má»Ÿ <http://127.0.0.1:5173/>.
 
-## Chạy kiểm thử
+## Cháº¡y kiá»ƒm thá»­
 
 ### Backend
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd test -- --runInBand
 ```
 
-### Frontend unit và encoding
+### Frontend unit vÃ  encoding
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd test -- --runInBand
 ```
 
 ### Frontend E2E
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run test:e2e
 ```
 
-### Kiểm tra release frontend
+### Kiá»ƒm tra release frontend
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run build
 npm.cmd run verify:release
 ```
 
-## Chạy lại nhanh sau khi máy khởi động
+## Cháº¡y láº¡i nhanh sau khi mÃ¡y khá»Ÿi Ä‘á»™ng
 
 Terminal 1:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 $env:HTTP_PROXY = ''
 $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
@@ -191,14 +191,15 @@ py scripts/vnstock_worker.py
 Terminal 2:
 
 ```powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd start
 ```
 
 Terminal 3:
 
 ```powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run build
 npm.cmd start -- --host 127.0.0.1 --port 4173 --strictPort
 ```
+

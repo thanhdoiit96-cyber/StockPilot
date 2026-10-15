@@ -9,7 +9,7 @@ Tài liệu này hướng dẫn chạy mã hiện có. Xem [README](README.md) �
 | Thủ công | Node.js/npm, PostgreSQL trên máy hoặc máy chủ truy cập được | backend/.env |
 | Docker Compose | Docker và Compose hoạt động | .env ở thư mục gốc |
 
-Dockerfile hiện dùng Node 22 và Compose dùng PostgreSQL 15. package.json backend khai báo tối thiểu Node 18/npm 9; đây là yêu cầu trong mã, không phải cam kết hỗ trợ mọi phiên bản. Các lệnh dưới dùng PowerShell, bắt đầu tại D:\MyProject. Dùng npm.cmd để tránh lỗi chặn npm.ps1.
+Dockerfile hiện dùng Node 22 và Compose dùng PostgreSQL 15. package.json backend khai báo tối thiểu Node 18/npm 9; đây là yêu cầu trong mã, không phải cam kết hỗ trợ mọi phiên bản. Các lệnh dưới dùng PowerShell, bắt đầu từ thư mục chứa dự án hiện tại. Dùng npm.cmd để tránh lỗi chặn npm.ps1.
 
 ## Chạy thủ công
 
@@ -36,7 +36,7 @@ Không cấp `SUPERUSER` hoặc `CREATEDB` chỉ để chạy migrations. Nếu 
 ### 2. Backend
 
 ~~~powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd ci
 if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
 ~~~
@@ -86,7 +86,7 @@ python -m pip install -r requirements-vnstock.txt
 Đặt biến môi trường cho lần ingest thử nghiệm rồi chạy từ thư mục backend:
 
 ~~~powershell
-$env:VNSTOCK_PROJECT_DIR='D:\MyProject\.vnstock'
+$env:VNSTOCK_PROJECT_DIR = Join-Path $PWD '.vnstock'
 $env:VNSTOCK_FROM='2026-09-11'
 $env:VNSTOCK_TO='2026-09-17'
 npm.cmd run ingest:vnstock
@@ -128,7 +128,7 @@ Vnstock trả giá theo nghìn VND trong bridge hiện tại; các lệnh thật
 Trong terminal khác:
 
 ~~~powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd ci
 npm.cmd run dev
 ~~~
@@ -145,7 +145,7 @@ npm.cmd run dev
 Tại thư mục gốc:
 
 ~~~powershell
-Set-Location D:\MyProject
+Set-Location .
 if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
 ~~~
 
@@ -196,9 +196,9 @@ Mở UI, chọn cổ phiếu và đối chiếu chi tiết với API. Health ch�
 Kiểm tra mã độc lập với server đang chạy:
 
 ~~~powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd test -- --runInBand
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd test
 npm.cmd run build
 ~~~
@@ -210,7 +210,7 @@ Test backend hiện có dùng mock cho database/cache trong các trường hợp
 Tại frontend, sau khi cài dependencies bằng npm.cmd ci, máy cần có Google Chrome:
 
 ~~~powershell
-Set-Location D:\MyProject\frontend
+Set-Location .\frontend
 npm.cmd run test:e2e
 ~~~
 
@@ -219,7 +219,7 @@ Playwright tự chạy Vite trên 127.0.0.1:4180 và Chrome headless, rồi dừ
 Kiểm tra migrations, TTL và invalidation trên PostgreSQL thật:
 
 ~~~powershell
-Set-Location D:\MyProject\backend
+Set-Location .\backend
 npm.cmd run test:postgres
 ~~~
 
@@ -258,7 +258,7 @@ $env:HTTP_PROXY = ''
 $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
 $env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
-cd D:\MyProject\backend
+cd .\backend
 python scripts/vnstock_worker.py
 ~~~
 
@@ -280,7 +280,7 @@ Kiểm chứng qua UI proxy: chạy `node scripts/verify-live-quotes.cjs` trong 
 Sau khi ingestion đang chạy đã kết thúc, kiểm chứng cùng callback với scheduler (ghi dữ liệu qua upsert thật):
 
 ```powershell
-cd D:\MyProject\backend
+cd .\backend
 $env:EOD_VERIFY_SYMBOLS='FPT,SBD,SBL,BCG'
 node scripts/verify-eod-scheduler.cjs
 ```
@@ -310,7 +310,7 @@ Script tạo hai tài khoản cookie-session cô lập, ghi rồi dọn một d�
 Kiểm tra lifecycle event ledger mới trên PostgreSQL development:
 
 ```powershell
-cd D:\MyProject\frontend
+cd .\frontend
 npm.cmd run verify:live:portfolio-events
 ```
 
@@ -352,14 +352,14 @@ Lệnh phát hành snapshot cho phiên mới trước, sau đó mới đánh gi�
 Sau khi tài khoản Vnstock đã có capability `foreign_flow` và quyền sử dụng phù hợp, cấu hình một nhóm tối đa 50 mã và cửa sổ tối đa 366 ngày:
 
 ```powershell
-cd D:\MyProject\backend
+cd .\backend
 npm.cmd run check:foreign-flow-entitlement
 ```
 
 Chỉ tiếp tục khi preflight trả `status: eligible`. Community/no-package trả exit khác 0 và không in API key.
 
 ```powershell
-cd D:\MyProject\backend
+cd .\backend
 $env:VNSTOCK_FOREIGN_FLOW_ENABLED='true'
 $env:VNSTOCK_FOREIGN_FLOW_SYMBOLS='FPT,HPG,VHM'
 $env:VNSTOCK_FOREIGN_FLOW_FROM='2026-10-01'
@@ -376,3 +376,4 @@ npm.cmd run audit:foreign-flow
 ```
 
 Exit 0 chỉ khi coverage phiên mới nhất đạt ngưỡng mặc định 80%; `unavailable` hoặc `partial` trả exit khác 0 để automation không vô tình mở UI/scoring. Có thể chọn phiên bằng `FOREIGN_FLOW_AUDIT_DATE=YYYY-MM-DD`.
+

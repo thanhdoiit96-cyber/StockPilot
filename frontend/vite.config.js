@@ -47,12 +47,20 @@ const externalRuntimeAssets = () => {
   }
 }
 
+const apiProxyTarget = process.env.API_PROXY_TARGET || process.env.VITE_API_BASE_URL || 'http://localhost:5000'
+
 export default defineConfig({
   plugins: [react(), externalRuntimeAssets()],
   server: {
     port: 5173,
     proxy: {
-      '/api': process.env.API_PROXY_TARGET || 'http://localhost:5000'
+      '/api': apiProxyTarget
+    }
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': apiProxyTarget
     }
   }
 })

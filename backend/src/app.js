@@ -1,6 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const isVercelRuntime = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const isLocalServerProcess = require.main === module && !isVercelRuntime;
 const { assertSecureAuthConfig, buildCorsOptions } = require('./config/authRuntime');
 assertSecureAuthConfig();
 const express = require('express');
@@ -72,21 +74,36 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Database configuration
-const dbConfig = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  dialect: 'postgres',
-  logging: false
-};
+const dbConfig = (() => {
+  if (process.env.DATABASE_URL) {
+    const parsedUrl = new URL(process.env.DATABASE_URL);
+    return {
+      host: parsedUrl.hostname,
+      port: Number(parsedUrl.port || 5432),
+      username: decodeURIComponent(parsedUrl.username),
+      password: decodeURIComponent(parsedUrl.password),
+      database: parsedUrl.pathname.replace(/^\/+/, ''),
+      dialect: 'postgres',
+      logging: false
+    };
+  }
+
+  return {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    dialect: 'postgres',
+    logging: false
+  };
+})();
 
 // Initialize Sequelize
 const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
+  process.env.DATABASE_URL || dbConfig.database,
+  process.env.DATABASE_URL ? undefined : dbConfig.username,
+  process.env.DATABASE_URL ? undefined : dbConfig.password,
   {
     host: dbConfig.host,
     port: dbConfig.port,
@@ -219,17 +236,16 @@ app.use((err, req, res, next) => {
 // Initialize server
 const PORT = process.env.PORT || 5000;
 
-async function start() {
+async function initializeApp() {
+  if (cacheService && app._stockRoutesMounted) return app;
+
   try {
-    // Test database connection
     await sequelize.authenticate();
     logger.info('[Database] Connected successfully');
 
-    // Initialize cache service
     cacheService = new CacheService(sequelize);
     logger.info('[Cache] Service initialized');
 
-    // Wire controllers with injected services
     const stockController = require('./controllers/stockController')(cacheService);
     app.use('/api/stocks', stockController);
     app.use('/api/market-data', marketDataController);
@@ -239,9 +255,49 @@ async function start() {
     app.use('/api/recommendations', recommendationController);
     app.use('/api/advisor/conversations', advisorController);
     app.use('/api/forecast', forecastController);
-    logger.info('[Routes] /api/stocks mounted');
+    app._stockRoutesMounted = true;
+    logger.info('[Routes] /api/* mounted');
 
-    // Start server
+    if (isLocalServerProcess) {
+      CacheCleanupJob(cacheService);
+      logger.info('[Scheduler] Cache cleanup job initialized');
+      if (startVnstockEodJob({ cacheService, logger })) {
+        logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
+      }
+      if (startRecommendationEvaluationJob({ logger })) {
+        logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5'})`);
+      }
+      if (startRecommendationLifecycleCheckpointJob({ logger })) {
+        logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5'})`);
+      }
+      if (startVnstockListingJob({ cacheService, logger })) {
+        logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);
+      }
+      if (startQuoteFreshnessJob({ logger })) {
+        logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
+      }
+      if (startForecastLiveCycleJob({ logger })) {
+        logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
+      }
+      if (startForeignFlowJob({ logger })) {
+        logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
+      }
+      if (startCompanyDataSnapshotJob({ logger })) {
+        logger.info(`[Scheduler] Company data snapshots initialized (${process.env.COMPANY_DATA_CRON || '30 18 * * 1-5'})`);
+      }
+    }
+
+    return app;
+  } catch (error) {
+    logger.error(`[Startup Error] ${error.message}`);
+    throw error;
+  }
+}
+
+async function start() {
+  try {
+    await initializeApp();
+
     await new Promise((resolve, reject) => {
       const server = app.listen(PORT);
       server.once('error', reject);
@@ -250,36 +306,9 @@ async function start() {
         resolve();
       });
     });
+
     logger.info(`[Server] Running on port ${PORT}`);
     logger.info(`[Environment] ${process.env.NODE_ENV}`);
-
-    // Schedule work only after the listener has started successfully.
-    CacheCleanupJob(cacheService);
-    logger.info('[Scheduler] Cache cleanup job initialized');
-    if (startVnstockEodJob({ cacheService, logger })) {
-      logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
-    }
-    if (startRecommendationEvaluationJob({ logger })) {
-      logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5'})`);
-    }
-    if (startRecommendationLifecycleCheckpointJob({ logger })) {
-      logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5'})`);
-    }
-    if (startVnstockListingJob({ cacheService, logger })) {
-      logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);
-    }
-    if (startQuoteFreshnessJob({ logger })) {
-      logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
-    }
-    if (startForecastLiveCycleJob({ logger })) {
-      logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
-    }
-    if (startForeignFlowJob({ logger })) {
-      logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
-    }
-    if (startCompanyDataSnapshotJob({ logger })) {
-      logger.info(`[Scheduler] Company data snapshots initialized (${process.env.COMPANY_DATA_CRON || '30 18 * * 1-5'})`);
-    }
   } catch (error) {
     logger.error(error.code === 'EADDRINUSE'
       ? `[Startup Error] Port ${PORT} is already in use. Choose another PORT or stop the intended server.`
@@ -288,7 +317,14 @@ async function start() {
   }
 }
 
-// Start the server
-start();
+if (isLocalServerProcess) {
+  start();
+} else {
+  initializeApp().catch((error) => {
+    logger.error(`[Vercel Bootstrap] ${error.message}`);
+  });
+}
 
 module.exports = app;
+module.exports.start = start;
+module.exports.initializeApp = initializeApp;
