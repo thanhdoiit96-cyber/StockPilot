@@ -27,8 +27,8 @@ describe('recommendation evaluation scheduler', () => {
     process.env.RECOMMENDATION_EVALUATION_TIMEZONE = 'Asia/Ho_Chi_Minh';
     evaluatePendingRecommendations.mockResolvedValue({ status: 'completed', measured: 1 });
     const logger = { info: jest.fn(), error: jest.fn() };
-    const task = startRecommendationEvaluationJob({ logger, schedule: '45 16 * * 1-5' });
-    expect(cron.schedule).toHaveBeenCalledWith('45 16 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
+    const task = startRecommendationEvaluationJob({ logger, schedule: '0 15 * * 1-5' });
+    expect(cron.schedule).toHaveBeenCalledWith('0 15 * * 1-5', expect.any(Function), { timezone: 'Asia/Ho_Chi_Minh' });
     await task.callback();
     expect(evaluatePendingRecommendations).toHaveBeenCalledWith(models);
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('"measured":1'));

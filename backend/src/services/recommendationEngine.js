@@ -41,6 +41,32 @@ function buildEvidenceProfile({ analysis = {}, externalFactors = [], sentiment =
   };
 }
 
+function parseReferenceTimestamp(value) {
+  if (value == null || value === '') return null;
+  const timestamp = Number.isFinite(Number(value)) ? Number(value) : Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function selectReferencePrice(rows = [], quote = null) {
+  const latestRow = rows.reduce((best, row) => {
+    const observedAt = row?.observed_at || row?.date || row?.timestamp;
+    const ts = parseReferenceTimestamp(observedAt);
+    if (!Number.isFinite(ts)) return best;
+    if (!best || ts > best.timestamp) return { row, observed_at: observedAt, timestamp: ts };
+    return best;
+  }, null);
+  const quotePrice = Number(quote?.price);
+  const quoteTimestamp = parseReferenceTimestamp(quote?.observed_at);
+  const rowPrice = Number(latestRow?.row?.close ?? latestRow?.row?.price);
+  if (Number.isFinite(quotePrice) && quotePrice > 0 && (!latestRow || !Number.isFinite(quoteTimestamp) || quoteTimestamp >= latestRow.timestamp)) {
+    return { price: quotePrice, observed_at: quote?.observed_at || latestRow?.observed_at || null, price_source: 'intraday' };
+  }
+  if (Number.isFinite(rowPrice) && rowPrice > 0) {
+    return { price: rowPrice, observed_at: latestRow?.observed_at || latestRow?.row?.date || null, price_source: 'eod' };
+  }
+  return { price: null, observed_at: null, price_source: null };
+}
+
 function buildReferencePlan(rows, analysis, horizonDays) {
   const latest = Number(rows.at(-1)?.close ?? rows.at(-1)?.price);
   if (!Number.isFinite(latest)) return null;
@@ -70,11 +96,10 @@ function buildShortTermRecommendations({ stocks = [], priceRowsByStock = new Map
     const news = factors.filter(item => item.type === 'news').map(item => ({ ...item, sentiment: item.sentiment || item.impact }));
     const evidence = buildEvidenceProfile({ analysis, externalFactors: macro, news, sentiment: sentimentByStock.get(stock.code), userContext: userContextByStock.get(stock.code) });
     const quote = currentQuotes instanceof Map ? currentQuotes.get(stock.code) : currentQuotes?.[stock.code];
-    const intradayPrice = Number(quote?.price);
-    const eodPrice = Number(latest?.close ?? latest?.price);
-    const entryPrice = Number.isFinite(intradayPrice) && intradayPrice > 0 ? intradayPrice : Number.isFinite(eodPrice) && eodPrice > 0 ? eodPrice : null;
+    const reference = selectReferencePrice(rows, quote);
+    const entryPrice = Number.isFinite(reference.price) && reference.price > 0 ? reference.price : null;
     const referencePlan = buildReferencePlan(rows, analysis, horizonDays);
-    if (referencePlan) { referencePlan.buy_price = entryPrice; referencePlan.price_source = Number.isFinite(intradayPrice) && intradayPrice > 0 ? 'intraday' : 'eod'; referencePlan.observed_at = quote?.observed_at || latest?.observed_at || latest?.date || null; }
+    if (referencePlan) { referencePlan.buy_price = entryPrice; referencePlan.price_source = reference.price_source || (reference.price ? 'eod' : null); referencePlan.observed_at = reference.observed_at || latest?.observed_at || latest?.date || null; }
     candidates.push({ stock_id: stock.id, symbol: stock.code, name: stock.name, rank: 0, score, horizon_days: horizonDays, entry_price: entryPrice, rationale: { reference_plan: referencePlan, model: 'short_term_rule_v2', trend: analysis.trend, indicators: analysis.indicators, technical_score: score, technical_confirmation: { ichimoku: analysis.indicators.ichimoku?.cloud || "insufficient_data", macd: analysis.indicators.macd?.state || "insufficient_data", bollinger: analysis.indicators.bollinger?.position || "insufficient_data" }, score_parts: criterionScores.get(stock.id) || null, evidence, factors: ['Lịch sử giá đủ dài', 'Động lượng và xu hướng được kiểm tra', 'Vĩ mô/tin tức/tâm lý chưa được cộng điểm khi thiếu nguồn xác minh', 'Điểm xếp hạng không phải khuyến nghị mua bán'] }, as_of: asOf });
   }
   const stockById = new Map(stocks.map(stock => [String(stock.id), stock]));
@@ -145,11 +170,10 @@ function buildPersonalizedRecommendations({ stocks = [], priceRowsByStock = new 
     const score = Number((weightedTotal / effectiveWeight).toFixed(1));
     const latest = item.rows.at(-1);
     const quote = currentQuotes instanceof Map ? currentQuotes.get(item.stock.code) : currentQuotes?.[item.stock.code];
-    const intradayPrice = Number(quote?.price);
-    const eodPrice = Number(latest?.close ?? latest?.price);
-    const entryPrice = Number.isFinite(intradayPrice) && intradayPrice > 0 ? intradayPrice : Number.isFinite(eodPrice) && eodPrice > 0 ? eodPrice : null;
-    const priceSource = Number.isFinite(intradayPrice) && intradayPrice > 0 ? 'intraday' : 'eod';
-    return { stock_id: item.stock.id, symbol: item.stock.code, name: item.stock.name, score, rank: 0, horizon_days: horizonDays, entry_price: entryPrice, rationale: { model: 'personalized_rule_v1', score_parts: parts, weights, calibration, volatility_pct: Number(item.dailyVolatility.toFixed(3)), average_volume: item.averageVolume, observations: item.analysis.observations, indicators: item.analysis.indicators, technical_score: scoreAnalysis(item.analysis), technical_confirmation: { ichimoku: item.analysis.indicators.ichimoku?.cloud || "insufficient_data", macd: item.analysis.indicators.macd?.state || "insufficient_data", bollinger: item.analysis.indicators.bollinger?.position || "insufficient_data" }, trend: item.analysis.trend, reference_plan: { buy_price: entryPrice, price_source: priceSource, observed_at: quote?.observed_at || latest?.observed_at || latest?.date || null }, factors: ['Điểm được tính lại theo tiêu chí đã chọn', 'Hệ số học từ kết quả lịch sử chỉ áp dụng khi đủ mẫu', 'Không phải khuyến nghị mua bán'] } };
+    const reference = selectReferencePrice(item.rows, quote);
+    const entryPrice = Number.isFinite(reference.price) && reference.price > 0 ? reference.price : null;
+    const priceSource = reference.price_source || 'eod';
+    return { stock_id: item.stock.id, symbol: item.stock.code, name: item.stock.name, score, rank: 0, horizon_days: horizonDays, entry_price: entryPrice, rationale: { model: 'personalized_rule_v1', score_parts: parts, weights, calibration, volatility_pct: Number(item.dailyVolatility.toFixed(3)), average_volume: item.averageVolume, observations: item.analysis.observations, indicators: item.analysis.indicators, technical_score: scoreAnalysis(item.analysis), technical_confirmation: { ichimoku: item.analysis.indicators.ichimoku?.cloud || "insufficient_data", macd: item.analysis.indicators.macd?.state || "insufficient_data", bollinger: item.analysis.indicators.bollinger?.position || "insufficient_data" }, trend: item.analysis.trend, reference_plan: { buy_price: entryPrice, price_source: priceSource, observed_at: reference.observed_at || latest?.observed_at || latest?.date || null }, factors: ['Điểm được tính lại theo tiêu chí đã chọn', 'Hệ số học từ kết quả lịch sử chỉ áp dụng khi đủ mẫu', 'Không phải khuyến nghị mua bán'] } };
   }).sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol)).slice(0, Math.min(30, Math.max(1, Number(limit) || 10))).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 

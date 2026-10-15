@@ -4,7 +4,7 @@ const cron = require('node-cron');
 const models = require('../models');
 const { readRecommendationLifecycleCheckpoint } = require('../services/recommendationLifecycleCheckpoint');
 
-function startRecommendationLifecycleCheckpointJob({ logger = console, schedule = process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '40 16 * * 1-5', readCheckpoint = () => readRecommendationLifecycleCheckpoint({ StockPrice: models.StockPrice, RecommendationRun: models.RecommendationRun, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) }) } = {}) {
+function startRecommendationLifecycleCheckpointJob({ logger = console, schedule = process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5', readCheckpoint = () => readRecommendationLifecycleCheckpoint({ StockPrice: models.StockPrice, RecommendationRun: models.RecommendationRun, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) }) } = {}) {
   if (process.env.RECOMMENDATION_LIFECYCLE_CHECK_ENABLED === 'false') return null;
   return cron.schedule(schedule, async () => {
     try {
