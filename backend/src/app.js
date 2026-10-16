@@ -86,11 +86,6 @@ const dbConfig = resolveDatabaseConnectionConfig({
 });
 
 // Initialize Sequelize
-const sequelizeOptions = buildSequelizeOptions({
-  databaseUrl: dbConfig.databaseUrl || primaryDatabaseUrl,
-  host: dbConfig.host
-});
-
 logger.warn('[DB_BOOT] Database env state', {
   hasDatabaseUrl: Boolean(dbConfig.databaseUrl || primaryDatabaseUrl),
   hasDbPassword: Boolean(dbConfig.password),
