@@ -236,68 +236,79 @@ app.use((err, req, res, next) => {
 
 // Initialize server
 const PORT = process.env.PORT || 5000;
+let initPromise = null;
 
 async function initializeApp() {
   if (cacheService && app._stockRoutesMounted) return app;
+  if (initPromise) return initPromise;
 
-  try {
-    await sequelize.authenticate();
-    logger.info('[Database] Connected successfully');
+  initPromise = (async () => {
+    try {
+      await sequelize.authenticate();
+      logger.info('[Database] Connected successfully');
 
-    cacheService = new CacheService(sequelize);
-    logger.info('[Cache] Service initialized');
+      cacheService = new CacheService(sequelize);
+      logger.info('[Cache] Service initialized');
 
-    const stockController = require('./controllers/stockController')(cacheService);
-    app.use('/api/stocks', stockController);
-    app.use('/api/market-data', marketDataController);
-    app.use('/api/auth', authController);
-    app.use('/api/watchlist', watchlistController);
-    app.use('/api/portfolio', portfolioController);
-    app.use('/api/recommendations', recommendationController);
-    app.use('/api/advisor/conversations', advisorController);
-    app.use('/api/forecast', forecastController);
-    app._stockRoutesMounted = true;
-    logger.info('[Routes] /api/* mounted');
+      const stockController = require('./controllers/stockController')(cacheService);
+      app.use('/api/stocks', stockController);
+      app.use('/api/market-data', marketDataController);
+      app.use('/api/auth', authController);
+      app.use('/api/watchlist', watchlistController);
+      app.use('/api/portfolio', portfolioController);
+      app.use('/api/recommendations', recommendationController);
+      app.use('/api/advisor/conversations', advisorController);
+      app.use('/api/forecast', forecastController);
+      app._stockRoutesMounted = true;
+      logger.info('[Routes] /api/* mounted');
 
-    if (isLocalServerProcess) {
-      CacheCleanupJob(cacheService);
-      logger.info('[Scheduler] Cache cleanup job initialized');
-      if (startVnstockEodJob({ cacheService, logger })) {
-        logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
+      if (isLocalServerProcess) {
+        CacheCleanupJob(cacheService);
+        logger.info('[Scheduler] Cache cleanup job initialized');
+        if (startVnstockEodJob({ cacheService, logger })) {
+          logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5'})`);
+        }
+        if (startRecommendationEvaluationJob({ logger })) {
+          logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5'})`);
+        }
+        if (startRecommendationLifecycleCheckpointJob({ logger })) {
+          logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5'})`);
+        }
+        if (startVnstockListingJob({ cacheService, logger })) {
+          logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);
+        }
+        if (startQuoteFreshnessJob({ logger })) {
+          logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
+        }
+        if (startForecastLiveCycleJob({ logger })) {
+          logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
+        }
+        if (startForeignFlowJob({ logger })) {
+          logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
+        }
+        if (startCompanyDataSnapshotJob({ logger })) {
+          logger.info(`[Scheduler] Company data snapshots initialized (${process.env.COMPANY_DATA_CRON || '30 18 * * 1-5'})`);
+        }
       }
-      if (startRecommendationEvaluationJob({ logger })) {
-        logger.info(`[Scheduler] Recommendation evaluation job initialized (${process.env.RECOMMENDATION_EVALUATION_CRON || '0 15 * * 1-5'})`);
-      }
-      if (startRecommendationLifecycleCheckpointJob({ logger })) {
-        logger.info(`[Scheduler] Recommendation lifecycle checkpoint initialized (${process.env.RECOMMENDATION_LIFECYCLE_CHECK_CRON || '0 15 * * 1-5'})`);
-      }
-      if (startVnstockListingJob({ cacheService, logger })) {
-        logger.info(`[Scheduler] Vnstock listing metadata job initialized (${process.env.VNSTOCK_LISTING_SYNC_CRON || '15 15 * * 1-5'})`);
-      }
-      if (startQuoteFreshnessJob({ logger })) {
-        logger.info(`[Scheduler] Quote freshness probe initialized (${process.env.QUOTE_FRESHNESS_CRON || '35 9,13 * * 1-5'})`);
-      }
-      if (startForecastLiveCycleJob({ logger })) {
-        logger.info(`[Scheduler] Forecast live cycle initialized (${process.env.FORECAST_LIVE_CYCLE_CRON || '30 16 * * 1-5'})`);
-      }
-      if (startForeignFlowJob({ logger })) {
-        logger.info(`[Scheduler] Foreign-flow ingestion initialized (${process.env.VNSTOCK_FOREIGN_FLOW_CRON || '0 17 * * 1-5'})`);
-      }
-      if (startCompanyDataSnapshotJob({ logger })) {
-        logger.info(`[Scheduler] Company data snapshots initialized (${process.env.COMPANY_DATA_CRON || '30 18 * * 1-5'})`);
-      }
+
+      return app;
+    } catch (error) {
+      logger.error(`[Startup Error] ${error.message}`);
+      throw error;
     }
+  })();
 
-    return app;
-  } catch (error) {
-    logger.error(`[Startup Error] ${error.message}`);
-    throw error;
-  }
+  return initPromise;
+}
+
+async function ensureAppInitialized() {
+  if (app._stockRoutesMounted) return app;
+  return initializeApp();
 }
 
 async function start() {
   try {
-    await initializeApp();
+    await ensureAppInitialized();
 
     await new Promise((resolve, reject) => {
       const server = app.listen(PORT);
@@ -318,14 +329,17 @@ async function start() {
   }
 }
 
-if (isLocalServerProcess) {
-  start();
-} else {
-  initializeApp().catch((error) => {
-    logger.error(`[Vercel Bootstrap] ${error.message}`);
-  });
+if (require.main === module) {
+  if (isLocalServerProcess) {
+    start();
+  } else {
+    ensureAppInitialized().catch((error) => {
+      logger.error(`[Vercel Bootstrap] ${error.message}`);
+    });
+  }
 }
 
 module.exports = app;
 module.exports.start = start;
 module.exports.initializeApp = initializeApp;
+module.exports.ensureAppInitialized = ensureAppInitialized;
