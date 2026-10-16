@@ -91,6 +91,15 @@ const sequelizeOptions = buildSequelizeOptions({
   host: dbConfig.host
 });
 
+logger.warn('[DB_BOOT] Database env state', {
+  hasDatabaseUrl: Boolean(dbConfig.databaseUrl || primaryDatabaseUrl),
+  hasDbPassword: Boolean(dbConfig.password),
+  hasDbHost: Boolean(dbConfig.host),
+  hasDbUser: Boolean(dbConfig.username),
+  hasDbName: Boolean(dbConfig.database),
+  driver: 'postgres'
+});
+
 const sequelize = new Sequelize(
   dbConfig.databaseUrl || dbConfig.database,
   dbConfig.databaseUrl ? undefined : dbConfig.username,
