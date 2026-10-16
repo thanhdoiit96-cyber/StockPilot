@@ -4,6 +4,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const isVercelRuntime = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isLocalServerProcess = require.main === module && !isVercelRuntime;
 const { assertSecureAuthConfig, buildCorsOptions } = require('./config/authRuntime');
+const { buildSequelizeOptions } = require('./config/config');
 assertSecureAuthConfig();
 const express = require('express');
 const cors = require('cors');
@@ -101,6 +102,11 @@ const dbConfig = (() => {
 })();
 
 // Initialize Sequelize
+const sequelizeOptions = buildSequelizeOptions({
+  databaseUrl: primaryDatabaseUrl,
+  host: dbConfig.host
+});
+
 const sequelize = new Sequelize(
   primaryDatabaseUrl || dbConfig.database,
   primaryDatabaseUrl ? undefined : dbConfig.username,
@@ -109,7 +115,8 @@ const sequelize = new Sequelize(
     host: dbConfig.host,
     port: dbConfig.port,
     dialect: dbConfig.dialect,
-    logging: false
+    logging: false,
+    ...sequelizeOptions
   }
 );
 

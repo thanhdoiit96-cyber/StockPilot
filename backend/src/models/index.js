@@ -7,11 +7,17 @@ const dbConfig = require('../config/config.js');
 const env = process.env.NODE_ENV || 'development';
 const cfg = dbConfig[env];
 
+const sequelizeOptions = dbConfig.buildSequelizeOptions({
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL,
+  host: cfg.host
+});
+
 const sequelize = new Sequelize(cfg.database, cfg.username, cfg.password, {
   host: cfg.host,
   port: cfg.port,
   dialect: cfg.dialect,
-  logging: false
+  logging: false,
+  ...sequelizeOptions
 });
 
 const models = {};

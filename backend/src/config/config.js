@@ -1,5 +1,22 @@
 require('dotenv').config();
 
+function buildSequelizeOptions({ databaseUrl, host, dbHost } = {}) {
+  const explicitTarget = databaseUrl || host || dbHost || '';
+  const target = explicitTarget || process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || '';
+  const mustUseSsl = /(sslmode=require|neon\.tech|supabase\.co)/i.test(target);
+
+  if (!mustUseSsl) return {};
+
+  return {
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
+  };
+}
+
 module.exports = {
   development: {
     username: process.env.DB_USER,
@@ -27,5 +44,6 @@ module.exports = {
     port: process.env.DB_PORT,
     dialect: 'postgres',
     logging: false
-  }
+  },
+  buildSequelizeOptions
 };
