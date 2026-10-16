@@ -4,7 +4,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const isVercelRuntime = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isLocalServerProcess = require.main === module && !isVercelRuntime;
 const { assertSecureAuthConfig, buildCorsOptions } = require('./config/authRuntime');
-const { buildSequelizeOptions, resolveDatabaseConnectionConfig } = require('./config/config');
+const { buildSequelizeConnection, resolveDatabaseConnectionConfig } = require('./config/config');
 assertSecureAuthConfig();
 const express = require('express');
 const cors = require('cors');
@@ -100,18 +100,16 @@ logger.warn('[DB_BOOT] Database env state', {
   driver: 'postgres'
 });
 
-const sequelize = new Sequelize(
-  dbConfig.databaseUrl || dbConfig.database,
-  dbConfig.databaseUrl ? undefined : dbConfig.username,
-  dbConfig.databaseUrl ? undefined : dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: 'postgres',
-    logging: false,
-    ...sequelizeOptions
-  }
-);
+const sequelizeConnection = buildSequelizeConnection({
+  databaseUrl: dbConfig.databaseUrl || primaryDatabaseUrl,
+  host: dbConfig.host,
+  dbHost: dbConfig.host,
+  dbName: dbConfig.database,
+  dbUser: dbConfig.username,
+  dbPassword: dbConfig.password
+});
+
+const sequelize = new Sequelize(...sequelizeConnection.args);
 
 // Initialize Cache Service
 let cacheService;

@@ -42,7 +42,7 @@ function resolveDatabaseConnectionConfig({ databaseUrl, host, dbHost, dbName, db
         host: parsedUrl.hostname || normalizeString(host || dbHost || process.env.DB_HOST),
         port: Number(parsedUrl.port || process.env.DB_PORT || 5432),
         username: normalizeString(parsedUrl.username || dbUser || process.env.DB_USER),
-        password,
+        password: String(password),
         database: normalizeString(parsedUrl.pathname.replace(/^\/+/, '') || dbName || process.env.DB_NAME)
       };
     } catch (error) {
@@ -63,8 +63,35 @@ function resolveDatabaseConnectionConfig({ databaseUrl, host, dbHost, dbName, db
     host: normalizeString(host || dbHost || process.env.DB_HOST),
     port: Number(process.env.DB_PORT || 5432),
     username: normalizeString(dbUser || process.env.DB_USER),
-    password: fallbackPassword,
+    password: String(fallbackPassword),
     database: normalizeString(dbName || process.env.DB_NAME)
+  };
+}
+
+function buildSequelizeConnection({ databaseUrl, host, dbHost, dbName, dbUser, dbPassword } = {}) {
+  const config = resolveDatabaseConnectionConfig({ databaseUrl, host, dbHost, dbName, dbUser, dbPassword });
+  const options = {
+    host: config.host,
+    port: config.port,
+    dialect: 'postgres',
+    logging: false,
+    ...buildSequelizeOptions({
+      databaseUrl: config.databaseUrl || databaseUrl,
+      host: config.host,
+      dbHost: config.host
+    })
+  };
+
+  if (config.databaseUrl) {
+    return {
+      type: 'uri',
+      args: [config.databaseUrl, options]
+    };
+  }
+
+  return {
+    type: 'credentials',
+    args: [config.database, config.username, config.password, options]
   };
 }
 
@@ -97,5 +124,6 @@ module.exports = {
     logging: false
   },
   buildSequelizeOptions,
-  resolveDatabaseConnectionConfig
+  resolveDatabaseConnectionConfig,
+  buildSequelizeConnection
 };

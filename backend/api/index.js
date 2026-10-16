@@ -1,8 +1,13 @@
 const appModule = require('../src/app');
 
+const passthroughRoutes = new Set(['/api/health', '/api/debug-env']);
+
 async function handler(req, res) {
   try {
-    await appModule.ensureAppInitialized();
+    const isPassthrough = typeof req?.path === 'string' && passthroughRoutes.has(req.path);
+    if (!isPassthrough) {
+      await appModule.ensureAppInitialized();
+    }
     return appModule(req, res);
   } catch (error) {
     console.error('[Vercel Handler] Failed to initialize app:', error);

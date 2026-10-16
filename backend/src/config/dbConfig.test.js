@@ -1,4 +1,4 @@
-const { buildSequelizeOptions, resolveDatabaseConnectionConfig } = require('./config');
+const { buildSequelizeConnection, buildSequelizeOptions, resolveDatabaseConnectionConfig } = require('./config');
 
 describe('buildSequelizeOptions', () => {
   test('enables SSL for Neon Postgres URLs', () => {
@@ -24,6 +24,17 @@ describe('buildSequelizeOptions', () => {
     });
 
     expect(opts.dialectOptions).toBeUndefined();
+  });
+
+  test('builds a safe Sequelize URI config for Neon and preserves a string password', () => {
+    const config = buildSequelizeConnection({
+      databaseUrl: 'postgresql://neondb_owner:npg_7PjznhAUKuZ8@ep-demo.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require'
+    });
+
+    expect(config.type).toBe('uri');
+    expect(config.args[0]).toContain('postgresql://');
+    expect(typeof config.args[1]).toBe('object');
+    expect(config.args[1].dialectOptions.ssl.require).toBe(true);
   });
 
   test('throws a clear error when the database password is missing', () => {
