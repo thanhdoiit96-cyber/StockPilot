@@ -125,6 +125,23 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/debug-env', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+      hasDbPassword: Boolean(process.env.DB_PASSWORD),
+      typeDbPassword: typeof process.env.DB_PASSWORD,
+      dbPasswordLength: process.env.DB_PASSWORD ? String(process.env.DB_PASSWORD).length : 0,
+      dbHost: process.env.DB_HOST || null,
+      dbUser: process.env.DB_USER || null,
+      dbName: process.env.DB_NAME || null,
+      dbPort: process.env.DB_PORT || null,
+      nodeEnv: process.env.NODE_ENV || null
+    }
+  });
+});
+
 app.get('/api/ops/metrics', requireAdmin, async (req, res) => {
   const workerUrl = process.env.VNSTOCK_WORKER_URL || 'http://127.0.0.1:8787';
   let worker = { available: false };
