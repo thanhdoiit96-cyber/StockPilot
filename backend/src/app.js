@@ -4,7 +4,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 const isVercelRuntime = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isLocalServerProcess = require.main === module && !isVercelRuntime;
 const { assertSecureAuthConfig, buildCorsOptions } = require('./config/authRuntime');
-const { buildSequelizeOptions } = require('./config/config');
+const { buildSequelizeOptions, resolveDatabaseConnectionConfig } = require('./config/config');
 assertSecureAuthConfig();
 const express = require('express');
 const cors = require('cors');
@@ -76,45 +76,29 @@ app.use('/api/', limiter);
 
 // Database configuration
 const primaryDatabaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
-const dbConfig = (() => {
-  if (primaryDatabaseUrl) {
-    const parsedUrl = new URL(primaryDatabaseUrl);
-    return {
-      host: parsedUrl.hostname,
-      port: Number(parsedUrl.port || 5432),
-      username: decodeURIComponent(parsedUrl.username),
-      password: decodeURIComponent(parsedUrl.password),
-      database: parsedUrl.pathname.replace(/^\/+/, ''),
-      dialect: 'postgres',
-      logging: false
-    };
-  }
-
-  return {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    dialect: 'postgres',
-    logging: false
-  };
-})();
+const dbConfig = resolveDatabaseConnectionConfig({
+  databaseUrl: primaryDatabaseUrl,
+  host: process.env.DB_HOST,
+  dbHost: process.env.DB_HOST,
+  dbName: process.env.DB_NAME,
+  dbUser: process.env.DB_USER,
+  dbPassword: process.env.DB_PASSWORD
+});
 
 // Initialize Sequelize
 const sequelizeOptions = buildSequelizeOptions({
-  databaseUrl: primaryDatabaseUrl,
+  databaseUrl: dbConfig.databaseUrl || primaryDatabaseUrl,
   host: dbConfig.host
 });
 
 const sequelize = new Sequelize(
-  primaryDatabaseUrl || dbConfig.database,
-  primaryDatabaseUrl ? undefined : dbConfig.username,
-  primaryDatabaseUrl ? undefined : dbConfig.password,
+  dbConfig.databaseUrl || dbConfig.database,
+  dbConfig.databaseUrl ? undefined : dbConfig.username,
+  dbConfig.databaseUrl ? undefined : dbConfig.password,
   {
     host: dbConfig.host,
     port: dbConfig.port,
-    dialect: dbConfig.dialect,
+    dialect: 'postgres',
     logging: false,
     ...sequelizeOptions
   }
