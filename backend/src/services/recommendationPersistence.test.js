@@ -169,7 +169,7 @@ test('does not create a snapshot before the current Vietnam EOD session is prese
 });
 
 test('evaluates every pending integrity-verified run without overwriting completed outcomes', async () => {
-  const pending = (id, stockId, code, asOf) => ({ id, stock_id: stockId, entry_price: 100, horizon_days: 1, outcome: 'pending', rationale: {}, stock: { code }, toJSON() { return this; } });
+  const pending = (id, stockId, code, _asOf) => ({ id, stock_id: stockId, entry_price: 100, horizon_days: 1, outcome: 'pending', rationale: {}, stock: { code }, toJSON() { return this; } });
   const first = { id: 'run-1', as_of: '2026-01-01', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-1', 'stock-1', 'AAA', '2026-01-01')] };
   const second = { id: 'run-2', as_of: '2026-01-02', model: 'short_term_rule_v2', provider: 'vnstock', recommendations: [pending('rec-2', 'stock-2', 'BBB', '2026-01-02')] };
   sealRun(first); sealRun(second);

@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface, _Sequelize) {
     await queryInterface.sequelize.query(`
       UPDATE portfolio_transactions AS t
       SET price = t.price * 1000

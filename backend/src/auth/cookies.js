@@ -14,7 +14,9 @@ function parseCookies(header = '') {
     const separator = part.indexOf('=');
     if (separator < 1) return cookies;
     const key = part.slice(0, separator).trim();
-    try { cookies[key] = decodeURIComponent(part.slice(separator + 1).trim()); } catch {}
+    try { cookies[key] = decodeURIComponent(part.slice(separator + 1).trim()); } catch {
+      // Ignore malformed cookie encoding and continue parsing the remaining cookies.
+    }
     return cookies;
   }, {});
 }

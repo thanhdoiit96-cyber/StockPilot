@@ -269,7 +269,7 @@ router.post('/events', async (req, res) => {
     if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
     const stock = await Stock.findOne({ where: { code: input.value.symbol } });
     if (!stock) return res.status(404).json({ success: false, message: 'Không tìm thấy mã chứng khoán.' });
-    const { symbol, ...value } = input.value;
+    const { symbol: _symbol, ...value } = input.value;
     const event = await PortfolioEvent.create({ portfolio_id: portfolio.id, stock_id: stock.id, ...value, status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', created_by: req.user.sub });
     const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
     const presented = presentPortfolioEvent({ ...(event.toJSON ? event.toJSON() : event), Stock: stock });
@@ -323,7 +323,7 @@ router.post('/events/:eventId/correct', async (req, res) => {
       if (!previous) return { status: 'not_found' };
       if (!['PENDING', 'CONFIRMED'].includes(previous.status)) return { status: 'conflict' };
       const stock = await Stock.findOne({ where: { code: input.value.symbol }, transaction }); if (!stock) return { status: 'stock_not_found' };
-      const { symbol, ...value } = input.value;
+      const { symbol: _symbol, ...value } = input.value;
       const replacement = await PortfolioEvent.create({ portfolio_id: portfolio.id, stock_id: stock.id, ...value, status: 'PENDING', source_type: 'MANUAL', verification_status: 'UNVERIFIED', supersedes_event_id: previous.id, created_by: req.user.sub }, { transaction });
       await previous.update({ status: 'SUPERSEDED', updated_at: new Date() }, { transaction });
       return { status: 'ok', replacement, stock };

@@ -23,8 +23,8 @@ test('outcomes alter scores but cannot alter stored prediction identity', () => 
   const sample = changed.samples.find(item => item.as_of === before.entries.at(-1).as_of);
   sample.labels.find(label => label.horizon_sessions === 5).label = sample.labels.find(label => label.horizon_sessions === 5).label === 'advancing' ? 'declining' : 'advancing';
   const after = buildForecastHistory({ report: changed, horizon: 5 });
-  expect(after.entries.map(({ actual_class, correct, brier_multiclass_sum, log_loss, ...entry }) => entry))
-    .toEqual(before.entries.map(({ actual_class, correct, brier_multiclass_sum, log_loss, ...entry }) => entry));
+  expect(after.entries.map(({ actual_class: _actualClass, correct: _correct, brier_multiclass_sum: _brierMulticlassSum, log_loss: _logLoss, ...entry }) => entry))
+    .toEqual(before.entries.map(({ actual_class: _actualClass, correct: _correct, brier_multiclass_sum: _brierMulticlassSum, log_loss: _logLoss, ...entry }) => entry));
   expect(after.entries.at(-1).brier_multiclass_sum).not.toBe(before.entries.at(-1).brier_multiclass_sum);
 });
 test('fails closed outside explicit synthetic research context', () => {

@@ -202,6 +202,7 @@ router.patch('/sessions/label', requireAuth, async (req, res, next) => {
   const { session_id: id, label } = req.body || {};
   if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ||
       (label !== null && typeof label !== 'string') ||
+       // eslint-disable-next-line no-control-regex -- explicitly reject C0/DEL control characters in session labels.
       (typeof label === 'string' && (label.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(label)))) {
     return res.status(400).json({ success: false, message: 'Tên phiên tối đa 80 ký tự, không chứa ký tự điều khiển.' });
   }

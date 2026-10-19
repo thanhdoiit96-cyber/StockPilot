@@ -5,7 +5,7 @@ module.exports = {
   parserOptions: { ecmaVersion: 'latest', sourceType: 'script' },
   ignorePatterns: ['coverage/', 'evidence/', 'node_modules/'],
   rules: {
-    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     'no-empty': 'warn',
     'no-control-regex': 'warn',
     'no-useless-escape': 'warn'

@@ -161,7 +161,9 @@ app.get('/api/ops/metrics/prometheus', requireAdmin, async (req, res) => {
   try {
     const response = await fetch(`${workerUrl}/metrics`, { signal: AbortSignal.timeout(1500) });
     if (response.ok) worker = { available: true, ...(await response.json()) };
-  } catch (_) {}
+  } catch (_) {
+    // Worker metrics are optional; expose backend metrics when it is unavailable.
+  }
   const backend = metrics.snapshot();
   const lines = [
     '# HELP stockpilot_backend_requests_total Backend requests observed.',
@@ -245,7 +247,7 @@ app.post('/api/cache/clear', requireAdmin, async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error('Error:', err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error'

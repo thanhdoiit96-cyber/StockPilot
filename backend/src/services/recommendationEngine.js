@@ -131,7 +131,7 @@ const DEFAULT_CRITERIA = { trend: 30, momentum: 25, rsi: 15, stability: 15, liqu
 
 function buildPersonalizedRecommendations({ stocks = [], priceRowsByStock = new Map(), criteria = {}, limit = 10, horizonDays = 20, calibration = {}, currentQuotes = new Map() } = {}) {
   const weights = Object.fromEntries(Object.keys(DEFAULT_CRITERIA).map(key => [key, Math.max(0, Math.min(100, Number(criteria[key] ?? DEFAULT_CRITERIA[key]) || 0))]));
-  const weightTotal = Object.values(weights).reduce((sum, value) => sum + value, 0) || 1;
+
   const candidates = [];
   for (const stock of stocks) {
     const rows = priceRowsByStock.get(stock.id) || [];

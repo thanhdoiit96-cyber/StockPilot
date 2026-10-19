@@ -107,7 +107,9 @@ function validatePortfolioImport({ rows, stocks = [], existingTransactions = [],
 
   const known = new Set();
   for (const tx of existingTransactions) {
-    try { known.add(transactionKey(tx)); } catch (_) {}
+    try { known.add(transactionKey(tx)); } catch (_) {
+      // Skip legacy transactions that do not have a stable import key.
+    }
   }
   for (const row of prepared) {
     const key = transactionKey(row);

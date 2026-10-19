@@ -145,7 +145,7 @@ const localIntraday = createVnstockIntradayFetcher({ retries: 0, timeoutMs: 2500
 const fallbackIntraday = process.env.VNSTOCK_SOURCE_FALLBACK
   ? createVnstockIntradayFetcher({ retries: 0, timeoutMs: 3500, backoffMs: 300 })
   : null;
-  const fetchIntraday = async ({ symbols, source = 'VCI', mode = 'intraday' }) => {
+  const fetchIntraday = async ({ symbols, mode = 'intraday' }) => {
   const wanted = [...new Set((symbols || []).map(symbol => String(symbol).toUpperCase()))];
   const primary = async requestSymbols => primaryIntraday({ symbols: requestSymbols, source: 'VCI', mode });
   try {

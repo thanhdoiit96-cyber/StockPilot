@@ -13,6 +13,7 @@ function profileDetails(body, now = new Date()) {
       if (field === 'preferred_language' || field === 'timezone' || field === 'theme_preference') throw new Error('Tùy chọn hiển thị không được để trống.');
       changes[field] = null; continue;
     }
+    // eslint-disable-next-line no-control-regex -- explicitly reject C0/DEL control characters in profile text.
     if (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value)) throw new Error('Thông tin cá nhân phải là văn bản hợp lệ.');
     let normalized = value.trim();
     if (field === 'preferred_language') {

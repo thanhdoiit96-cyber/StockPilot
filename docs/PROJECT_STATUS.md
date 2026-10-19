@@ -24,6 +24,12 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 - Close/Delete nhật ký có dialog xác nhận, nhận focus và hủy được bằng Escape trước mutation. Tab Danh mục có năm cột desktop, ba cột màn hình trung bình, hai cột mobile.
 - Kiểm chứng gần nhất: frontend unit/contract 100/100; build/bundle integrity đạt; targeted Playwright Danh mục và Recommendation đạt. Không coi test mock là bằng chứng mutation trên dữ liệu người dùng thật.
 
+### Nền tảng backend: lint
+
+- Đã xử lý toàn bộ 38 warning ESLint: biến/đối số bỏ qua có chủ ý được đặt tên `_`, catch có lý do được ghi rõ, validation ký tự điều khiển giữ rule cục bộ có chú thích, và test/migration/seed không còn cảnh báo cơ học.
+- Không thay đổi schema, API hay chính sách dữ liệu. Dịch vụ quote tiếp tục dùng nguồn VCI cố định như trước; tham số `source` vốn không có tác dụng đã được bỏ khỏi chữ ký nội bộ.
+- Kiểm chứng: `npm.cmd run lint` sạch; Jest các mô-đun liên quan 101/101 và scheduler 4/4 đạt.
+
 ## Giới hạn giữ nguyên
 
 - Recommendation, forecast và dữ liệu provider vẫn research/internal prototype cho đến khi có evidence, quyền nguồn và validation ngoài mẫu phù hợp.
@@ -32,6 +38,6 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
-1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license.
+1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint backend hiện không còn warning.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.

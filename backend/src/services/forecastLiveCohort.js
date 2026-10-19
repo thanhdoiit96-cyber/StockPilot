@@ -23,7 +23,7 @@ function buildLiveCohortSummary(rows, { horizon, minimumSamples = 20 } = {}) {
     const model={ brier: CLASSES.reduce((sum, name) => sum + (values[name] - Number(name === truth)) ** 2, 0), log: -Math.log(Math.max(1e-15, values[truth])) }; measured.push(model);
     if(row.payload.version==='forecast_live_shadow_payload_v2'&&row.payload.baseline_snapshot){ const score=items=>{const mapped=Object.fromEntries(items.map(item=>[item.class,item.value]));return{brier:CLASSES.reduce((sum,name)=>sum+(mapped[name]-Number(name===truth))**2,0),log:-Math.log(Math.max(1e-15,mapped[truth]))}}; baselineEligible.push({model,frequency:score(row.payload.baseline_snapshot.frequency_probabilities),persistence:score(row.payload.baseline_snapshot.persistence_probabilities)}); }
   }
-  const mean = key => measured.length ? measured.reduce((sum, item) => sum + item[key], 0) / measured.length : null;
+
   const eligible=baselineEligible.length>=minimumSamples, baselineMean=(type,key)=>baselineEligible.reduce((sum,item)=>sum+item[type][key],0)/Math.max(1,baselineEligible.length);
   return { version: 'forecast_live_cohort_summary_v1', status: 'live_cohort', source: 'snapshot_store', provider: rows[0]?.provider || 'vnstock', horizon_sessions: horizon,
     synthetic: false, research_only: false, live: true, market_accuracy_verified: false, minimum_samples: minimumSamples,

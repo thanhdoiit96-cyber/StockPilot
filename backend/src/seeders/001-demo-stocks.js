@@ -1,7 +1,7 @@
 "use strict";
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface, _Sequelize) {
     await queryInterface.sequelize.query(`
       INSERT INTO stocks (id, code, name, industry, market_cap, created_at, updated_at)
       VALUES
@@ -35,7 +35,7 @@ module.exports = {
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     await queryInterface.bulkDelete('stocks', { code: ['FPT', 'VHM', 'MWG'] }, {});
   }
 };

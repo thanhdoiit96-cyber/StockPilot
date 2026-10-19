@@ -13,7 +13,7 @@ Cập nhật: 2026-10-19. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 | Mốc | Trạng thái | Điều kiện còn lại |
 | --- | --- | --- |
-| A — Nền tảng | Code/config chính hoàn thành | Archive tài liệu đã hoàn thành trong checkpoint này; release verification tiếp tục theo thay đổi |
+| A — Nền tảng | Code/config chính hoàn thành | Archive tài liệu và dọn sạch 38 warning ESLint backend đã hoàn thành; release verification tiếp tục theo thay đổi |
 | B — Frontend/lifecycle | Lazy-load và request ownership chính hoàn thành | Chỉ tách thêm App.jsx khi đo/lifecycle cho thấy lợi ích |
 | C — Readiness dữ liệu | Local readiness database/worker hoàn thành | Chưa xác nhận scheduler/worker production hoặc provider rights |
 | D — Tính năng người dùng | Allocation target, decision journal và accessibility/mobile hoàn thành | Hạng mục còn lại có dependency bên ngoài |
@@ -43,7 +43,7 @@ Tiếp tục data evidence, point-in-time availability, out-of-sample validation
 
 ## Điều kiện nghiệm thu chung
 
-- Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có error mới.
+- Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
 - Frontend thay đổi: unit/contract, production build và bundle integrity; browser smoke khi sửa luồng tương tác.
 - Tài liệu: cập nhật PROJECT_STATUS, file thiết kế chịu trách nhiệm và INDEX/link khi thêm hoặc di chuyển tài liệu.
 - Không gọi test/build là production proof; ghi rõ dependency và phần chưa chạy.
