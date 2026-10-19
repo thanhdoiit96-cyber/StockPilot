@@ -1,0 +1,205 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "git-log-check",
+			"type": "shell",
+			"command": "git --no-pager log --oneline --decorate -n 10",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "git-show-pg-downgrade",
+			"type": "shell",
+			"command": "git --no-pager show --stat --patch 81295cb -- backend/package.json backend/package-lock.json",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "git-status-before-revert",
+			"type": "shell",
+			"command": "git --no-pager status --short",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "git-revert-pg-downgrade",
+			"type": "shell",
+			"command": "git revert --no-edit 81295cb",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "verify-pg-version-restored",
+			"type": "shell",
+			"command": "git --no-pager show HEAD:backend/package.json | findstr /C:\"\\\"pg\\\"\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "git-push-main",
+			"type": "shell",
+			"command": "git --no-pager status --short; Write-Host '---'; git --no-pager push origin main",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "check-tracked-env-files",
+			"type": "shell",
+			"command": "git --no-pager ls-files | Select-String -Pattern '(^|/)(\\.env|\\.env\\..*)$'",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "rewrite-history-remove-env-secrets",
+			"type": "shell",
+			"command": "git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch '.env' '.env.production' '.env.example' '.env.production.example' 'backend/.env' 'backend/.env.production' 'backend/.env.example' 'backend/.env.production.example' 'frontend/.env' 'frontend/.env.production' 'frontend/.env.example' 'frontend/.env.production.example'\" --prune-empty -- --all",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "rewrite-history-remove-env-secrets-bash",
+			"type": "shell",
+			"command": "bash -lc \"FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch --quiet .env .env.production .env.example .env.production.example backend/.env backend/.env.production backend/.env.example backend/.env.production.example frontend/.env frontend/.env.production frontend/.env.example frontend/.env.production.example' --prune-empty -- --all\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "rewrite-history-remove-env-secrets-pwsh",
+			"type": "shell",
+			"command": "$env:FILTER_BRANCH_SQUELCH_WARNING='1'; git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch --quiet -- .env .env.production .env.example .env.production.example backend/.env backend/.env.production backend/.env.example backend/.env.production.example frontend/.env frontend/.env.production frontend/.env.example frontend/.env.production.example\" --prune-empty -- --all",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "check-git-filter-repo",
+			"type": "shell",
+			"command": "git filter-repo --help | Select-Object -First 20",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "rewrite-history-with-git-filter-repo",
+			"type": "shell",
+			"command": "py -m pip install --user git-filter-repo; git filter-repo --path .env --path .env.production --path .env.example --path .env.production.example --path backend/.env --path backend/.env.production --path backend/.env.example --path backend/.env.production.example --path frontend/.env --path frontend/.env.production --path frontend/.env.example --path frontend/.env.production.example --invert-paths --force",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "run-git-filter-repo-direct",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject'; & 'C:\\Users\\ntdoi\\AppData\\Roaming\\Python\\Python313\\Scripts\\git-filter-repo.exe' --path .env --path .env.production --path .env.example --path .env.production.example --path backend/.env --path backend/.env.production --path backend/.env.example --path backend/.env.production.example --path frontend/.env --path frontend/.env.production --path frontend/.env.example --path frontend/.env.production.example --invert-paths --force",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "restore-remote-and-push-force",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject'; git remote add origin git@github.com:thanhdoiit96-cyber/StockPilot.git; git remote -v; git --no-pager status --short; git push --force-with-lease origin main",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "sync-remote-ref-and-push",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject'; git fetch origin main; git push --force-with-lease origin main",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "install-backend-deps",
+			"type": "shell",
+			"command": "cd /d D:\\MyProject\\backend; npm install",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "install-backend-deps-fixed",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; npm install --no-fund --no-audit",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "verify-sequelize-pg-compat",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; node -p \"require('sequelize/package.json').version + ' / ' + require('pg/package.json').version\"; node -e \"const { Sequelize } = require('sequelize'); const s = new Sequelize('postgres://postgres:postgres@localhost:5432/postgres', { logging: false, dialect: 'postgres' }); console.log('construct_ok', !!s);\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "verify-sequelize-pg-compat-fixed",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; node -p \"require('sequelize/package.json').version + ' / ' + require('pg/package.json').version\"; node -e \"const { Sequelize } = require('sequelize'); const s = new Sequelize('postgres://postgres:postgres@localhost:5432/postgres', { logging: false, dialect: 'postgres' }); console.log('sequelize_obj_type=' + typeof s);\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "check-installed-versions",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; node -p \"require('sequelize/package.json').version\"; node -p \"require('pg/package.json').version\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "check-installed-versions-direct",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; node -p \"require('./node_modules/sequelize/package.json').version\"; node -p \"require('./node_modules/pg/package.json').version\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "npm-ls-sequelize-pg",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; npm ls sequelize pg --depth=0",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "validate-config-load",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject\\backend'; node -e \"require('./src/config/config.js'); console.log('config_ok');\"",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "git-commit-push-package-fix",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject'; git status --short; git add backend/package.json backend/package-lock.json; git commit -m \"fix: align sequelize with pg 8\"; git push origin main",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "commit-package-sequelize-fix",
+			"type": "shell",
+			"command": "Set-Location 'D:\\MyProject'; git add backend/package.json backend/package-lock.json; git commit -m 'fix: align sequelize with pg 8'; git push origin main",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		}
+	]
+}
