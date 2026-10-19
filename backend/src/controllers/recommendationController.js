@@ -41,20 +41,23 @@ router.delete('/saved/:id', requireAuth, async (req, res) => {
   } catch (error) { console.error('[Recommendation Controller] Error deleting saved proposal:', error); return httpError(res, 500, 'recommendation_saved_delete_failed', 'Error deleting recommendation'); }
 });
 
-function deriveCalibration(runs) {
+function deriveCalibration(runs, { targetModel = 'personalized_rule_v1', targetHorizonDays = 20 } = {}) {
   const keys = Object.keys(DEFAULT_CRITERIA);
+  const sourceModel = 'short_term_rule_v2';
+  const sourceRuns = runs.filter(run => run.model === sourceModel && Number(run.horizon_days) === Number(targetHorizonDays));
   const observations = [];
-  for (const run of runs) for (const item of run.recommendations || []) {
+  for (const run of sourceRuns) for (const item of run.recommendations || []) {
     const value = Number(item.forward_return_pct);
     const parts = item.rationale?.score_parts;
     if (item.statistics_eligible === true && hasForwardReturn(item.forward_return_pct) && parts) observations.push({ value, parts });
   }
   const calibration = Object.fromEntries(keys.map(key => [key, 1]));
   const evidence = Object.fromEntries(keys.map(key => [key, { samples: 0, adjustment: 1 }]));
+  const modelMatch = targetModel === sourceModel;
   for (const key of keys) {
     const rows = observations.filter(item => Number.isFinite(Number(item.parts[key])));
     evidence[key].samples = rows.length;
-    if (rows.length < 15) continue;
+    if (!modelMatch || rows.length < 15) continue;
     const meanScore = rows.reduce((sum, item) => sum + Number(item.parts[key]), 0) / rows.length;
     const meanReturn = rows.reduce((sum, item) => sum + item.value, 0) / rows.length;
     const covariance = rows.reduce((sum, item) => sum + (Number(item.parts[key]) - meanScore) * (item.value - meanReturn), 0) / rows.length;
@@ -63,7 +66,19 @@ function deriveCalibration(runs) {
     calibration[key] = Math.max(0.75, Math.min(1.25, Number((1 + association * 0.04).toFixed(3))));
     evidence[key].adjustment = calibration[key];
   }
-  return { calibration, evidence, sample_count: observations.length, minimum_samples: 15, status: observations.length >= 15 ? 'calibrated' : 'insufficient_history' };
+  const enoughHistory = observations.length >= 15 && keys.every(key => evidence[key].samples >= 15);
+  const applicationStatus = modelMatch && enoughHistory ? 'applied' : 'not_applied';
+  return {
+    calibration,
+    evidence,
+    sample_count: observations.length,
+    minimum_samples: 15,
+    status: applicationStatus === 'applied' ? 'calibrated' : (modelMatch ? 'insufficient_history' : 'model_mismatch'),
+    application_status: applicationStatus,
+    application_reason: applicationStatus === 'applied' ? null : (modelMatch ? 'insufficient_history' : 'model_mismatch'),
+    source: { model: sourceModel, horizon_days: Number(targetHorizonDays), runs_considered: sourceRuns.length },
+    target: { model: targetModel, horizon_days: Number(targetHorizonDays) },
+  };
 }
 
 function hasForwardReturn(value) {
@@ -203,12 +218,13 @@ router.post('/personalized', async (req, res) => {
     const byStock = new Map();
     for (const row of prices) { const item = row.toJSON ? row.toJSON() : row; const id = String(item.stock_id); if (!byStock.has(id)) byStock.set(id, []); byStock.get(id).push(item); }
     const runs = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
-    const learning = deriveCalibration(runs);
+    const horizonDays = Number(req.body?.horizon_days || 20);
+    const learning = deriveCalibration(runs, { targetModel: 'personalized_rule_v1', targetHorizonDays: horizonDays });
     const stockData = stocks.map(item => item.toJSON());
-    const baseline = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays: req.body?.horizon_days || 20 });
+    const baseline = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays });
     let currentQuotes = {};
     try { currentQuotes = await loadRecommendationQuotes(baseline.map(item => item.symbol)); } catch (quoteError) { console.warn(`[Recommendation Controller] intraday reference fallback: ${quoteError.message}`); }
-    const recommendations = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, currentQuotes, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays: req.body?.horizon_days || 20 });
+    const recommendations = buildPersonalizedRecommendations({ stocks: stockData, priceRowsByStock: byStock, currentQuotes, criteria: req.body?.criteria || {}, calibration: learning.calibration, limit: req.body?.limit || 10, horizonDays });
     return res.json({ success: true, data: { recommendations, criteria: req.body?.criteria || DEFAULT_CRITERIA, learning, eligible_count: stocks.filter(item => (byStock.get(String(item.id)) || []).length >= 50).length, model: 'personalized_rule_v1', generated_at: new Date().toISOString() } });
   } catch (error) { console.error('[Recommendation Controller] Error generating personalized recommendations:', error); return httpError(res, 500, 'recommendation_personalized_failed', 'Không thể tạo đề xuất theo tiêu chí hiện tại'); }
 });
@@ -246,7 +262,7 @@ router.get('/latest', async (req, res) => {
     const run = await refreshLatestRunIfStale({ provider: 'vnstock', horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
     if (!run) return res.json({ success: true, data: { status: 'unavailable', recommendations: [] } });
     const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
-    const learning = deriveCalibration(calibrationRuns);
+    const learning = deriveCalibration(calibrationRuns, { targetModel: 'personalized_rule_v1', targetHorizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
     return res.json({ success: true, data: { status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning, recommendations: (run.recommendations || []).map(item => ({ id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock })) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return httpError(res, 500, 'recommendation_latest_failed', 'Error fetching recommendations'); }
 });

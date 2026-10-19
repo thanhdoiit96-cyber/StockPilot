@@ -46,6 +46,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | [MARKET_INDEX_SERIES_DESIGN](MARKET_INDEX_SERIES_DESIGN.md) | Contract đề xuất cho provider series chỉ số, provenance và gate production |
 | [PORTFOLIO_EVENT_LEDGER_DESIGN](PORTFOLIO_EVENT_LEDGER_DESIGN.md) | Contract cổ tức, corporate action, entitlement và provenance |
 | [DECISION_JOURNAL_DESIGN](DECISION_JOURNAL_DESIGN.md) | Contract nhật ký quyết định, evidence snapshot và giới hạn v1 |
+| [RECOMMENDATION_CALIBRATION_DESIGN](RECOMMENDATION_CALIBRATION_DESIGN.md) | Phạm vi outcome, guard hiệu chỉnh và điều kiện mở calibration thật |
 | [DATABASE_SCHEMA](DATABASE_SCHEMA.md) | Schema mục tiêu; schema chạy thực tế do migrations quản lý |
 | [CACHING_STRATEGY](CACHING_STRATEGY.md) | Chiến lược và ví dụ cache; hành vi hiện có ở Backend README |
 | [DATA_FLOW](DATA_FLOW.md) | Luồng dữ liệu mục tiêu |

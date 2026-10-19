@@ -64,7 +64,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     else if (path === '/api/watchlist') data = []
     else if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user' } } })
     else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }
-    else if (path === '/api/recommendations/latest') data = { learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) }, recommendations: [{ id: 'old-1', rank: 1, score: 61, entry_price: 120000, stock: { code: 'FPT' }, rationale: { factors: ['Snapshot gần nhất'] } }] }
+    else if (path === '/api/recommendations/latest') data = { learning: { sample_count: 15, minimum_samples: 15, status: 'model_mismatch', application_status: 'not_applied', application_reason: 'model_mismatch', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 15, adjustment: 1 }])) }, recommendations: [{ id: 'old-1', rank: 1, score: 61, entry_price: 120000, stock: { code: 'FPT' }, rationale: { factors: ['Snapshot gần nhất'] } }] }
     else if (path === '/api/recommendations/history') data = [{ id: 'run-1', as_of: '2026-09-01', selected_count: 5, measured_count: 5, pending_count: 0, hit_rate_pct: 60, average_forward_return_pct: 1.2 }]
     else if (path === '/api/recommendations/readiness') data = { coverage: [] }
     else if (path === '/api/recommendations/saved' && request.method() === 'GET') data = savedSnapshots
@@ -74,7 +74,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     }
     else if (path === '/api/recommendations/personalized' && request.method() === 'POST') {
       submitted = request.postDataJSON()
-      data = { recommendations: [{ stock_id: 'FPT', symbol: 'FPT', rank: 1, score: 83.2, entry_price: 121000, horizon_days: 20, rationale: { model: 'personalized_rule_v1', score_parts: { trend: 100, momentum: 80, rsi: 70, stability: 65, liquidity: 90 }, weights: submitted.criteria, calibration: { trend: 1.1 }, indicators: { rsi14: 55, momentum10: 3.2 }, trend: 'above_sma20', volatility_pct: 1.25, average_volume: 2500000, observations: 90, reference_plan: { price_source: 'intraday', observed_at: '2026-09-22T02:45:00.000Z' }, evidence: { sources: [{ type: 'news', source: 'Verified Wire', title: 'FPT update', source_url: 'https://example.com/fpt', published_at: '2026-09-21T02:00:00.000Z' }, { source: 'Unsafe', source_url: 'javascript:alert(1)', published_at: '2026-09-21T02:00:00.000Z' }] }, factors: ['Điểm được tính lại theo tiêu chí đã chọn'] } }], eligible_count: 131, model: 'personalized_rule_v1', generated_at: '2026-09-22T03:00:00.000Z', criteria: submitted.criteria, learning: { sample_count: 0, minimum_samples: 15, status: 'insufficient_history', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 0, adjustment: 1 }])) } }
+      data = { recommendations: [{ stock_id: 'FPT', symbol: 'FPT', rank: 1, score: 83.2, entry_price: 121000, horizon_days: 20, rationale: { model: 'personalized_rule_v1', score_parts: { trend: 100, momentum: 80, rsi: 70, stability: 65, liquidity: 90 }, weights: submitted.criteria, calibration: { trend: 1 }, indicators: { rsi14: 55, momentum10: 3.2 }, trend: 'above_sma20', volatility_pct: 1.25, average_volume: 2500000, observations: 90, reference_plan: { price_source: 'intraday', observed_at: '2026-09-22T02:45:00.000Z' }, evidence: { sources: [{ type: 'news', source: 'Verified Wire', title: 'FPT update', source_url: 'https://example.com/fpt', published_at: '2026-09-21T02:00:00.000Z' }, { source: 'Unsafe', source_url: 'javascript:alert(1)', published_at: '2026-09-21T02:00:00.000Z' }] }, factors: ['Điểm được tính lại theo tiêu chí đã chọn'] } }], eligible_count: 131, model: 'personalized_rule_v1', generated_at: '2026-09-22T03:00:00.000Z', criteria: submitted.criteria, learning: { sample_count: 15, minimum_samples: 15, status: 'model_mismatch', application_status: 'not_applied', application_reason: 'model_mismatch', evidence: Object.fromEntries(['trend', 'momentum', 'rsi', 'stability', 'liquidity'].map(key => [key, { samples: 15, adjustment: 1 }])) } }
     } else if (path === '/api/portfolio/transactions' && request.method() === 'POST') {
       savedTransaction = request.postDataJSON()
       data = { id: 'transaction-1' }
@@ -115,12 +115,12 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await expect(evidence).toContainText('Intraday')
   await expect(evidence).toContainText('90')
   await expect(evidence).toContainText('Xu hướng giá')
-  await expect(evidence).toContainText('1,1×')
+  await expect(evidence).toContainText('1×')
   await expect(evidence).toContainText('Nguồn ngoài hệ thống đã xác minh')
   await expect(evidence.getByRole('link', { name: 'FPT update' })).toHaveAttribute('href', 'https://example.com/fpt')
   await expect(evidence).not.toContainText('Unsafe')
   await expect(evidence).toContainText('không được cộng điểm')
-  await expect(page.locator('.learning-status')).toContainText('Đang thu thập dữ liệu đánh giá')
+  await expect(page.locator('.learning-status')).toContainText('Chưa áp dụng hiệu chỉnh chéo mô hình')
   await expect(page.locator('.learning-definition')).toContainText('Lịch sử chung và kết quả từng mã là hai thước đo riêng')
   await expect(page.getByRole('heading', { name: 'Lịch sử các đợt đề xuất chung' })).toHaveCount(0)
   await page.getByRole('tab', { name: /Lịch sử & báo cáo/ }).click()

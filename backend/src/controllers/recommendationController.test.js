@@ -23,6 +23,7 @@ const jwt = require('jsonwebtoken');
 const { SavedRecommendation, RecommendationRun, RecommendationEvaluationEvent, StockPrice } = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 const createRouter = require('./recommendationController');
+const { deriveCalibration } = createRouter;
 
 describe('saved recommendation API', () => {
   let app;
@@ -163,5 +164,33 @@ describe('saved recommendation API', () => {
     ]));
     expect(response.body.data.sector_taxonomy).toEqual(expect.objectContaining({ source: 'snapshot_taxonomy', excluded_without_snapshot_taxonomy: 2 }));
     expect(response.body.data.pending_integrity).toEqual(expect.objectContaining({ pending_runs: 1, blocked_runs: 1 }));
+  });
+});
+
+describe('recommendation calibration scope', () => {
+  test('keeps personalized weights neutral when evidence belongs to a different model', () => {
+    const runs = Array.from({ length: 3 }, (_, runIndex) => ({
+      id: `run-${runIndex}`,
+      model: 'short_term_rule_v2',
+      horizon_days: 20,
+      recommendations: Array.from({ length: 5 }, (_, itemIndex) => ({
+        statistics_eligible: true,
+        forward_return_pct: itemIndex % 2 ? -2 : 3,
+        rationale: { score_parts: { trend: 50 + itemIndex, momentum: 40 + itemIndex, rsi: 45 + itemIndex, stability: 55 + itemIndex, liquidity: 60 + itemIndex } },
+      })),
+    }));
+
+    const learning = deriveCalibration(runs, { targetModel: 'personalized_rule_v1', targetHorizonDays: 20 });
+
+    expect(learning).toMatchObject({
+      sample_count: 15,
+      status: 'model_mismatch',
+      application_status: 'not_applied',
+      application_reason: 'model_mismatch',
+      source: { model: 'short_term_rule_v2', horizon_days: 20, runs_considered: 3 },
+      target: { model: 'personalized_rule_v1', horizon_days: 20 },
+    });
+    expect(learning.calibration).toEqual({ trend: 1, momentum: 1, rsi: 1, stability: 1, liquidity: 1 });
+    expect(Object.values(learning.evidence).every(item => item.adjustment === 1 && item.samples === 15)).toBe(true);
   });
 });

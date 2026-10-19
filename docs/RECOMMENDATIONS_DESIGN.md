@@ -51,6 +51,8 @@ Model `short_term_rule_v2` hiện chỉ tính nhóm technical/objective đã ki�
 
 Đề xuất chỉ đủ điều kiện khi có tối thiểu 50 quan sát giá. Đánh giá phải dùng giá tương lai ngoài mẫu sau đủ 20 phiên, giữ snapshot bất biến, báo số measured/pending, hit rate, phân phối forward return và phân bổ theo ngành. Không dùng pending để điều chỉnh trọng số. Trước khi thêm điểm tin tức hoặc sentiment cần fixture positive/negative, timestamp, nguồn, rights, phương pháp tính, kiểm tra độ trễ và đánh giá hiệu chuẩn theo ngành.
 
+Outcome chỉ được dùng để hiệu chỉnh trọng số của cùng model và cùng horizon. `short_term_rule_v2` và `personalized_rule_v1` là hai model khác nhau; outcome của snapshot theo lịch chỉ là dữ liệu theo dõi cho đề xuất cá nhân hóa và không được đổi trọng số của nó. Quyết định, contract trả về và điều kiện mở hiệu chỉnh thật được ghi tại [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
+
 ## Ranh giới an toàn
 
 ### Đã triển khai: eligibility của báo cáo lịch sử

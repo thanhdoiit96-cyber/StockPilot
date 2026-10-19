@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-19 — Rà soát đánh giá và hiệu chỉnh Đề xuất
+
+- Đã kiểm tra contract snapshot, evaluation evidence, read-time eligibility, cohort report và calibration. Runtime read-only tại `/api/recommendations/history/summary` ghi nhận cohort `short_term_rule_v2`/20 phiên có 0 outcome hợp lệ, 65 pending và 5 outcome bị loại vì integrity; do đó không có hệ số nào được phép áp dụng.
+- Đã khóa hiệu chỉnh chéo model: outcome của `short_term_rule_v2` không còn có thể thay đổi trọng số của `personalized_rule_v1`. API trả `source`, `target`, `application_status` và lý do; khi model không khớp, mọi hệ số giữ `1.00`. UI giải thích rõ trạng thái này thay vì ghi nhận hiệu chỉnh lịch sử đã bật.
+- Quyết định sản phẩm, trade-off, ranh giới dữ liệu và điều kiện mở lại calibration được ghi tại [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md). Muốn mở hiệu chỉnh thật cần snapshot/evaluator bất biến của chính `personalized_rule_v1`, outcome đủ điều kiện và kiểm tra ổn định theo snapshot độc lập.
+- Kiểm chứng: backend controller regression 12/12 đạt, gồm fixture 15 outcome hợp lệ của model nguồn vẫn giữ toàn bộ hệ số cá nhân hóa trung tính; frontend unit/contract 100/100, build + bundle integrity và Playwright Recommendation 3/3 đạt; `GET /api/ready` trả `ready=true` sau restart backend, `GET /api/recommendations/latest` xác nhận runtime trả `model_mismatch` cùng hệ số `1.00`. `git diff --check` đạt. Chưa coi đây là kiểm chứng outcome thị trường thực tế.
+- Điểm tiếp tục: tiếp tục audit accessibility/mobile các tab Danh mục khi nhánh evaluation này đã xanh.
+
 ## 2026-10-19 — Rà soát toàn dự án và khởi động lộ trình cải thiện
 
 ## 2026-10-19 — Tách ownership request khỏi App
