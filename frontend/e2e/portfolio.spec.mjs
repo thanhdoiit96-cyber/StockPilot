@@ -107,7 +107,7 @@ test('portfolio tabs preserve drafts and filters with keyboard and mobile naviga
   await expect(page.getByLabel('Tìm trong Watchlist')).toHaveValue('FPT')
   await expect(page.getByLabel('Thêm mã theo dõi')).toHaveValue('VCB')
   await page.setViewportSize({ width: 390, height: 844 })
-  for (const label of ['Tổng quan', 'Giao dịch', 'Dòng tiền', 'Watchlist']) {
+  for (const label of ['Tổng quan', 'Giao dịch', 'Nhật ký quyết định', 'Dòng tiền', 'Watchlist']) {
     await tabs.getByRole('tab', { name: new RegExp(label) }).click()
     await expect(page.getByRole('tabpanel')).toHaveCount(1)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

@@ -32,10 +32,10 @@ Snapshot chỉ chứa context đã được backend chuẩn hóa khi lưu giao d
 
 Nhật ký là tab riêng trong Danh mục để không trộn với ledger giao dịch. Form đặt trước danh sách: mã, loại quyết định, ngày rà soát, luận điểm, điều kiện vô hiệu và evidence tùy chọn. Danh sách phân biệt rõ evidence snapshot với nội dung do người dùng nhập; entry chưa có evidence hiển thị trung thực là chưa gắn snapshot.
 
-Khi tải, tab giữ trạng thái loading của portfolio; khi lưu/đóng/xóa, từng hành động bị khóa và lỗi được trả tại form. Tab dùng semantic form controls, label rõ ràng, thao tác bàn phím và không phụ thuộc hover. Trên mobile, entry xếp dọc thay vì bảng rộng.
+Khi tải, tab giữ trạng thái loading của portfolio; khi lưu/đóng/xóa, từng hành động bị khóa và lỗi được trả tại form. Đóng và xóa mở dialog xác nhận trước khi gọi API; `Escape`, Hủy hoặc bấm ngoài dialog hủy thao tác khi request chưa chạy. Dialog nhận focus, có `aria-modal` và mô tả rõ đóng entry không suy diễn outcome, còn xóa không thể hoàn tác. Tab dùng semantic form controls, label rõ ràng, thao tác bàn phím và không phụ thuộc hover. Trên mobile, entry xếp dọc thay vì bảng rộng.
 
 ## Hiệu năng, riêng tư và nghiệm thu
 
 Không tạo request mới cho tab: dữ liệu nhỏ được trả trong payload `/api/portfolio` vốn đã có. Giới hạn tối đa 100 entry trả về và 200 entry mỗi portfolio để giữ payload hữu hạn. Snapshot không chứa secret, không gọi provider và không tạo dữ liệu thị trường.
 
-Nghiệm thu v1: validation reject input sai trước khi ghi; evidence transaction ngoài danh mục, khác mã hoặc không có context bị từ chối; snapshot không đổi khi transaction gốc thay đổi; action close/delete chỉ tác động entry của người dùng; UI hiển thị loading/empty/error/success rõ ràng; backend/frontend test và production build đạt.
+Nghiệm thu v1: validation reject input sai trước khi ghi; evidence transaction ngoài danh mục, khác mã hoặc không có context bị từ chối; snapshot không đổi khi transaction gốc thay đổi; action close/delete chỉ tác động entry của người dùng và yêu cầu xác nhận UI rõ ràng; UI hiển thị loading/empty/error/success rõ ràng; backend/frontend test và production build đạt.

@@ -1,5 +1,13 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-19 — Accessibility và mobile cho tab Danh mục
+
+- Rà soát năm tab Danh mục phát hiện tab Watchlist bị rơi một mình sang hàng mới ở desktop vì lưới chỉ có bốn cột, và Close/Delete trong Nhật ký quyết định gửi xác nhận API mà không có bước xác nhận UI. Đây là rủi ro thao tác sai và không khớp contract trải nghiệm đã ghi.
+- Lưới tab nay dùng năm cột ở desktop, ba cột ở màn hình trung bình và hai cột ở mobile. Điều hướng tab bằng bàn phím, draft từng tab và trạng thái panel giữ nguyên.
+- Close/Delete của Nhật ký quyết định nay mở dialog modal nhận focus; Escape, Hủy hoặc bấm nền hủy trước khi mutation chạy. Dialog nói rõ Close không suy diễn outcome thị trường, Delete không thể hoàn tác; success feedback hiện trong form.
+- Kiểm chứng: production build + bundle integrity đạt (entry 495,18 kB / 145,84 kB gzip); Playwright workflow xác nhận dialog không gọi API trước xác nhận, Escape hủy đúng và Close/Delete cập nhật đúng; targeted portfolio tab keyboard/mobile đạt ở 390px, gồm cả Nhật ký quyết định. `git diff --check` đạt.
+- Điểm tiếp tục: hoàn tất frontend unit/contract regression và commit; sau đó quay lại các hạng mục Giai đoạn D chưa có phụ thuộc dữ liệu ngoài.
+
 ## 2026-10-19 — Rà soát đánh giá và hiệu chỉnh Đề xuất
 
 - Đã kiểm tra contract snapshot, evaluation evidence, read-time eligibility, cohort report và calibration. Runtime read-only tại `/api/recommendations/history/summary` ghi nhận cohort `short_term_rule_v2`/20 phiên có 0 outcome hợp lệ, 65 pending và 5 outcome bị loại vì integrity; do đó không có hệ số nào được phép áp dụng.

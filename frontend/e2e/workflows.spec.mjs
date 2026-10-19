@@ -2,8 +2,10 @@
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',exchange:'HSX',listing_status:'listed',volume:1000},{id:'b',code:'VCB',name:'Vietcombank',price:90000,industry:'banking_finance',exchange:'HSX',listing_status:'listed',volume:2000}]
 const list=(data=stocks)=>({success:true,data,pagination:{page:1,pageSize:25,total:data.length,totalPages:2}})
 async function boot(page, options = {}) {
+  let decisions = options.decisions || []
   await page.route('**/api/**', async route => {
-    const path = new URL(route.request().url()).pathname
+    const request = route.request()
+    const path = new URL(request.url()).pathname
     options.requests?.push(path)
     let payload = { success: true, data: null }
     if (path === '/api/stocks') payload = list()
@@ -20,7 +22,16 @@ async function boot(page, options = {}) {
     else if (path === '/api/recommendations/readiness') payload = { success: true, data: { coverage: [] } }
     else if (path === '/api/auth/me') payload = { success: true, user: { id: 'e2e', email: 'e2e@example.com', role: 'admin' } }
     else if (path === '/api/watchlist') payload = { success: true, data: [] }
-    else if (path === '/api/portfolio') payload = { success: true, data: { positions: [] } }
+    else if (path === '/api/portfolio' && request.method() === 'GET') payload = { success: true, data: { positions: [], decisions } }
+    else if (/^\/api\/portfolio\/decisions\/[^/]+\/close$/.test(path) && request.method() === 'POST') {
+      const id = decodeURIComponent(path.split('/').at(-2))
+      decisions = decisions.map(item => item.id === id ? { ...item, status: 'CLOSED' } : item)
+      payload = { success: true, data: decisions.find(item => item.id === id) }
+    } else if (/^\/api\/portfolio\/decisions\/[^/]+$/.test(path) && request.method() === 'DELETE') {
+      const id = decodeURIComponent(path.split('/').at(-1))
+      decisions = decisions.filter(item => item.id !== id)
+      payload = { success: true, data: { id } }
+    }
     await route.fulfill({ json: payload })
   })
   await page.goto('/')
@@ -81,6 +92,30 @@ test('portfolio decision journal stays usable without mobile horizontal overflow
   const geometry = await page.locator('#portfolio-panel-decisions').evaluate(panel => ({ fits: document.documentElement.scrollWidth <= innerWidth, buttonHeight: panel.querySelector('.primary-btn').getBoundingClientRect().height }))
   expect(geometry).toMatchObject({ fits: true })
   expect(geometry.buttonHeight).toBeGreaterThanOrEqual(40)
+})
+
+test('decision journal requires a keyboard-dismissible confirmation before close or delete', async ({ page }) => {
+  const requests = []
+  await boot(page, { requests, decisions: [{ id: 'decision-1', symbol: 'FPT', decision_type: 'BUY', thesis: 'Luận điểm đủ dài để kiểm thử đóng entry.', review_date: '2026-10-26', invalidation_condition: 'Đóng cửa dưới vùng hỗ trợ.', status: 'ACTIVE' }] })
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.getByRole('tab', { name: /Nhật ký quyết định/ }).click()
+  await page.getByRole('button', { name: 'Đóng entry', exact: true }).click()
+  const closeDialog = page.getByRole('dialog', { name: 'Đóng entry nhật ký?' })
+  await expect(closeDialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(closeDialog).toHaveCount(0)
+  expect(requests).not.toContain('/api/portfolio/decisions/decision-1/close')
+  await page.getByRole('button', { name: 'Đóng entry', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Đóng entry nhật ký?' }).getByRole('button', { name: 'Xác nhận đóng' }).click()
+  await expect.poll(() => requests.includes('/api/portfolio/decisions/decision-1/close')).toBe(true)
+  await expect(page.locator('.decision-list')).toContainText('Đã đóng')
+  await page.getByRole('button', { name: 'Xóa', exact: true }).click()
+  const deleteDialog = page.getByRole('dialog', { name: 'Xóa entry nhật ký?' })
+  await expect(deleteDialog).toBeVisible()
+  await expect(deleteDialog).toContainText('không thể hoàn tác')
+  await deleteDialog.getByRole('button', { name: 'Xác nhận xóa' }).click()
+  await expect.poll(() => requests.includes('/api/portfolio/decisions/decision-1')).toBe(true)
+  await expect(page.locator('.decision-list')).toHaveCount(0)
 })
 for (const width of [390, 800, 900]) {
   test(`mobile navigation stays in flow at ${width}px with a collapsed desktop preference`, async ({ page }) => {

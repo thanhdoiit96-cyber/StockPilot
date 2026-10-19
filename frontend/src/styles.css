@@ -1505,7 +1505,7 @@ th {
 .portfolio-section-tabs {
   position: sticky; top: 10px; z-index: 22; max-width: 100%; margin-bottom: 18px; padding: 5px; border: 1px solid rgba(148, 163, 184, .2); border-radius: 16px; background: linear-gradient(180deg, rgba(15, 23, 42, .96), rgba(8, 17, 33, .9)); box-shadow: 0 12px 28px rgba(2, 8, 23, .34), inset 0 1px 0 rgba(255,255,255,.03); backdrop-filter: blur(10px);
 }
-.portfolio-section-tabs [role="tablist"] { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.portfolio-section-tabs [role="tablist"] { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
 .portfolio-section-tabs button {
   display: grid; gap: 3px; min-width: 0; min-height: 58px; padding: 9px 12px; border: 1px solid transparent; border-radius: 12px; color: var(--muted); background: transparent; text-align: left; cursor: pointer; transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
 }
@@ -1604,6 +1604,7 @@ th {
 .performance-funding-gap small { color:var(--muted); line-height:1.45; }
 @media (max-width: 1050px) { .performance-history-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .performance-history-heading { flex-direction: column; } .performance-history-heading .performance-history-cutoff { align-items:flex-start; flex-direction:column; } .performance-history-actions { width:100%; align-items:stretch; } .performance-history-ranges { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .performance-history-summary { grid-template-columns: 1fr; } .performance-history-chart,.performance-history-chart-stage { height: 180px; } .performance-history-y-axis { padding: 27px 0 18px; font-size: 9px; } .performance-history-error { align-items: stretch; flex-direction: column; } }
+@media (max-width: 900px) { .portfolio-section-tabs [role="tablist"] { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .portfolio-section-tabs { position: static; margin-right: -2px; margin-left: -2px; } .portfolio-section-tabs [role="tablist"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } .portfolio-section-tabs button { padding: 9px 10px; } }
 .cash-flow-panel {
   grid-column: 1 / -1; display: grid; gap: 16px; padding: 18px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 18px; background: linear-gradient(180deg, rgba(15, 23, 42, .96), rgba(15, 23, 42, .72)); box-shadow: 0 18px 36px rgba(2, 8, 23, .18), inset 0 1px 0 rgba(255,255,255,.03);
@@ -1765,6 +1766,14 @@ th {
 .decision-list p { margin:0; white-space:pre-wrap; }
 .decision-invalidation, .decision-evidence { border-left:3px solid var(--primary,#5eead4); padding-left:10px; display:grid; gap:3px; font-size:13px; }
 .decision-evidence { border-left-color:var(--accent,#60a5fa); }
+.decision-journal-feedback { margin:14px 0 0; padding:10px 12px; border:1px solid rgba(52,211,153,.3); border-radius:10px; color:#a7f3d0; background:rgba(6,78,59,.18); }
+.decision-dialog-backdrop { position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:20px; background:rgba(2,6,23,.78); backdrop-filter:blur(4px); }
+.decision-dialog { width:min(500px,100%); max-height:calc(100vh - 40px); overflow:auto; padding:22px; border:1px solid rgba(148,163,184,.28); border-radius:16px; outline:none; background:var(--surface); box-shadow:0 24px 70px rgba(0,0,0,.5); }
+.decision-dialog h3 { margin:0 0 8px; }
+.decision-dialog p { margin:0; line-height:1.55; }
+.decision-dialog .error-text { margin-top:12px; }
+.decision-dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+@media(max-width:700px) { .decision-dialog-backdrop { align-items:end; padding:12px; } .decision-dialog { max-height:calc(100vh - 24px); padding:18px 16px; border-radius:16px 16px 12px 12px; } .decision-dialog-actions { display:grid; grid-template-columns:1fr 1fr; } .decision-dialog-actions button { width:100%; min-height:44px; } }
 @media(max-width:700px) { .decision-journal-form { grid-template-columns:1fr; } .decision-wide { grid-column:auto; } }
 /* Readability and information hierarchy */
 input, select, textarea { color: #172033; background: #ffffff; }
