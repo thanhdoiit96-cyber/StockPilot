@@ -35,6 +35,12 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 - `npm run verify:release` nay chạy lint trước toàn bộ Jest backend. Jest chạy tuần tự để tương thích môi trường hạn chế tạo tiến trình con; lệnh không thay thế kiểm thử PostgreSQL thật, browser, provider hay worker production.
 - Kiểm chứng: full gate ngoài sandbox đạt 102 suite, 507 test trong 95,446 giây. Trong sandbox, hai test CLI bị chặn `spawnSync EPERM`; chạy riêng ngoài sandbox đạt 3/3, xác nhận đây là giới hạn môi trường kiểm thử chứ không phải lỗi assertion.
 
+### Template cấu hình backend
+
+- `backend/.env.example` đã bỏ các biến dự kiến/không được runtime đọc và chỉ giữ database, auth/CORS, worker/readiness, preview research và scheduler hiện hành. Không sửa `backend/.env` local.
+- Bản sao template mặc định tắt preview và toàn bộ scheduler để không tự gọi provider. Bật từng phần vẫn cần worker, quyền nguồn và evidence tương ứng; điều này không làm thay đổi default của một môi trường đã có `.env`.
+- Kiểm chứng: parse template thành công với 27 biến hoạt động, đủ các khóa bootstrap và mọi cờ scheduler/preview đều là `false`.
+
 ## Giới hạn giữ nguyên
 
 - Recommendation, forecast và dữ liệu provider vẫn research/internal prototype cho đến khi có evidence, quyền nguồn và validation ngoài mẫu phù hợp.
@@ -43,6 +49,6 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
-1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint và release gate backend hiện đã có lệnh tái lập.
+1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint, release gate và template cấu hình backend hiện đã được chuẩn hóa.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.

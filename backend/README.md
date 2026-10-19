@@ -123,7 +123,7 @@ Backend tự chạy probe giới hạn 5 mã lúc 09:35 và 13:35 các ngày tro
 
 Ứng viên thứ hai cho cá nhân là EODHD: đặt `EODHD_API_KEY` và `EODHD_SYMBOL_SUFFIX`, chạy `npm run verify:eodhd` để kiểm tra key/coverage rồi mới chạy `npm run reconcile:eodhd`. Adapter dùng EOD API, không ingest vào `stock_prices`; cần tuân thủ điều khoản personal-use. Không ghi API key vào Git hoặc log.
 
-Template .env.example còn chứa biến dự kiến. DATABASE_URL không thay thế DB_*; CACHE_DEFAULT_TTL và CACHE_CLEANUP_INTERVAL_HOURS chưa điều khiển TTL/lịch cron trong mã. Khai báo khóa AI hoặc JWT không tự bật tính năng.
+`.env.example` chỉ giữ biến runtime hiện hành: database, auth/CORS, worker/readiness, research preview và scheduler. `DATABASE_URL` được ưu tiên khi có mặt; nếu không, cấu hình đủ `DB_*`. Template để toàn bộ scheduler và forecast preview ở trạng thái tắt để một bản sao local không tự gọi provider. Bật từng job chỉ sau khi kiểm chứng worker, quyền nguồn và cửa sổ vận hành tương ứng.
 
 Helmet, CORS và rate limiting được gắn trong app.js; Winston ghi console. Chưa có cấu hình ghi file, audit request đầy đủ hay monitoring hiệu năng.
 

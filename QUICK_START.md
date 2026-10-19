@@ -51,6 +51,7 @@ DB_PORT=5432
 DB_NAME=stock_analysis_db
 DB_USER=postgres
 DB_PASSWORD=<mat-khau-cua-ban>
+# Vite dev mặc định là 5173; nếu chạy UI ở 4173, thay bằng http://localhost:4173.
 CORS_ORIGIN=http://localhost:5173
 ADMIN_API_KEY=
 ~~~
