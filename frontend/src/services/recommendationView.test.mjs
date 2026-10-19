@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { deriveRecommendationView } from './recommendationView.mjs'
+import { deriveRecommendationView, resolveOverviewRecommendations } from './recommendationView.mjs'
 
 test('prefers a fresh generated result over stale initial data', () => {
   const view = deriveRecommendationView({
@@ -20,4 +20,13 @@ test('ignores stale initial snapshot from an older session instead of rendering 
 
   assert.deepEqual(view.recommendations, [])
   assert.equal(view.expiredInitialData, true)
+})
+
+test('prefers freshly generated overview recommendations over stale scheduled recommendations', () => {
+  const recommendations = resolveOverviewRecommendations({
+    latestRecommendations: [{ symbol: 'AAA' }, { symbol: 'BBB' }, { symbol: 'CCC' }],
+    generatedRecommendations: [{ symbol: 'FPT' }, { symbol: 'HPG' }],
+  })
+
+  assert.deepEqual(recommendations.map(item => item.symbol), ['FPT', 'HPG'])
 })

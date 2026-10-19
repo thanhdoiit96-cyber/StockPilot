@@ -21,6 +21,7 @@ import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
 import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
 import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
+import { resolveOverviewRecommendations } from "./services/recommendationView.mjs";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
 import AuthErrorMessage from "./components/AuthErrorMessage.jsx";
 import AuthSessionGate from "./components/AuthSessionGate.jsx";
@@ -35,7 +36,7 @@ import DetailExternalFactors from "./components/DetailExternalFactors.jsx";
 import DetailSectionNav from "./components/DetailSectionNav.jsx";
 import CompanyFundamentalsTabs from "./components/CompanyFundamentalsTabs.jsx";
 import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
-import { sessionFetch } from "./services/cookieSession.mjs";
+import { readCsrfCookie, sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
 class ur extends Error {
   constructor(n, t = null) {
@@ -665,11 +666,11 @@ function lv() {
     [Jl, s] = D.useState(0),
     $r = D.useRef(null);
   var Or, Rr, Ar, Ur, br, Br, Vr, Hr, Qr, Kr, Wr, qr, Gr, Yr, Xr, Zr;
-  const [ue, Bt] = D.useState(() => readStoredAuth() || {
+  const [ue, Bt] = D.useState(() => readStoredAuth() || (readCsrfCookie() ? {
       token: true,
       mode: "cookie",
       user: null
-    }),
+    } : null)),
     [authVerification, setAuthVerification] = D.useState(() => ({
       status: ue ? "verifying" : "idle",
       message: ""
@@ -947,7 +948,8 @@ function lv() {
     ai = Pn("/api/cache/stats"),
     au = Pn("/api/ai-gate", Bm),
     su = Pn("/api/recommendations/latest", Vm),
-    uu = Pn("/api/recommendations/history?limit=50", Hm);
+    uu = Pn("/api/recommendations/history?limit=50", Hm),
+    [Eh, It] = D.useState(null);
   const Nt = Pn(`/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`, Pc),
     il = D.useMemo(() => (Nt.data || []).map(nv), [Nt.data]),
     si = D.useMemo(() => il.slice(0, 40), [il]),
@@ -1192,6 +1194,10 @@ function lv() {
       En(1), li(Number(d));
     }),
     nf = su.data,
+    gtOverviewRecommendations = resolveOverviewRecommendations({
+      latestRecommendations: nf == null ? void 0 : nf.recommendations,
+      generatedRecommendations: Eh
+    }),
     tf = async d => {
       d.preventDefault();
       const S = nl.trim();
@@ -1638,7 +1644,7 @@ function lv() {
               children: profileLanguage === "en" ? "Provider observation time" : uiTextValue("Thời điểm provider ghi nhận")
             })]
           })]
-        }), O.jsx(ShortTermOutlook, { language: profileLanguage, recommendations: nf?.recommendations || [], watchlistSymbols: [...yt], onOpenDetail: openMarketStock, onAddToWatchlist: addToWatchlist, onOpenIdeas: () => Xe("recommendations") }), O.jsxs("div", {
+        }), O.jsx(ShortTermOutlook, { language: profileLanguage, recommendations: gtOverviewRecommendations, watchlistSymbols: [...yt], onOpenDetail: openMarketStock, onAddToWatchlist: addToWatchlist, onOpenIdeas: () => Xe("recommendations") }), O.jsxs("div", {
           className: `overview-market-grid ${pt.length && ue?.user ? "has-watchlist-pulse" : ""}`,
           children: [O.jsx(MarketBreadth, {
             stocks: si,
@@ -1966,6 +1972,7 @@ function lv() {
         onOpenDetail: openLinkedStock,
         watchlistSymbols: [...yt],
         onAddToWatchlist: addToWatchlist,
+        onRefreshLatest: data => It(Array.isArray(data == null ? void 0 : data.recommendations) ? data.recommendations : null),
         language: profileLanguage
       }), re === "portfolio" && O.jsxs("section", {
         className: "personal-page",

@@ -48,7 +48,7 @@ function RecommendationLifecycleStatus({ language }) {
   const sessions = readiness.expected_session || readiness.latest_eod_session ? `${copy('Phiên lifecycle', 'Lifecycle session')} ${readiness.expected_session || '—'} · EOD ${readiness.latest_eod_session || '—'}${readiness.as_of ? ` · ${copy('Snapshot', 'Snapshot')} ${readiness.as_of}` : ''}${Number.isFinite(Number(readiness.horizon_days)) ? ` · ${copy('Kỳ theo dõi', 'Observation horizon')} ${Number(readiness.horizon_days)} ${copy('phiên', 'sessions')}` : ''}` : null
   return <div className={`recommendation-lifecycle-status is-${readiness.status}`} role="status"><div><strong>{title}</strong><span>{description}</span></div><div className="recommendation-lifecycle-actions">{sessions && <small>{sessions}</small>}<button type="button" className="ghost-btn small-btn" onClick={refresh} disabled={checking}>{checking ? copy('Đang kiểm tra…', 'Checking…') : copy('Làm mới', 'Refresh')}</button></div></div>
 }
-export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, language = 'vi' }) {
+export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, onRefreshLatest, language = 'vi' }) {
   const ui = text => uiText(language, text)
   const money = value => value == null ? '—' : new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
   const en = language === 'en'
@@ -129,6 +129,9 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
         setSelectedProposalId(latest?.id || snapshot.id)
         if (latest) loadProposal(latest)
       }
+      if (typeof onRefreshLatest === 'function') {
+        await onRefreshLatest(response.data)
+      }
     } catch (requestError) { setError(localizeApiError(requestError, language)) } finally { setLoading(false) }
   }
 
@@ -167,6 +170,23 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
   }
   return <section className="recommendations-page recommendation-workbench" lang={language}>    <div className="recommendation-command-header"><div><span className="eyebrow accent">{copy('ĐỀ XUẤT CÁ NHÂN', 'PERSONAL IDEAS')}</span><h2>{copy('Đề xuất theo tiêu chí của bạn', 'Ideas based on your criteria')}</h2><p className="muted-text">{copy('Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.', 'Set priorities to rank symbols for your goals.')}</p></div><span className="chip neutral">{copy('Mô hình giải thích được', 'Explainable model')}</span></div><RecommendationLifecycleStatus language={language} />{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>{copy('Cảnh báo tập trung danh mục', 'Portfolio concentration warning')}</strong><span>{copy('Tỷ trọng ngành cao nhất đang ở mức', 'The largest sector share is')} {initialData.risk.max_sector_share_pct}%.</span><small>{copy('Đang chờ đo lường thêm', 'Waiting for')} {initialData.risk.pending || 0} {copy('kết quả.', 'more results.')}</small></div>}
     <RecommendationSectionTabs active={activeTab} onChange={selectTab} language={language} />
+    <div className="recommendation-summary-strip" aria-label={copy('Tóm tắt nhanh về đề xuất', 'Quick summary of ideas')}>
+      <div className="recommendation-summary-tile">
+        <span>{copy('Mã đủ điều kiện', 'Qualified symbols')}</span>
+        <strong>{recommendations.length}</strong>
+        <small>{copy('Theo tiêu chí hiện tại', 'Current scoring model')}</small>
+      </div>
+      <div className="recommendation-summary-tile">
+        <span>{copy('Snapshot đã lưu', 'Saved snapshots')}</span>
+        <strong>{savedProposals.length}</strong>
+        <small>{copy('Bản xem lại nhanh', 'Fast comparisons')}</small>
+      </div>
+      <div className="recommendation-summary-tile">
+        <span>{copy('Đợt đã đo', 'Measured runs')}</span>
+        <strong>{effectiveHistory.length}</strong>
+        <small>{copy('sau đủ kỳ quan sát', 'after full observation')}</small>
+      </div>
+    </div>
     <div id="recommendation-panel-ideas" role="tabpanel" aria-labelledby="recommendation-tab-ideas" className="recommendation-tab-panel" hidden={activeTab !== 'ideas'} tabIndex={0}>
     <section className="panel recommendation-criteria-panel">
       <div className="recommendation-section-heading"><div><span className="eyebrow accent">{copy('Tùy chỉnh', 'CUSTOMIZE')}</span><h3>{copy('Bạn muốn ưu tiên điều gì?', 'What should be prioritized?')}</h3><p className="muted-text">{copy('Tăng trọng số để tiêu chí ảnh hưởng nhiều hơn đến điểm tổng. Mỗi tiêu chí được chuẩn hóa khi tính.', 'Increase a weight to give a criterion more influence on the total score. Each criterion is normalized.')}</p></div><div className="criteria-heading-actions"><span className="criteria-total">{copy('Tổng trọng số', 'Total weight')} <strong>{totalWeight}</strong></span><button type="button" className="ghost-btn small-btn" aria-expanded={!criteriaCollapsed} aria-controls="recommendation-criteria-form" onClick={() => setCriteriaCollapsed(value => !value)}>{criteriaCollapsed ? copy('Mở tiêu chí', 'Open criteria') : copy('Thu gọn tiêu chí', 'Collapse criteria')}</button></div></div>

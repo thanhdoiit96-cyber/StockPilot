@@ -33,3 +33,9 @@ export function deriveRecommendationView({ result = null, initialData = null, no
     generatedAt: result?.generated_at || initialData?.run?.created_at || initialData?.run?.as_of || initialData?.generated_at || null,
   }
 }
+
+export function resolveOverviewRecommendations({ latestRecommendations = [], generatedRecommendations = null } = {}) {
+  if (Array.isArray(generatedRecommendations)) return generatedRecommendations
+  if (Array.isArray(latestRecommendations)) return latestRecommendations
+  return []
+}
