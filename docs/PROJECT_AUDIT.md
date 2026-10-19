@@ -14,7 +14,7 @@ Dự án đã vượt xa phạm vi demo ban đầu: có xác thực bằng cooki
 - Frontend: 94 unit/contract test đạt; production build đạt. Bundle JavaScript chính trước cải tiến là 557,96 kB (164,41 kB gzip) và Vite cảnh báo vượt 500 kB.
 - Backend: 99 file test được phát hiện. Bộ Jest đầy đủ được chạy trong lần rà soát này; kết quả cuối được ghi ở `PROJECT_STATUS.md`.
 - Backend lint trước rà soát không chạy được vì thiếu cấu hình ESLint dù `package.json` đã khai báo lệnh `lint`.
-- `frontend/src/App.jsx` có 2.332 dòng/98,6 kB; `PROJECT_STATUS.md` khoảng 721 kB và `ROADMAP.md` khoảng 186 kB. Đây là dấu hiệu cần tách ranh giới và lưu trữ lịch sử.
+- `frontend/src/App.jsx` có 2.332 dòng/98,6 kB. Lịch sử dài của trạng thái và roadmap đã được chuyển vào [archive](archive/README.md); hai tài liệu hiện hành chỉ giữ thông tin cần để tiếp tục công việc.
 
 ## Đánh giá theo lĩnh vực
 
@@ -37,7 +37,7 @@ Dự án đã vượt xa phạm vi demo ban đầu: có xác thực bằng cooki
 1. Thêm URL chuẩn cho từng view, hỗ trợ Back/Forward và link chi tiết cổ phiếu.
 2. Khóa endpoint debug bằng quyền quản trị.
 3. Khôi phục lint backend và đưa vào release verification.
-4. Tạo bản trạng thái ngắn hiện hành; chuyển lịch sử dài sang archive mà không mất bằng chứng.
+4. Tạo bản trạng thái ngắn hiện hành; chuyển lịch sử dài sang archive mà không mất bằng chứng. Hoàn thành 2026-10-19; record cũ nằm tại [archive](archive/README.md).
 
 Nghiệm thu: URL round-trip được test; navigation browser đạt; request debug không có quyền bị từ chối; lint/test/build xanh; tài liệu hiện trạng không mâu thuẫn mã.
 
@@ -80,4 +80,4 @@ Không ưu tiên thêm chatbot, tín hiệu mua bán hoặc forecast mới. Các
 - Chưa chọn email provider cho phục hồi mật khẩu và cảnh báo.
 - Chưa xác nhận scheduler/worker production; quyết định deploy được hoãn theo yêu cầu hiện tại.
 - Chưa có bằng chứng để mở company scope ngoài profile hoặc công bố forecast live.
-- Chưa archive hai tài liệu tiến độ dài vì cần giữ liên kết lịch sử; thực hiện ở bước tài liệu riêng, có kiểm tra link.
+- Archive trạng thái/lộ trình đã hoàn thành; các thay đổi mới chỉ cập nhật nguồn hiện hành và archive khi một record không còn là trạng thái tiếp tục.

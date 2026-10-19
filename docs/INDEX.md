@@ -17,6 +17,7 @@ Người mới bắt đầu từ [README](../README.md), chạy ứng dụng the
 | Quy tắc làm việc và cập nhật tài liệu | [AGENTS](../AGENTS.md) |
 | Hiện trạng, bằng chứng và bàn giao | [PROJECT_STATUS](PROJECT_STATUS.md) |
 | Ưu tiên, mốc phát triển và tiêu chí nghiệm thu | [ROADMAP](ROADMAP.md) |
+| Record trạng thái/lộ trình đã thay thế | [Archive](archive/README.md) |
 | Hợp đồng, adapter và ingestion dữ liệu thị trường | [MARKET_DATA_CONTRACT](MARKET_DATA_CONTRACT.md) |
 | Cấu trúc backend, API và cache hiện có | [Backend README](../backend/README.md) |
 | Contract hồ sơ cá nhân, validation và giới hạn giai đoạn 1 | [PERSONAL_PROFILE_DESIGN](PERSONAL_PROFILE_DESIGN.md) |
