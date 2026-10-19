@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { formatNumber } from '../services/userLocale.mjs'
 import { translate } from '../services/i18n.mjs'
 
@@ -20,8 +20,9 @@ function annularPath(startPercent, endPercent) {
   return `M ${outerStart.x} ${outerStart.y} A 49 49 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y} L ${innerEnd.x} ${innerEnd.y} A 35 35 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y} Z`
 }
 
-export default function PortfolioAllocation({ allocations = [], positions = [], quoteCount = 0, positionCount = 0, quoteError = false, providerStatus, language = 'vi' }) {
+export default function PortfolioAllocation({ allocations = [], positions = [], quoteCount = 0, positionCount = 0, quoteError = false, providerStatus, targetSummary, onSaveTargets, savingTargets = false, language = 'vi' }) {
   const t = key => translate(language, key)
+  const copy = (vi, en) => language === 'en' ? en : vi
   const money = value => `${formatNumber(value, language, { maximumFractionDigits: 0 })} ₫`
   const [tooltip, setTooltip] = useState(null)
   const tooltipId = useId().replaceAll(':', '')
@@ -47,6 +48,17 @@ export default function PortfolioAllocation({ allocations = [], positions = [], 
     return { ...item, index, start, end: cursor }
   })
   const coverage = `${quoteCount}/${positionCount} ${t('portfolio.allocation.coverage')}`
+  const targetItems = targetSummary?.items || []
+  const [draftTargets, setDraftTargets] = useState({})
+  useEffect(() => {
+    setDraftTargets(Object.fromEntries(targetItems.map(item => [item.stock_id, item.target_weight_pct == null ? '' : String(item.target_weight_pct)])))
+  }, [targetSummary])
+  const draftTotal = Object.values(draftTargets).reduce((sum, value) => sum + (Number(value) || 0), 0)
+  const saveTargets = async event => {
+    event.preventDefault()
+    if (!onSaveTargets || draftTotal > 100) return
+    await onSaveTargets(positions.map(position => ({ stock_id: position.stock_id, target_weight_pct: Number(draftTargets[position.stock_id] || 0), alert_threshold_pct: 5 })).filter(item => item.target_weight_pct > 0))
+  }
 
   return <article className="panel allocation-panel" lang={language}>
     <div className="allocation-panel-heading"><div><h3>{t('portfolio.allocation.title')}</h3><p className="muted-text">{t('portfolio.allocation.subtitle')}</p></div><span className="chip neutral">{allocations.length} {t('portfolio.common.symbols')}</span></div>
@@ -65,5 +77,13 @@ export default function PortfolioAllocation({ allocations = [], positions = [], 
     </div> : <p className="muted-text">{t('portfolio.allocation.empty')}</p>}
     <p className="allocation-footnote">{coverage} · {t(quoteError || quoteCount < positionCount ? 'portfolio.allocation.partial' : 'portfolio.allocation.fresh')}{providerStatus === 'circuit_open' ? ` ${t('portfolio.allocation.circuit')}` : providerStatus === 'degraded' ? ` ${t('portfolio.allocation.degraded')}` : ''}</p>
     <aside className="portfolio-data-audit" aria-label={t('portfolio.allocation.audit')}><strong>{t('portfolio.allocation.audit')}</strong><p>{coverage}</p><p>{t('portfolio.allocation.formula')}</p><div className="portfolio-data-audit-legend" aria-label={t('portfolio.allocation.legend')}><span><i className="rag-green" />{t('portfolio.allocation.up')}</span><span><i className="rag-red" />{t('portfolio.allocation.down')}</span><span><i className="rag-amber" />{t('portfolio.common.noData')}</span></div></aside>
+    <section className="allocation-targets" aria-labelledby="allocation-targets-title">
+      <div><h4 id="allocation-targets-title">{copy('Mục tiêu phân bổ', 'Allocation targets')}</h4><p>{copy('Đặt tỷ trọng mong muốn theo mã. Cảnh báo xuất hiện khi lệch từ 5 điểm phần trăm.', 'Set a desired weight for each symbol. An alert appears at a 5 percentage-point deviation.')}</p></div>
+      {targetSummary?.alerts?.length ? <p className="allocation-target-alert" role="status">{copy(`${targetSummary.alerts.length} mã đang lệch khỏi mục tiêu.`, `${targetSummary.alerts.length} symbols are outside their targets.`)}</p> : null}
+      {positions.length ? <form onSubmit={saveTargets} className="allocation-target-form"><div className="allocation-target-summary"><span>{copy('Đã đặt', 'Configured')}: {draftTotal.toFixed(1)}%</span><span>{copy('Còn lại', 'Remaining')}: {Math.max(0, 100 - draftTotal).toFixed(1)}%</span></div>{positions.map(position => {
+        const item = targetItems.find(target => target.stock_id === position.stock_id)
+        return <label key={position.stock_id}><span><strong>{position.symbol}</strong><small>{copy('Hiện tại', 'Current')}: {item?.actual_weight_pct?.toFixed?.(1) ?? Number(position.weight || 0).toFixed(1)}%</small></span><input type="number" min="0" max="100" step="0.1" value={draftTargets[position.stock_id] || ''} onChange={event => setDraftTargets(current => ({ ...current, [position.stock_id]: event.target.value }))} aria-label={copy(`Mục tiêu ${position.symbol}`, `${position.symbol} target`)} disabled={savingTargets} /><span>%</span></label>
+      })}<button type="submit" className="ghost-btn small-btn" disabled={savingTargets || draftTotal > 100}>{savingTargets ? copy('Đang lưu…', 'Saving…') : copy('Lưu mục tiêu', 'Save targets')}</button>{draftTotal > 100 ? <p className="error-text" role="alert">{copy('Tổng mục tiêu không được vượt 100%.', 'Total targets cannot exceed 100%.')}</p> : null}</form> : <p className="muted-text">{copy('Thêm vị thế để đặt mục tiêu phân bổ.', 'Add positions to set allocation targets.')}</p>}
+    </section>
   </article>
 }

@@ -4,7 +4,7 @@ Cập nhật: 2026-10-15. Mục tiêu hiện tại là hoàn thiện tiếp view
 
 Cập nhật: 2026-10-14. Mục tiêu hiện tại là hoàn thiện nền tảng dữ liệu, lifecycle và forecast research cho thị trường Việt Nam theo hướng dữ liệu có provenance, có audit và không phát hành dự báo giả, đồng thời giữ các view chính của app ở mức production-grade trong khi không gia tăng dữ liệu hoặc feature ngoài phạm vi.
 
-> **Kế hoạch hiện hành (2026-10-19):** dùng [PROJECT_AUDIT.md](PROJECT_AUDIT.md) làm bản đánh giá và thứ tự triển khai hiện tại. Giai đoạn A đã hoàn thành phần code/config; việc archive tài liệu dài còn mở. Giai đoạn B đã lazy-load Bảng giá/Đề xuất/Advisor và giảm entry JS xuống 481,94 kB; tiếp theo tách page orchestration khỏi `App.jsx`, rồi làm readiness dữ liệu, mục tiêu phân bổ danh mục và nhật ký quyết định. Các checkpoint bên dưới là lịch sử và ràng buộc evidence; chúng không thay đổi các gate research/live.
+> **Kế hoạch hiện hành (2026-10-19):** dùng [PROJECT_AUDIT.md](PROJECT_AUDIT.md) làm bản đánh giá và thứ tự triển khai hiện tại. Giai đoạn A đã hoàn thành phần code/config; việc archive tài liệu dài còn mở. Giai đoạn B đã lazy-load Bảng giá/Đề xuất/Advisor và giảm entry JS xuống 481,94 kB; request lifecycle theo view đã giảm tải trang không mở. Giai đoạn C đã có readiness database/worker. Giai đoạn D đã hoàn thành mục tiêu phân bổ v1; tiếp theo là tách orchestration Đề xuất/Advisor và nhật ký quyết định. Các checkpoint bên dưới là lịch sử và ràng buộc evidence; chúng không thay đổi các gate research/live.
 
 ## Cập nhật 2026-10-14 — UI views chính của app được giữ làm tầng sản phẩm chính
 

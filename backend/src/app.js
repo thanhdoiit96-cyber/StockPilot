@@ -35,6 +35,7 @@ const forecastController = require('./controllers/forecastController')();
 const requireAdmin = require('./middleware/requireAdmin');
 const requestMetrics = require('./middleware/requestMetrics');
 const { createRequestMetrics } = require('./services/requestMetrics');
+const { createReadinessProbe } = require('./services/readinessService');
 
 // Initialize Express app
 const app = express();
@@ -67,6 +68,7 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
   skip: req => req.method === 'GET' && [
     '/api/health',
+    '/api/ready',
     '/api/cache/stats',
     '/api/stocks/data-quality',
     '/api/stocks/quotes/status'
@@ -105,6 +107,7 @@ const sequelizeConnection = buildSequelizeConnection({
 });
 
 const sequelize = new Sequelize(...sequelizeConnection.args);
+const probeReadiness = createReadinessProbe({ sequelize });
 
 // Initialize Cache Service
 let cacheService;
@@ -116,6 +119,11 @@ app.get('/api/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
+});
+
+app.get('/api/ready', async (req, res) => {
+  const readiness = await probeReadiness();
+  return res.status(readiness.ready ? 200 : 503).json({ success: readiness.ready, data: readiness });
 });
 
 app.get('/api/debug-env', requireAdmin, (req, res) => {

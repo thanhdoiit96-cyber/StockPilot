@@ -2,6 +2,14 @@
 
 ## 2026-10-19 — Rà soát toàn dự án và khởi động lộ trình cải thiện
 
+## 2026-10-19 — Readiness runtime và mục tiêu phân bổ danh mục
+
+- Hoàn thành `GET /api/ready`, tách với liveness `/api/health`: kiểm tra Sequelize database trong timeout bị giới hạn 2 giây và kiểm tra Python worker khi `READINESS_REQUIRE_WORKER=true`. Response chỉ trả trạng thái dependency/độ trễ, không trả URL, lỗi hay secret. Docker Compose nay dùng readiness và bắt buộc worker.
+- Tách request lifecycle theo view: Tổng quan chỉ tải danh sách mã và đề xuất mới nhất; Bảng giá tự sở hữu request; history Đề xuất và AI gate chỉ tải khi mở đúng page. Xóa health/cache diagnostics khỏi UI thường. E2E xác nhận không phát sinh request không thuộc page.
+- Triển khai Mục tiêu phân bổ: migration `041_create_portfolio_allocation_targets` đã áp dụng local, lưu tỷ trọng theo mã, tổng tối đa 100%, thay thế toàn bộ set trong transaction và trả deviation/cảnh báo từ snapshot vị thế. UI Danh mục cho phép đặt tỷ trọng và hiển thị mã lệch ít nhất 5 điểm phần trăm. Không tạo lệnh, không gửi email/push và không ảnh hưởng ledger giao dịch.
+- Kiểm chứng: readiness service 4/4; portfolio target service/controller 30/30; frontend 100/100; frontend build + bundle integrity đạt; targeted Playwright navigation/request ownership 2/2; lint backend 0 error/38 warning. Migration 041 đã chạy thành công trên database development. Backend local đã restart; `/api/ready` trả `ready=true` với database và worker khả dụng.
+- Điểm tiếp tục: tách request/state của Recommendation và Advisor khỏi `App.jsx`; sau đó triển khai nhật ký quyết định đầu tư, dùng evidence snapshot hiện có và không suy diễn hiệu suất.
+
 - Hoàn thành bản rà soát hiện hành tại [PROJECT_AUDIT.md](PROJECT_AUDIT.md), đối chiếu sản phẩm, frontend, backend, dữ liệu, bảo mật, kiểm thử, hiệu năng, tài liệu và vận hành. Thứ tự đã chọn: làm sạch nền tảng → tách/lazy-load frontend → readiness dữ liệu → mục tiêu danh mục/nhật ký quyết định; tiếp tục khóa forecast/company scope khi chưa đủ evidence.
 - Triển khai URL chuẩn cho sáu view bằng query `view`, giữ link `stock` cho Chi tiết, hỗ trợ reload và Back/Forward, loại view không hợp lệ về Tổng quan. Logic URL nằm trong `frontend/src/services/viewNavigation.mjs` để kiểm thử độc lập.
 - Khóa `/api/debug-env` bằng `requireAdmin`, tránh công khai host/user/độ dài password cho request ẩn danh. Khôi phục `npm run lint` bằng cấu hình ESLint; 38 nợ kỹ thuật cũ hiện được báo warning, còn nhóm lỗi mặc định như biến chưa khai báo vẫn làm lint thất bại.

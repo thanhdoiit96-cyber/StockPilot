@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const { Op, QueryTypes } = require('sequelize');
-const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, Stock, StockPrice, sequelize } = require('../models');
+const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, PortfolioAllocationTarget, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
@@ -9,6 +9,7 @@ const { normalizeCashFlowInput, summarizeExternalCashFlows } = require('../servi
 const { normalizeSessionLimit, buildDailyValuationSeries } = require('../services/portfolioValuation');
 const { normalizePortfolioEventInput, presentPortfolioEvent } = require('../services/portfolioEvent');
 const { reconcilePortfolioEvent } = require('../services/portfolioEventReconciliation');
+const { normalizeAllocationTargets, summarizeAllocationTargets } = require('../services/portfolioAllocationTargets');
 const { httpError } = require('../utils/httpError');
 const router = express.Router();
 router.use(requireAuth);
@@ -21,6 +22,7 @@ router.get('/', async (req, res) => {
   if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
   const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }], order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
   const cashFlows = await PortfolioCashFlow.findAll({ where: { portfolio_id: portfolio.id }, order: [['occurred_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
+  const allocationTargets = await PortfolioAllocationTarget.findAll({ where: { portfolio_id: portfolio.id }, order: [['created_at', 'ASC'], ['id', 'ASC']] });
   const stocks = [...new Set(transactions.map(tx => tx.stock_id))]; const prices = new Map();
   const previousPrices = new Map();
   if (stocks.length) {
@@ -101,12 +103,14 @@ router.get('/', async (req, res) => {
     };
   });
   const performance = summarizeInvestmentPerformance({ transactions, positions, closedPositions, cashFlowSummary: summarizeExternalCashFlows(cashFlows) });
+  const allocationTargetSummary = summarizeAllocationTargets({ positions, targets: allocationTargets.map(target => target.toJSON ? target.toJSON() : target) });
   res.json({ success: true, data: {
     portfolio,
     positions,
     closed_positions: closedPositions,
     position_counts: { open: positions.length, closed: closedPositions.length },
     performance,
+    allocation_targets: allocationTargetSummary,
     cash_flows: cashFlows.map(flow => ({ id: flow.id, type: flow.type, amount: Number(flow.amount), occurred_at: flow.occurred_at, note: flow.note || null, created_at: flow.created_at, updated_at: flow.updated_at })),
     transactions: transactions.map(tx => ({
       id: tx.id,
@@ -130,6 +134,26 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Load failed:', error.message);
     httpError(res, 500, 'portfolio_load_failed', 'Không tải được danh mục. Vui lòng thử lại.');
+  }
+});
+
+router.put('/allocation-targets', async (req, res) => {
+  const input = normalizeAllocationTargets(req.body);
+  if (input.error) return httpError(res, 400, 'portfolio_allocation_targets_invalid', input.error);
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return httpError(res, 404, 'portfolio_not_found', 'Chưa có danh mục để lưu mục tiêu phân bổ.');
+    const stockIds = input.value.map(item => item.stock_id);
+    const stocks = stockIds.length ? await Stock.findAll({ where: { id: { [Op.in]: stockIds } }, attributes: ['id'] }) : [];
+    if (stocks.length !== stockIds.length) return httpError(res, 400, 'portfolio_allocation_targets_invalid', 'Có mã chứng khoán không hợp lệ.');
+    await sequelize.transaction(async transaction => {
+      await PortfolioAllocationTarget.destroy({ where: { portfolio_id: portfolio.id }, transaction });
+      if (input.value.length) await PortfolioAllocationTarget.bulkCreate(input.value.map(target => ({ ...target, portfolio_id: portfolio.id })), { transaction });
+    });
+    return res.json({ success: true, data: { total_target_weight_pct: input.total_target_weight_pct, target_count: input.value.length } });
+  } catch (error) {
+    console.error('[Portfolio] Save allocation targets failed:', error.message);
+    return httpError(res, 500, 'portfolio_allocation_targets_save_failed', 'Không thể lưu mục tiêu phân bổ. Chưa có dữ liệu nào được thay đổi.');
   }
 });
 

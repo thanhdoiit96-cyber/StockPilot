@@ -36,6 +36,7 @@ import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStor
 import { readCsrfCookie, sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
 import { normalizeAppView, readAppView, writeAppView } from "./services/viewNavigation.mjs";
+import { viewNeedsResource } from "./services/pageResourcePolicy.mjs";
 const MarketBoardPage = D.lazy(() => import("./components/MarketBoardPage.jsx"));
 const RecommendationWorkbench = D.lazy(() => import("./components/RecommendationWorkbench.jsx"));
 const AdvisorWorkspace = D.lazy(() => import("./components/AdvisorWorkspace.jsx"));
@@ -946,13 +947,12 @@ function lv() {
       d = true, S.abort();
     };
   }, [ue, Jl, authVerification.status, portfolioRetry]);
-  const wt = Pn("/api/health"),
-    ai = Pn("/api/cache/stats"),
-    au = Pn("/api/ai-gate", Bm),
-    su = Pn("/api/recommendations/latest", Vm),
-    uu = Pn("/api/recommendations/history?limit=50", Hm),
+  const au = Pn(viewNeedsResource(re, "aiGate") ? "/api/ai-gate" : null, Bm),
+    su = Pn(viewNeedsResource(re, "latestRecommendations") ? "/api/recommendations/latest" : null, Vm),
+    uu = Pn(viewNeedsResource(re, "recommendationHistory") ? "/api/recommendations/history?limit=50" : null, Hm),
     [Eh, It] = D.useState(null);
-  const Nt = Pn(`/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`, Pc),
+  const stockListUrl = `/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`,
+    Nt = Pn(viewNeedsResource(re, "stocks") ? stockListUrl : null, Pc),
     il = D.useMemo(() => (Nt.data || []).map(nv), [Nt.data]),
     si = D.useMemo(() => il.slice(0, 40), [il]),
     ol = ma(si.map(d => d.symbol), {
@@ -985,7 +985,7 @@ function lv() {
     me = Ro.find(d => d.id === Cn) || (Cn ? {
       id: Cn
     } : Ro[0]),
-    Ee = Pn(me != null && me.id ? `/api/stocks/${encodeURIComponent(me.id)}` : null, Um),
+    Ee = Pn(viewNeedsResource(re, "detail") && me != null && me.id ? `/api/stocks/${encodeURIComponent(me.id)}` : null, Um),
     [Kh, du] = D.useState(false),
     [Wh, hu] = D.useState(false),
     T = Pn(Kh && me != null && me.id ? `/api/stocks/${encodeURIComponent(me.id)}/analysis${Wh ? "?refresh=1" : ""}` : null, bm),
@@ -1546,23 +1546,6 @@ function lv() {
       }), (re === "overview" && cu || re === "portfolio" && ci.loading || re === "detail" && (Ee.status === "loading" || fi.loading) || re === "recommendations" && (su.status === "loading" || uu.status === "loading")) && O.jsx(PageLoadingOverlay, {
         active: true,
         label: re === "detail" ? p(uiTextValue("Đang tải dữ liệu Chi tiết mã mới nhất...")) : re === "recommendations" ? p(uiTextValue("Đang cập nhật dữ liệu Đề xuất mới nhất...")) : re === "portfolio" ? p(uiTextValue("Đang cập nhật dữ liệu Danh mục mới nhất...")) : p(uiTextValue("Đang cập nhật dữ liệu Thị trường mới nhất..."))
-      }), re !== "market-board" && (wt.error || ai.error) && O.jsxs("section", {
-        className: "api-panel diagnostics-panel",
-        children: [wt.error && O.jsxs("p", {
-          role: "alert",
-          children: [wt.error, " ", O.jsx("button", {
-            className: "ghost-btn small-btn",
-            onClick: wt.retry,
-            children: p(uiTextValue("Thử lại health"))
-          })]
-        }), ai.error && O.jsxs("p", {
-          role: "alert",
-          children: [ai.error, " ", O.jsx("button", {
-            className: "ghost-btn small-btn",
-            onClick: ai.retry,
-            children: p(uiTextValue("Thử lại cache"))
-          })]
-        })]
       }), re === "market-board" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải Bảng giá…") }), children: O.jsx(MarketBoardPage, {
         active: re === "market-board",
         overviewStocks: il,
@@ -2028,6 +2011,22 @@ function lv() {
             positionCount: Oo.length,
             quoteError: Qh,
             providerStatus: hi == null ? void 0 : hi.status,
+            targetSummary: pe == null ? void 0 : pe.allocation_targets,
+            savingTargets: transactionSubmitting,
+            onSaveTargets: async targets => {
+              setTransactionSubmitting(true);
+              try {
+                await je("/api/portfolio/allocation-targets", { method: "PUT", token: ue.token, body: { targets } });
+                const refreshed = await je("/api/portfolio", { token: ue.token });
+                mt(refreshed.data);
+                on(p(uiTextValue("Đã lưu mục tiêu phân bổ.")));
+              } catch (error) {
+                on(error.message);
+                throw error;
+              } finally {
+                setTransactionSubmitting(false);
+              }
+            },
             language: profileLanguage
           }), O.jsx(PortfolioPerformanceHistory, {
             token: ue.token,

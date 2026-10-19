@@ -1,6 +1,6 @@
 jest.mock('../models', () => ({
   Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
-  PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
+  PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioAllocationTarget: { findAll: jest.fn(), destroy: jest.fn(), bulkCreate: jest.fn() },
   PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
   sequelize: { transaction: jest.fn(), query: jest.fn() }
@@ -19,6 +19,7 @@ beforeEach(() => {
   models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
   models.PortfolioTransaction.bulkCreate.mockResolvedValue([{ id: 'import-1' }]);
   models.PortfolioCashFlow.findAll.mockResolvedValue([]);
+  models.PortfolioAllocationTarget.findAll.mockResolvedValue([]);
   models.PortfolioEvent.findAll.mockResolvedValue([]);
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.Stock.findOne.mockResolvedValue({ id: 's', code: 'FPT', name: 'FPT Corp' });
@@ -40,6 +41,29 @@ test('uses the same shared intraday quote as detail/overview for valuation', asy
   liveQuoteService.load.mockResolvedValue({ FPT: { symbol: 'FPT', price: 66000, observed_at: '2026-09-25T10:00:00+07:00' } });
   const response = await request(app).get('/portfolio');
   expect(response.body.data.positions[0]).toMatchObject({ market_price: 66000, market_value: 660000, unrealized_pnl: 160000, price_source: 'intraday' });
+});
+
+test('returns saved allocation targets with their calculated deviation', async () => {
+  models.PortfolioAllocationTarget.findAll.mockResolvedValue([{ stock_id: 's', target_weight_pct: '60', alert_threshold_pct: '5' }]);
+  liveQuoteService.load.mockResolvedValue({});
+  const response = await request(app).get('/portfolio');
+  expect(response.status).toBe(200);
+  expect(response.body.data.allocation_targets).toMatchObject({ total_target_weight_pct: 60, unallocated_target_weight_pct: 40, items: [expect.objectContaining({ symbol: 'FPT', actual_weight_pct: 100, deviation_pct: 40, status: 'outside_target' })] });
+});
+
+test('replaces allocation targets atomically after validating stock IDs', async () => {
+  models.PortfolioAllocationTarget.destroy.mockResolvedValue(1);
+  models.PortfolioAllocationTarget.bulkCreate.mockResolvedValue([]);
+  const response = await request(app).put('/portfolio/allocation-targets').send({ targets: [{ stock_id: 's', target_weight_pct: 60, alert_threshold_pct: 5 }] });
+  expect(response.status).toBe(200);
+  expect(models.PortfolioAllocationTarget.destroy).toHaveBeenCalledWith({ where: { portfolio_id: 'p' }, transaction: { id: 'db-transaction' } });
+  expect(models.PortfolioAllocationTarget.bulkCreate).toHaveBeenCalledWith([expect.objectContaining({ portfolio_id: 'p', stock_id: 's', target_weight_pct: 60 })], { transaction: { id: 'db-transaction' } });
+});
+
+test('does not write allocation targets above one hundred percent', async () => {
+  const response = await request(app).put('/portfolio/allocation-targets').send({ targets: [{ stock_id: 's', target_weight_pct: 70 }, { stock_id: 'other', target_weight_pct: 40 }] });
+  expect(response.status).toBe(400);
+  expect(models.PortfolioAllocationTarget.destroy).not.toHaveBeenCalled();
 });
 
 test('returns the authenticated portfolio transaction history as normalized ledger rows', async () => {

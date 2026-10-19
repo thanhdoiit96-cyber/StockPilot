@@ -4,6 +4,7 @@ const list=(data=stocks)=>({success:true,data,pagination:{page:1,pageSize:25,tot
 async function boot(page, options = {}) {
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
+    options.requests?.push(path)
     let payload = { success: true, data: null }
     if (path === '/api/stocks') payload = list()
     else if (path === '/api/stocks/data-quality') payload = { success: true, data: { session_date: '2026-09-25', listed: 551, covered: 204, missing: 347, missing_symbols: ['VPB'], ready: false, provider: {}, eod_retry: { last_run_at: '2026-09-25T12:45:00.000Z', last_run_mode: 'gap_retry', last_run_complete: false, last_run_failed: false, last_run_requested: 347, last_run_selected: 25, last_run_selected_traded: 18, last_run_trade_priority: { enabled: true, probed: 347, batches: 2, failed_batches: 0, matched: 18, had_error: false }, runtime: { running: false, phase: 'idle' } } } }
@@ -24,8 +25,22 @@ async function boot(page, options = {}) {
   })
   await page.goto('/')
   await expect(page.locator('.dashboard-shell')).toBeVisible()
-  await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
+  if (options.openMarketBoard !== false) await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
 }
+
+test('each page loads only its owned data resources', async ({ page }) => {
+  const requests = []
+  await boot(page, { requests, openMarketBoard: false })
+  await expect.poll(() => requests.filter(path => path === '/api/stocks').length).toBeGreaterThan(0)
+  expect(requests).toContain('/api/recommendations/latest')
+  expect(requests).not.toContain('/api/recommendations/history')
+  expect(requests).not.toContain('/api/ai-gate')
+  expect(requests).not.toContain('/api/cache/stats')
+  expect(requests).not.toContain('/api/health')
+
+  await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
+  await expect.poll(() => requests.includes('/api/recommendations/history')).toBe(true)
+})
 
 test('page URLs are shareable and browser history restores the previous view', async ({ page }) => {
   await boot(page)
