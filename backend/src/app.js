@@ -118,7 +118,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/debug-env', (req, res) => {
+app.get('/api/debug-env', requireAdmin, (req, res) => {
   res.json({
     success: true,
     data: {

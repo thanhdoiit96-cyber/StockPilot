@@ -5,7 +5,8 @@ const root = process.cwd()
 const html = fs.readFileSync(path.join(root, 'dist/index.html'), 'utf8')
 const asset = html.match(/<script type="module"[^>]+src="\/assets\/([^"']+\.js)"/)?.[1]
 if (!asset) throw new Error('Không tìm thấy JavaScript asset trong dist/index.html')
-const bundle = fs.readFileSync(path.join(root, 'dist/assets', asset), 'utf8')
+const javascriptAssets = fs.readdirSync(path.join(root, 'dist/assets')).filter(file => file.endsWith('.js'))
+const completeBundle = javascriptAssets.map(file => fs.readFileSync(path.join(root, 'dist/assets', file), 'utf8')).join('\n')
 const checks = [
   ['page Đề xuất', /recommendation/],
   ['loading overlay', /loading-overlay/],
@@ -19,7 +20,7 @@ const checks = [
   ['khối nhận định chuyên gia', /expert-guidance-panel/],
   ['chỉ báo Ichimoku', /ichimoku/]
 ]
-const missing = checks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
+const missing = checks.filter(([, marker]) => !marker.test(completeBundle)).map(([label]) => label)
 if (missing.length) throw new Error(`Bundle không đạt kiểm tra: ${missing.join(', ')}`)
 
 const overviewChecks = [
@@ -29,7 +30,7 @@ const overviewChecks = [
   ['phân bổ danh mục', /allocation-panel/],
   ['biểu đồ chi tiết', /detail-chart-panel/]
 ]
-const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
+const missingOverview = overviewChecks.filter(([, marker]) => !marker.test(completeBundle)).map(([label]) => label)
 if (missingOverview.length) throw new Error(`Component React không đạt kiểm tra: ${missingOverview.join(', ')}`)
 
 const marketBoardChecks = [
@@ -38,7 +39,7 @@ const marketBoardChecks = [
   ['cấu hình cột', /stockpilot-market-columns-v1/],
   ['xuất CSV', /stockpilot-bang-gia-/]
 ]
-const missingMarketBoard = marketBoardChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
+const missingMarketBoard = marketBoardChecks.filter(([, marker]) => !marker.test(completeBundle)).map(([label]) => label)
 if (missingMarketBoard.length) throw new Error(`Công cụ Bảng giá không đạt kiểm tra: ${missingMarketBoard.join(', ')}`)
 
 const sidebarChecks = [
@@ -46,7 +47,7 @@ const sidebarChecks = [
   ['nhãn thu gọn', /Thu gọn thanh điều hướng/],
   ['nhãn mở rộng', /Mở rộng thanh điều hướng/]
 ]
-const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(bundle)).map(([label]) => label)
+const missingSidebar = sidebarChecks.filter(([, marker]) => !marker.test(completeBundle)).map(([label]) => label)
 if (missingSidebar.length) throw new Error(`Runtime sidebar không đạt kiểm tra: ${missingSidebar.join(', ')}`)
 
-console.log(`Bundle integrity passed: ${asset}; Tổng quan, Bảng giá, Danh mục, Chi tiết và sidebar: React`)
+console.log(`Bundle integrity passed: ${asset} + ${javascriptAssets.length - 1} chunks; Tổng quan, Bảng giá, Danh mục, Chi tiết và sidebar: React`)

@@ -1,5 +1,22 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-19 — Rà soát toàn dự án và khởi động lộ trình cải thiện
+
+- Hoàn thành bản rà soát hiện hành tại [PROJECT_AUDIT.md](PROJECT_AUDIT.md), đối chiếu sản phẩm, frontend, backend, dữ liệu, bảo mật, kiểm thử, hiệu năng, tài liệu và vận hành. Thứ tự đã chọn: làm sạch nền tảng → tách/lazy-load frontend → readiness dữ liệu → mục tiêu danh mục/nhật ký quyết định; tiếp tục khóa forecast/company scope khi chưa đủ evidence.
+- Triển khai URL chuẩn cho sáu view bằng query `view`, giữ link `stock` cho Chi tiết, hỗ trợ reload và Back/Forward, loại view không hợp lệ về Tổng quan. Logic URL nằm trong `frontend/src/services/viewNavigation.mjs` để kiểm thử độc lập.
+- Khóa `/api/debug-env` bằng `requireAdmin`, tránh công khai host/user/độ dài password cho request ẩn danh. Khôi phục `npm run lint` bằng cấu hình ESLint; 38 nợ kỹ thuật cũ hiện được báo warning, còn nhóm lỗi mặc định như biến chưa khai báo vẫn làm lint thất bại.
+- Cập nhật README vì mô tả demo cũ không còn đúng; INDEX và ROADMAP liên kết tới bản rà soát hiện hành. Chưa archive lịch sử status/roadmap trong bước này để không làm mất liên kết/bằng chứng.
+- Bắt đầu Giai đoạn B: Bảng giá, Đề xuất và Advisor được lazy-load theo page boundary với loading overlay có trạng thái. Bundle integrity nay kiểm toàn bộ entry và dynamic chunks thay vì giả định mọi marker nằm trong một file.
+- Kiểm chứng: backend 99/99 suite, 491/491 test đạt; coverage statement 81,36%, line 86,67%. Frontend 97/97 unit/contract test đạt; targeted Playwright navigation 1/1 đạt; production build và bundle integrity đạt. Entry JS giảm từ 557,96 kB/164,41 kB gzip xuống 481,94 kB/142,08 kB gzip; các page chunk là 19,48 kB, 52,12 kB và 6,75 kB. Backend lint đạt với 0 error/38 warning.
+- Điểm tiếp tục: tách page orchestration và request lifecycle khỏi `App.jsx`, ưu tiên Đề xuất/Advisor; đo request và render trước khi tách thêm các tab doanh nghiệp. Sau đó triển khai readiness endpoint có timeout.
+
+## 2026-10-19 — Bộ hướng dẫn và template deploy Vercel
+
+- Thêm `docs/VERCEL_DEPLOYMENT.md` cho mô hình hai Vercel Project (`backend`/`frontend`) và PostgreSQL managed, gồm migration ngoài build, exact CORS origin, same-origin `/api` proxy, Preview strategy, smoke test và rollback.
+- Thêm root `.env.example` tối thiểu cho Docker Compose và `frontend/.env.example` chỉ chứa biến public `VITE_*`; cập nhật `backend/.env.example` với production baseline và danh sách scheduler cần tắt trên Vercel. `.gitignore` nay chặn `.env.*` và `.vercel/` nhưng cho phép commit template `.env.example`, không thay đổi các `.env` local hiện hữu.
+- Giới hạn được ghi rõ: Express API có thể chạy như Vercel Function, nhưng Python Vnstock worker, in-process `node-cron` và filesystem evidence cần worker/orchestration/storage riêng. `frontend/vercel.json` vẫn giữ backend placeholder cho tới khi có domain production thật.
+- Kiểm chứng tài liệu/cấu hình: JSON Vercel hiện hữu parse hợp lệ, các template được Git nhìn thấy, link chỉ mục hợp lệ và scan không phát hiện giá trị secret thật. Đây là chuẩn bị deploy; chưa tạo Vercel Project, database production, migration production hay deployment thật.
+
 ## 2026-10-19 — Khôi phục kết nối đăng nhập local
 
 - Đã kiểm tra `backend/.env` theo hướng không hiển thị secret: các biến cốt lõi cho database, JWT, port và CORS đều có giá trị; cả `DATABASE_URL` và bộ `DB_*` kết nối PostgreSQL thành công, danh sách CORS bao gồm UI local trên cổng 5173/4173.

@@ -11,3 +11,8 @@ backend/*.err
 frontend/*-runtime.err
 *.log
 .env
+.env.*
+!.env.example
+!**/.env.example
+.vercel/
+**/.vercel/

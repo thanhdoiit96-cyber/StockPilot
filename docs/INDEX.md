@@ -1,5 +1,9 @@
 ﻿# Chỉ mục tài liệu
 
+## Kế hoạch hiện hành
+
+- [Rà soát sản phẩm và kỹ thuật](PROJECT_AUDIT.md): đánh giá hiện trạng, khoảng trống, ưu tiên và lộ trình triển khai hiện hành.
+
 ## Quy trình chung
 
 Người mới bắt đầu từ [README](../README.md), chạy ứng dụng theo [QUICK_START](../QUICK_START.md). Khi tiếp tục phát triển, đọc [AGENTS](../AGENTS.md) → [PROJECT_STATUS](PROJECT_STATUS.md) → [ROADMAP](ROADMAP.md), thực hiện và kiểm chứng, rồi cập nhật đúng tài liệu chịu trách nhiệm.
@@ -9,6 +13,7 @@ Người mới bắt đầu từ [README](../README.md), chạy ứng dụng the
 | Tổng quan và vai trò tài liệu | [README](../README.md) |
 | Cài đặt, cấu hình, chạy demo, xử lý lỗi | [QUICK_START](../QUICK_START.md) |
 | Bảng lệnh build/run PowerShell | [RUN_COMMANDS](../RUN_COMMANDS.md) |
+| Deploy PostgreSQL, backend và frontend lên Vercel | [VERCEL_DEPLOYMENT](VERCEL_DEPLOYMENT.md) |
 | Quy tắc làm việc và cập nhật tài liệu | [AGENTS](../AGENTS.md) |
 | Hiện trạng, bằng chứng và bàn giao | [PROJECT_STATUS](PROJECT_STATUS.md) |
 | Ưu tiên, mốc phát triển và tiêu chí nghiệm thu | [ROADMAP](ROADMAP.md) |

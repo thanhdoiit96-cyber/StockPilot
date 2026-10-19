@@ -1,8 +1,8 @@
 ﻿# Phân tích thị trường chứng khoán Việt Nam
 
-Ứng dụng web hướng tới phân tích dữ liệu thị trường, theo dõi danh mục cá nhân và hỗ trợ phân tích bằng AI. Bản hiện tại là demo React/Vite → Express → PostgreSQL, có dashboard, danh sách và chi tiết cổ phiếu từ dữ liệu seed.
+Ứng dụng web phân tích dữ liệu thị trường Việt Nam, theo dõi danh mục cá nhân và hỗ trợ nghiên cứu có kiểm soát nguồn dữ liệu. Hệ thống dùng React/Vite → Express → PostgreSQL, kèm Python Vnstock worker cho dữ liệu thị trường.
 
-Danh mục và biểu đồ tổng quan dùng dữ liệu minh họa; AI, nguồn giá trực tiếp và tài khoản người dùng chưa được triển khai. Xem [trạng thái và bằng chứng kiểm tra](docs/PROJECT_STATUS.md) để biết mức độ hoàn thiện.
+Bản hiện tại có tài khoản và quản lý phiên, bảng giá, watchlist, sổ giao dịch và dòng tiền danh mục, dữ liệu doanh nghiệp, đề xuất có vòng đời đánh giá và forecast ở phạm vi research. Dữ liệu live, company scope và forecast chỉ được mở khi vượt qua các gate về nguồn, độ mới và bằng chứng; xem [trạng thái](docs/PROJECT_STATUS.md), [rà soát hiện hành](docs/PROJECT_AUDIT.md) và [lộ trình](docs/ROADMAP.md).
 
 ## Bắt đầu
 

@@ -5,7 +5,6 @@ import { formatMoney, formatNumber, formatDateTime } from "./services/userLocale
 import AccountPanel from "./components/AccountPanel.jsx";
 import * as D from "react";
 import * as O from "react/jsx-runtime";
-import MarketBoardPage from "./components/MarketBoardPage.jsx";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import ForeignFlowPanel from "./components/ForeignFlowPanel.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
@@ -19,8 +18,6 @@ import PortfolioCashFlows from "./components/PortfolioCashFlows.jsx";
 import PortfolioSectionTabs from "./components/PortfolioSectionTabs.jsx";
 import WatchlistPanel from "./components/WatchlistPanel.jsx";
 import QuickWatchlistButton from "./components/QuickWatchlistButton.jsx";
-import RecommendationWorkbench from "./components/RecommendationWorkbench.jsx";
-import AdvisorWorkspace from "./components/AdvisorWorkspace.jsx";
 import { resolveOverviewRecommendations } from "./services/recommendationView.mjs";
 import AuthPasswordField from "./components/AuthPasswordField.jsx";
 import AuthErrorMessage from "./components/AuthErrorMessage.jsx";
@@ -38,6 +35,10 @@ import CompanyFundamentalsTabs from "./components/CompanyFundamentalsTabs.jsx";
 import { AUTH_STORAGE_KEY, SESSION_EXPIRED_EVENT, authFromResponse, authFromStorageValue, broadcastAuthEvent, clearStoredAuth, notifySessionExpired, readStoredAuth } from "./services/authSession.mjs";
 import { readCsrfCookie, sessionFetch } from "./services/cookieSession.mjs";
 import { translate } from "./services/i18n.mjs";
+import { normalizeAppView, readAppView, writeAppView } from "./services/viewNavigation.mjs";
+const MarketBoardPage = D.lazy(() => import("./components/MarketBoardPage.jsx"));
+const RecommendationWorkbench = D.lazy(() => import("./components/RecommendationWorkbench.jsx"));
+const AdvisorWorkspace = D.lazy(() => import("./components/AdvisorWorkspace.jsx"));
 class ur extends Error {
   constructor(n, t = null) {
     super(n), this.name = "ApiError", this.status = t, this.code = arguments[2] || null;
@@ -689,8 +690,8 @@ function lv() {
     [portfolioTab, setPortfolioTab] = D.useState("overview"),
     [re, Xe] = D.useState(() => {
       try {
-        if (new URLSearchParams(window.location.search).has("stock")) return "detail";
-        return sessionStorage.getItem("stockpilot-view") || (sessionStorage.getItem("stockpilot-market-view") === "board" ? "market-board" : "overview");
+        const storedView = sessionStorage.getItem("stockpilot-view") || (sessionStorage.getItem("stockpilot-market-view") === "board" ? "market-board" : "overview");
+        return readAppView(window.location, storedView);
       } catch {
         return "overview";
       }
@@ -900,13 +901,14 @@ function lv() {
   D.useEffect(() => {
     try {
       sessionStorage.setItem("stockpilot-view", re), Cn == null ? sessionStorage.removeItem("stockpilot-selected-id") : sessionStorage.setItem("stockpilot-selected-id", String(Cn));
-      const url = new URL(window.location.href);
-      if (re === "detail" && Cn) url.searchParams.set("stock", String(Cn));
-      else url.searchParams.delete("stock");
-      url.searchParams.delete("symbol");
+      const url = writeAppView(window.location, re, Cn);
       window.history.replaceState(null, "", url);
     } catch {}
   }, [re, Cn]), D.useEffect(() => {
+    const restoreView = () => Xe(readAppView(window.location));
+    window.addEventListener("popstate", restoreView);
+    return () => window.removeEventListener("popstate", restoreView);
+  }, []), D.useEffect(() => {
     try {
       sessionStorage.setItem("stockpilot-sidebar-collapsed", yn ? "1" : "0");
     } catch {}
@@ -1401,11 +1403,13 @@ function lv() {
     },
     currentPageTitle = pageTitles[re] || pageTitles.overview,
     navigateToPage = view => {
+      const nextView = normalizeAppView(view);
       try {
         Object.keys(sessionStorage).filter(key => key.startsWith("analysis-requested:")).forEach(key => sessionStorage.removeItem(key));
+        window.history.pushState(null, "", writeAppView(window.location, nextView, Cn));
       } catch {}
       window.__stockpilotResetAnalysis?.();
-      Xe(view);
+      Xe(nextView);
     },
     openMarketStock = (stock, options = {}) => {
       ht(stock.id);
@@ -1559,7 +1563,7 @@ function lv() {
             children: p(uiTextValue("Thử lại cache"))
           })]
         })]
-      }), O.jsx(MarketBoardPage, {
+      }), re === "market-board" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải Bảng giá…") }), children: O.jsx(MarketBoardPage, {
         active: re === "market-board",
         overviewStocks: il,
         overviewTotal: vu,
@@ -1575,7 +1579,7 @@ function lv() {
           ...stock,
           symbol: stock.symbol || stock.code
         })
-      }), re === "overview" && O.jsxs(i.Fragment, {
+      }) }), re === "overview" && O.jsxs(i.Fragment, {
         children: [O.jsxs("section", {
           className: "overview-hero panel",
           children: [O.jsxs("div", {
@@ -1964,7 +1968,7 @@ function lv() {
             })]
           })]
         })]
-      }), re === "recommendations" && O.jsx(RecommendationWorkbench, {
+      }), re === "recommendations" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải Đề xuất…") }), children: O.jsx(RecommendationWorkbench, {
         initialData: nf,
         history: uu.data || [],
         token: ue.token,
@@ -1974,7 +1978,7 @@ function lv() {
         onAddToWatchlist: addToWatchlist,
         onRefreshLatest: data => It(Array.isArray(data == null ? void 0 : data.recommendations) ? data.recommendations : null),
         language: profileLanguage
-      }), re === "portfolio" && O.jsxs("section", {
+      }) }), re === "portfolio" && O.jsxs("section", {
         className: "personal-page",
         children: [Ir && O.jsx("p", {
           role: "status",
@@ -2313,7 +2317,7 @@ function lv() {
             })]
           })]
         })]
-      }), re === "advisor" && O.jsx(AdvisorWorkspace, {
+      }), re === "advisor" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải AI Advisor…") }), children: O.jsx(AdvisorWorkspace, {
         language: profileLanguage,
         token: ue.token,
         aiEnabled: (Xr = au.data) == null ? void 0 : Xr.enabled,
@@ -2323,7 +2327,7 @@ function lv() {
         marketStocks: al,
         quotes: an,
         providerLicenseUrl: gu
-      })]
+      }) })]
     })]
   });
 }

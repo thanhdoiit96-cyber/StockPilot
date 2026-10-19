@@ -26,6 +26,22 @@ async function boot(page, options = {}) {
   await expect(page.locator('.dashboard-shell')).toBeVisible()
   await page.getByRole('button', { name: 'Bảng giá', exact: true }).click()
 }
+
+test('page URLs are shareable and browser history restores the previous view', async ({ page }) => {
+  await boot(page)
+  await expect(page).toHaveURL(/view=market-board/)
+
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await expect(page).toHaveURL(/view=portfolio/)
+  await expect(page.getByRole('button', { name: 'Danh mục cá nhân', exact: true })).toHaveAttribute('aria-current', 'page')
+
+  await page.goBack()
+  await expect(page).toHaveURL(/view=market-board/)
+  await expect(page.getByRole('button', { name: 'Bảng giá', exact: true })).toHaveAttribute('aria-current', 'page')
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Bảng giá', exact: true })).toHaveAttribute('aria-current', 'page')
+})
 for (const width of [390, 800, 900]) {
   test(`mobile navigation stays in flow at ${width}px with a collapsed desktop preference`, async ({ page }) => {
     await page.addInitScript(() => sessionStorage.setItem('stockpilot-sidebar-collapsed', '1'))
