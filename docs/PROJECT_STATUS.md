@@ -1,5 +1,22 @@
 # Trạng thái và bàn giao dự án
 
+## 2026-10-19 — Khôi phục kết nối đăng nhập local
+
+- Đã kiểm tra `backend/.env` theo hướng không hiển thị secret: các biến cốt lõi cho database, JWT, port và CORS đều có giá trị; cả `DATABASE_URL` và bộ `DB_*` kết nối PostgreSQL thành công, danh sách CORS bao gồm UI local trên cổng 5173/4173.
+- Sửa `backend/src/models/index.js` để dùng chung `buildSequelizeConnection` với app. Trước đó URL được truyền sai overload của Sequelize nên model auth rơi về Windows user mặc định (`ntdoi`) và `POST /api/auth/login` trả 500 dù health vẫn xanh.
+- Đã restart backend và UI dev. Xác minh `GET /api/health`, UI `http://127.0.0.1:5173/` và `GET /api/stocks/data-quality` trả 200; login probe với tài khoản không tồn tại trả 401 đúng contract; stderr backend sạch sau restart.
+- Runtime local hiện dùng backend cổng 5000 và Vite cổng 5173. Log được ghi tạm tại `.runtime-logs/`; chưa thực hiện đăng nhập bằng thông tin người dùng thật.
+- Theo yêu cầu vận hành tiếp theo, frontend đã được build lại và chuyển sang production preview `http://127.0.0.1:4173/`; UI dev cổng 5173 đã dừng. Proxy health qua 4173 trả 200 và bundle integrity đạt.
+- Database có đúng một bản ghi `admin@abc.com`, email đã chuẩn hóa và mật khẩu là bcrypt hợp lệ. Bản ghi hiện mang role `user` thay vì `admin`; chưa tự đổi quyền hoặc đặt lại mật khẩu vì hai thao tác đó cần quyết định rõ của chủ tài khoản.
+- Sửa bootstrap auth frontend: chỉ tạo trạng thái xác minh cookie khi trình duyệt thực sự có cookie CSRF, thay vì luôn gọi `/api/auth/me` lúc mở app. Trình duyệt chưa có phiên nay đi thẳng tới form đăng nhập, không còn hiểu nhầm `401 Authentication required` thành phiên cũ hết hạn. Targeted auth/session test đạt 12/12; production build và bundle integrity đạt với `index-hOq5HO0h.js`. Bộ test frontend tổng thể vẫn dừng ở lỗi catalog độc lập có sẵn: thiếu `market_basket_failed`.
+- Sửa cấu hình runtime local của frontend để `VITE_API_BASE_URL` rỗng, buộc auth và API dùng đường dẫn same-origin `/api` qua proxy 4173. Cấu hình cũ nhúng `http://localhost:5000`, trong khi cookie client dùng `credentials: same-origin`, nên trang `localhost:4173` không thể duy trì cookie đăng nhập qua origin khác. Build mới `index-Bok0l0F6.js` không còn URL API tuyệt đối; UI/proxy trên `localhost:4173` đều trả 200 và targeted auth/session test tiếp tục đạt 12/12.
+
+## 2026-10-19 — Rà soát worktree và hoàn thiện các thay đổi đang chờ
+
+- Giữ các thay đổi có mục đích rõ: URL PostgreSQL được chuẩn hóa trước khi truyền cho Sequelize; model dùng cùng factory kết nối với app; bổ sung template `backend/.env.example` chỉ chứa placeholder; demo seed chuyển sang upsert theo ID để có thể chạy lại mà không lỗi trùng khóa.
+- Hoàn thiện UI đang chờ: điều hướng section chi tiết bám theo vùng đang xem, trang Đề xuất có dải tóm tắt và cập nhật đề xuất Tổng quan ngay sau khi tạo mới; bổ sung test tránh Tổng quan giữ danh sách scheduled cũ. Catalog lỗi frontend được bổ sung `market_basket_failed` để giữ contract song ngữ với backend.
+- Kiểm chứng: backend config/auth 25/25 test đạt; frontend 94/94 test đạt; syntax check model/config/hai seeder đạt. Hai seeder chưa được chạy vào database hiện hữu trong lần rà soát này để tránh tự thay đổi dữ liệu; production build được chạy lại sau khi chốt source.
+
 ## 2026-10-15 — Khôi phục saved proposal mới nhất và đồng bộ lịch chạy về 15:00 ICT
 
 - Đã sửa luồng tải đề xuất đã lưu ở [frontend/src/components/RecommendationWorkbench.jsx](../frontend/src/components/RecommendationWorkbench.jsx) để sắp xếp theo thời gian tạo mới nhất trước, ưu tiên snapshot gần nhất và tự load lại bản mới nhất nếu chưa có lựa chọn hiện tại.
