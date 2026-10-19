@@ -204,7 +204,7 @@ npm.cmd test
 npm.cmd run build
 ~~~
 
-`verify:release` chạy ESLint trước rồi toàn bộ Jest backend tuần tự, không cần backend đang chạy. Chế độ tuần tự giữ lệnh dùng được trong môi trường không cho Jest tạo worker con. Nó không thay thế `test:postgres`, browser E2E, migration production hay kiểm chứng provider/worker thật. Test backend hiện có dùng mock cho database/cache trong các trường hợp liên quan; test frontend dùng fetch giả lập để kiểm tra xử lý lỗi và phản hồi đến sai thứ tự. Build không thay thế kiểm tra trình duyệt. Ghi ngày, môi trường, kết quả và hạn chế vào [PROJECT_STATUS](docs/PROJECT_STATUS.md) khi nghiệm thu.
+`verify:release` chạy ESLint, kiểm tra contract `.env.example`, rồi toàn bộ Jest backend tuần tự; không cần backend đang chạy. Chế độ tuần tự giữ lệnh dùng được trong môi trường không cho Jest tạo worker con. Nó không thay thế `test:postgres`, browser E2E, migration production hay kiểm chứng provider/worker thật. Test backend hiện có dùng mock cho database/cache trong các trường hợp liên quan; test frontend dùng fetch giả lập để kiểm tra xử lý lỗi và phản hồi đến sai thứ tự. Build không thay thế kiểm tra trình duyệt. Ghi ngày, môi trường, kết quả và hạn chế vào [PROJECT_STATUS](docs/PROJECT_STATUS.md) khi nghiệm thu.
 
 ## Kiểm thử trình duyệt và PostgreSQL
 

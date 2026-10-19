@@ -39,7 +39,8 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 
 - `backend/.env.example` đã bỏ các biến dự kiến/không được runtime đọc và chỉ giữ database, auth/CORS, worker/readiness, preview research và scheduler hiện hành. Không sửa `backend/.env` local.
 - Bản sao template mặc định tắt preview và toàn bộ scheduler để không tự gọi provider. Bật từng phần vẫn cần worker, quyền nguồn và evidence tương ứng; điều này không làm thay đổi default của một môi trường đã có `.env`.
-- Kiểm chứng: parse template thành công với 27 biến hoạt động, đủ các khóa bootstrap và mọi cờ scheduler/preview đều là `false`.
+- `npm run check:env-template` nay khóa contract gồm 27 biến hoạt động, phát hiện key trùng/ngoài contract và bắt buộc mọi cờ scheduler/preview là `false`; lệnh đã nằm trong release gate.
+- Kiểm chứng: full release gate ngoài sandbox đạt lint, contract template và 102 suite/507 test trong 96,059 giây.
 
 ## Giới hạn giữ nguyên
 

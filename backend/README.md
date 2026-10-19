@@ -127,7 +127,7 @@ Backend tự chạy probe giới hạn 5 mã lúc 09:35 và 13:35 các ngày tro
 
 Helmet, CORS và rate limiting được gắn trong app.js; Winston ghi console. Chưa có cấu hình ghi file, audit request đầy đủ hay monitoring hiệu năng.
 
-Test dùng mock nằm cạnh mã: [cacheService.test.js](src/services/cacheService.test.js) và [stockController.test.js](src/controllers/stockController.test.js). Chạy `npm run verify:release` trước checkpoint backend: lệnh chạy ESLint rồi toàn bộ Jest tuần tự để tương thích môi trường không cho Jest tạo worker con. Gate này chỉ kiểm tra mã nguồn/backend trong workspace; không chạy migration trên database production, browser E2E, provider thật hoặc worker production.
+Test dùng mock nằm cạnh mã: [cacheService.test.js](src/services/cacheService.test.js) và [stockController.test.js](src/controllers/stockController.test.js). `npm run check:env-template` kiểm tra contract của `.env.example`: đủ khóa bootstrap, không trùng khóa và các scheduler/preview đều tắt. Chạy `npm run verify:release` trước checkpoint backend: lệnh chạy ESLint, kiểm tra template rồi toàn bộ Jest tuần tự để tương thích môi trường không cho Jest tạo worker con. Gate này chỉ kiểm tra mã nguồn/backend trong workspace; không chạy migration trên database production, browser E2E, provider thật hoặc worker production.
 
 [scripts/verify-postgres.cjs](scripts/verify-postgres.cjs) kiểm tra PostgreSQL thật trong schema ngẫu nhiên: chạy migrations, TTL/cleanup, cache miss/hit và invalidation sau PUT qua router với models/cache thật. Các connection của bài kiểm tra đặt search_path chỉ tới schema thử. Script không khởi động app.js hoặc cron và không kiểm chứng toàn bộ middleware/startup của server. Schema thử được xóa trong finally.
 
