@@ -4,6 +4,7 @@ import { translate } from '../services/i18n.mjs'
 const tabs = [
   { id: 'overview', label: 'portfolio.tabs.overview', description: 'portfolio.tabs.overviewDesc' },
   { id: 'transactions', label: 'portfolio.tabs.transactions', description: 'portfolio.tabs.transactionsDesc' },
+  { id: 'decisions', label: 'portfolio.tabs.decisions', description: 'portfolio.tabs.decisionsDesc' },
   { id: 'cash', label: 'portfolio.tabs.cash', description: 'portfolio.tabs.cashDesc' },
   { id: 'watchlist', label: 'portfolio.tabs.watchlist', description: 'portfolio.tabs.watchlistDesc' }
 ]

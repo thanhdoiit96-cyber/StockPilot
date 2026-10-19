@@ -1,7 +1,7 @@
 jest.mock('../models', () => ({
-  Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), bulkCreate: jest.fn() },
+  Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), findOne: jest.fn(), bulkCreate: jest.fn() },
   PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioAllocationTarget: { findAll: jest.fn(), destroy: jest.fn(), bulkCreate: jest.fn() },
-  PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
+  PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioDecision: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn(), count: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
   sequelize: { transaction: jest.fn(), query: jest.fn() }
 }));
@@ -21,6 +21,8 @@ beforeEach(() => {
   models.PortfolioCashFlow.findAll.mockResolvedValue([]);
   models.PortfolioAllocationTarget.findAll.mockResolvedValue([]);
   models.PortfolioEvent.findAll.mockResolvedValue([]);
+  models.PortfolioDecision.findAll.mockResolvedValue([]);
+  models.PortfolioDecision.count.mockResolvedValue(0);
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.Stock.findOne.mockResolvedValue({ id: 's', code: 'FPT', name: 'FPT Corp' });
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
@@ -341,4 +343,34 @@ test('deletes a confirmed transaction when the locked remaining timeline stays v
   expect(response.status).toBe(200);
   expect(response.body.data).toEqual({ id: 'sell' });
   expect(destroy).toHaveBeenCalledWith({ transaction: { id: 'db-transaction' } });
+});
+
+test('creates a decision with server-projected recommendation evidence only', async () => {
+  models.PortfolioTransaction.findOne.mockResolvedValue({ id: 'tx-evidence', stock_id: 's', side: 'BUY', Stock: { code: 'FPT', name: 'FPT Corp' }, recommendation_context: { source: 'personalized', symbol: 'FPT', model: 'rule_v1', generated_at: '2026-10-18T03:00:00Z', horizon_days: 20, score: 82, rank: 1, expected_entry_price: 100000, criteria: { trend: 30 } } });
+  models.PortfolioDecision.create.mockImplementation(async value => ({ id: 'decision-1', stock_id: 's', decision_type: 'BUY', status: 'ACTIVE', thesis: 'Luận điểm đủ dài để được lưu trong nhật ký.', review_date: '2026-11-01', invalidation_condition: 'Mất vùng hỗ trợ ba phiên.', evidence_snapshot: value.evidence_snapshot, created_at: '2026-10-19T03:00:00Z' }));
+  const response = await request(app).post('/portfolio/decisions').send({ symbol: 'FPT', decision_type: 'BUY', thesis: 'Luận điểm đủ dài để được lưu trong nhật ký.', review_date: '2026-11-01', invalidation_condition: 'Mất vùng hỗ trợ ba phiên.', evidence_transaction_id: 'tx-evidence' });
+  expect(response.status).toBe(201);
+  expect(models.PortfolioDecision.create).toHaveBeenCalledWith(expect.objectContaining({ portfolio_id: 'p', stock_id: 's', evidence_snapshot: expect.objectContaining({ transaction_id: 'tx-evidence', score: 82 }) }));
+  expect(response.body.data.evidence_snapshot).toMatchObject({ transaction_id: 'tx-evidence', score: 82 });
+});
+
+test('rejects an evidence transaction without recommendation context before writing a decision', async () => {
+  models.PortfolioTransaction.findOne.mockResolvedValue({ id: 'tx-manual', stock_id: 's', side: 'BUY', recommendation_context: null });
+  const response = await request(app).post('/portfolio/decisions').send({ symbol: 'FPT', decision_type: 'RESEARCH', thesis: 'Luận điểm đủ dài để được lưu trong nhật ký.', review_date: '2026-11-01', invalidation_condition: 'Mất vùng hỗ trợ ba phiên.', evidence_transaction_id: 'tx-manual' });
+  expect(response.status).toBe(400);
+  expect(response.body.code).toBe('portfolio_decision_evidence_invalid');
+  expect(models.PortfolioDecision.create).not.toHaveBeenCalled();
+});
+
+test('closes and deletes only an authenticated portfolio decision after confirmation', async () => {
+  const update = jest.fn().mockResolvedValue(undefined);
+  const destroy = jest.fn().mockResolvedValue(undefined);
+  models.PortfolioDecision.findOne.mockResolvedValueOnce({ id: 'decision-1', stock_id: 's', decision_type: 'BUY', status: 'ACTIVE', thesis: 'Luận điểm đủ dài để được lưu trong nhật ký.', review_date: '2026-11-01', invalidation_condition: 'Mất vùng hỗ trợ ba phiên.', Stock: { code: 'FPT', name: 'FPT Corp' }, update });
+  const close = await request(app).post('/portfolio/decisions/decision-1/close').send({ confirmed: true });
+  expect(close.status).toBe(200);
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: 'CLOSED' }));
+  models.PortfolioDecision.findOne.mockResolvedValueOnce({ id: 'decision-1', destroy });
+  const remove = await request(app).delete('/portfolio/decisions/decision-1').send({ confirmed: true });
+  expect(remove.status).toBe(204);
+  expect(destroy).toHaveBeenCalled();
 });

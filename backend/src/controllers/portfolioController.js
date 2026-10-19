@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const { Op, QueryTypes } = require('sequelize');
-const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, PortfolioAllocationTarget, Stock, StockPrice, sequelize } = require('../models');
+const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, PortfolioAllocationTarget, PortfolioDecision, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
@@ -10,6 +10,7 @@ const { normalizeSessionLimit, buildDailyValuationSeries } = require('../service
 const { normalizePortfolioEventInput, presentPortfolioEvent } = require('../services/portfolioEvent');
 const { reconcilePortfolioEvent } = require('../services/portfolioEventReconciliation');
 const { normalizeAllocationTargets, summarizeAllocationTargets } = require('../services/portfolioAllocationTargets');
+const { MAX_DECISIONS, normalizeDecisionInput, snapshotRecommendationEvidence, presentDecision, presentDecisionEvidence } = require('../services/portfolioDecisionJournal');
 const { httpError } = require('../utils/httpError');
 const router = express.Router();
 router.use(requireAuth);
@@ -23,6 +24,7 @@ router.get('/', async (req, res) => {
   const transactions = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }], order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
   const cashFlows = await PortfolioCashFlow.findAll({ where: { portfolio_id: portfolio.id }, order: [['occurred_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] });
   const allocationTargets = await PortfolioAllocationTarget.findAll({ where: { portfolio_id: portfolio.id }, order: [['created_at', 'ASC'], ['id', 'ASC']] });
+  const decisions = await PortfolioDecision.findAll({ where: { portfolio_id: portfolio.id }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }], order: [['created_at', 'DESC'], ['id', 'DESC']], limit: 100 });
   const stocks = [...new Set(transactions.map(tx => tx.stock_id))]; const prices = new Map();
   const previousPrices = new Map();
   if (stocks.length) {
@@ -111,6 +113,8 @@ router.get('/', async (req, res) => {
     position_counts: { open: positions.length, closed: closedPositions.length },
     performance,
     allocation_targets: allocationTargetSummary,
+    decisions: decisions.map(presentDecision),
+    decision_evidence: recommendationTransactions.map(presentDecisionEvidence).filter(Boolean),
     cash_flows: cashFlows.map(flow => ({ id: flow.id, type: flow.type, amount: Number(flow.amount), occurred_at: flow.occurred_at, note: flow.note || null, created_at: flow.created_at, updated_at: flow.updated_at })),
     transactions: transactions.map(tx => ({
       id: tx.id,
@@ -154,6 +158,59 @@ router.put('/allocation-targets', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Save allocation targets failed:', error.message);
     return httpError(res, 500, 'portfolio_allocation_targets_save_failed', 'Không thể lưu mục tiêu phân bổ. Chưa có dữ liệu nào được thay đổi.');
+  }
+});
+
+router.post('/decisions', async (req, res) => {
+  const input = normalizeDecisionInput(req.body);
+  if (input.error) return httpError(res, 400, 'portfolio_decision_invalid', input.error);
+  try {
+    let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
+    const count = await PortfolioDecision.count({ where: { portfolio_id: portfolio.id } });
+    if (count >= MAX_DECISIONS) return httpError(res, 409, 'portfolio_decision_invalid', 'Nhật ký đã đạt giới hạn 200 entry.');
+    const stock = await Stock.findOne({ where: { code: input.value.symbol } });
+    if (!stock) return httpError(res, 404, 'portfolio_decision_invalid', 'Không tìm thấy mã chứng khoán.');
+    let evidenceSnapshot = null;
+    if (input.value.evidence_transaction_id) {
+      const transaction = await PortfolioTransaction.findOne({ where: { id: input.value.evidence_transaction_id, portfolio_id: portfolio.id, stock_id: stock.id, side: 'BUY' }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }] });
+      evidenceSnapshot = snapshotRecommendationEvidence(transaction);
+      if (!evidenceSnapshot) return httpError(res, 400, 'portfolio_decision_evidence_invalid', 'Evidence được chọn không thuộc mã này hoặc chưa có snapshot đề xuất.');
+    }
+    const decision = await PortfolioDecision.create({ portfolio_id: portfolio.id, stock_id: stock.id, decision_type: input.value.decision_type, status: 'ACTIVE', thesis: input.value.thesis, review_date: input.value.review_date, invalidation_condition: input.value.invalidation_condition, evidence_snapshot: evidenceSnapshot });
+    return res.status(201).json({ success: true, data: presentDecision({ ...(decision.toJSON ? decision.toJSON() : decision), Stock: stock }) });
+  } catch (error) {
+    console.error('[Portfolio] Create decision failed:', error.message);
+    return httpError(res, 500, 'portfolio_decision_create_failed', 'Không thể lưu nhật ký quyết định. Chưa có dữ liệu nào được thay đổi.');
+  }
+});
+
+router.post('/decisions/:decisionId/close', async (req, res) => {
+  if (req.body?.confirmed !== true) return httpError(res, 400, 'portfolio_decision_invalid', 'Cần xác nhận trước khi đóng entry.');
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    const decision = portfolio ? await PortfolioDecision.findOne({ where: { id: req.params.decisionId, portfolio_id: portfolio.id }, include: [{ model: Stock, attributes: ['id', 'code', 'name'] }] }) : null;
+    if (!decision) return httpError(res, 404, 'portfolio_decision_not_found', 'Không tìm thấy entry nhật ký.');
+    if (decision.status === 'CLOSED') return res.json({ success: true, data: presentDecision(decision) });
+    await decision.update({ status: 'CLOSED', closed_at: new Date(), updated_at: new Date() });
+    return res.json({ success: true, data: presentDecision(decision) });
+  } catch (error) {
+    console.error('[Portfolio] Close decision failed:', error.message);
+    return httpError(res, 500, 'portfolio_decision_close_failed', 'Không thể đóng entry nhật ký.');
+  }
+});
+
+router.delete('/decisions/:decisionId', async (req, res) => {
+  if (req.body?.confirmed !== true) return httpError(res, 400, 'portfolio_decision_invalid', 'Cần xác nhận trước khi xóa entry.');
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    const decision = portfolio ? await PortfolioDecision.findOne({ where: { id: req.params.decisionId, portfolio_id: portfolio.id } }) : null;
+    if (!decision) return httpError(res, 404, 'portfolio_decision_not_found', 'Không tìm thấy entry nhật ký.');
+    await decision.destroy();
+    return res.status(204).send();
+  } catch (error) {
+    console.error('[Portfolio] Delete decision failed:', error.message);
+    return httpError(res, 500, 'portfolio_decision_delete_failed', 'Không thể xóa entry nhật ký.');
   }
 });
 

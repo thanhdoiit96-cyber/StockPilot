@@ -9,6 +9,14 @@
 - Kiểm chứng: frontend unit/contract 100/100; production build và bundle integrity đạt (entry 484,49 kB / 142,95 kB gzip); Playwright request ownership và URL navigation 2/2 đạt. E2E xác nhận history chỉ tải khi mở Đề xuất, AI gate chỉ tải khi mở Advisor.
 - Điểm tiếp tục: triển khai nhật ký quyết định đầu tư gắn evidence snapshot hiện có, giữ rõ dữ liệu do người dùng nhập và không suy diễn hiệu suất hay kết quả đầu tư.
 
+## 2026-10-19 — Nhật ký quyết định đầu tư v1
+
+- Thêm migration `042_create_portfolio_decisions`, model và API tạo/đọc/đóng/xóa entry theo portfolio của người dùng. Entry gồm mã, loại quyết định, luận điểm, ngày rà soát và điều kiện vô hiệu; không có trường return, giá mục tiêu hay đánh giá đúng/sai.
+- Evidence snapshot là tùy chọn nhưng không tin payload từ client: người dùng chỉ chọn giao dịch BUY có `recommendation_context` thuộc chính danh mục và đúng mã; backend kiểm tra rồi copy context chuẩn hóa vào entry tại thời điểm tạo. `GET /api/portfolio` trả tối đa 100 entry cùng danh sách evidence hợp lệ, không phát sinh request riêng khi mở tab.
+- Thêm tab Nhật ký quyết định trong Danh mục, có form semantic, trạng thái empty/error/saving, thao tác đóng/xóa xác nhận qua API và hiển thị tách biệt nội dung người dùng nhập với evidence snapshot. Thiết kế/trade-off/giới hạn được ghi tại [DECISION_JOURNAL_DESIGN.md](DECISION_JOURNAL_DESIGN.md).
+- Kiểm chứng: migration 042 đã áp dụng local development; backend service/controller 34/34 và frontend unit/contract 100/100 đạt; production build + bundle integrity đạt (entry 492,93 kB / 145,24 kB gzip); Playwright request ownership và submit journal 2/2 đạt; backend lint 0 error/38 warning cũ.
+- Điểm tiếp tục: ưu tiên audit accessibility/mobile của các tab Danh mục thay vì mở rộng nội dung decision journal.
+
 ## 2026-10-19 — Readiness runtime và mục tiêu phân bổ danh mục
 
 - Hoàn thành `GET /api/ready`, tách với liveness `/api/health`: kiểm tra Sequelize database trong timeout bị giới hạn 2 giây và kiểm tra Python worker khi `READINESS_REQUIRE_WORKER=true`. Response chỉ trả trạng thái dependency/độ trễ, không trả URL, lỗi hay secret. Docker Compose nay dùng readiness và bắt buộc worker.

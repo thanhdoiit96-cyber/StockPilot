@@ -60,6 +60,18 @@ test('page URLs are shareable and browser history restores the previous view', a
   await page.reload()
   await expect(page.getByRole('button', { name: 'Bảng giá', exact: true })).toHaveAttribute('aria-current', 'page')
 })
+
+test('portfolio decision journal submits a user thesis without inventing an outcome', async ({ page }) => {
+  const requests = []
+  await boot(page, { requests })
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.getByRole('tab', { name: /Nhật ký quyết định/ }).click()
+  await page.getByLabel('Mã cổ phiếu').fill('FPT')
+  await page.getByRole('textbox', { name: 'Luận điểm', exact: true }).fill('Xu hướng và thanh khoản vẫn đáp ứng tiêu chí đã đặt.')
+  await page.getByRole('textbox', { name: 'Điều kiện vô hiệu', exact: true }).fill('Đóng cửa dưới vùng hỗ trợ trong ba phiên.')
+  await page.getByRole('button', { name: 'Lưu entry', exact: true }).click()
+  await expect.poll(() => requests.includes('/api/portfolio/decisions')).toBe(true)
+})
 for (const width of [390, 800, 900]) {
   test(`mobile navigation stays in flow at ${width}px with a collapsed desktop preference`, async ({ page }) => {
     await page.addInitScript(() => sessionStorage.setItem('stockpilot-sidebar-collapsed', '1'))

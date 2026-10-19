@@ -10,6 +10,7 @@ import ForeignFlowPanel from "./components/ForeignFlowPanel.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
 import ShortTermOutlook from "./components/ShortTermOutlook.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
+import PortfolioDecisionJournal from "./components/PortfolioDecisionJournal.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
 import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
@@ -1974,6 +1975,7 @@ function lv() {
           counts: {
             overview: mi.length,
             transactions: ((pe == null ? void 0 : pe.transactions) || []).length,
+            decisions: ((pe == null ? void 0 : pe.decisions) || []).length,
             cash: ((pe == null ? void 0 : pe.cash_flows) || []).length,
             watchlist: pt.length
           }
@@ -2100,7 +2102,47 @@ function lv() {
             onRetry: () => retryPortfolio(value => value + 1),
             language: profileLanguage,
             timezone: profileTimezone
-          }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf, language: profileLanguage }) })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
+          }), O.jsx("article", { className: "panel portfolio-tracking-panel", children: O.jsx(Jm, { entries: lf, language: profileLanguage }) })] }), O.jsx(PortfolioDecisionJournal, {
+            decisions: (pe == null ? void 0 : pe.decisions) || [],
+            evidence: (pe == null ? void 0 : pe.decision_evidence) || [],
+            saving: transactionSubmitting,
+            active: portfolioTab === "decisions",
+            onCreate: async decision => {
+              setTransactionSubmitting(true);
+              try {
+                await je("/api/portfolio/decisions", { method: "POST", token: ue.token, body: decision });
+                const refreshed = await je("/api/portfolio", { token: ue.token });
+                mt(refreshed.data);
+                on(p(uiTextValue("Đã lưu entry nhật ký quyết định.")));
+              } catch (error) {
+                on(error.message);
+                throw error;
+              } finally {
+                setTransactionSubmitting(false);
+              }
+            },
+            onClose: async decisionId => {
+              setTransactionSubmitting(true);
+              try {
+                await je(`/api/portfolio/decisions/${encodeURIComponent(decisionId)}/close`, { method: "POST", token: ue.token, body: { confirmed: true } });
+                const refreshed = await je("/api/portfolio", { token: ue.token });
+                mt(refreshed.data);
+              } finally {
+                setTransactionSubmitting(false);
+              }
+            },
+            onDelete: async decisionId => {
+              setTransactionSubmitting(true);
+              try {
+                await je(`/api/portfolio/decisions/${encodeURIComponent(decisionId)}`, { method: "DELETE", token: ue.token, body: { confirmed: true } });
+                const refreshed = await je("/api/portfolio", { token: ue.token });
+                mt(refreshed.data);
+              } finally {
+                setTransactionSubmitting(false);
+              }
+            },
+            language: profileLanguage
+          }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-cash", "aria-labelledby": "portfolio-tab-cash", hidden: portfolioTab !== "cash", tabIndex: 0, children: [O.jsx(PortfolioCashFlows, {
             entries: (pe == null ? void 0 : pe.cash_flows) || [],
             onCreate: createPortfolioCashFlow,
             onUpdate: updatePortfolioCashFlow,
