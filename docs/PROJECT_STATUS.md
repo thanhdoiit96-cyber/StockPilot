@@ -2,6 +2,13 @@
 
 ## 2026-10-19 — Rà soát toàn dự án và khởi động lộ trình cải thiện
 
+## 2026-10-19 — Tách ownership request khỏi App
+
+- `RecommendationWorkbench` tự tải snapshot đề xuất mới nhất và history khi trang được mở, hủy request khi rời trang, giữ kết quả tải thành công từng phần và có trạng thái tải/lỗi cùng nút thử lại tại chỗ. `App.jsx` chỉ tiếp tục tải đề xuất mới nhất cho Tổng quan.
+- `AdvisorWorkspace` tự kiểm tra AI gate khi mount; trạng thái đang kiểm tra/đã mở/đang khóa được hiển thị ngay trong workspace. App không còn điều phối history Đề xuất hoặc AI gate, còn danh sách mã vẫn được nạp theo policy cho evidence của Advisor.
+- Kiểm chứng: frontend unit/contract 100/100; production build và bundle integrity đạt (entry 484,49 kB / 142,95 kB gzip); Playwright request ownership và URL navigation 2/2 đạt. E2E xác nhận history chỉ tải khi mở Đề xuất, AI gate chỉ tải khi mở Advisor.
+- Điểm tiếp tục: triển khai nhật ký quyết định đầu tư gắn evidence snapshot hiện có, giữ rõ dữ liệu do người dùng nhập và không suy diễn hiệu suất hay kết quả đầu tư.
+
 ## 2026-10-19 — Readiness runtime và mục tiêu phân bổ danh mục
 
 - Hoàn thành `GET /api/ready`, tách với liveness `/api/health`: kiểm tra Sequelize database trong timeout bị giới hạn 2 giây và kiểm tra Python worker khi `READINESS_REQUIRE_WORKER=true`. Response chỉ trả trạng thái dependency/độ trễ, không trả URL, lỗi hay secret. Docker Compose nay dùng readiness và bắt buộc worker.

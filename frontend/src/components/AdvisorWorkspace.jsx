@@ -19,6 +19,7 @@ export default function AdvisorWorkspace(props) {
   const [persistenceError, setPersistenceError] = useState('')
   const [saving, setSaving] = useState(false)
   const [input, setInput] = useState('')
+  const [aiEnabled, setAiEnabled] = useState(null)
   const evidence = useMemo(() => buildAdvisorEvidence({ ...props, context }), [props.selectedStock, props.analysis, props.positions, props.marketStocks, props.quotes, props.providerLicenseUrl, context])
   useEffect(() => {
     if (!props.token) return
@@ -30,6 +31,15 @@ export default function AdvisorWorkspace(props) {
     }).catch(error => { if (!controller.signal.aborted) setPersistenceError(error.message) })
     return () => controller.abort()
   }, [props.token])
+  useEffect(() => {
+    const controller = new AbortController()
+    requestJson('/api/ai-gate', { signal: controller.signal }).then(response => {
+      if (!controller.signal.aborted) setAiEnabled(response.data?.enabled === true)
+    }).catch(() => {
+      if (!controller.signal.aborted) setAiEnabled(false)
+    })
+    return () => controller.abort()
+  }, [])
   const persist = async (nextMessages, question) => {
     if (!props.token) return
     const payload = { title: String(question || conversations.find(item => item.id === conversationId)?.title || ui("Hội thoại Advisor")).slice(0, 120), context, messages: nextMessages.slice(-100) }
@@ -66,7 +76,7 @@ export default function AdvisorWorkspace(props) {
     } catch (error) { setPersistenceError(error.message) }
   }
   return <section className="advisor-page panel">
-    <div className="panel-header"><div><h3>AI Advisor</h3><p className="muted-text">{ui("Câu trả lời rule-based nêu rõ phạm vi và nguồn dữ liệu đã dùng.")}</p></div><span className={`chip ${props.aiEnabled ? 'success' : 'neutral'}`}>{props.aiEnabled ? ui("Generative AI đã mở") : ui("Generative AI đang khóa")}</span></div>
+    <div className="panel-header"><div><h3>AI Advisor</h3><p className="muted-text">{ui("Câu trả lời rule-based nêu rõ phạm vi và nguồn dữ liệu đã dùng.")}</p></div><span className={`chip ${aiEnabled ? 'success' : 'neutral'}`}>{aiEnabled === null ? ui("Đang kiểm tra Generative AI") : aiEnabled ? ui("Generative AI đã mở") : ui("Generative AI đang khóa")}</span></div>
     <div className="advisor-conversation-toolbar"><label htmlFor="advisor-conversation-select">{ui("Hội thoại")}</label><select id="advisor-conversation-select" className="app-select" value={conversationId} onChange={event => selectConversation(event.target.value)}><option value="">{ui("Hội thoại mới")}</option>{conversations.map(item => <option value={item.id} key={item.id}>{item.title}</option>)}</select><button type="button" className="ghost-btn small-btn" onClick={newConversation}>{ui("＋ Mới")}</button><button type="button" className="ghost-btn small-btn danger-btn" disabled={!conversationId} onClick={deleteConversation}>{ui("Xóa")}</button><small>{ui("Tối đa 20 hội thoại, 100 tin nhắn mỗi hội thoại.")}</small></div>
     {persistenceError && <p className="error-text" role="alert">{ui("Không thể đồng bộ hội thoại:")} {persistenceError}</p>}
     <div className="advisor-context"><label htmlFor="advisor-context-select">{ui("Ngữ cảnh trả lời")}</label><select id="advisor-context-select" className="app-select" value={context} onChange={event => setContext(event.target.value)}>{Object.entries(CONTEXTS).map(([value, item]) => <option key={value} value={value}>{item.label}</option>)}</select><small>{ui("Mỗi câu trả lời ghi lại ngữ cảnh tại thời điểm gửi.")}</small></div>

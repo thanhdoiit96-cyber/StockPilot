@@ -9,9 +9,9 @@ test('overview avoids page-specific history and AI requests', () => {
   assert.equal(viewNeedsResource('overview', 'aiGate'), false)
 })
 
-test('recommendations and advisor request only their page dependencies', () => {
-  assert.deepEqual([...resourcesForView('recommendations')], ['latestRecommendations', 'recommendationHistory'])
-  assert.deepEqual([...resourcesForView('advisor')], ['stocks', 'aiGate'])
+test('recommendation and advisor pages own their local requests', () => {
+  assert.deepEqual([...resourcesForView('recommendations')], [])
+  assert.deepEqual([...resourcesForView('advisor')], ['stocks'])
 })
 
 test('market board owns its request lifecycle', () => {

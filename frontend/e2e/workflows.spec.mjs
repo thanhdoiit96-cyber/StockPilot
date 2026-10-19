@@ -40,6 +40,9 @@ test('each page loads only its owned data resources', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
   await expect.poll(() => requests.includes('/api/recommendations/history')).toBe(true)
+
+  await page.getByRole('button', { name: 'AI Advisor', exact: true }).click()
+  await expect.poll(() => requests.includes('/api/ai-gate')).toBe(true)
 })
 
 test('page URLs are shareable and browser history restores the previous view', async ({ page }) => {

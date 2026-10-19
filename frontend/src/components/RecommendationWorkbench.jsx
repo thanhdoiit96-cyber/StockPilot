@@ -48,7 +48,7 @@ function RecommendationLifecycleStatus({ language }) {
   const sessions = readiness.expected_session || readiness.latest_eod_session ? `${copy('Phiên lifecycle', 'Lifecycle session')} ${readiness.expected_session || '—'} · EOD ${readiness.latest_eod_session || '—'}${readiness.as_of ? ` · ${copy('Snapshot', 'Snapshot')} ${readiness.as_of}` : ''}${Number.isFinite(Number(readiness.horizon_days)) ? ` · ${copy('Kỳ theo dõi', 'Observation horizon')} ${Number(readiness.horizon_days)} ${copy('phiên', 'sessions')}` : ''}` : null
   return <div className={`recommendation-lifecycle-status is-${readiness.status}`} role="status"><div><strong>{title}</strong><span>{description}</span></div><div className="recommendation-lifecycle-actions">{sessions && <small>{sessions}</small>}<button type="button" className="ghost-btn small-btn" onClick={refresh} disabled={checking}>{checking ? copy('Đang kiểm tra…', 'Checking…') : copy('Làm mới', 'Refresh')}</button></div></div>
 }
-export default function RecommendationWorkbench({ initialData, history = [], token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, onRefreshLatest, language = 'vi' }) {
+export default function RecommendationWorkbench({ token, onAddToPortfolio, onOpenDetail, watchlistSymbols = [], onAddToWatchlist, onRefreshLatest, language = 'vi' }) {
   const ui = text => uiText(language, text)
   const money = value => value == null ? '—' : new Intl.NumberFormat(language === 'en' ? 'en-US' : 'vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
   const en = language === 'en'
@@ -72,11 +72,30 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     try { return JSON.parse(localStorage.getItem('stockpilot.recommendation.saved') || '[]') } catch { return [] }
   })
   const [selectedProposalId, setSelectedProposalId] = useState('')
+  const [scheduled, setScheduled] = useState({ status: 'loading', initialData: null, history: [], error: '' })
+  const [scheduledRetry, setScheduledRetry] = useState(0)
+  const initialData = scheduled.initialData
+  const history = scheduled.history
   const totalWeight = Object.values(weights).reduce((sum, value) => sum + Number(value || 0), 0)
   const effectiveHistory = useMemo(() => history.filter(run => Number(run.measured_count) > 0), [history])
 
   useEffect(() => { localStorage.setItem('stockpilot.recommendation.criteria', JSON.stringify(weights)) }, [weights])
   useEffect(() => { setResult(null) }, [initialData?.run?.id])
+  useEffect(() => {
+    const controller = new AbortController()
+    setScheduled(current => ({ ...current, status: 'loading', error: '' }))
+    Promise.allSettled([
+      requestJson('/api/recommendations/latest', { signal: controller.signal }),
+      requestJson('/api/recommendations/history?limit=50', { signal: controller.signal })
+    ]).then(([latest, historyResponse]) => {
+      if (controller.signal.aborted) return
+      const initialData = latest.status === 'fulfilled' && Array.isArray(latest.value?.data?.recommendations) ? latest.value.data : null
+      const history = historyResponse.status === 'fulfilled' && Array.isArray(historyResponse.value?.data) ? historyResponse.value.data : []
+      const failed = [latest, historyResponse].find(result => result.status === 'rejected')
+      setScheduled({ status: failed ? 'error' : 'success', initialData, history, error: failed?.reason?.message || '' })
+    })
+    return () => controller.abort()
+  }, [scheduledRetry])
   useEffect(() => {
     if (!token) return
     requestJson('/api/recommendations/saved', { token }).then(async response => {
@@ -168,7 +187,7 @@ export default function RecommendationWorkbench({ initialData, history = [], tok
     link.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 0)
   }
-  return <section className="recommendations-page recommendation-workbench" lang={language}>    <div className="recommendation-command-header"><div><span className="eyebrow accent">{copy('ĐỀ XUẤT CÁ NHÂN', 'PERSONAL IDEAS')}</span><h2>{copy('Đề xuất theo tiêu chí của bạn', 'Ideas based on your criteria')}</h2><p className="muted-text">{copy('Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.', 'Set priorities to rank symbols for your goals.')}</p></div><span className="chip neutral">{copy('Mô hình giải thích được', 'Explainable model')}</span></div><RecommendationLifecycleStatus language={language} />{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>{copy('Cảnh báo tập trung danh mục', 'Portfolio concentration warning')}</strong><span>{copy('Tỷ trọng ngành cao nhất đang ở mức', 'The largest sector share is')} {initialData.risk.max_sector_share_pct}%.</span><small>{copy('Đang chờ đo lường thêm', 'Waiting for')} {initialData.risk.pending || 0} {copy('kết quả.', 'more results.')}</small></div>}
+  return <section className="recommendations-page recommendation-workbench" lang={language}>    <div className="recommendation-command-header"><div><span className="eyebrow accent">{copy('ĐỀ XUẤT CÁ NHÂN', 'PERSONAL IDEAS')}</span><h2>{copy('Đề xuất theo tiêu chí của bạn', 'Ideas based on your criteria')}</h2><p className="muted-text">{copy('Chọn mức ưu tiên để xếp hạng các mã phù hợp với mục tiêu của bạn.', 'Set priorities to rank symbols for your goals.')}</p></div><span className="chip neutral">{copy('Mô hình giải thích được', 'Explainable model')}</span></div>{scheduled.status === 'loading' && <p className="muted-text" role="status">{copy('Đang cập nhật dữ liệu đề xuất…', 'Loading recommendation data…')}</p>}{scheduled.error && <p className="error-text" role="alert">{copy('Một phần dữ liệu đề xuất chưa tải được.', 'Some recommendation data could not be loaded.')} <button type="button" className="ghost-btn small-btn" onClick={() => setScheduledRetry(value => value + 1)}>{copy('Thử lại', 'Retry')}</button></p>}<RecommendationLifecycleStatus language={language} />{initialData?.risk?.concentration_warning && <div className="recommendation-risk-banner" role="status"><strong>{copy('Cảnh báo tập trung danh mục', 'Portfolio concentration warning')}</strong><span>{copy('Tỷ trọng ngành cao nhất đang ở mức', 'The largest sector share is')} {initialData.risk.max_sector_share_pct}%.</span><small>{copy('Đang chờ đo lường thêm', 'Waiting for')} {initialData.risk.pending || 0} {copy('kết quả.', 'more results.')}</small></div>}
     <RecommendationSectionTabs active={activeTab} onChange={selectTab} language={language} />
     <div className="recommendation-summary-strip" aria-label={copy('Tóm tắt nhanh về đề xuất', 'Quick summary of ideas')}>
       <div className="recommendation-summary-tile">

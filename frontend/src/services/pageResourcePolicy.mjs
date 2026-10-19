@@ -3,8 +3,8 @@ const PAGE_RESOURCES = Object.freeze({
   'market-board': [],
   portfolio: [],
   detail: ['stocks', 'detail'],
-  recommendations: ['latestRecommendations', 'recommendationHistory'],
-  advisor: ['stocks', 'aiGate']
+  recommendations: [],
+  advisor: ['stocks']
 })
 
 export const resourcesForView = view => new Set(PAGE_RESOURCES[view] || PAGE_RESOURCES.overview)

@@ -235,16 +235,8 @@ function bm(e) {
   if (e.success !== true || !e.data || !e.data.indicators || typeof e.data.observations != "number" || !e.data.quality || !e.data.risk_plan || !e.data.expert_guidance || !Array.isArray(e.data.expert_guidance.score_breakdown)) throw new Ut("Phân tích kỹ thuật trả về không đúng định dạng.");
   return e.data;
 }
-function Bm(e) {
-  if (e.success !== true || !e.data || typeof e.data.enabled != "boolean" || !Array.isArray(e.data.reasons)) throw new Ut("Trạng thái AI Gate trả về không đúng định dạng.");
-  return e.data;
-}
 function Vm(e) {
   if (e.success !== true || !e.data || !Array.isArray(e.data.recommendations)) throw new Ut("Đề xuất cổ phiếu trả về không đúng định dạng.");
-  return e.data;
-}
-function Hm(e) {
-  if (e.success !== true || !e.data || !Array.isArray(e.data)) throw new Ut("Lịch sử đề xuất trả về không đúng định dạng.");
   return e.data;
 }
 function Qm(e) {
@@ -947,9 +939,7 @@ function lv() {
       d = true, S.abort();
     };
   }, [ue, Jl, authVerification.status, portfolioRetry]);
-  const au = Pn(viewNeedsResource(re, "aiGate") ? "/api/ai-gate" : null, Bm),
-    su = Pn(viewNeedsResource(re, "latestRecommendations") ? "/api/recommendations/latest" : null, Vm),
-    uu = Pn(viewNeedsResource(re, "recommendationHistory") ? "/api/recommendations/history?limit=50" : null, Hm),
+  const su = Pn(viewNeedsResource(re, "latestRecommendations") ? "/api/recommendations/latest" : null, Vm),
     [Eh, It] = D.useState(null);
   const stockListUrl = `/api/stocks?page=${xn}&pageSize=${ft ? 200 : Ht}&q=${encodeURIComponent(ft)}&sector=${encodeURIComponent(Qt)}&sort=${be.key === "symbol" ? "code" : be.key}&direction=${be.direction}&pinned=${encodeURIComponent(ll)}`,
     Nt = Pn(viewNeedsResource(re, "stocks") ? stockListUrl : null, Pc),
@@ -1543,7 +1533,7 @@ function lv() {
             children: p(uiTextValue("Đăng xuất"))
           })]
         })]
-      }), (re === "overview" && cu || re === "portfolio" && ci.loading || re === "detail" && (Ee.status === "loading" || fi.loading) || re === "recommendations" && (su.status === "loading" || uu.status === "loading")) && O.jsx(PageLoadingOverlay, {
+      }), (re === "overview" && cu || re === "portfolio" && ci.loading || re === "detail" && (Ee.status === "loading" || fi.loading)) && O.jsx(PageLoadingOverlay, {
         active: true,
         label: re === "detail" ? p(uiTextValue("Đang tải dữ liệu Chi tiết mã mới nhất...")) : re === "recommendations" ? p(uiTextValue("Đang cập nhật dữ liệu Đề xuất mới nhất...")) : re === "portfolio" ? p(uiTextValue("Đang cập nhật dữ liệu Danh mục mới nhất...")) : p(uiTextValue("Đang cập nhật dữ liệu Thị trường mới nhất..."))
       }), re === "market-board" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải Bảng giá…") }), children: O.jsx(MarketBoardPage, {
@@ -1952,8 +1942,6 @@ function lv() {
           })]
         })]
       }), re === "recommendations" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải Đề xuất…") }), children: O.jsx(RecommendationWorkbench, {
-        initialData: nf,
-        history: uu.data || [],
         token: ue.token,
         onAddToPortfolio: Ao,
         onOpenDetail: openLinkedStock,
@@ -2319,7 +2307,6 @@ function lv() {
       }), re === "advisor" && O.jsx(D.Suspense, { fallback: O.jsx(PageLoadingOverlay, { active: true, label: uiTextValue("Đang tải AI Advisor…") }), children: O.jsx(AdvisorWorkspace, {
         language: profileLanguage,
         token: ue.token,
-        aiEnabled: (Xr = au.data) == null ? void 0 : Xr.enabled,
         selectedStock: me,
         analysis: T.data,
         positions: mi,
