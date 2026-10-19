@@ -12,6 +12,22 @@ function firstNonEmptyString(...values) {
   return '';
 }
 
+function sanitizeDatabaseUrl(value = '') {
+  const text = normalizeString(value);
+  if (!text) return '';
+
+  try {
+    const parsed = new URL(text);
+    const params = new URLSearchParams(parsed.search);
+    params.delete('sslmode');
+    params.delete('ssl');
+    parsed.search = params.toString() ? `?${params.toString()}` : '';
+    return parsed.toString();
+  } catch (error) {
+    return text;
+  }
+}
+
 function buildSequelizeOptions({ databaseUrl, host, dbHost } = {}) {
   const explicitTarget = firstNonEmptyString(databaseUrl, host, dbHost);
   const target = firstNonEmptyString(explicitTarget, process.env.DATABASE_URL, process.env.POSTGRES_URL, process.env.POSTGRES_PRISMA_URL);
@@ -30,7 +46,7 @@ function buildSequelizeOptions({ databaseUrl, host, dbHost } = {}) {
 }
 
 function resolveDatabaseConnectionConfig({ databaseUrl, host, dbHost, dbName, dbUser, dbPassword } = {}) {
-  const effectiveDatabaseUrl = firstNonEmptyString(databaseUrl, process.env.DATABASE_URL, process.env.POSTGRES_URL, process.env.POSTGRES_PRISMA_URL);
+  const effectiveDatabaseUrl = sanitizeDatabaseUrl(firstNonEmptyString(databaseUrl, process.env.DATABASE_URL, process.env.POSTGRES_URL, process.env.POSTGRES_PRISMA_URL));
 
   if (effectiveDatabaseUrl) {
     try {

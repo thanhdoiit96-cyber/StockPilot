@@ -15,18 +15,16 @@ const resolvedDb = dbConfig.resolveDatabaseConnectionConfig({
   dbPassword: cfg.password
 });
 
-const sequelizeOptions = dbConfig.buildSequelizeOptions({
+const sequelizeConnection = dbConfig.buildSequelizeConnection({
   databaseUrl: resolvedDb.databaseUrl,
-  host: resolvedDb.host
+  host: resolvedDb.host,
+  dbHost: resolvedDb.host,
+  dbName: resolvedDb.database,
+  dbUser: resolvedDb.username,
+  dbPassword: resolvedDb.password
 });
 
-const sequelize = new Sequelize(resolvedDb.databaseUrl || resolvedDb.database, resolvedDb.databaseUrl ? undefined : resolvedDb.username, resolvedDb.databaseUrl ? undefined : resolvedDb.password, {
-  host: resolvedDb.host,
-  port: resolvedDb.port,
-  dialect: cfg.dialect,
-  logging: false,
-  ...sequelizeOptions
-});
+const sequelize = new Sequelize(...sequelizeConnection.args);
 
 const models = {};
 
