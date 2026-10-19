@@ -30,6 +30,7 @@
     "cycle:forecast-live": "npm run materialize:forecast-live-shadow && npm run evaluate:forecast-live-shadow",
     "evaluate:forecast-preview": "node scripts/evaluate-forecast-preview.cjs",
     "lint": "eslint src/**/*.js",
+    "verify:release": "npm run lint && npm run test -- --runInBand",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "seed": "sequelize-cli db:seed:all",

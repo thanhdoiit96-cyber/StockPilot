@@ -36,7 +36,7 @@ Dự án đã vượt xa phạm vi demo ban đầu: có xác thực bằng cooki
 
 1. Thêm URL chuẩn cho từng view, hỗ trợ Back/Forward và link chi tiết cổ phiếu.
 2. Khóa endpoint debug bằng quyền quản trị.
-3. Khôi phục lint backend và đưa vào release verification.
+3. Hoàn thành 2026-10-19: khôi phục lint backend và đưa vào `npm run verify:release`.
 4. Tạo bản trạng thái ngắn hiện hành; chuyển lịch sử dài sang archive mà không mất bằng chứng. Hoàn thành 2026-10-19; record cũ nằm tại [archive](archive/README.md).
 
 Nghiệm thu: URL round-trip được test; navigation browser đạt; request debug không có quyền bị từ chối; lint/test/build xanh; tài liệu hiện trạng không mâu thuẫn mã.

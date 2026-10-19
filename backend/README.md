@@ -127,11 +127,11 @@ Template .env.example còn chứa biến dự kiến. DATABASE_URL không thay t
 
 Helmet, CORS và rate limiting được gắn trong app.js; Winston ghi console. Chưa có cấu hình ghi file, audit request đầy đủ hay monitoring hiệu năng.
 
-Test dùng mock nằm cạnh mã: [cacheService.test.js](src/services/cacheService.test.js) và [stockController.test.js](src/controllers/stockController.test.js).
+Test dùng mock nằm cạnh mã: [cacheService.test.js](src/services/cacheService.test.js) và [stockController.test.js](src/controllers/stockController.test.js). Chạy `npm run verify:release` trước checkpoint backend: lệnh chạy ESLint rồi toàn bộ Jest tuần tự để tương thích môi trường không cho Jest tạo worker con. Gate này chỉ kiểm tra mã nguồn/backend trong workspace; không chạy migration trên database production, browser E2E, provider thật hoặc worker production.
 
 [scripts/verify-postgres.cjs](scripts/verify-postgres.cjs) kiểm tra PostgreSQL thật trong schema ngẫu nhiên: chạy migrations, TTL/cleanup, cache miss/hit và invalidation sau PUT qua router với models/cache thật. Các connection của bài kiểm tra đặt search_path chỉ tới schema thử. Script không khởi động app.js hoặc cron và không kiểm chứng toàn bộ middleware/startup của server. Schema thử được xóa trong finally.
 
-Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_STATUS. Script lint tồn tại nhưng chưa có cấu hình ESLint trong workspace; chưa coi đây là kiểm tra đã đạt.
+Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_STATUS. ESLint đã được cấu hình và là bước đầu của `npm run verify:release`.
 
 ## Current quote endpoints
 

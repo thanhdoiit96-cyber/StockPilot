@@ -30,6 +30,11 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 - Không thay đổi schema, API hay chính sách dữ liệu. Dịch vụ quote tiếp tục dùng nguồn VCI cố định như trước; tham số `source` vốn không có tác dụng đã được bỏ khỏi chữ ký nội bộ.
 - Kiểm chứng: `npm.cmd run lint` sạch; Jest các mô-đun liên quan 101/101 và scheduler 4/4 đạt.
 
+### Release gate backend
+
+- `npm run verify:release` nay chạy lint trước toàn bộ Jest backend. Jest chạy tuần tự để tương thích môi trường hạn chế tạo tiến trình con; lệnh không thay thế kiểm thử PostgreSQL thật, browser, provider hay worker production.
+- Kiểm chứng: full gate ngoài sandbox đạt 102 suite, 507 test trong 95,446 giây. Trong sandbox, hai test CLI bị chặn `spawnSync EPERM`; chạy riêng ngoài sandbox đạt 3/3, xác nhận đây là giới hạn môi trường kiểm thử chứ không phải lỗi assertion.
+
 ## Giới hạn giữ nguyên
 
 - Recommendation, forecast và dữ liệu provider vẫn research/internal prototype cho đến khi có evidence, quyền nguồn và validation ngoài mẫu phù hợp.
@@ -38,6 +43,6 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
-1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint backend hiện không còn warning.
+1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint và release gate backend hiện đã có lệnh tái lập.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.
