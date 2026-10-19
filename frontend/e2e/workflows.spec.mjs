@@ -72,6 +72,16 @@ test('portfolio decision journal submits a user thesis without inventing an outc
   await page.getByRole('button', { name: 'Lưu entry', exact: true }).click()
   await expect.poll(() => requests.includes('/api/portfolio/decisions')).toBe(true)
 })
+
+test('portfolio decision journal stays usable without mobile horizontal overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page)
+  await page.getByRole('button', { name: 'Danh mục cá nhân', exact: true }).click()
+  await page.getByRole('tab', { name: /Nhật ký quyết định/ }).click()
+  const geometry = await page.locator('#portfolio-panel-decisions').evaluate(panel => ({ fits: document.documentElement.scrollWidth <= innerWidth, buttonHeight: panel.querySelector('.primary-btn').getBoundingClientRect().height }))
+  expect(geometry).toMatchObject({ fits: true })
+  expect(geometry.buttonHeight).toBeGreaterThanOrEqual(40)
+})
 for (const width of [390, 800, 900]) {
   test(`mobile navigation stays in flow at ${width}px with a collapsed desktop preference`, async ({ page }) => {
     await page.addInitScript(() => sessionStorage.setItem('stockpilot-sidebar-collapsed', '1'))
