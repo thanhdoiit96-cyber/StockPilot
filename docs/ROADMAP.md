@@ -37,6 +37,8 @@ Chỉ mở dữ liệu doanh nghiệp/ngành khi coverage, freshness, provider r
 
 Chỉ áp dụng hệ số sau khi chính model/horizon đích có snapshot bất biến, outcome hợp lệ, đủ mẫu và kiểm tra ổn định theo snapshot độc lập. Chi tiết ở [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
 
+Trước khi mở cohort `personalized_rule_v1`, cần chốt profile criteria versioned theo owner; không gộp các xếp hạng cá nhân vào một cohort chung.
+
 ### 5. Forecast/live data — giữ research gate
 
 Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.

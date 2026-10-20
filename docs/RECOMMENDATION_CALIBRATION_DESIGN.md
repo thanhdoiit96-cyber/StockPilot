@@ -35,4 +35,10 @@ Phương án mở rộng là tạo snapshot bất biến và evaluator riêng ch
 4. Phiên bản hóa công thức, ngưỡng và payload hiệu chỉnh; lưu chúng cùng kết quả để tái lập ranking.
 5. Chạy regression cho guard, UI disclosure và xác nhận rằng trạng thái không đủ bằng chứng giữ trọng số trung tính.
 
+## Rà soát runtime ngày 2026-10-20
+
+Runtime có 14 snapshot `short_term_rule_v2`/20 phiên, gồm 70 mã được chọn nhưng 0 outcome eligible; 65 còn pending, 5 excluded. Trong 13 snapshot pending, chỉ 3 snapshot có hash xác minh được, 10 snapshot legacy bị chặn integrity. Cohort ngành chưa thể lập vì cả 70 mã thiếu taxonomy được chụp cùng snapshot.
+
+Không tạo cohort tự động cho `personalized_rule_v1` ở giai đoạn này. Weights của model này là tiêu chí từng người dùng chọn, nên gộp các request cá nhân thành một cohort chung sẽ trộn nhiều policy xếp hạng và làm calibration không còn diễn giải được. Khi cần mở rộng, phải thiết kế profile criteria bất biến có version, ownership, consent, snapshot/evaluation evidence riêng; chỉ sau đó mới có thể đánh giá theo profile đó.
+
 Ngân sách hiện tại: không thêm request mới. `learning` được trả cùng snapshot hoặc kết quả cá nhân hóa sẵn có; không polling và không lưu state client mới.
