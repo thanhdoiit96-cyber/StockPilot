@@ -3,7 +3,7 @@ import fs from 'node:fs'
 
 const frontendBase = process.env.FRONTEND_URL || 'http://127.0.0.1:4173'
 const backendBase = process.env.BACKEND_URL || 'http://127.0.0.1:5000'
-const samples = Math.max(5, Number(process.env.LIVE_PERF_SAMPLES || 5))
+const samples = Math.max(1, Number(process.env.LIVE_PERF_SAMPLES || 5))
 
 const percentile = (values, ratio) => {
   const sorted = [...values].sort((a, b) => a - b)
@@ -15,6 +15,21 @@ const timedFetch = async url => {
   const response = await fetch(url, { cache: 'no-store' })
   const body = await response.json().catch(() => null)
   return { ms: Math.round(performance.now() - started), status: response.status, body }
+}
+const waitForBoardRows = async (page, timeoutMs = 30_000) => {
+  const started = performance.now()
+  const symbols = page.locator('.table-panel tbody tr .symbol')
+  const errors = page.locator('.table-panel [role="alert"], .table-panel .error-text')
+  while (performance.now() - started < timeoutMs) {
+    const rowCount = await symbols.count()
+    if (rowCount > 0) return rowCount
+    if (await errors.count()) {
+      const error = await errors.first().textContent()
+      if (error?.trim()) throw new Error(`Market board failed to load: ${error.trim()}`)
+    }
+    await page.waitForTimeout(50)
+  }
+  throw new Error(`Market board did not attach a row within ${timeoutMs}ms`)
 }
 
 const health = await timedFetch(`${backendBase}/api/health`)
@@ -64,6 +79,7 @@ const boardPanelVisible = []
 const boardRowsVisible = []
 const quoteSettlement = []
 const boardRequests = []
+const boardSnapshots = []
 try {
   for (let index = 0; index < samples; index += 1) {
     const page = await context.newPage()
@@ -101,11 +117,15 @@ try {
     await page.locator('[data-react-market-board]').waitFor({ state: 'visible', timeout: 30_000 })
     boardPanelVisible.push(Math.round(performance.now() - panelStarted))
     const rowsStarted = performance.now()
-    await page.waitForFunction(() => document.querySelector('.table-panel tbody tr .symbol') || document.querySelector('.table-panel [role="alert"], .table-panel .error-text'), null, { timeout: 30_000 })
-    const boardError = await page.locator('.table-panel [role="alert"], .table-panel .error-text').first().textContent().catch(() => '')
-    if (boardError) throw new Error(`Market board failed to load: ${boardError.trim()}`)
-    await page.locator('.table-panel tbody tr .symbol').first().waitFor({ state: 'visible' })
+    await waitForBoardRows(page)
     boardRowsVisible.push(Math.round(performance.now() - rowsStarted))
+    boardSnapshots.push(await page.locator('[data-react-market-board]').evaluate(panel => ({
+      rows: panel.querySelectorAll('tbody tr .symbol').length,
+      busy: panel.querySelector('.table-wrap')?.getAttribute('aria-busy') || null,
+      status: panel.querySelector('.overview-data-status')?.textContent?.trim() || '',
+      hidden: panel.hidden,
+      display: getComputedStyle(panel).display
+    })))
     boardRequests.push(requestEvents)
     const quoteStarted = performance.now()
     await page.locator('#market-board-loading-overlay').waitFor({ state: 'detached', timeout: 30_000 }).catch(() => {})
@@ -130,6 +150,7 @@ const report = {
     boardPanelVisible: summary(boardPanelVisible),
     boardRowsVisible: summary(boardRowsVisible),
     quoteSettlement: summary(quoteSettlement),
+    boardSnapshots,
     boardRequests
   }
 }
