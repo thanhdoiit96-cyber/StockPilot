@@ -14,7 +14,7 @@ Cập nhật: 2026-10-20. Lịch sử roadmap và checkpoint đã thay thế đ�
 | Mốc | Trạng thái | Điều kiện còn lại |
 | --- | --- | --- |
 | A — Nền tảng | Code/config chính hoàn thành | Archive tài liệu, dọn sạch 38 warning ESLint, release gate và contract template backend/frontend an toàn đã hoàn thành; verification tiếp tục theo thay đổi |
-| B — Frontend/lifecycle | Lazy-load và request ownership chính hoàn thành | Chỉ tách thêm App.jsx khi đo/lifecycle cho thấy lợi ích |
+| B — Frontend/lifecycle | Đang truy nguyên lifecycle Bảng giá | Live UI 2026-10-20: panel mount p95 145 ms nhưng hàng p50 30.025 ms sau response list; xác đnh state/request ownership và regression test trước khi tách App.jsx |
 | C — Readiness dữ liệu | Local readiness database/worker hoàn thành | Chưa xác nhận scheduler/worker production hoặc provider rights |
 | D — Tính năng người dùng | Allocation target, decision journal và accessibility/mobile hoàn thành | Hạng mục còn lại có dependency bên ngoài |
 | M6 — Phát hành | Chưa bắt đầu | Deploy, backup/restore, observability và evidence production |

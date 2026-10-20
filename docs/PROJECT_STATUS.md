@@ -48,6 +48,13 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - Kiểm tra này đã nằm đầu `frontend/npm run verify:release`, nên không thể vô tình đưa secret vào template public hoặc làm cookie authentication đi qua URL API tuyệt đối.
 - Kiểm chứng: frontend release gate đạt template contract, encoding, API error contract, 100 unit/contract test, bundle integrity và Prometheus contract.
 
+### Hiệu năng Bảng giá: đo lifecycle trước refactor
+
+- Trình đo live UI nay tách thao tác bấm điều hướng, mount panel, hàng dữ liệu và request `/api/stocks`, quote/status; mặc định lấy 5 mẫu để không kéo dài dev loop.
+- Mẫu live ngày 2026-10-20 (10 lần, UI `:4173`, backend `:5000`): panel Bảng giá mount p95 145 ms, nhưng hàng dữ liệu p50 30.025 ms. Request danh sách đã trả HTTP 200 trong 153 ms hoặc nhanh hơn; quote có dao động và một số request bị abort khi lifecycle đổi. Không có bằng chứng lazy chunk hay kích thước `App.jsx` là nguyên nhân.
+- Cần truy nguyên state dữ liệu live sau khi response trả về, đặc biệt chuyển giao giữa list của Bảng giá và polling quote, rồi mới chọn sửa. Không refactor/tách `App.jsx` vì suy đoán.
+- `npm.cmd run build` đạt (Vite build và bundle integrity). Lần chạy Playwright `market-board-productivity` dùng web server test mới không render được `.dashboard-shell` trong 5 giây; đã dừng sau các failure đầu tiên, chưa dùng nó là bằng chứng hành vi Bảng giá.
+
 ## Giới hạn giữ nguyên
 
 - Recommendation, forecast và dữ liệu provider vẫn research/internal prototype cho đến khi có evidence, quyền nguồn và validation ngoài mẫu phù hợp.
@@ -56,6 +63,6 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
-1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint, release gate và contract cấu hình backend/frontend hiện đã được chuẩn hóa.
+1. Truy nguyên Bảng giá live: ghi snapshot state/DOM ngay sau response list, xác đnh request/state nào làm hàng xuất hiện sau 30 giây, rồi thêm regression test và đo lại. Nền tảng lint, release gate và contract cấu hình backend/frontend hiện đã được chuẩn hóa.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.

@@ -3,7 +3,7 @@ import fs from 'node:fs'
 
 const frontendBase = process.env.FRONTEND_URL || 'http://127.0.0.1:4173'
 const backendBase = process.env.BACKEND_URL || 'http://127.0.0.1:5000'
-const samples = Math.max(5, Number(process.env.LIVE_PERF_SAMPLES || 10))
+const samples = Math.max(5, Number(process.env.LIVE_PERF_SAMPLES || 5))
 
 const percentile = (values, ratio) => {
   const sorted = [...values].sort((a, b) => a - b)
@@ -59,25 +59,57 @@ await context.route('**/api/recommendations/latest', route => route.fulfill({ js
 await context.route('**/api/recommendations/history**', route => route.fulfill({ json: { success: true, data: [] } }))
 await context.route('**/api/recommendations/readiness', route => route.fulfill({ json: { success: true, data: { coverage: [] } } }))
 const firstUsable = []
-const boardSwitch = []
+const boardNavClick = []
+const boardPanelVisible = []
+const boardRowsVisible = []
 const quoteSettlement = []
+const boardRequests = []
 try {
   for (let index = 0; index < samples; index += 1) {
     const page = await context.newPage()
+    const requests = new Map()
+    const requestEvents = []
+    const isBoardRequest = url => {
+      const path = new URL(url).pathname
+      return path === '/api/stocks' || path === '/api/stocks/quotes' || path === '/api/stocks/quotes/status'
+    }
+    page.on('request', request => {
+      if (!isBoardRequest(request.url())) return
+      requests.set(request, { path: new URL(request.url()).pathname, started: performance.now() })
+    })
+    page.on('response', response => {
+      const request = response.request()
+      const metadata = requests.get(request)
+      if (!metadata) return
+      requestEvents.push({ path: metadata.path, status: response.status(), ms: Math.round(performance.now() - metadata.started) })
+      requests.delete(request)
+    })
+    page.on('requestfailed', request => {
+      const metadata = requests.get(request)
+      if (!metadata) return
+      requestEvents.push({ path: metadata.path, failed: true, ms: Math.round(performance.now() - metadata.started) })
+      requests.delete(request)
+    })
     const started = performance.now()
     await page.goto(`${frontendBase}/?perf=${Date.now()}-${index}`, { waitUntil: 'domcontentloaded' })
     await page.locator('.market-breadth-panel').waitFor({ state: 'visible', timeout: 30_000 })
     firstUsable.push(Math.round(performance.now() - started))
-    const switchStarted = performance.now()
-    await page.getByRole('button', { name: 'Bảng giá', exact: true }).evaluate(button => button.click())
+    const navStarted = performance.now()
+    await page.locator('.market-board-nav-item').click()
+    boardNavClick.push(Math.round(performance.now() - navStarted))
+    const panelStarted = performance.now()
+    await page.locator('[data-react-market-board]').waitFor({ state: 'visible', timeout: 30_000 })
+    boardPanelVisible.push(Math.round(performance.now() - panelStarted))
+    const rowsStarted = performance.now()
     await page.waitForFunction(() => document.querySelector('.table-panel tbody tr .symbol') || document.querySelector('.table-panel [role="alert"], .table-panel .error-text'), null, { timeout: 30_000 })
     const boardError = await page.locator('.table-panel [role="alert"], .table-panel .error-text').first().textContent().catch(() => '')
-    if (boardError) throw new Error(`Bảng giá live không tải được: ${boardError.trim()}`)
+    if (boardError) throw new Error(`Market board failed to load: ${boardError.trim()}`)
     await page.locator('.table-panel tbody tr .symbol').first().waitFor({ state: 'visible' })
-    boardSwitch.push(Math.round(performance.now() - switchStarted))
+    boardRowsVisible.push(Math.round(performance.now() - rowsStarted))
+    boardRequests.push(requestEvents)
     const quoteStarted = performance.now()
     await page.locator('#market-board-loading-overlay').waitFor({ state: 'detached', timeout: 30_000 }).catch(() => {})
-    await page.locator('.overview-data-status').filter({ hasNotText: 'Đang cập nhật' }).waitFor({ state: 'visible', timeout: 30_000 })
+    await page.locator('.overview-data-status').filter({ hasNotText: 'Äang cáº­p nháº­t' }).waitFor({ state: 'visible', timeout: 30_000 })
     quoteSettlement.push(Math.round(performance.now() - quoteStarted))
     await page.close()
   }
@@ -92,7 +124,14 @@ const report = {
   backendBase,
   sampleCount: samples,
   api: { healthMs: health.ms, stocks500: summary(listTimes), quotes40: summary(quoteTimes), quoteStatuses },
-  ui: { firstUsable: summary(firstUsable), boardSwitch: summary(boardSwitch), quoteSettlement: summary(quoteSettlement) }
+  ui: {
+    firstUsable: summary(firstUsable),
+    boardNavClick: summary(boardNavClick),
+    boardPanelVisible: summary(boardPanelVisible),
+    boardRowsVisible: summary(boardRowsVisible),
+    quoteSettlement: summary(quoteSettlement),
+    boardRequests
+  }
 }
 if (process.env.LIVE_PERF_OUTPUT) fs.writeFileSync(process.env.LIVE_PERF_OUTPUT, `${JSON.stringify(report, null, 2)}\n`)
 console.log(JSON.stringify(report, null, 2))
