@@ -128,7 +128,7 @@ Tab **AI Advisor** giữ câu trả lời rule-based và citation theo ngữ c�
 
 ## Build và kiểm tra bản phát hành
 
-`npm run build` dùng safe-build: gọi npm CLI qua Node để tương thích Windows, kiểm tra bundle và khôi phục dist trước đó nếu build/gate thất bại. `verify:release` kiểm tra service tests và dist hiện có, không thay thế build hoặc E2E. Source ứng dụng và CSS đã được khôi phục từ asset đã phát hành; xem [nguồn gốc khôi phục](recovery/README.md). App.jsx là mã ứng dụng đã định dạng lại từ bản biên dịch, còn tên biến cũ; React/vendor tiếp tục lấy từ package chuẩn. Chỉnh sửa source và build bình thường, không sửa dist trực tiếp.
+`npm run build` dùng safe-build: gọi npm CLI qua Node để tương thích Windows, kiểm tra bundle và khôi phục dist trước đó nếu build/gate thất bại. `check:env-template` khóa `.env.example` ở API cùng origin và forecast tắt mặc định; `verify:release` chạy kiểm tra này, service tests và dist hiện có, không thay thế build hoặc E2E. Source ứng dụng và CSS đã được khôi phục từ asset đã phát hành; xem [nguồn gốc khôi phục](recovery/README.md). App.jsx là mã ứng dụng đã định dạng lại từ bản biên dịch, còn tên biến cũ; React/vendor tiếp tục lấy từ package chuẩn. Chỉnh sửa source và build bình thường, không sửa dist trực tiếp.
 
 ## Intraday và trạng thái tải
 

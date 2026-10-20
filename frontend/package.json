@@ -9,6 +9,7 @@
     "build": "node scripts/safe-build.mjs",
     "build:raw": "vite build",
     "start": "vite preview",
+    "check:env-template": "node scripts/check-env-template.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
     "check:source-parity": "node scripts/check-source-parity.mjs",
     "check:error-contract": "node scripts/check-api-error-contract.mjs",
@@ -21,7 +22,7 @@
     "verify:live:portfolio-dividend": "node scripts/verify-live-portfolio-dividend.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
     "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
-    "verify:release": "npm run test -- --runInBand && npm run check:bundle && npm run check:prometheus"
+    "verify:release": "npm run check:env-template && npm run test -- --runInBand && npm run check:bundle && npm run check:prometheus"
   },
   "dependencies": {
     "react": "^18.2.0",

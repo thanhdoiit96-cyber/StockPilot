@@ -1,6 +1,6 @@
 ﻿# Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
+Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
 
 ## Hiện trạng chạy local
 
@@ -42,6 +42,12 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 - `npm run check:env-template` nay khóa contract gồm 27 biến hoạt động, phát hiện key trùng/ngoài contract và bắt buộc mọi cờ scheduler/preview là `false`; lệnh đã nằm trong release gate.
 - Kiểm chứng: full release gate ngoài sandbox đạt lint, contract template và 102 suite/507 test trong 96,059 giây.
 
+### Template cấu hình frontend
+
+- `npm run check:env-template` khóa ba biến public được hỗ trợ: `VITE_API_BASE_URL` phải rỗng để browser dùng proxy `/api` cùng origin; hai cờ forecast mặc định `false`; key trùng hoặc ngoài contract làm lệnh thất bại.
+- Kiểm tra này đã nằm đầu `frontend/npm run verify:release`, nên không thể vô tình đưa secret vào template public hoặc làm cookie authentication đi qua URL API tuyệt đối.
+- Kiểm chứng: frontend release gate đạt template contract, encoding, API error contract, 100 unit/contract test, bundle integrity và Prometheus contract.
+
 ## Giới hạn giữ nguyên
 
 - Recommendation, forecast và dữ liệu provider vẫn research/internal prototype cho đến khi có evidence, quyền nguồn và validation ngoài mẫu phù hợp.
@@ -50,6 +56,6 @@ Cập nhật: 2026-10-19. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
-1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint, release gate và template cấu hình backend hiện đã được chuẩn hóa.
+1. Chọn hạng mục chỉ triển khai được khi dependency được chốt: password recovery sau email delivery, alerts sau scheduler/kênh gửi, hoặc comparison sau coverage/license. Nền tảng lint, release gate và contract cấu hình backend/frontend hiện đã được chuẩn hóa.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.
