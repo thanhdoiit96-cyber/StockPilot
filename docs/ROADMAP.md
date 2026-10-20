@@ -21,9 +21,9 @@ Cập nhật: 2026-10-20. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ## Ưu tiên tiếp theo theo dependency
 
-### 1. Khôi phục mật khẩu — chờ email delivery
+### 1. Khôi phục mật khẩu — thiết kế sẵn, chờ email delivery
 
-Thiết kế token một lần, hash trong database, expiry/revocation, rate limit và audit trước khi tạo UI. Nghiệm thu chỉ bắt đầu sau khi email provider, domain gửi và môi trường test được chốt.
+Thiết kế token một lần, hash trong database, expiry/revocation, rate limit và audit đã ghi tại [PASSWORD_RECOVERY_DESIGN.md](PASSWORD_RECOVERY_DESIGN.md). Nghiệm thu chỉ bắt đầu sau khi email provider, domain gửi và môi trường test được chốt.
 
 ### 2. Cảnh báo giá/dữ liệu — chờ scheduler và kênh gửi
 
