@@ -16,6 +16,9 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - Runtime hiện có 0 outcome hợp lệ cho cohort `short_term_rule_v2`/20 phiên; 65 pending và 5 bị loại vì integrity. Không có cơ sở để hiệu chỉnh trọng số.
 - Outcome của `short_term_rule_v2` không còn đổi trọng số `personalized_rule_v1`. API trả source/target/application status; mismatch giữ toàn bộ hệ số `1.00`. Xem [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
 - Kiểm chứng gần nhất: backend controller 12/12, frontend unit/contract 100/100, Playwright Recommendation 3/3, build và bundle integrity đạt.
+- Lỗi hiển thị đã xác định: frontend từng bỏ snapshot EOD khi `as_of` nhỏ hơn ngày hiện tại. Snapshot gần nhất nay vẫn hiển thị kèm ngày EOD/stale notice; snapshot mới chỉ sinh sau khi EOD phiên hiện tại hoàn tất. Endpoint local đang có 5 đề xuất EOD ngày 2026-10-19, còn 5 outcome pending do kỳ theo dõi là 20 phiên.
+- Evaluation job local được bật, nhưng outcome chỉ đổi khi đủ session EOD và snapshot integrity hợp lệ; UI Learning/History hiển thị rõ measured, pending và excluded thay vì suy diễn hiệu quả.
+- Forecast live endpoint local trả current-data preview nhưng frontend từng tắt cờ hiển thị. Local UI bật `VITE_ENABLE_FORECAST_LIVE=true`; nội dung vẫn là prototype/chưa có market-accuracy verified, không phải tín hiệu đầu tư.
 
 ### Danh mục: mục tiêu và nhật ký quyết định
 

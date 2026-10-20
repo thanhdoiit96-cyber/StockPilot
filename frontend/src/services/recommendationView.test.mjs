@@ -12,13 +12,13 @@ test('prefers a fresh generated result over stale initial data', () => {
   assert.deepEqual(view.recommendations.map(item => item.symbol), ['FPT'])
 })
 
-test('ignores stale initial snapshot from an older session instead of rendering it as the default', () => {
+test('keeps the latest EOD snapshot visible while marking it as stale', () => {
   const view = deriveRecommendationView({
     initialData: { run: { as_of: '2026-10-08', created_at: '2026-10-08T08:00:00+07:00' }, recommendations: [{ symbol: 'AAA' }] },
     now: '2026-10-09T10:00:00+07:00',
   })
 
-  assert.deepEqual(view.recommendations, [])
+  assert.deepEqual(view.recommendations.map(item => item.symbol), ['AAA'])
   assert.equal(view.expiredInitialData, true)
 })
 

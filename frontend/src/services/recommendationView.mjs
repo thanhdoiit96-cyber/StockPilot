@@ -23,7 +23,7 @@ export function deriveRecommendationView({ result = null, initialData = null, no
   const expiredInitialData = Boolean(currentSession && initialSession && initialSession < currentSession)
   const recommendations = Array.isArray(result?.recommendations)
     ? result.recommendations
-    : !expiredInitialData && Array.isArray(initialData?.recommendations)
+    : Array.isArray(initialData?.recommendations)
       ? initialData.recommendations
       : []
 
