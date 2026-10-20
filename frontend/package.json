@@ -20,6 +20,7 @@
     "verify:live:portfolio-performance": "node scripts/verify-live-portfolio-performance.mjs",
     "verify:live:portfolio-events": "node scripts/verify-live-portfolio-events.mjs",
     "verify:live:portfolio-dividend": "node scripts/verify-live-portfolio-dividend.mjs",
+    "verify:live:recommendations": "node scripts/verify-live-recommendations.mjs",
     "measure:live:market-board": "node scripts/measure-live-market-board.mjs",
     "trace:live:market-board": "node scripts/trace-live-market-board-browser.mjs",
     "verify:release": "npm run check:env-template && npm run test -- --runInBand && npm run check:bundle && npm run check:prometheus"

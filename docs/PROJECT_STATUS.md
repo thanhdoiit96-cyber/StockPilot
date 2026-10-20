@@ -21,6 +21,7 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - EOD scheduler đã có luồng idempotent tạo snapshot sau ingestion chỉ khi coverage đầy đủ; `RECOMMENDATIONS_AFTER_INGEST` nay được đưa vào template và contract với default `false`. Local giữ cờ này `true`. Kiểm chứng: template contract đạt; Jest EOD/evaluation scheduler 16/16 đạt.
 - Rà soát History/Calibration runtime: hai tab gọi được API và hiển thị pending/integrity/cohort đúng contract, nhưng 14 run/70 mã hiện có 0 outcome eligible; 65 pending, 5 excluded, 10 snapshot legacy chặn integrity và 70 mã thiếu taxonomy snapshot. Không tạo cohort tự động cho `personalized_rule_v1` vì weights là policy theo người dùng; xem quyết định tại [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
 - Forecast live endpoint local trả current-data preview nhưng frontend từng tắt cờ hiển thị. Local UI bật `VITE_ENABLE_FORECAST_LIVE=true`; nội dung vẫn là prototype/chưa có market-accuracy verified, không phải tín hiệu đầu tư.
+- Smoke check local `frontend/npm run verify:live:recommendations` nay đọc payload Recommendation/Forecast từ backend `127.0.0.1:5000`, dùng chính payload đó để kiểm tra UI `:4173`: snapshot EOD có danh sách mã và stale notice, tab Lịch sử mở được report, tab Hiệu chỉnh công bố trạng thái chưa áp dụng, Forecast hiển thị badge `Live`. API proxy `:4173/api/recommendations/latest` cũng đã trả 5 mã sau khi fallback local đổi sang IPv4. Check chỉ đọc dữ liệu/API; không tạo recommendation, giao dịch hay outcome.
 
 ### Danh mục: mục tiêu và nhật ký quyết định
 

@@ -67,7 +67,7 @@ Tên phiên do người dùng tự đặt (tối đa 80 ký tự) giúp nhận d
 | [src/runtime/market-board-tools-core.mjs](src/runtime/market-board-tools-core.mjs) | Contract thuần cho cấu hình cột và xuất CSV, dùng chung cho runtime/unit test |
 | [src/runtime/quality-overlay.js](src/runtime/quality-overlay.js) | Banner coverage EOD toàn ứng dụng, kèm trạng thái runtime và evidence job gần nhất |
 | [src/styles.css](src/styles.css) | Giao diện |
-| [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc localhost:5000 |
+| [vite.config.js](vite.config.js) | Dev server cổng 5173; proxy /api tới API_PROXY_TARGET hoặc fallback IPv4 `127.0.0.1:5000` |
 
 UI gọi health, thống kê cache, danh sách và chi tiết cổ phiếu. Lịch sử hiển thị 12 giá mới nhất theo thời gian tăng dần. Danh mục lưu giao dịch do người dùng nhập qua backend; AI Advisor hiện trả lời theo phân tích rule-based.
 

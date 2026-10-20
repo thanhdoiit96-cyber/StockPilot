@@ -134,7 +134,7 @@ npm.cmd ci
 npm.cmd run dev
 ~~~
 
-Mở http://localhost:5173. Vite chuyển các request /api tới http://localhost:5000. Nếu backend đổi cổng, đặt API_PROXY_TARGET trong terminal frontend trước khi khởi động Vite:
+Mở http://localhost:5173. Vite chuyển các request /api tới http://127.0.0.1:5000. Nếu backend đổi cổng, đặt API_PROXY_TARGET trong terminal frontend trước khi khởi động Vite:
 
 ~~~powershell
 $env:API_PROXY_TARGET = 'http://localhost:5001'

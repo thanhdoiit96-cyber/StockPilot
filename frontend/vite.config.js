@@ -47,7 +47,9 @@ const externalRuntimeAssets = () => {
   }
 }
 
-const apiProxyTarget = process.env.API_PROXY_TARGET || process.env.VITE_API_BASE_URL || 'http://localhost:5000'
+// Use IPv4 for the local fallback: backend development servers commonly bind only
+// 127.0.0.1, while a `localhost` lookup may select an unavailable IPv6 address.
+const apiProxyTarget = process.env.API_PROXY_TARGET || process.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000'
 
 export default defineConfig({
   plugins: [react(), externalRuntimeAssets()],
