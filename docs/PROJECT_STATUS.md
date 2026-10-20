@@ -18,6 +18,7 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - Kiểm chứng gần nhất: backend controller 12/12, frontend unit/contract 100/100, Playwright Recommendation 3/3, build và bundle integrity đạt.
 - Lỗi hiển thị đã xác định: frontend từng bỏ snapshot EOD khi `as_of` nhỏ hơn ngày hiện tại. Snapshot gần nhất nay vẫn hiển thị kèm ngày EOD/stale notice; snapshot mới chỉ sinh sau khi EOD phiên hiện tại hoàn tất. Endpoint local đang có 5 đề xuất EOD ngày 2026-10-19, còn 5 outcome pending do kỳ theo dõi là 20 phiên.
 - Evaluation job local được bật, nhưng outcome chỉ đổi khi đủ session EOD và snapshot integrity hợp lệ; UI Learning/History hiển thị rõ measured, pending và excluded thay vì suy diễn hiệu quả.
+- EOD scheduler đã có luồng idempotent tạo snapshot sau ingestion chỉ khi coverage đầy đủ; `RECOMMENDATIONS_AFTER_INGEST` nay được đưa vào template và contract với default `false`. Local giữ cờ này `true`. Kiểm chứng: template contract đạt; Jest EOD/evaluation scheduler 16/16 đạt.
 - Forecast live endpoint local trả current-data preview nhưng frontend từng tắt cờ hiển thị. Local UI bật `VITE_ENABLE_FORECAST_LIVE=true`; nội dung vẫn là prototype/chưa có market-accuracy verified, không phải tín hiệu đầu tư.
 
 ### Danh mục: mục tiêu và nhật ký quyết định
