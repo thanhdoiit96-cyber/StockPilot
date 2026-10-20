@@ -28,6 +28,16 @@ function assert(condition, message) {
 }
 
 try {
+  const proxyPage = await browser.newPage()
+  await proxyPage.goto(baseUrl, { waitUntil: 'domcontentloaded' })
+  const proxyLatest = await proxyPage.evaluate(async () => {
+    const response = await fetch('/api/recommendations/latest', { signal: AbortSignal.timeout(10000), headers: { Accept: 'application/json' } })
+    const body = await response.json()
+    return { status: response.status, recommendationCount: Array.isArray(body?.data?.recommendations) ? body.data.recommendations.length : 0 }
+  })
+  await proxyPage.close()
+  assert(proxyLatest.status === 200 && proxyLatest.recommendationCount > 0, `browser proxy did not return recommendations: ${JSON.stringify(proxyLatest)}`)
+
   const page = await browser.newPage()
   await page.addInitScript(() => localStorage.setItem('market-auth', JSON.stringify({ token: 'local-ui-smoke', user: { email: 'local-smoke@example.com', role: 'user' } })))
   await page.route('**/api/auth/me', route => route.fulfill({ json: { success: true, user: { email: 'local-smoke@example.com', role: 'user' } } }))
@@ -70,6 +80,7 @@ try {
   console.log(JSON.stringify({
     baseUrl,
     backendUrl,
+    proxyLatest,
     recommendationCount,
     staleNoticeVisible,
     historyRuns,
