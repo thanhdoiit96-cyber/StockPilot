@@ -3,11 +3,12 @@ import { fetchForecastCurrentPreview, fetchForecastResearchPreview } from '../se
 import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
 import { forecastRagTone } from '../services/forecastRag.mjs'
+import { summarizeForecastBreadth } from '../services/forecastBreadth.mjs'
 
 // Design fixtures only. These values are not outputs of the research baseline.
 const scenarios = {
-  1: { probabilities: [38, 36, 26], range: [40, 62], median: 51 },
-  5: { probabilities: [54, 28, 18], range: [35, 72], median: 57 },
+  1: { probabilities: [38, 36, 26] },
+  5: { probabilities: [54, 28, 18] },
 }
 
 export default function ShortTermOutlook({ language = 'vi', recommendations = [], onOpenDetail, onOpenIdeas, onAddToWatchlist, watchlistSymbols = [] }) {
@@ -61,7 +62,13 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const scenario = { ...scenarios[horizon], probabilities: currentData ? currentPreview.probabilities.map(item => item.value * 100) : research ? preview.probabilities.map(item => item.value * 100) : scenarios[horizon].probabilities }
   const labels = [copy('Tăng lan tỏa', 'Broad advance'), copy('Cân bằng', 'Balanced'), copy('Giảm lan tỏa', 'Broad decline')]
   const scenarioTypes = ['advance', 'balanced', 'decline']
+  const forecastClasses = ['advancing', 'balanced', 'declining']
   const ragLegend = copy('Màu xác suất: xanh = khả năng tăng cao hoặc rủi ro giảm thấp; vàng = chưa rõ; đỏ = khả năng tăng thấp hoặc rủi ro giảm cao.', 'Probability colour: green = strong advance chance or low decline risk; amber = uncertain; red = weak advance chance or elevated decline risk.')
+  const forecastPayload = currentData ? currentPreview : research ? preview : null
+  const breadthForecast = summarizeForecastBreadth(forecastPayload?.probabilities, forecastPayload?.breadth_target)
+  const breadthLabel = breadthForecast ? labels[forecastClasses.indexOf(breadthForecast.scenario)] : null
+  const breadthTone = breadthForecast ? forecastRagTone(scenarioTypes[forecastClasses.indexOf(breadthForecast.scenario)], breadthForecast.probability * 100) : null
+  const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `<${breadthForecast.band.maximum * 100}%` : breadthForecast.band.maximum === 1 ? `>${breadthForecast.band.minimum * 100}%` : `${breadthForecast.band.minimum * 100}–${breadthForecast.band.maximum * 100}%`) : null
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
   const candidates = recommendations.filter(item => (item.stock?.code || item.symbol) && Number.isFinite(Number(item.score))).sort((a, b) => Number(a.rank || 999) - Number(b.rank || 999) || Number(b.score) - Number(a.score)).slice(0, 3)
   const [isCompact, setIsCompact] = useState(true)
@@ -133,18 +140,21 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
 
             <div className="outlook-range">
               <h3>{copy('Tỷ lệ mã tăng trong rổ', 'Share of advancing stocks')}</h3>
-              <div className="outlook-range-value">
-                <strong>{scenario.range[0]}–{scenario.range[1]}%</strong>
-                <span>{copy('Khoảng minh họa', 'Illustrative range')}</span>
-              </div>
-              <svg viewBox="0 0 360 66" role="img" aria-label={`${copy('Khoảng minh họa', 'Illustrative range')}: ${scenario.range[0]}–${scenario.range[1]}%; ${copy('điểm giữa', 'midpoint')} ${scenario.median}%`}>
-                <line x1="16" x2="344" y1="22" y2="22" className="outlook-axis" />
-                <line x1="180" x2="180" y1="9" y2="35" className="outlook-reference" />
-                <line x1={16 + scenario.range[0] * 3.28} x2={16 + scenario.range[1] * 3.28} y1="22" y2="22" className="outlook-band" />
-                <circle cx={16 + scenario.median * 3.28} cy="22" r="5" className="outlook-point" />
-                <text x="16" y="56">0%</text><text x="180" y="56" textAnchor="middle">50%</text><text x="344" y="56" textAnchor="end">100%</text>
-              </svg>
-              <p className="outlook-note">{copy('Đo tỷ lệ cổ phiếu tăng, không phải mức tăng giá hay lợi nhuận.', 'A share of advancing stocks, not price appreciation or investment return.')}</p>
+              {breadthForecast ? (
+                <>
+                  <div className="outlook-range-value">
+                    <strong className={`rag-${breadthTone}`}>{breadthThreshold}</strong>
+                    <span>{copy(`ngưỡng của kịch bản ${breadthLabel}`, `${breadthLabel} scenario threshold`)}</span>
+                  </div>
+                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${(breadthForecast.probability * 100).toFixed(1)}%).`, `Most likely scenario: ${breadthLabel} (${(breadthForecast.probability * 100).toFixed(1)}%).`)}</p>
+                  <p className="outlook-note">{copy('Mô hình chỉ dự đoán lớp độ rộng rổ; chưa có ước lượng điểm hoặc khoảng tin cậy cho tỷ lệ mã tăng. Màu thể hiện xác suất/rủi ro của kịch bản, không phải lợi nhuận.', 'The model predicts a breadth class only; it has no point estimate or confidence interval for the advancing share. Colour expresses scenario probability/risk, not return.')}</p>
+                </>
+              ) : (
+                <>
+                  <div className="outlook-range-value"><strong>—</strong><span>{copy('Chưa có đầu ra dự báo hợp lệ', 'No valid forecast output')}</span></div>
+                  <p className="outlook-note">{copy('Không hiển thị khoảng minh họa khi chưa có forecast chứa định nghĩa độ rộng rổ có thể kiểm chứng.', 'No illustrative range is shown until a forecast includes a verifiable breadth-target definition.')}</p>
+                </>
+              )}
             </div>
           </div>
 

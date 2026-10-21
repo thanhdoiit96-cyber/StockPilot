@@ -1,5 +1,6 @@
 'use strict';
 const { createHash } = require('crypto');
+const { classifyBreadth } = require('./forecastBreadth');
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const dateValid = day => typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isFinite(Date.parse(day)) && new Date(day).toISOString().slice(0, 10) === day;
 const time = value => value == null ? NaN : Date.parse(value);
@@ -69,7 +70,7 @@ function buildForecastSample({ rows = [], calendar, asOf, cutoff, evaluatedAt, p
     const breadth = positive / valid;
     // Conservative availability: the coverage decision itself was made at evaluatedAt.
     // Do not backdate a label to the last price timestamp when missing rows may arrive later.
-    return { ...result, evidence_ids: [...outcomeEvidence].sort(), status: 'available', label_available_at: new Date(evaluatedAt).toISOString(), coverage, missing, breadth, label: breadth < 0.45 ? 'declining' : breadth > 0.55 ? 'advancing' : 'balanced' };
+    return { ...result, evidence_ids: [...outcomeEvidence].sort(), status: 'available', label_available_at: new Date(evaluatedAt).toISOString(), coverage, missing, breadth, label: classifyBreadth(breadth) };
   });
   return { ...manifest, status: members.length >= 50 ? 'features_available' : 'unavailable', labels };
 }

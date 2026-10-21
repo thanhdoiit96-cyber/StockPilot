@@ -6,7 +6,7 @@ function rows(symbol, start, step) {
 test('builds basket features per symbol instead of treating different symbols as one time series', () => {
   const preview = buildLiveForecastPreview({ currentData: { provider: 'vnstock', as_of: '2026-09-21T00:00:00Z', fetched_at: '2026-09-21T01:00:00Z', rows: [...rows('AAA', 100, 1), ...rows('BBB', 200, -1)] }, horizon: 5 });
   expect(preview).toMatchObject({ status: 'live_preview', synthetic: false, research_only: false, market_accuracy_verified: false, horizon_sessions: 5,
-    model: { type: 'current-data-softmax-prototype', history_window: 21 } });
+    model: { type: 'current-data-softmax-prototype', history_window: 21 }, breadth_target: { version: 'breadth_forward_v1', point_estimate_available: false } });
   expect(preview.probabilities).toHaveLength(3);
   expect(Math.abs(preview.probabilities.reduce((sum, item) => sum + item.value, 0) - 1)).toBeLessThan(1e-12);
 });

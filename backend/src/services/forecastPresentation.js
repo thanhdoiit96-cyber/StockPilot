@@ -1,5 +1,6 @@
 'use strict';
 const { assertForecastModeGate } = require('./forecastModeGate');
+const { forecastBreadthTarget } = require('./forecastBreadth');
 const UI_CLASSES = ['advancing', 'balanced', 'declining'];
 
 // Converts one historical research prediction into an explicit UI-safe contract.
@@ -34,7 +35,7 @@ function buildForecastPresentation({ report, horizon, asOf } = {}) {
     if (UI_CLASSES.some(name => !Number.isFinite(byClass[name])) || Math.abs(Object.values(byClass).reduce((a, b) => a + b, 0) - 1) > 1e-9) return unavailable('invalid_probabilities');
     return { version: 'forecast_presentation_v1', status: 'local_live_preview', source: 'live_local_preview', synthetic: false, research_only: false,
       live: true, market_accuracy_verified: false, calibrated: model.calibrated === true, model_version: model.version,
-      horizon_sessions: horizon, as_of: asOf, probabilities: UI_CLASSES.map(name => ({ class: name, value: byClass[name] })),
+      horizon_sessions: horizon, as_of: asOf, probabilities: UI_CLASSES.map(name => ({ class: name, value: byClass[name] })), breadth_target: forecastBreadthTarget(),
       notice: 'Local live preview only; license is pending and the signal is not market-accuracy verified.' };
   }
   if (!report || report.synthetic !== true || report.research_only !== true) return unavailable('verified_live_forecast_not_available');
@@ -47,7 +48,7 @@ function buildForecastPresentation({ report, horizon, asOf } = {}) {
   if (UI_CLASSES.some(name => !Number.isFinite(byClass[name])) || Math.abs(Object.values(byClass).reduce((a, b) => a + b, 0) - 1) > 1e-9) return unavailable('invalid_probabilities');
   return { version: 'forecast_presentation_v1', status: 'research_preview', source: 'synthetic_replay', synthetic: true, research_only: true,
     live: false, market_accuracy_verified: false, calibrated: model.calibrated === true, model_version: model.version,
-    horizon_sessions: horizon, as_of: asOf, probabilities: UI_CLASSES.map(name => ({ class: name, value: byClass[name] })),
+    horizon_sessions: horizon, as_of: asOf, probabilities: UI_CLASSES.map(name => ({ class: name, value: byClass[name] })), breadth_target: forecastBreadthTarget(),
     notice: 'Synthetic replay only; not a current market forecast.' };
 }
 module.exports = { buildForecastPresentation };

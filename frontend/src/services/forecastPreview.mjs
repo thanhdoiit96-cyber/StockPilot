@@ -1,3 +1,5 @@
+import { isForecastBreadthTarget } from './forecastBreadth.mjs'
+
 function isResearchPreviewEnabled() {
   const globalValue = typeof globalThis !== 'undefined' ? String(globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ || '') : ''
   const raw = globalValue || (typeof import.meta !== 'undefined' && import.meta?.env ? String(import.meta.env.VITE_ENABLE_FORECAST_RESEARCH || '') : '')
@@ -19,7 +21,7 @@ export async function fetchForecastResearchPreview(horizon, { signal } = {}) {
   const data = body?.data
   const validTime = typeof data?.artifact_generated_at === 'string' && Number.isFinite(Date.parse(data.artifact_generated_at))
   const validArtifact = /^[a-f0-9]{64}$/.test(data?.artifact_sha256 || '') && validTime && ['fresh', 'stale'].includes(data?.artifact_freshness) && Number.isInteger(data?.artifact_age_seconds) && data.artifact_age_seconds >= 0
-  const valid = data?.status === 'research_preview' && data.synthetic === true && data.research_only === true && data.live === false && data.market_accuracy_verified === false && data.horizon_sessions === horizon && Array.isArray(data.probabilities) && validArtifact
+  const valid = data?.status === 'research_preview' && data.synthetic === true && data.research_only === true && data.live === false && data.market_accuracy_verified === false && data.horizon_sessions === horizon && Array.isArray(data.probabilities) && validArtifact && isForecastBreadthTarget(data.breadth_target)
   if (!valid) return { status: 'unavailable', reason: 'invalid_contract' }
   const values = Object.fromEntries(data.probabilities.map(item => [item.class, item.value]))
   const classes = ['advancing', 'balanced', 'declining']
@@ -38,7 +40,7 @@ export async function fetchForecastCurrentPreview(symbols = ['FPT', 'HPG', 'VHM'
   const classes = ['advancing', 'balanced', 'declining'], values = Object.fromEntries((data?.probabilities || []).map(item => [item.class, item.value]))
   const valid = body?.success === true && data?.status === 'live_preview' && data.mode === 'live' && data.live === true && data.synthetic === false && data.research_only === false
     && data.market_accuracy_verified === false && data.horizon_sessions === horizon && typeof data.as_of === 'string' && Number.isFinite(Date.parse(data.as_of))
-    && classes.every(name => Number.isFinite(values[name]) && values[name] >= 0 && values[name] <= 1) && Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) < 1e-6
+    && classes.every(name => Number.isFinite(values[name]) && values[name] >= 0 && values[name] <= 1) && Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) < 1e-6 && isForecastBreadthTarget(data.breadth_target)
   if (!valid) return { status: 'unavailable', reason: 'invalid_contract' }
   return { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })) }
 }

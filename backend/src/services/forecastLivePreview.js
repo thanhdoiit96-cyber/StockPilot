@@ -1,4 +1,5 @@
 'use strict';
+const { forecastBreadthTarget } = require('./forecastBreadth');
 
 const CLASSES = ['declining', 'balanced', 'advancing'];
 const UI_CLASSES = ['advancing', 'balanced', 'declining'];
@@ -106,6 +107,7 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
       }
     },
     probabilities: recommended,
+    breadth_target: forecastBreadthTarget(),
     gate: {
       provider_valid: true,
       evidence_integrity: true,

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fetchForecastResearchPreview, fetchForecastCurrentPreview } from './forecastPreview.mjs'
+import { forecastBreadthTarget } from './forecastBreadth.mjs'
 test('requires an explicit opt-in before loading the synthetic research replay', async t => {
   const originalFetch = global.fetch; const originalFlag = globalThis.__VITE_ENABLE_FORECAST_RESEARCH__
   t.after(() => { global.fetch = originalFetch; globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = originalFlag })
@@ -13,7 +14,7 @@ test('accepts only the explicitly synthetic research contract', async t => {
   const originalFetch = global.fetch; const originalFlag = globalThis.__VITE_ENABLE_FORECAST_RESEARCH__
   t.after(() => { global.fetch = originalFetch; globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = originalFlag })
   globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ = 'true'
-  global.fetch = async () => ({ ok: true, json: async () => ({ data: { status: 'research_preview', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, horizon_sessions: 5, artifact_sha256: 'a'.repeat(64), artifact_generated_at: '2026-10-12T06:00:00Z', artifact_freshness: 'fresh', artifact_age_seconds: 30, probabilities: [{ class: 'declining', value: .2 }, { class: 'advancing', value: .5 }, { class: 'balanced', value: .3 }] } }) })
+  global.fetch = async () => ({ ok: true, json: async () => ({ data: { status: 'research_preview', synthetic: true, research_only: true, live: false, market_accuracy_verified: false, horizon_sessions: 5, artifact_sha256: 'a'.repeat(64), artifact_generated_at: '2026-10-12T06:00:00Z', artifact_freshness: 'fresh', artifact_age_seconds: 30, breadth_target: forecastBreadthTarget, probabilities: [{ class: 'declining', value: .2 }, { class: 'advancing', value: .5 }, { class: 'balanced', value: .3 }] } }) })
   const result = await fetchForecastResearchPreview(5)
   assert.equal(result.status, 'research_preview')
   assert.deepEqual(result.probabilities.map(item => item.class), ['advancing', 'balanced', 'declining'])
@@ -50,6 +51,7 @@ test('loads a valid current-data preview only when the live flag is explicitly e
         research_only: false,
         market_accuracy_verified: false,
         horizon_sessions: 5,
+        breadth_target: forecastBreadthTarget,
         probabilities: [{ class: 'declining', value: .2 }, { class: 'advancing', value: .5 }, { class: 'balanced', value: .3 }]
       }
     })
