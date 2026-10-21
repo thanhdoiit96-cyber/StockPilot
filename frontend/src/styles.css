@@ -2957,7 +2957,7 @@ html[data-page-loading="true"]{overscroll-behavior:none}
 .outlook-range text { fill: var(--muted); font-size: 11px; }
 .outlook-axis { stroke: #8885; stroke-width: 3; }
 .outlook-reference { stroke: var(--muted); stroke-dasharray: 3 3; }
-.outlook-band { stroke: #5c91d9; stroke-width: 12; stroke-linecap: round; opacity: .45; }
+.outlook-band { stroke: currentColor; stroke-width: 12; stroke-linecap: round; opacity: .55; }
 .outlook-point { fill: #5c91d9; stroke: var(--text); stroke-width: 2; }
 .outlook-footer { border-top: 1px solid #8883; padding-top: 10px; margin-top: 6px; }
 .outlook-candidates { margin-top: 16px; padding-top: 14px; border-top: 1px solid #8883; }

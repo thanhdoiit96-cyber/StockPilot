@@ -62,6 +62,10 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const breadthLabel = breadthForecast ? labels[forecastClasses.indexOf(breadthForecast.scenario)] : null
   const breadthTone = breadthForecast ? forecastOutcomeTone(breadthForecast.scenario) : null
   const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `<${breadthForecast.band.maximum * 100}%` : breadthForecast.band.maximum === 1 ? `>${breadthForecast.band.minimum * 100}%` : `${breadthForecast.band.minimum * 100}–${breadthForecast.band.maximum * 100}%`) : null
+  const formatForecastPercent = value => {
+    const rounded = roundedForecastPercent(value)
+    return rounded == null ? '—' : rounded.toLocaleString(en ? 'en-US' : 'vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  }
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
   const candidates = recommendations.filter(item => (item.stock?.code || item.symbol) && Number.isFinite(Number(item.score))).sort((a, b) => Number(a.rank || 999) - Number(b.rank || 999) || Number(b.score) - Number(a.score)).slice(0, 3)
   const [isCompact, setIsCompact] = useState(true)
@@ -76,7 +80,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
         <div className="outlook-controls">
           <details className="outlook-info">
             <summary>{currentData ? copy('Dữ liệu hiện tại', 'Current data') : research ? copy('Mô phỏng nghiên cứu', 'Research simulation') : copy('Mô phỏng', 'Simulated')} <span aria-hidden="true">ⓘ</span></summary>
-            <p>{currentData ? copy(`Đang dùng dữ liệu hiện tại từ ${currentPreview.provider} với as_of ${currentPreview.as_of}. Đây là preview live, chưa qua gate xác minh hiệu quả thị trường.`, `Using current data from ${currentPreview.provider} with as_of ${currentPreview.as_of}. This is a live preview, not yet validated through the market-accuracy gate.`) : research ? copy(`Xác suất lấy từ replay synthetic tại ${preview.as_of}; không phải dự báo thị trường hiện tại, chưa hiệu chỉnh và chưa có hiệu quả được xác minh. Khoảng tỷ lệ mã tăng vẫn là fixture giao diện.`, `Probabilities come from a synthetic replay at ${preview.as_of}; this is not a current market forecast, is not calibrated and has no verified performance. The advancing-share range remains a UI fixture.`) : copy('API research preview không khả dụng nên toàn bộ số liệu bên dưới là fixture cố định để kiểm tra giao diện. Không đại diện VNINDEX hay dự báo thị trường.', 'The research preview API is unavailable, so all values below are fixed UI fixtures. They do not represent VNINDEX or a market forecast.')}</p>
+            <p>{currentData ? copy(`Đang dùng dữ liệu hiện tại từ ${currentPreview.provider} với as_of ${currentPreview.as_of}. Đây là preview live, chưa qua gate xác minh hiệu quả thị trường.`, `Using current data from ${currentPreview.provider} with as_of ${currentPreview.as_of}. This is a live preview, not yet validated through the market-accuracy gate.`) : research ? copy(`Xác suất lấy từ replay synthetic tại ${preview.as_of}; không phải dự báo thị trường hiện tại, chưa hiệu chỉnh và chưa có hiệu quả được xác minh.`, `Probabilities come from a synthetic replay at ${preview.as_of}; this is not a current market forecast, is not calibrated and has no verified performance.`) : copy('Chưa có payload dự báo hợp lệ để hiển thị.', 'No valid forecast payload is available to display.')}</p>
           </details>
           <div className="outlook-horizons" role="group" aria-label={copy('Kỳ dự báo', 'Forecast horizon')}>
             {[1, 5].map(value => (
@@ -97,7 +101,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
             {labels.map((label, index) => (
               <div className={`outlook-compact-cell outcome-${forecastOutcomeTone(forecastClasses[index])}`} key={label} title={outcomeLegend}>
                 <span>{label}</span>
-                <strong>{roundedForecastPercent(probabilities[index]?.value) ?? '—'}{forecastPayload ? '%' : ''}</strong>
+                <strong>{formatForecastPercent(probabilities[index]?.value)}{forecastPayload ? '%' : ''}</strong>
               </div>
             ))}
           </div>
@@ -115,7 +119,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                 {labels.map((label, i) => (
                   <div className={`outlook-probability outcome-${forecastOutcomeTone(forecastClasses[i])}`} key={label} title={outcomeLegend}>
                     <span>{label}</span>
-                    <strong>{roundedForecastPercent(probabilities[i]?.value) ?? '—'}{forecastPayload && <small>%</small>}</strong>
+                    <strong>{formatForecastPercent(probabilities[i]?.value)}{forecastPayload && <small>%</small>}</strong>
                     <div className="outlook-meter" aria-hidden="true"><i style={{ width: `${forecastPayload ? Math.max(0, Math.min(100, Number(probabilities[i]?.value) * 100 || 0)) : 0}%` }} /></div>
                   </div>
                 ))}
@@ -123,7 +127,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
               <p className="outlook-outcome-legend">{outcomeLegend}</p>
               <div className="outlook-preview-status">
                 <p className={`outlook-note${stale ? ' is-stale' : ''}`}>
-                  {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Research preview không khả dụng · Đang hiển thị fixture giao diện', 'Research preview unavailable · Showing UI fixtures')}
+                  {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Chưa có forecast hợp lệ để hiển thị', 'No valid forecast is available')}
                 </p>
                 {(preview.status === 'unavailable' || currentPreview.status === 'unavailable') && (
                   <button type="button" className="ghost-btn small-btn" onClick={() => setPreviewRetry(value => value + 1)}>{copy('Thử lại', 'Retry')}</button>
@@ -139,7 +143,13 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                     <strong className={`outcome-${breadthTone}`}>{breadthThreshold}</strong>
                     <span>{copy(`ngưỡng của kịch bản ${breadthLabel}`, `${breadthLabel} scenario threshold`)}</span>
                   </div>
-                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${roundedForecastPercent(breadthForecast.probability)}%).`, `Most likely scenario: ${breadthLabel} (${roundedForecastPercent(breadthForecast.probability)}%).`)}</p>
+                  <svg className={`outcome-${breadthTone}`} viewBox="0 0 360 66" role="img" aria-label={`${copy('Band tỷ lệ mã tăng', 'Advancing-share band')}: ${breadthThreshold}; ${breadthLabel} ${formatForecastPercent(breadthForecast.probability)}%`}>
+                    <line x1="16" x2="344" y1="22" y2="22" className="outlook-axis" />
+                    <line x1="180" x2="180" y1="9" y2="35" className="outlook-reference" />
+                    <line x1={16 + breadthForecast.band.minimum * 328} x2={16 + breadthForecast.band.maximum * 328} y1="22" y2="22" className="outlook-band" />
+                    <text x="16" y="56">0%</text><text x="180" y="56" textAnchor="middle">50%</text><text x="344" y="56" textAnchor="end">100%</text>
+                  </svg>
+                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${formatForecastPercent(breadthForecast.probability)}%).`, `Most likely scenario: ${breadthLabel} (${formatForecastPercent(breadthForecast.probability)}%).`)}</p>
                   <p className="outlook-note">{copy('Mô hình chỉ dự đoán lớp độ rộng rổ; chưa có ước lượng điểm hoặc khoảng tin cậy cho tỷ lệ mã tăng. Màu thể hiện hướng của kịch bản, không phải lợi nhuận.', 'The model predicts a breadth class only; it has no point estimate or confidence interval for the advancing share. Colour expresses scenario direction, not return.')}</p>
                 </>
               ) : (

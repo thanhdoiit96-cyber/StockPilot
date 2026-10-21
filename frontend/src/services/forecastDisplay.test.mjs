@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { forecastOutcomeTone, roundedForecastPercent } from './forecastDisplay.mjs'
 
-test('rounds valid forecast probabilities to whole percentages', () => {
-  assert.equal(roundedForecastPercent(.352261), 35)
-  assert.equal(roundedForecastPercent(.995), 100)
+test('rounds valid forecast probabilities to one decimal place', () => {
+  assert.equal(roundedForecastPercent(.352261), 35.2)
+  assert.equal(roundedForecastPercent(.995), 99.5)
   assert.equal(roundedForecastPercent(null), null)
   assert.equal(roundedForecastPercent('invalid'), null)
 })

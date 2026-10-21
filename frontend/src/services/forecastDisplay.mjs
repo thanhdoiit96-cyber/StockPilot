@@ -3,7 +3,7 @@ const outcomeTones = Object.freeze({ advancing: 'advance', balanced: 'balanced',
 export function roundedForecastPercent(value) {
   if (value == null || value === '') return null
   const percent = Number(value) * 100
-  return Number.isFinite(percent) && percent >= 0 && percent <= 100 ? Math.round(percent) : null
+  return Number.isFinite(percent) && percent >= 0 && percent <= 100 ? Math.round(percent * 10) / 10 : null
 }
 
 export function forecastOutcomeTone(className) {
