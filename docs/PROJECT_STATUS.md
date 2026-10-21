@@ -20,6 +20,11 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - [ALERTS_DESIGN.md](ALERTS_DESIGN.md) chốt cảnh báo in-app dựa trên close EOD/coverage có provenance, rule/event/evaluation ledger theo owner và dedupe theo rule/session. Không dùng quote intraday stale, không tự tạo tín hiệu từ Đề xuất và chưa có email/push.
 - Chưa thêm migration/API/UI vì worker deploy có lock/ownership, retention và coverage SLA chưa được xác minh; node-cron local không là bằng chứng scheduler production.
 
+### So sánh mã/ngành: thiết kế sẵn, chưa triển khai
+
+- [COMPANY_COMPARISON_DESIGN.md](COMPANY_COMPARISON_DESIGN.md) chốt so sánh 2–5 mã theo metric cùng period/currency/basis, industry snapshot versioned và trạng thái unavailable/stale có provenance.
+- Chưa thêm API/UI: company-data scheduler chỉ development opt-in, expansion coverage/provider rights và taxonomy snapshot chưa đủ để tạo peer/ranking trung thực.
+
 ### Đề xuất: đánh giá và hiệu chỉnh
 
 - Outcome chỉ được tính vào report/calibration khi qua snapshot integrity, evaluation evidence, đủ phiên EOD, price provenance và return check.
