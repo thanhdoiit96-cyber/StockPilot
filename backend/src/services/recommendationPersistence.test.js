@@ -116,6 +116,20 @@ test('generates a v2 snapshot with verified external evidence', async () => {
   expect(verifyRecommendationSnapshot(reloaded)).toMatchObject({ valid: false, reason: 'input_provenance_integrity_failed' });
 });
 
+test('reads listed, provider-specific EOD rows and excludes prices after the sealed session', async () => {
+  const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', listing_status: 'listed', toJSON() { return this; } };
+  const prices = [...historicalPrices(), { stock_id: 'stock-1', provider: 'vnstock', interval: '1d', observed_at: '2026-01-31', close: 999, toJSON() { return this; } }];
+  let findAllOptions;
+  await generateRecommendationSnapshot({
+    Stock: { findAll: async () => [stock] },
+    StockPrice: { findAll: async options => { findAllOptions = options; return prices; } },
+    ExternalFactor: { findAll: async () => [] },
+    RecommendationRun: { findOne: async () => ({ id: 'existing-run', universe_size: 1, selected_count: 1, model: 'short_term_rule_v2' }) },
+    Recommendation: { bulkCreate: jest.fn() }, now: new Date('2026-01-30T10:00:00.000Z')
+  });
+  expect(findAllOptions.where).toEqual({ provider: 'vnstock', interval: '1d' });
+});
+
 test('does not create a duplicate scheduled snapshot for the same session contract', async () => {
   const stock = { id: 'stock-1', code: 'FPT', name: 'FPT', toJSON() { return this; } };
   const prices = historicalPrices();

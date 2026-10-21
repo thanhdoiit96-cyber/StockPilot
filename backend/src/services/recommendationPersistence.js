@@ -56,8 +56,8 @@ function verifyRecommendationSnapshot(run, evidencePath = process.env.RECOMMENDA
   }
 }
 
-async function loadPriceRows({ StockPrice, transaction }) {
-  const rows = await StockPrice.findAll({ order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000, transaction });
+async function loadPriceRows({ StockPrice, transaction, provider = 'vnstock', interval = '1d' }) {
+  const rows = await StockPrice.findAll({ where: { provider, interval }, order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000, transaction });
   const byStock = new Map();
   for (const row of rows) { if (!byStock.has(row.stock_id)) byStock.set(row.stock_id, []); byStock.get(row.stock_id).push(row.toJSON ? row.toJSON() : row); }
   return byStock;
@@ -119,21 +119,23 @@ async function generateRecommendationSnapshot({ Stock, StockPrice, ExternalFacto
   let asOfDate;
   let generation_key;
   const seal = async transaction => {
-  const stocks = await Stock.findAll({ order: [['code', 'ASC']], transaction });
-  const priceRowsByStock = await loadPriceRows({ StockPrice, transaction });
+  const stocks = await Stock.findAll({ where: { listing_status: 'listed' }, order: [['code', 'ASC']], transaction });
+  const priceRowsByStock = await loadPriceRows({ StockPrice, transaction, provider });
   const priceRows = [...priceRowsByStock.values()].flat();
   const expectedSession = vietnamSessionDate(now);
   const latestSession = latestEodSession(priceRows);
   if (latestSession !== expectedSession) return { status: 'eod_not_ready', expected_session: expectedSession, latest_eod_session: latestSession, universe_size: stocks.length };
+  const sessionPriceRowsByStock = new Map([...priceRowsByStock.entries()].map(([stockId, rows]) => [stockId, rows.filter(row => latestEodSession([row]) <= latestSession)]));
+  const sessionPriceRows = [...sessionPriceRowsByStock.values()].flat();
   const stockData = stocks.map(item => item.toJSON());
   const externalFactors = await loadVerifiedExternalFactors({ ExternalFactor, transaction });
   const factorsByStock = groupExternalFactorsByStock(stockData, externalFactors);
-  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
+  const recommendations = buildShortTermRecommendations({ stocks: stockData, priceRowsByStock: sessionPriceRowsByStock, externalFactorsByStock: factorsByStock, limit, horizonDays, asOf: new Date(`${latestSession}T00:00:00.000Z`) });
   asOfDate = latestSession; const model = 'short_term_rule_v2';
   generation_key = recommendationGenerationKey({ asOf: asOfDate, horizonDays, provider, model });
   const existing = await RecommendationRun.findOne({ where: { as_of: asOfDate, horizon_days: horizonDays, provider, model }, order: [['created_at', 'DESC']], transaction });
   if (existing) return { status: 'snapshot_exists', run_id: existing.id, as_of: asOfDate, universe_size: existing.universe_size, selected_count: existing.selected_count, model: existing.model, snapshot_sha256: existing.snapshot_sha256 || null };
-  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model, generation_key, input_provenance: inputProvenance({ rows: priceRows, factors: externalFactors, provider, session: asOfDate, now }), universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' }, { transaction });
+  const run = await RecommendationRun.create({ as_of: asOfDate, horizon_days: horizonDays, provider, model, generation_key, input_provenance: inputProvenance({ rows: sessionPriceRows, factors: externalFactors, provider, session: asOfDate, now }), universe_size: stocks.length, selected_count: recommendations.length, status: 'completed' }, { transaction });
   const storedRecommendations = recommendations.map(item => ({ run_id: run.id, stock_id: item.stock_id, rank: item.rank, score: item.score, horizon_days: item.horizon_days, entry_price: item.entry_price, rationale: item.rationale, outcome: 'pending' }));
   if (storedRecommendations.length) await Recommendation.bulkCreate(storedRecommendations, { transaction });
   // Hash the persisted representation, including joined stock codes and JSONB

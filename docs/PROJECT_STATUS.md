@@ -1,6 +1,6 @@
 ﻿# Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
+Cập nhật: 2026-10-21. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
 
 ## Hiện trạng chạy local
 
@@ -35,6 +35,7 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - Evaluation job local được bật, nhưng outcome chỉ đổi khi đủ session EOD và snapshot integrity hợp lệ; UI Learning/History hiển thị rõ measured, pending và excluded thay vì suy diễn hiệu quả.
 - EOD scheduler đã có luồng idempotent tạo snapshot sau ingestion chỉ khi coverage đầy đủ; `RECOMMENDATIONS_AFTER_INGEST` nay được đưa vào template và contract với default `false`. Local giữ cờ này `true`. Kiểm chứng: template contract đạt; Jest EOD/evaluation scheduler 16/16 đạt.
 - Evidence scheduler ngày 2026-10-20 ghi 549/759 mã EOD, còn thiếu 210 nên job đã bỏ qua sinh snapshot đúng policy; retry cuối ngày vẫn chưa phủ đủ. Một snapshot `as_of=2026-10-20` hiện có nhưng endpoint `/latest` trước đây có side effect tự sinh khi snapshot cũ, nên không coi đó là bằng chứng scheduler đã hoàn tất. Endpoint nay chỉ đọc snapshot; chỉ EOD worker được quyền sinh dữ liệu. Test controller/EOD scheduler 25/25 đạt sau sửa.
+- Cổng tạo snapshot EOD nay theo universe thật của `short_term_rule_v2`: mã listed có tối thiểu 50 phiên EOD trước phiên chạy và phải có close của phiên đó. Coverage 549/759 toàn thị trường tiếp tục được ghi để audit ingestion, nhưng không chặn một snapshot khi toàn bộ tập mô hình đã đủ; thiếu trong tập này vẫn bỏ qua và ghi `skipped_incomplete_recommendation_coverage`. Generator đọc riêng EOD `vnstock`/mã listed; test coverage, scheduler và persistence 33/33 đạt. Xem [RECOMMENDATION_EOD_AUTOMATION_DESIGN.md](RECOMMENDATION_EOD_AUTOMATION_DESIGN.md).
 - Rà soát History/Calibration runtime: hai tab gọi được API và hiển thị pending/integrity/cohort đúng contract, nhưng 14 run/70 mã hiện có 0 outcome eligible; 65 pending, 5 excluded, 10 snapshot legacy chặn integrity và 70 mã thiếu taxonomy snapshot. Không tạo cohort tự động cho `personalized_rule_v1` vì weights là policy theo người dùng; xem quyết định tại [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
 - Forecast live endpoint local trả current-data preview nhưng frontend từng tắt cờ hiển thị. Local UI bật `VITE_ENABLE_FORECAST_LIVE=true`; nội dung vẫn là prototype/chưa có market-accuracy verified, không phải tín hiệu đầu tư.
 - Smoke check local `frontend/npm run verify:live:recommendations` nay bắt Chrome gọi trực tiếp proxy `:4173/api/recommendations/latest` (HTTP 200/5 mã), rồi đọc payload Recommendation/Forecast từ backend `127.0.0.1:5000` để kiểm tra UI `:4173`: snapshot EOD có danh sách mã và stale notice, tab Lịch sử mở được report, tab Hiệu chỉnh công bố trạng thái chưa áp dụng, Forecast hiển thị badge `Live`. Check chỉ đọc dữ liệu/API; không tạo recommendation, giao dịch hay outcome.
@@ -61,7 +62,7 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 
 - `backend/.env.example` đã bỏ các biến dự kiến/không được runtime đọc và chỉ giữ database, auth/CORS, worker/readiness, preview research và scheduler hiện hành. Không sửa `backend/.env` local.
 - Bản sao template mặc định tắt preview và toàn bộ scheduler để không tự gọi provider. Bật từng phần vẫn cần worker, quyền nguồn và evidence tương ứng; điều này không làm thay đổi default của một môi trường đã có `.env`.
-- `npm run check:env-template` nay khóa contract gồm 27 biến hoạt động, phát hiện key trùng/ngoài contract và bắt buộc mọi cờ scheduler/preview là `false`; lệnh đã nằm trong release gate.
+- `npm run check:env-template` nay khóa contract gồm 28 biến hoạt động, phát hiện key trùng/ngoài contract và bắt buộc mọi cờ scheduler/preview là `false`; lệnh đã nằm trong release gate.
 - Kiểm chứng: full release gate ngoài sandbox đạt lint, contract template và 102 suite/507 test trong 96,059 giây.
 
 ### Template cấu hình frontend

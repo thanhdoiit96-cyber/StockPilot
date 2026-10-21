@@ -88,12 +88,12 @@ describe('vnstock EOD scheduler', () => {
   test('does not generate recommendations when the EOD session remains incomplete', async () => {
     process.env.RECOMMENDATIONS_AFTER_INGEST = 'true';
     ingestVnstockEod.mockResolvedValue({ received: 1 });
-    eodCoverage.mockResolvedValue({ symbols: 2, covered: 1, missing_symbols: ['BCG'] });
+    eodCoverage.mockImplementation((_, __, ___, options) => Promise.resolve(options?.minimumHistoricalSessions ? { symbols: 1, covered: 0, missing_symbols: ['BCG'] } : { symbols: 2, covered: 1, missing_symbols: ['BCG'] }));
     const task = startVnstockEodJob({ logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } });
     await task.callback();
     expect(generateRecommendationSnapshot).not.toHaveBeenCalled();
     const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
-    expect(saved.recommendations).toEqual(expect.objectContaining({ status: 'skipped_incomplete_eod_coverage', missing_symbols: 1 }));
+    expect(saved.recommendations).toEqual(expect.objectContaining({ status: 'skipped_incomplete_recommendation_coverage', missing_symbols: 1, minimum_historical_sessions: 50 }));
   });
 
   test('creates an EOD-only recommendation snapshot after complete coverage', async () => {
@@ -107,8 +107,25 @@ describe('vnstock EOD scheduler', () => {
     expect(generateRecommendationSnapshot).toHaveBeenCalledWith(expect.objectContaining({
       provider: 'vnstock', useIntradayReference: false, horizonDays: 20,
     }));
+    expect(eodCoverage).toHaveBeenCalledWith(undefined, '2026-09-25', null, { minimumHistoricalSessions: 50 });
     const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
     expect(saved.recommendations).toEqual(expect.objectContaining({ run_id: 'sealed-run', snapshot_sha256: 'a'.repeat(64) }));
+  });
+
+  test('creates a snapshot when the model-eligible EOD universe is complete even if the full listed universe is not', async () => {
+    process.env.RECOMMENDATIONS_AFTER_INGEST = 'true';
+    process.env.VNSTOCK_EOD_REPAIR_PREVIOUS = 'false';
+    ingestVnstockEod.mockResolvedValue({ received: 549 });
+    eodCoverage.mockImplementation((_, __, ___, options) => Promise.resolve(options?.minimumHistoricalSessions
+      ? { symbols: 120, covered: 120, missing_symbols: [] }
+      : { symbols: 759, covered: 549, missing_symbols: ['NEW'] }));
+    generateRecommendationSnapshot.mockResolvedValue({ run_id: 'eligible-run' });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } });
+    await task.callback();
+    expect(generateRecommendationSnapshot).toHaveBeenCalledTimes(1);
+    const saved = JSON.parse(fs.writeFile.mock.calls[0][1]);
+    expect(saved.after).toMatchObject({ symbols: 759, covered: 549 });
+    expect(saved.recommendation_coverage).toEqual({ symbols: 120, covered: 120, missing_symbols: [] });
   });
 
   test('repeats configured gap retry passes while symbols remain missing', async () => {

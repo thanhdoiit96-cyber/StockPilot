@@ -9,6 +9,8 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const models = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 
+const RECOMMENDATION_MINIMUM_HISTORY_SESSIONS = 50;
+
 const runtimeStatus = {
   running: false,
   phase: 'idle',
@@ -168,12 +170,20 @@ function startVnstockEodJob({
         }
       }
       logger.info(`[Vnstock EOD] ${JSON.stringify(report)}`);
-      if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true' && evidence.after.symbols > 0 && evidence.after.missing_symbols.length === 0) {
+      if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {
+        // The scheduled model excludes symbols with fewer than 50 EOD sessions.
+        // Do not make its snapshot wait for unrelated newly listed/unavailable codes,
+        // but require the whole eligible universe to have this session's close.
+        evidence.recommendation_coverage = await eodCoverage(models.sequelize, sessionDate, options.symbols || null, {
+          minimumHistoricalSessions: RECOMMENDATION_MINIMUM_HISTORY_SESSIONS
+        });
+      }
+      if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true' && evidence.recommendation_coverage.symbols > 0 && evidence.recommendation_coverage.missing_symbols.length === 0) {
         const snapshot = await generateRecommendationSnapshot({ ...models, provider: process.env.RECOMMENDATION_PROVIDER || 'vnstock', useIntradayReference: false, limit: Math.min(5, Math.max(3, Number(process.env.RECOMMENDATION_LIMIT || 5))), horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
         evidence.recommendations = snapshot;
         logger.info(`[Recommendations] ${JSON.stringify(snapshot)}`);
       } else if (process.env.RECOMMENDATIONS_AFTER_INGEST === 'true') {
-        evidence.recommendations = { status: 'skipped_incomplete_eod_coverage', covered_symbols: evidence.after.symbols, missing_symbols: evidence.after.missing_symbols.length };
+        evidence.recommendations = { status: 'skipped_incomplete_recommendation_coverage', covered_symbols: evidence.recommendation_coverage.covered, missing_symbols: evidence.recommendation_coverage.missing_symbols.length, minimum_historical_sessions: RECOMMENDATION_MINIMUM_HISTORY_SESSIONS };
         logger.warn(`[Recommendations] ${JSON.stringify(evidence.recommendations)}`);
       }
     } catch (error) {
