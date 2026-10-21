@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react'
 import { fetchForecastCurrentPreview, fetchForecastResearchPreview } from '../services/forecastPreview.mjs'
 import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
-import { forecastRagTone } from '../services/forecastRag.mjs'
 import { summarizeForecastBreadth } from '../services/forecastBreadth.mjs'
-
-// Design fixtures only. These values are not outputs of the research baseline.
-const scenarios = {
-  1: { probabilities: [38, 36, 26] },
-  5: { probabilities: [54, 28, 18] },
-}
+import { forecastOutcomeTone, roundedForecastPercent } from '../services/forecastDisplay.mjs'
 
 export default function ShortTermOutlook({ language = 'vi', recommendations = [], onOpenDetail, onOpenIdeas, onAddToWatchlist, watchlistSymbols = [] }) {
   const [horizon, setHorizon] = useState(() => {
@@ -59,15 +53,14 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const research = preview.status === 'research_preview'
   const currentData = currentPreview.status === 'live_preview'
   const stale = research && preview.artifact_freshness === 'stale'
-  const scenario = { ...scenarios[horizon], probabilities: currentData ? currentPreview.probabilities.map(item => item.value * 100) : research ? preview.probabilities.map(item => item.value * 100) : scenarios[horizon].probabilities }
-  const labels = [copy('Tăng lan tỏa', 'Broad advance'), copy('Cân bằng', 'Balanced'), copy('Giảm lan tỏa', 'Broad decline')]
-  const scenarioTypes = ['advance', 'balanced', 'decline']
-  const forecastClasses = ['advancing', 'balanced', 'declining']
-  const ragLegend = copy('Màu xác suất: xanh = khả năng tăng cao hoặc rủi ro giảm thấp; vàng = chưa rõ; đỏ = khả năng tăng thấp hoặc rủi ro giảm cao.', 'Probability colour: green = strong advance chance or low decline risk; amber = uncertain; red = weak advance chance or elevated decline risk.')
   const forecastPayload = currentData ? currentPreview : research ? preview : null
+  const probabilities = forecastPayload?.probabilities || []
+  const labels = [copy('Tăng lan tỏa', 'Broad advance'), copy('Cân bằng', 'Balanced'), copy('Giảm lan tỏa', 'Broad decline')]
+  const forecastClasses = ['advancing', 'balanced', 'declining']
+  const outcomeLegend = copy('Màu kịch bản: xanh = tăng lan tỏa; vàng = cân bằng; đỏ = giảm lan tỏa.', 'Scenario colour: green = broad advance; amber = balanced; red = broad decline.')
   const breadthForecast = summarizeForecastBreadth(forecastPayload?.probabilities, forecastPayload?.breadth_target)
   const breadthLabel = breadthForecast ? labels[forecastClasses.indexOf(breadthForecast.scenario)] : null
-  const breadthTone = breadthForecast ? forecastRagTone(scenarioTypes[forecastClasses.indexOf(breadthForecast.scenario)], breadthForecast.probability * 100) : null
+  const breadthTone = breadthForecast ? forecastOutcomeTone(breadthForecast.scenario) : null
   const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `<${breadthForecast.band.maximum * 100}%` : breadthForecast.band.maximum === 1 ? `>${breadthForecast.band.minimum * 100}%` : `${breadthForecast.band.minimum * 100}–${breadthForecast.band.maximum * 100}%`) : null
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
   const candidates = recommendations.filter(item => (item.stock?.code || item.symbol) && Number.isFinite(Number(item.score))).sort((a, b) => Number(a.rank || 999) - Number(b.rank || 999) || Number(b.score) - Number(a.score)).slice(0, 3)
@@ -97,37 +90,37 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
       {isCompact ? (
         <div className="outlook-compact-summary" aria-live="polite">
           <div className="outlook-compact-header">
-            <span className="outlook-compact-badge">{currentData ? copy('Live', 'Live') : research ? copy('Replay', 'Replay') : copy('Fixture', 'Fixture')}</span>
+            <span className="outlook-compact-badge">{currentData ? copy('Live', 'Live') : research ? copy('Replay', 'Replay') : copy('Không có dữ liệu', 'Unavailable')}</span>
             <strong>{copy('Trạng thái rút gọn', 'Compact status')}</strong>
           </div>
           <div className="outlook-compact-grid">
             {labels.map((label, index) => (
-              <div className={`outlook-compact-cell rag-${forecastRagTone(scenarioTypes[index], scenario.probabilities[index])}`} key={label} title={ragLegend}>
+              <div className={`outlook-compact-cell outcome-${forecastOutcomeTone(forecastClasses[index])}`} key={label} title={outcomeLegend}>
                 <span>{label}</span>
-                <strong>{Number(scenario.probabilities[index].toFixed(1))}%</strong>
+                <strong>{roundedForecastPercent(probabilities[index]?.value) ?? '—'}{forecastPayload ? '%' : ''}</strong>
               </div>
             ))}
           </div>
-          <p className="outlook-rag-legend">{ragLegend}</p>
+          <p className="outlook-outcome-legend">{outcomeLegend}</p>
           <p className="outlook-note">
-            {currentData ? copy(`Horizon ${horizon} phiên · Dữ liệu hiện tại`, `Horizon ${horizon} sessions · current data`) : research ? copy(`Horizon ${horizon} phiên · Replay synthetic`, `Horizon ${horizon} sessions · synthetic replay`) : copy(`Horizon ${horizon} phiên · Fixture UI`, `Horizon ${horizon} sessions · UI fixture`)}
+            {currentData ? copy(`Horizon ${horizon} phiên · Dữ liệu hiện tại`, `Horizon ${horizon} sessions · current data`) : research ? copy(`Horizon ${horizon} phiên · Replay synthetic`, `Horizon ${horizon} sessions · synthetic replay`) : copy('Chưa có forecast hợp lệ', 'No valid forecast')}
           </p>
         </div>
       ) : (
         <>
           <div className="outlook-body" aria-live="polite">
             <div>
-              <h3 className={currentData ? 'outlook-prototype-title' : undefined}>{currentData ? copy('Xác suất prototype trên dữ liệu hiện tại', 'Prototype probabilities on current data') : research ? copy('Xác suất replay synthetic', 'Synthetic replay probabilities') : copy('Xác suất minh họa', 'Illustrative probabilities')}</h3>
+              <h3 className={currentData ? 'outlook-prototype-title' : undefined}>{currentData ? copy('Xác suất prototype trên dữ liệu hiện tại', 'Prototype probabilities on current data') : research ? copy('Xác suất replay synthetic', 'Synthetic replay probabilities') : copy('Chưa có xác suất dự báo', 'Forecast probabilities unavailable')}</h3>
               <div className={`outlook-probabilities${preview.status === 'loading' || currentPreview.status === 'loading' ? ' is-loading' : ''}`} aria-busy={preview.status === 'loading' || currentPreview.status === 'loading'}>
                 {labels.map((label, i) => (
-                  <div className={`outlook-probability rag-${forecastRagTone(scenarioTypes[i], scenario.probabilities[i])}`} key={label} title={ragLegend}>
+                  <div className={`outlook-probability outcome-${forecastOutcomeTone(forecastClasses[i])}`} key={label} title={outcomeLegend}>
                     <span>{label}</span>
-                    <strong>{Number(scenario.probabilities[i].toFixed(1))}<small>%</small></strong>
-                    <div className="outlook-meter" aria-hidden="true"><i style={{ width: `${scenario.probabilities[i]}%` }} /></div>
+                    <strong>{roundedForecastPercent(probabilities[i]?.value) ?? '—'}{forecastPayload && <small>%</small>}</strong>
+                    <div className="outlook-meter" aria-hidden="true"><i style={{ width: `${forecastPayload ? Math.max(0, Math.min(100, Number(probabilities[i]?.value) * 100 || 0)) : 0}%` }} /></div>
                   </div>
                 ))}
               </div>
-              <p className="outlook-rag-legend">{ragLegend}</p>
+              <p className="outlook-outcome-legend">{outcomeLegend}</p>
               <div className="outlook-preview-status">
                 <p className={`outlook-note${stale ? ' is-stale' : ''}`}>
                   {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Research preview không khả dụng · Đang hiển thị fixture giao diện', 'Research preview unavailable · Showing UI fixtures')}
@@ -143,11 +136,11 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
               {breadthForecast ? (
                 <>
                   <div className="outlook-range-value">
-                    <strong className={`rag-${breadthTone}`}>{breadthThreshold}</strong>
+                    <strong className={`outcome-${breadthTone}`}>{breadthThreshold}</strong>
                     <span>{copy(`ngưỡng của kịch bản ${breadthLabel}`, `${breadthLabel} scenario threshold`)}</span>
                   </div>
-                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${(breadthForecast.probability * 100).toFixed(1)}%).`, `Most likely scenario: ${breadthLabel} (${(breadthForecast.probability * 100).toFixed(1)}%).`)}</p>
-                  <p className="outlook-note">{copy('Mô hình chỉ dự đoán lớp độ rộng rổ; chưa có ước lượng điểm hoặc khoảng tin cậy cho tỷ lệ mã tăng. Màu thể hiện xác suất/rủi ro của kịch bản, không phải lợi nhuận.', 'The model predicts a breadth class only; it has no point estimate or confidence interval for the advancing share. Colour expresses scenario probability/risk, not return.')}</p>
+                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${roundedForecastPercent(breadthForecast.probability)}%).`, `Most likely scenario: ${breadthLabel} (${roundedForecastPercent(breadthForecast.probability)}%).`)}</p>
+                  <p className="outlook-note">{copy('Mô hình chỉ dự đoán lớp độ rộng rổ; chưa có ước lượng điểm hoặc khoảng tin cậy cho tỷ lệ mã tăng. Màu thể hiện hướng của kịch bản, không phải lợi nhuận.', 'The model predicts a breadth class only; it has no point estimate or confidence interval for the advancing share. Colour expresses scenario direction, not return.')}</p>
                 </>
               ) : (
                 <>
