@@ -106,7 +106,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
         <>
           <div className="outlook-body" aria-live="polite">
             <div>
-              <h3>{currentData ? copy('Xác suất prototype trên dữ liệu hiện tại', 'Prototype probabilities on current data') : research ? copy('Xác suất replay synthetic', 'Synthetic replay probabilities') : copy('Xác suất minh họa', 'Illustrative probabilities')}</h3>
+              <h3 className={currentData ? 'outlook-prototype-title' : undefined}>{currentData ? copy('Xác suất prototype trên dữ liệu hiện tại', 'Prototype probabilities on current data') : research ? copy('Xác suất replay synthetic', 'Synthetic replay probabilities') : copy('Xác suất minh họa', 'Illustrative probabilities')}</h3>
               <div className={`outlook-probabilities${preview.status === 'loading' || currentPreview.status === 'loading' ? ' is-loading' : ''}`} aria-busy={preview.status === 'loading' || currentPreview.status === 'loading'}>
                 {labels.map((label, i) => (
                   <div className={`outlook-probability tone-${i}`} key={label}>
