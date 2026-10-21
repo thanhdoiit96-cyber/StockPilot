@@ -25,9 +25,9 @@ Cập nhật: 2026-10-20. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 Thiết kế token một lần, hash trong database, expiry/revocation, rate limit và audit đã ghi tại [PASSWORD_RECOVERY_DESIGN.md](PASSWORD_RECOVERY_DESIGN.md). Nghiệm thu chỉ bắt đầu sau khi email provider, domain gửi và môi trường test được chốt.
 
-### 2. Cảnh báo giá/dữ liệu — chờ scheduler và kênh gửi
+### 2. Cảnh báo giá/dữ liệu — thiết kế sẵn, chờ worker ownership
 
-Bắt đầu bằng cảnh báo trong ứng dụng dùng dữ liệu snapshot/provenance. Chỉ thêm email hoặc push sau khi job lock, retry, worker ownership và delivery channel được xác minh. Không polling nhanh hơn quote policy.
+Bắt đầu bằng cảnh báo trong ứng dụng dùng dữ liệu snapshot/provenance. [ALERTS_DESIGN.md](ALERTS_DESIGN.md) đã chốt rule/event/ledger và EOD gate. Chỉ thêm email hoặc push sau khi job lock, retry, worker ownership và delivery channel được xác minh. Không polling nhanh hơn quote policy.
 
 ### 3. So sánh mã/ngành — chờ coverage và license
 

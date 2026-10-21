@@ -15,6 +15,11 @@ Cập nhật: 2026-10-20. Lịch sử checkpoint chi tiết trước lần rút 
 - Đã rà soát auth hiện có: `users.password_version`, session revoke và validation password có thể tái dùng; chưa có email adapter hoặc provider.
 - [PASSWORD_RECOVERY_DESIGN.md](PASSWORD_RECOVERY_DESIGN.md) chốt token 32 byte hash-only, expiry 30 phút, single-use/revocation, response chống enumeration, transaction revoke session và delivery adapter. Chưa thêm migration/API/UI để không tạo luồng gửi thư giả khi sender domain và mailbox test chưa có.
 
+### Cảnh báo giá/dữ liệu: thiết kế sẵn, chưa triển khai
+
+- [ALERTS_DESIGN.md](ALERTS_DESIGN.md) chốt cảnh báo in-app dựa trên close EOD/coverage có provenance, rule/event/evaluation ledger theo owner và dedupe theo rule/session. Không dùng quote intraday stale, không tự tạo tín hiệu từ Đề xuất và chưa có email/push.
+- Chưa thêm migration/API/UI vì worker deploy có lock/ownership, retention và coverage SLA chưa được xác minh; node-cron local không là bằng chứng scheduler production.
+
 ### Đề xuất: đánh giá và hiệu chỉnh
 
 - Outcome chỉ được tính vào report/calibration khi qua snapshot integrity, evaluation evidence, đủ phiên EOD, price provenance và return check.
