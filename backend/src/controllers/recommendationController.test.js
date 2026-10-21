@@ -20,7 +20,7 @@ jest.mock('../services/recommendationPersistence', () => ({
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { SavedRecommendation, RecommendationRun, RecommendationEvaluationEvent, StockPrice } = require('../models');
+const { SavedRecommendation, RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice } = require('../models');
 const { generateRecommendationSnapshot } = require('../services/recommendationPersistence');
 const createRouter = require('./recommendationController');
 const { deriveCalibration } = createRouter;
@@ -126,6 +126,19 @@ describe('saved recommendation API', () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({ provider: 'vnstock', status: 'awaiting_eod', latest_eod_session: '2026-10-08', can_generate: false, can_evaluate: false });
     expect(StockPrice.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', interval: '1d' } }));
+  });
+
+  test('reports readiness using the same listed EOD universe as the scheduler', async () => {
+    Stock.findAll.mockResolvedValue([{ id: 'a', code: 'AAA' }, { id: 'b', code: 'BBB' }]);
+    StockPrice.findAll.mockResolvedValue([
+      { stock_id: 'a', observed_at: '2026-09-29', close: 10 }, { stock_id: 'a', observed_at: '2026-09-30', close: 11 }, { stock_id: 'a', observed_at: '2026-10-01', close: 12 },
+      { stock_id: 'b', observed_at: '2026-09-29', close: 20 }, { stock_id: 'b', observed_at: '2026-09-30', close: 21 },
+    ]);
+    const response = await request(app).get('/api/recommendations/readiness');
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ provider: 'vnstock', latest_eod_session: '2026-10-01', model_universe_symbols: 0, eligible_symbols: 0, ready_for_recommendations: false });
+    expect(Stock.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { listing_status: 'listed' } }));
+    expect(StockPrice.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', interval: '1d' } }));
   });
 
   test('list, report and cohort consistently count only evidenced outcomes', async () => {

@@ -15,6 +15,7 @@ const { httpError } = require('../utils/httpError');
 const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent } = require('../services/recommendationPersistence');
 const { assessRuns } = require('../services/recommendationEligibility');
 const { readRecommendationLifecycleCheckpoint } = require('../services/recommendationLifecycleCheckpoint');
+const { recommendationUniverseReadiness } = require('../services/recommendationUniverseReadiness');
 const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
 
 router.get('/saved', requireAuth, async (req, res) => {
@@ -188,18 +189,10 @@ function readSnapshotRisk(runId) {
 
 router.get('/readiness', async (req, res) => {
   try {
-    const stocks = await Stock.findAll({ attributes: ['id', 'code'], order: [['code', 'ASC']] });
-    const prices = await StockPrice.findAll({ attributes: ['stock_id', 'observed_at'] });
-    const counts = new Map();
-    const sessions = new Set();
-    for (const row of prices) {
-      const id = String(row.stock_id);
-      counts.set(id, (counts.get(id) || 0) + 1);
-      if (row.observed_at) sessions.add(new Date(row.observed_at).toISOString().slice(0, 10));
-    }
-    const coverage = stocks.map(stock => ({ code: stock.code, observations: counts.get(String(stock.id)) || 0, eligible: (counts.get(String(stock.id)) || 0) >= 50 }));
-    const eligible = coverage.filter(item => item.eligible);
-    return res.json({ success: true, data: { universe_size: stocks.length, price_rows: prices.length, distinct_sessions: sessions.size, minimum_observations: 50, eligible_symbols: eligible.length, ready_for_recommendations: eligible.length > 0, coverage } });
+    const provider = process.env.RECOMMENDATION_PROVIDER || 'vnstock';
+    const stocks = await Stock.findAll({ where: { listing_status: 'listed' }, attributes: ['id', 'code'], order: [['code', 'ASC']] });
+    const prices = await StockPrice.findAll({ where: { provider, interval: '1d' }, attributes: ['stock_id', 'observed_at', 'close', 'price'] });
+    return res.json({ success: true, data: { provider, ...recommendationUniverseReadiness({ stocks, prices, minimumHistoricalSessions: 50 }) } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching readiness:', error); return httpError(res, 500, 'recommendation_readiness_failed', 'Error fetching recommendation readiness'); }
 });
 
