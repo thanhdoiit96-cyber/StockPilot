@@ -1,10 +1,12 @@
 jest.mock('../models', () => ({ Stock: { findAll: jest.fn(), findByPk: jest.fn() }, StockPrice: { findOne: jest.fn() } }));
 jest.mock('../services/eodEvidence', () => ({ readLatestEodEvidence: jest.fn() }));
+jest.mock('../services/liveQuoteService', () => ({ liveQuoteService: { load: jest.fn(), health: jest.fn() } }));
 const express = require('express');
 const request = require('supertest');
 const { Op } = require('sequelize');
 const { Stock, StockPrice } = require('../models');
 const { readLatestEodEvidence } = require('../services/eodEvidence');
+const { liveQuoteService } = require('../services/liveQuoteService');
 const createRouter = require('./stockController');
 
 describe('stock API', () => {
@@ -39,6 +41,21 @@ describe('stock API', () => {
       expect.objectContaining({ key: 'technology', label: expect.any(String) }),
       expect.objectContaining({ key: 'consumer_retail', label: expect.any(String) })
     ]));
+  });
+  test('reports incomplete intraday quote coverage without pretending missing symbols have a quote', async () => {
+    liveQuoteService.load.mockResolvedValue({ FPT: { symbol: 'FPT', price: 100000 } });
+    const result = await request(app).get('/api/stocks/quotes').query({ symbols: 'fpt,BCG,FPT' });
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      success: true,
+      requested: 2,
+      returned: 1,
+      coverage_pct: 50,
+      complete: false,
+      missing_symbols: ['BCG'],
+      data: { FPT: { price: 100000 } }
+    });
+    expect(liveQuoteService.load).toHaveBeenCalledWith(['FPT', 'BCG'], { waitMs: 11000 });
   });
   test('exposes bounded trade-priority evidence without raw provider errors', async () => {
     Stock.sequelize.query

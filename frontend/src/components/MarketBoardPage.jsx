@@ -262,6 +262,15 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
   const activePreset = marketColumnPresetKey(columns)
   const changePageSize = event => setPageSize(Number(event.target.value))
   const quoteProviders = [...new Set(Object.values(mergedQuotes).map(quote => quote?.upstream || quote?.provider).filter(Boolean))]
+  const missingIntradaySymbols = quoteState.coverage?.complete === false ? quoteState.coverage.missingSymbols : []
+  const missingIntradayLabel = missingIntradaySymbols.length > 5
+    ? `${missingIntradaySymbols.slice(0, 5).join(', ')} +${missingIntradaySymbols.length - 5}`
+    : missingIntradaySymbols.join(', ')
+  const quoteStatus = quoteState.error || (quoteState.loading
+    ? t('market.updatingIntraday')
+    : missingIntradaySymbols.length
+      ? t('market.partialIntraday', { returned: quoteState.coverage.returned, requested: quoteState.coverage.requested, missing: missingIntradayLabel })
+      : Object.keys(mergedQuotes).length ? t('market.hasIntraday') : t('market.usingEod'))
   const hasFilters = Boolean(queryInput.trim() || sector)
   const clearFilters = () => { setQueryInput(''); setQuery(''); setSector(''); setPage(1) }
   const openRowWithKeyboard = (event, stock) => {
@@ -304,7 +313,7 @@ export default function MarketBoardPage({ active, overviewStocks = [], overviewT
     </div>
     {exportError && <p className="error-text market-board-export-error" role="alert">{exportError}</p>}
     {exportNotice && <p className="market-board-export-notice" role="status">{exportNotice}</p>}
-    <p className="overview-data-status" role="status">{listState.loading && stocks.length ? t('market.updatingList') : quoteState.error || (quoteState.loading ? t('market.updatingIntraday') : Object.keys(mergedQuotes).length ? t('market.hasIntraday') : t('market.usingEod'))}</p>
+    <p className="overview-data-status" role="status">{listState.loading && stocks.length ? t('market.updatingList') : quoteStatus}</p>
     <p className="overview-source-summary"><span className="overview-source-label">{t('market.dataSource')}</span><span className={`overview-source-provider${quoteProviders.length ? '' : ' is-fallback'}`}>{quoteProviders.length ? quoteProviders.join(', ') : t('market.latestEod')}</span><span className="overview-source-description">{t('market.sourceDescription')}</span><button className="overview-source-help" type="button" aria-label={t('market.sourceHelpAria')} title={t('market.sourceHelp')}>?</button></p>
     {listState.error && <p className="error-text" role="alert">{listState.error} <button type="button" className="ghost-btn small-btn" onClick={() => setListAttempt(value => value + 1)}>{t('market.retryList')}</button></p>}
     <p id="market-board-scroll-hint" className="table-scroll-hint" role="note">{t('market.scrollHint')}</p>

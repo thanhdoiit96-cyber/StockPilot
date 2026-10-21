@@ -481,11 +481,20 @@ module.exports = function(cacheService) {
       if (String(process.env.REALTIME_QUOTES_ENABLED || 'true').toLowerCase() === 'false') {
         return res.status(503).json({ success: false, code: 'quote_realtime_disabled', message: 'Realtime quotes are disabled' });
       }
-      const symbols = String(req.query.symbols || '').split(',').map(item => item.trim().toUpperCase()).filter(symbol => /^[A-Z0-9]{1,10}$/.test(symbol)).slice(0, 200);
+      const symbols = [...new Set(String(req.query.symbols || '').split(',').map(item => item.trim().toUpperCase()).filter(symbol => /^[A-Z0-9]{1,10}$/.test(symbol)))].slice(0, 200);
       if (!symbols.length) return httpError(res, 400, 'market_quote_symbols_required', 'At least one symbol is required');
       const quotes = await loadQuotes(symbols);
+      const missingSymbols = symbols.filter(symbol => !Object.prototype.hasOwnProperty.call(quotes, symbol));
       res.set('Cache-Control', 'no-store');
-      return res.json({ success: true, data: quotes, requested: symbols.length, returned: Object.keys(quotes).length });
+      return res.json({
+        success: true,
+        data: quotes,
+        requested: symbols.length,
+        returned: Object.keys(quotes).length,
+        coverage_pct: Number((Object.keys(quotes).length / symbols.length * 100).toFixed(1)),
+        complete: missingSymbols.length === 0,
+        missing_symbols: missingSymbols
+      });
     } catch (error) {
       console.error('[Stock Controller] Error fetching intraday quotes:', error);
       return res.status(503).json({ success: false, message: 'Realtime quote provider unavailable', code: 'quote_provider_unavailable' });
