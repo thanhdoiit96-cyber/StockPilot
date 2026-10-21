@@ -3,7 +3,7 @@ import { fetchForecastCurrentPreview, fetchForecastResearchPreview } from '../se
 import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
 import { summarizeForecastBreadth } from '../services/forecastBreadth.mjs'
-import { forecastOutcomeTone, roundedForecastPercent } from '../services/forecastDisplay.mjs'
+import { forecastOutcomeTone, formatForecastPercent } from '../services/forecastDisplay.mjs'
 
 export default function ShortTermOutlook({ language = 'vi', recommendations = [], onOpenDetail, onOpenIdeas, onAddToWatchlist, watchlistSymbols = [] }) {
   const [horizon, setHorizon] = useState(() => {
@@ -61,11 +61,8 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const breadthForecast = summarizeForecastBreadth(forecastPayload?.probabilities, forecastPayload?.breadth_target)
   const breadthLabel = breadthForecast ? labels[forecastClasses.indexOf(breadthForecast.scenario)] : null
   const breadthTone = breadthForecast ? forecastOutcomeTone(breadthForecast.scenario) : null
-  const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `<${breadthForecast.band.maximum * 100}%` : breadthForecast.band.maximum === 1 ? `>${breadthForecast.band.minimum * 100}%` : `${breadthForecast.band.minimum * 100}–${breadthForecast.band.maximum * 100}%`) : null
-  const formatForecastPercent = value => {
-    const rounded = roundedForecastPercent(value)
-    return rounded == null ? '—' : rounded.toLocaleString(en ? 'en-US' : 'vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-  }
+  const formatPercent = value => formatForecastPercent(value, en ? 'en-US' : 'vi-VN') || '—'
+  const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `< ${formatPercent(breadthForecast.band.maximum)} %` : breadthForecast.band.maximum === 1 ? `> ${formatPercent(breadthForecast.band.minimum)} %` : `${formatPercent(breadthForecast.band.minimum)}–${formatPercent(breadthForecast.band.maximum)} %`) : null
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
   const candidates = recommendations.filter(item => (item.stock?.code || item.symbol) && Number.isFinite(Number(item.score))).sort((a, b) => Number(a.rank || 999) - Number(b.rank || 999) || Number(b.score) - Number(a.score)).slice(0, 3)
   const [isCompact, setIsCompact] = useState(true)
@@ -101,7 +98,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
             {labels.map((label, index) => (
               <div className={`outlook-compact-cell outcome-${forecastOutcomeTone(forecastClasses[index])}`} key={label} title={outcomeLegend}>
                 <span>{label}</span>
-                <strong>{formatForecastPercent(probabilities[index]?.value)}{forecastPayload ? '%' : ''}</strong>
+                <strong>{formatPercent(probabilities[index]?.value)}{forecastPayload ? '%' : ''}</strong>
               </div>
             ))}
           </div>
@@ -119,7 +116,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                 {labels.map((label, i) => (
                   <div className={`outlook-probability outcome-${forecastOutcomeTone(forecastClasses[i])}`} key={label} title={outcomeLegend}>
                     <span>{label}</span>
-                    <strong>{formatForecastPercent(probabilities[i]?.value)}{forecastPayload && <small>%</small>}</strong>
+                    <strong>{formatPercent(probabilities[i]?.value)}{forecastPayload && <small>%</small>}</strong>
                     <div className="outlook-meter" aria-hidden="true"><i style={{ width: `${forecastPayload ? Math.max(0, Math.min(100, Number(probabilities[i]?.value) * 100 || 0)) : 0}%` }} /></div>
                   </div>
                 ))}
@@ -143,13 +140,13 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                     <strong className={`outcome-${breadthTone}`}>{breadthThreshold}</strong>
                     <span>{copy(`ngưỡng của kịch bản ${breadthLabel}`, `${breadthLabel} scenario threshold`)}</span>
                   </div>
-                  <svg className={`outcome-${breadthTone}`} viewBox="0 0 360 66" role="img" aria-label={`${copy('Band tỷ lệ mã tăng', 'Advancing-share band')}: ${breadthThreshold}; ${breadthLabel} ${formatForecastPercent(breadthForecast.probability)}%`}>
+                  <svg className={`outcome-${breadthTone}`} viewBox="0 0 360 66" role="img" aria-label={`${copy('Band tỷ lệ mã tăng', 'Advancing-share band')}: ${breadthThreshold}; ${breadthLabel} ${formatPercent(breadthForecast.probability)}%`}>
                     <line x1="16" x2="344" y1="22" y2="22" className="outlook-axis" />
                     <line x1="180" x2="180" y1="9" y2="35" className="outlook-reference" />
                     <line x1={16 + breadthForecast.band.minimum * 328} x2={16 + breadthForecast.band.maximum * 328} y1="22" y2="22" className="outlook-band" />
                     <text x="16" y="56">0%</text><text x="180" y="56" textAnchor="middle">50%</text><text x="344" y="56" textAnchor="end">100%</text>
                   </svg>
-                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${formatForecastPercent(breadthForecast.probability)}%).`, `Most likely scenario: ${breadthLabel} (${formatForecastPercent(breadthForecast.probability)}%).`)}</p>
+                  <p className="outlook-breadth-scenario">{copy(`Kịch bản có xác suất cao nhất: ${breadthLabel} (${formatPercent(breadthForecast.probability)}%).`, `Most likely scenario: ${breadthLabel} (${formatPercent(breadthForecast.probability)}%).`)}</p>
                   <p className="outlook-note">{copy('Mô hình chỉ dự đoán lớp độ rộng rổ; chưa có ước lượng điểm hoặc khoảng tin cậy cho tỷ lệ mã tăng. Màu thể hiện hướng của kịch bản, không phải lợi nhuận.', 'The model predicts a breadth class only; it has no point estimate or confidence interval for the advancing share. Colour expresses scenario direction, not return.')}</p>
                 </>
               ) : (

@@ -6,6 +6,11 @@ export function roundedForecastPercent(value) {
   return Number.isFinite(percent) && percent >= 0 && percent <= 100 ? Math.round(percent * 10) / 10 : null
 }
 
+export function formatForecastPercent(value, locale = 'en-US') {
+  const rounded = roundedForecastPercent(value)
+  return rounded == null ? null : rounded.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}
+
 export function forecastOutcomeTone(className) {
   return outcomeTones[className] || null
 }
