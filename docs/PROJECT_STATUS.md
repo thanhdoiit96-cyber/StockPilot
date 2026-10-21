@@ -4,7 +4,7 @@ Cập nhật: 2026-10-21. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Hiện trạng chạy local
 
-- UI Vite dev: `http://localhost:4173/`; backend: `http://localhost:5000`.
+- UI Vite Preview: `http://localhost:4173/`; backend: `http://localhost:5000`.
 - `GET /api/ready` đã xác nhận database và worker local khả dụng. Đây là bằng chứng development, không phải production readiness.
 - Cookie auth dùng same-origin `/api` qua proxy frontend. Không lưu hoặc ghi secret trong tài liệu.
 
@@ -39,6 +39,7 @@ Cập nhật: 2026-10-21. Lịch sử checkpoint chi tiết trước lần rút 
 - Rà soát History/Calibration runtime: hai tab gọi được API và hiển thị pending/integrity/cohort đúng contract, nhưng 14 run/70 mã hiện có 0 outcome eligible; 65 pending, 5 excluded, 10 snapshot legacy chặn integrity và 70 mã thiếu taxonomy snapshot. Không tạo cohort tự động cho `personalized_rule_v1` vì weights là policy theo người dùng; xem quyết định tại [RECOMMENDATION_CALIBRATION_DESIGN.md](RECOMMENDATION_CALIBRATION_DESIGN.md).
 - Forecast live endpoint local trả current-data preview nhưng frontend từng tắt cờ hiển thị. Local UI bật `VITE_ENABLE_FORECAST_LIVE=true`; nội dung vẫn là prototype/chưa có market-accuracy verified, không phải tín hiệu đầu tư.
 - Smoke check local `frontend/npm run verify:live:recommendations` nay bắt Chrome gọi trực tiếp proxy `:4173/api/recommendations/latest` (HTTP 200/5 mã), rồi đọc payload Recommendation/Forecast từ backend `127.0.0.1:5000` để kiểm tra UI `:4173`: snapshot EOD có danh sách mã và stale notice, tab Lịch sử mở được report, tab Hiệu chỉnh công bố trạng thái chưa áp dụng, Forecast hiển thị badge `Live`. Check chỉ đọc dữ liệu/API; không tạo recommendation, giao dịch hay outcome.
+- Kiểm tra runtime 2026-10-21: 124/624 mã có ít nhất 50 quan sát, scheduler evaluation đang bật và snapshot 2026-10-20 hash hợp lệ. Lifecycle ở `ready_to_evaluate`, nhưng 15 run/75 mã vẫn có 0 measured (70 pending, 5 excluded); không hiệu chỉnh trước khi đủ 20 phiên. UI Preview từng trả 404 do `dist/index.html` tracked tham chiếu bundle hash đã bị ignore. `dist` nay là build output hoàn toàn và `npm start` build trước khi preview; kiểm tra HTML và bundle hiện tại đều HTTP 200.
 
 ### Danh mục: mục tiêu và nhật ký quyết định
 

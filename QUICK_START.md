@@ -268,11 +268,10 @@ Giữ concurrency 1 mặc định vì worker phục vụ nhiều caller nhưng u
 Backend cần `VNSTOCK_WORKER_URL=http://127.0.0.1:8787`. Chạy backend bằng `npm.cmd start` trong terminal riêng. Build và phục vụ UI từ thư mục frontend:
 
 ~~~powershell
-npm.cmd run build
 npm.cmd run start -- --host 127.0.0.1 --port 4173 --strictPort
 ~~~
 
-Mở http://127.0.0.1:4173. Trang mặc định hiển thị tối đa 200 mã, đủ cho 131 mã hiện tại. Bảng giá tự làm mới sau 30 giây kể từ khi lần lấy trước hoàn tất; mã không có quote hợp lệ hiển thị EOD. Nguồn có thể có độ trễ.
+`npm.cmd run start` luôn build lại trước khi mở Preview, để `index.html` và bundle có hash nhất quán. Mở http://localhost:4173. Trang mặc định hiển thị tối đa 200 mã, đủ cho 131 mã hiện tại. Bảng giá tự làm mới sau 30 giây kể từ khi lần lấy trước hoàn tất; mã không có quote hợp lệ hiển thị EOD. Nguồn có thể có độ trễ.
 
 Kiểm chứng qua UI proxy: chạy `node scripts/verify-live-quotes.cjs` trong backend. Script lưu số mã, độ phủ quote, thời gian phản hồi và mã thiếu trong thư mục evidence.
 
@@ -296,7 +295,7 @@ Khi backend đang chạy, tại thư mục backend:
 node scripts/verify-intraday-pages.cjs
 ```
 
-Script chỉ đọc API, kiểm tra nhóm FPT/SSI/VCB và quote Chi tiết FPT, lưu thời gian/HTTP/payload vào `evidence/intraday-pages-*.json`. Đọc `returned`, timestamp và cờ `cached`/`stale` để phân biệt quote mới, cache và response thiếu mã. Script không truy cập danh mục cá nhân hoặc ghi giao dịch. UI preview hiện tại ở http://127.0.0.1:4173; reload một lần để nạp bundle mới sau build.
+Script chỉ đọc API, kiểm tra nhóm FPT/SSI/VCB và quote Chi tiết FPT, lưu thời gian/HTTP/payload vào `evidence/intraday-pages-*.json`. Đọc `returned`, timestamp và cờ `cached`/`stale` để phân biệt quote mới, cache và response thiếu mã. Script không truy cập danh mục cá nhân hoặc ghi giao dịch. UI preview hiện tại ở http://localhost:4173; luôn chạy lại `npm.cmd run start` sau thay đổi source để tạo bundle mới.
 
 ### Kiểm tra daily valuation trên PostgreSQL development
 

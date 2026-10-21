@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "node scripts/safe-build.mjs",
     "build:raw": "vite build",
-    "start": "vite preview",
+    "start": "npm run build && vite preview",
     "check:env-template": "node scripts/check-env-template.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
     "check:source-parity": "node scripts/check-source-parity.mjs",
