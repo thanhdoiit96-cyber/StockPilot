@@ -39,6 +39,8 @@ Chỉ áp dụng hệ số sau khi chính model/horizon đích có snapshot bấ
 
 Trước khi mở cohort `personalized_rule_v1`, cần chốt profile criteria versioned theo owner; không gộp các xếp hạng cá nhân vào một cohort chung.
 
+Recommendation snapshot theo lịch chỉ được coi là tự động hoàn tất khi evidence EOD coverage của chính session đạt gate; `GET /api/recommendations/latest` chỉ đọc, không được dùng để bù scheduler.
+
 ### 5. Forecast/live data — giữ research gate
 
 Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.

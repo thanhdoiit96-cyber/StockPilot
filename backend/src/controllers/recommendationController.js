@@ -12,7 +12,7 @@ const { createVnstockIntradayFetcher } = require('../market-data/adapters/vnstoc
 const { createQuoteLoader } = require('../services/quoteLoader');
 const loadRecommendationQuotes = createQuoteLoader(createVnstockIntradayFetcher({ retries: 1, timeoutMs: 12000 }), { upstream: 'VCI', ttlMs: 10000 });
 const { httpError } = require('../utils/httpError');
-const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent, generateRecommendationSnapshot, vietnamSessionDate } = require('../services/recommendationPersistence');
+const { verifyRecommendationSnapshot, verifyRecommendationEvaluationEvent } = require('../services/recommendationPersistence');
 const { assessRuns } = require('../services/recommendationEligibility');
 const { readRecommendationLifecycleCheckpoint } = require('../services/recommendationLifecycleCheckpoint');
 const historyInclude = [{ association: 'recommendations', include: [{ association: 'stock', attributes: ['id', 'code', 'name', 'industry'] }] }];
@@ -229,37 +229,13 @@ router.post('/personalized', async (req, res) => {
   } catch (error) { console.error('[Recommendation Controller] Error generating personalized recommendations:', error); return httpError(res, 500, 'recommendation_personalized_failed', 'Không thể tạo đề xuất theo tiêu chí hiện tại'); }
 });
 
-async function refreshLatestRunIfStale({ provider = 'vnstock', horizonDays = 20 } = {}) {
-  const currentSession = vietnamSessionDate(new Date());
-  const run = await RecommendationRun.findOne({
-    where: { provider, model: 'short_term_rule_v2' },
-    order: [['as_of', 'DESC'], ['created_at', 'DESC']],
-    include: historyInclude,
-  });
-  if (!run || !currentSession || run.as_of === currentSession) return run;
-  const snapshot = await generateRecommendationSnapshot({
-    Stock,
-    StockPrice,
-    ExternalFactor,
-    RecommendationRun,
-    Recommendation,
-    sequelize: Stock.sequelize || StockPrice.sequelize || RecommendationRun.sequelize || undefined,
-    provider,
-    limit: 5,
-    horizonDays,
-    useIntradayReference: false,
-    now: new Date(),
-  });
-  if (!snapshot || !snapshot.run_id) return run;
-  return RecommendationRun.findOne({
-    where: { id: snapshot.run_id },
-    include: historyInclude,
-  });
-}
-
 router.get('/latest', async (req, res) => {
   try {
-    const run = await refreshLatestRunIfStale({ provider: 'vnstock', horizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
+    const run = await RecommendationRun.findOne({
+      where: { provider: 'vnstock', model: 'short_term_rule_v2' },
+      order: [['as_of', 'DESC'], ['created_at', 'DESC']],
+      include: historyInclude,
+    });
     if (!run) return res.json({ success: true, data: { status: 'unavailable', recommendations: [] } });
     const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(calibrationRuns, { targetModel: 'personalized_rule_v1', targetHorizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });

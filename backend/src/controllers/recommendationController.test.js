@@ -80,18 +80,16 @@ describe('saved recommendation API', () => {
     expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, order: [['as_of', 'DESC'], ['created_at', 'DESC']] }));
   });
 
-  test('regenerates the default latest snapshot when the stored run is stale relative to the current session', async () => {
+  test('returns the latest stored snapshot without generating data on a read request', async () => {
     const stale = { id: 'stale-run', as_of: '2026-10-14', created_at: '2026-10-15T09:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
-    const fresh = { id: 'fresh-run', as_of: '2026-10-15', created_at: '2026-10-15T10:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
-    RecommendationRun.findOne.mockResolvedValueOnce(stale).mockResolvedValueOnce(fresh);
+    RecommendationRun.findOne.mockResolvedValue(stale);
     RecommendationRun.findAll.mockResolvedValue([]);
-    generateRecommendationSnapshot.mockResolvedValue({ run_id: 'fresh-run' });
 
     const response = await request(app).get('/api/recommendations/latest');
 
     expect(response.status).toBe(200);
-    expect(response.body.data.run).toMatchObject({ id: 'fresh-run', as_of: '2026-10-15' });
-    expect(generateRecommendationSnapshot).toHaveBeenCalledWith(expect.objectContaining({ provider: 'vnstock', limit: 5, horizonDays: 20 }));
+    expect(response.body.data.run).toMatchObject({ id: 'stale-run', as_of: '2026-10-14' });
+    expect(generateRecommendationSnapshot).not.toHaveBeenCalled();
   });
 
   test('returns a distinct not-found response for an unknown history snapshot', async () => {
