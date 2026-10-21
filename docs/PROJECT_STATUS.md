@@ -82,6 +82,7 @@ Cập nhật: 2026-10-21. Lịch sử checkpoint chi tiết trước lần rút 
 
 - Trình đo live UI nay tách thao tác bấm điều hướng, mount panel, hàng dữ liệu và request `/api/stocks`, quote/status; mặc định lấy 5 mẫu để không kéo dài dev loop.
 - Mẫu live ngày 2026-10-20 (UI `:4173`, backend `:5000`) ban đầu ghi 30 giây vì harness gọi `textContent()` trên locator lỗi không tồn tại; Playwright chờ timeout trước khi trả về. Mẫu xác nhận sau khi sửa: hàng đầu tiên gắn vào DOM 4 ms sau panel mount, panel không hidden, và quote settle 2.867 ms. Harness nay poll node DOM trực tiếp, chỉ đọc lỗi khi locator tồn tại và lưu snapshot state; default là 5 mẫu nhưng cho phép một mẫu khi chẩn đoán.
+- Baseline API 5 mẫu ngày 2026-10-21: list p50/p95 3/143 ms; quote p50/p95 683/1.732 ms. Cả năm response HTTP thành công nhưng chỉ trả 39/40 mã; BCG thiếu quote intraday. Harness nay công bố `coverage_pct`, `complete`, `missing_symbols` ở cả request và batch để partial response không bị coi là đầy đủ. Đây là số đo API local, không thay thế browser render và không đủ cơ sở tách `App.jsx`.
 - Không có bằng chứng lazy chunk hay kích thước `App.jsx` là nút thắt. Request quote có dao động và có abort khi lifecycle đổi, nhưng chưa ngăn dữ liệu hiển thị. Không refactor/tách `App.jsx` vì suy đoán.
 - `npm.cmd run build` đạt (Vite build và bundle integrity). Lần chạy Playwright `market-board-productivity` dùng web server test mới không render được `.dashboard-shell` trong 5 giây; đã dừng sau các failure đầu tiên, chưa dùng nó là bằng chứng hành vi Bảng giá.
 
