@@ -7,6 +7,7 @@ async function eodCoverage(sequelize, sessionDate, symbols = null, { minimumHist
       SELECT 1 FROM stock_prices p WHERE p.stock_id = s.id
       AND p.provider = 'vnstock' AND p.interval = '1d'
       AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = $1::date
+      AND COALESCE(p.close, p.price) > 0
     ) AS covered FROM stocks s
     WHERE s.listing_status = 'listed'
       AND ($2::text[] IS NULL OR s.code = ANY($2::text[]))

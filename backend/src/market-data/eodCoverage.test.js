@@ -13,6 +13,7 @@ describe('listed EOD universe', () => {
       session_date: '2026-10-02', minimum_historical_sessions: 0, symbols: 2, covered: 1, missing_symbols: ['SSI']
     });
     expect(sequelize.query.mock.calls[0][0]).toContain("s.listing_status = 'listed'");
+    expect(sequelize.query.mock.calls[0][0]).toContain('COALESCE(p.close, p.price) > 0');
     expect(sequelize.query.mock.calls[0][1].bind).toEqual(['2026-10-02', null, 0]);
   });
 

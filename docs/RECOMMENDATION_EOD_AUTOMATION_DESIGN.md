@@ -10,7 +10,7 @@ Cổng coverage toàn thị trường vẫn giữ nguyên. Nó ghi evidence về
 
 1. EOD worker ingest và retry gap như hiện có, rồi ghi `after` cho toàn bộ mã niêm yết.
 2. Khi `RECOMMENDATIONS_AFTER_INGEST=true`, worker tính thêm `recommendation_coverage` với ngưỡng 50 phiên lịch sử hợp lệ.
-3. Chỉ khi `recommendation_coverage.symbols > 0` và không còn `missing_symbols`, worker gọi snapshot generator. Evidence giữ cả hai coverage, ngưỡng lịch sử, trạng thái tạo hoặc lý do bỏ qua.
+3. Chỉ khi `recommendation_coverage.symbols > 0` và không còn `missing_symbols`, worker gọi snapshot generator. Một mã chỉ covered khi có close EOD dương; row rỗng/0 không thể mở gate. Evidence giữ cả hai coverage, ngưỡng lịch sử, trạng thái tạo hoặc lý do bỏ qua.
 4. Generator đọc duy nhất rows `provider=vnstock`, `interval=1d`, stocks `listing_status=listed`; snapshot không được lấy intraday hay mã đã rời universe. `GET /api/recommendations/latest` chỉ đọc snapshot đã lưu.
 
 Nếu tập ứng viên thiếu close, worker ghi `skipped_incomplete_recommendation_coverage`; không tạo fallback từ ngày cũ, giá intraday hoặc dữ liệu do request UI kích hoạt.
