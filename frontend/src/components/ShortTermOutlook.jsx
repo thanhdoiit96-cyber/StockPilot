@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchForecastCurrentPreview, fetchForecastResearchPreview } from '../services/forecastPreview.mjs'
 import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
+import { forecastRagTone } from '../services/forecastRag.mjs'
 
 // Design fixtures only. These values are not outputs of the research baseline.
 const scenarios = {
@@ -59,6 +60,8 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const stale = research && preview.artifact_freshness === 'stale'
   const scenario = { ...scenarios[horizon], probabilities: currentData ? currentPreview.probabilities.map(item => item.value * 100) : research ? preview.probabilities.map(item => item.value * 100) : scenarios[horizon].probabilities }
   const labels = [copy('Tăng lan tỏa', 'Broad advance'), copy('Cân bằng', 'Balanced'), copy('Giảm lan tỏa', 'Broad decline')]
+  const scenarioTypes = ['advance', 'balanced', 'decline']
+  const ragLegend = copy('Màu xác suất: xanh = khả năng tăng cao hoặc rủi ro giảm thấp; vàng = chưa rõ; đỏ = khả năng tăng thấp hoặc rủi ro giảm cao.', 'Probability colour: green = strong advance chance or low decline risk; amber = uncertain; red = weak advance chance or elevated decline risk.')
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
   const candidates = recommendations.filter(item => (item.stock?.code || item.symbol) && Number.isFinite(Number(item.score))).sort((a, b) => Number(a.rank || 999) - Number(b.rank || 999) || Number(b.score) - Number(a.score)).slice(0, 3)
   const [isCompact, setIsCompact] = useState(true)
@@ -92,12 +95,13 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
           </div>
           <div className="outlook-compact-grid">
             {labels.map((label, index) => (
-              <div className={`outlook-compact-cell tone-${index}`} key={label}>
+              <div className={`outlook-compact-cell rag-${forecastRagTone(scenarioTypes[index], scenario.probabilities[index])}`} key={label} title={ragLegend}>
                 <span>{label}</span>
                 <strong>{Number(scenario.probabilities[index].toFixed(1))}%</strong>
               </div>
             ))}
           </div>
+          <p className="outlook-rag-legend">{ragLegend}</p>
           <p className="outlook-note">
             {currentData ? copy(`Horizon ${horizon} phiên · Dữ liệu hiện tại`, `Horizon ${horizon} sessions · current data`) : research ? copy(`Horizon ${horizon} phiên · Replay synthetic`, `Horizon ${horizon} sessions · synthetic replay`) : copy(`Horizon ${horizon} phiên · Fixture UI`, `Horizon ${horizon} sessions · UI fixture`)}
           </p>
@@ -109,13 +113,14 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
               <h3 className={currentData ? 'outlook-prototype-title' : undefined}>{currentData ? copy('Xác suất prototype trên dữ liệu hiện tại', 'Prototype probabilities on current data') : research ? copy('Xác suất replay synthetic', 'Synthetic replay probabilities') : copy('Xác suất minh họa', 'Illustrative probabilities')}</h3>
               <div className={`outlook-probabilities${preview.status === 'loading' || currentPreview.status === 'loading' ? ' is-loading' : ''}`} aria-busy={preview.status === 'loading' || currentPreview.status === 'loading'}>
                 {labels.map((label, i) => (
-                  <div className={`outlook-probability tone-${i}`} key={label}>
+                  <div className={`outlook-probability rag-${forecastRagTone(scenarioTypes[i], scenario.probabilities[i])}`} key={label} title={ragLegend}>
                     <span>{label}</span>
                     <strong>{Number(scenario.probabilities[i].toFixed(1))}<small>%</small></strong>
                     <div className="outlook-meter" aria-hidden="true"><i style={{ width: `${scenario.probabilities[i]}%` }} /></div>
                   </div>
                 ))}
               </div>
+              <p className="outlook-rag-legend">{ragLegend}</p>
               <div className="outlook-preview-status">
                 <p className={`outlook-note${stale ? ' is-stale' : ''}`}>
                   {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Research preview không khả dụng · Đang hiển thị fixture giao diện', 'Research preview unavailable · Showing UI fixtures')}
