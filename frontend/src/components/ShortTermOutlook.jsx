@@ -4,6 +4,7 @@ import ForecastHistoryPanel from './ForecastHistoryPanel.jsx'
 import { fetchForecastLiveCohort } from '../services/forecastHistory.mjs'
 import { summarizeForecastBreadth } from '../services/forecastBreadth.mjs'
 import { forecastOutcomeTone, formatForecastPercent } from '../services/forecastDisplay.mjs'
+import { fetchLiquid30Readiness } from '../services/liquid30Readiness.mjs'
 
 export default function ShortTermOutlook({ language = 'vi', recommendations = [], onOpenDetail, onOpenIdeas, onAddToWatchlist, watchlistSymbols = [] }) {
   const [horizon, setHorizon] = useState(() => {
@@ -20,9 +21,11 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const [evidenceTab, setEvidenceTab] = useState('current')
   const [liveCohort, setLiveCohort] = useState({ status: 'loading' })
   const [previewRetry, setPreviewRetry] = useState(0)
+  const [liquid30, setLiquid30] = useState({ status: 'loading' })
   const researchPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_RESEARCH || '' : '')).toLowerCase() === 'true'
   const currentPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_LIVE__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_LIVE || '' : '')).toLowerCase() === 'true'
   useEffect(() => { if (!currentPreviewEnabled) setEvidenceTab('research') }, [currentPreviewEnabled])
+  useEffect(() => { const controller = new AbortController(); fetchLiquid30Readiness({ signal: controller.signal }).then(setLiquid30).catch(() => setLiquid30({ status: 'unavailable' })); return () => controller.abort() }, [])
   useEffect(() => {
     if (!currentPreviewEnabled) { setLiveCohort({ status:'unavailable', reason:'preview_disabled' }); return undefined }
     const controller = new AbortController(); setLiveCohort({ status:'loading' })
@@ -218,6 +221,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                     {validationItems.map(([key, label]) => <li key={key} className={validation[key] ? 'is-ready' : 'is-pending'}><span aria-hidden="true">{validation[key] ? '✓' : '○'}</span>{label}<small>{validation[key] ? copy('Đạt', 'Ready') : copy('Chờ', 'Pending')}</small></li>)}
                   </ul>
                 </div>}
+                <div className="forecast-validation-gate liquid30-readiness" role="status"><div><strong>{copy('Rổ Liquid30', 'Liquid30 basket')}</strong><p>{liquid30.status === 'ready' ? copy(`Sẵn sàng chọn Top 30 theo giá trị giao dịch EOD phiên ${liquid30.session_date}.`, `Ready to select the top 30 by EOD traded value for ${liquid30.session_date}.`) : liquid30.status === 'partial_observed_universe' ? copy(`Nghiên cứu trên tập EOD quan sát được: ${liquid30.covered}/${liquid30.listed} mã (${liquid30.coverage_pct.toFixed(1)}%). Không phải toàn thị trường và chưa phát hành xác suất Liquid30.`, `Research on the observed EOD subset: ${liquid30.covered}/${liquid30.listed} symbols (${liquid30.coverage_pct.toFixed(1)}%). This is not the whole market and no Liquid30 probability is issued.`) : copy('Chưa đủ dữ liệu EOD để lập rổ Liquid30.', 'EOD data is not sufficient to form a Liquid30 basket.')}</p></div>{liquid30.exchange_coverage?.length ? <ul aria-label={copy('Coverage EOD theo sàn', 'EOD coverage by exchange')}>{liquid30.exchange_coverage.map(item => <li key={item.exchange}><span aria-hidden="true">○</span>{item.exchange}<small>{Number(item.coverage_pct).toFixed(1)}%</small></li>)}</ul> : null}</div>
                 </>
               ) : (
                 <>
