@@ -61,6 +61,8 @@ Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi
 
 Audit mã nguồn đã xác nhận weighted-average cost basis từ ledger giao dịch, nhưng corporate action hiện chỉ được áp trong valuation history. Engine thuần `position_exit_rule_v1` đã có và fail-closed với vị thế có corporate action chưa áp dụng; bước tiếp theo là migration/snapshot ledger cho exit guidance, rồi mới có read API và UI shadow.
 
+Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến theo portfolio chứa provenance/hash và cả trạng thái unavailable. Bước tiếp theo là read-only API theo ownership, sau đó UI shadow; không nối scheduler cho đến khi contract corporate-action/current-holding reconciliation được kiểm chứng.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
