@@ -1,15 +1,78 @@
 ﻿# Chạy bản demo
 
-Tài liệu này hướng dẫn chạy mã hiện có. Xem [README](README.md) để hiểu sản phẩm và [PROJECT_STATUS](docs/PROJECT_STATUS.md) để biết các kiểm tra đã thực sự chạy.
+Tài liệu này là nguồn hướng dẫn duy nhất để cài đặt, khởi động và kiểm tra bản demo. Xem [README](README.md) để hiểu sản phẩm và [PROJECT_STATUS](docs/PROJECT_STATUS.md) để biết các kiểm tra đã thực sự chạy.
+
+## Khởi động lại local đã cấu hình
+
+Dùng mục này khi máy đã có `backend/.env`, PostgreSQL, `node_modules` và Python Vnstock từ lần chạy trước. Không tạo virtual environment và không cài lại package chỉ để khởi động lại: worker của dự án dùng Python mà lệnh `py` chọn. Nếu cổng đã có phản hồi, giữ tiến trình đang chạy thay vì mở bản sao thứ hai.
+
+Trước khi chạy, kiểm tra đúng runtime và dependency đã có:
+
+~~~powershell
+node --version
+npm.cmd --version
+py --version
+py -c "import vnstock, vnai; print('vnstock/vnai OK')"
+~~~
+
+Khởi động theo thứ tự dưới đây trong **ba cửa sổ PowerShell riêng**, từ thư mục gốc dự án. Giữ mỗi cửa sổ mở trong lúc dùng ứng dụng.
+
+~~~powershell
+# Cửa sổ 1 — Python worker
+Set-Location .\backend
+$env:HTTP_PROXY = ''
+$env:HTTPS_PROXY = ''
+$env:ALL_PROXY = ''
+$env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
+py scripts/vnstock_worker.py
+~~~
+
+~~~powershell
+# Cửa sổ 2 — API backend
+Set-Location .\backend
+npm.cmd start
+~~~
+
+~~~powershell
+# Cửa sổ 3 — production preview UI (tự build trước khi mở)
+Set-Location .\frontend
+npm.cmd run start -- --host 127.0.0.1 --port 4173 --strictPort
+~~~
+
+Sau đó kiểm tra từng lớp, không chỉ kiểm tra giao diện:
+
+~~~powershell
+Invoke-RestMethod 'http://127.0.0.1:8787/health'
+Invoke-RestMethod 'http://127.0.0.1:5000/api/health'
+Invoke-RestMethod 'http://127.0.0.1:5000/api/ready'
+Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:4173/'
+Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:4173/api/health'
+~~~
+
+Kỳ vọng worker trả `ok: true`, backend trả `success: true`, `ready` không báo dependency lỗi, và hai request frontend trả HTTP 200. Mở UI tại <http://127.0.0.1:4173/>. `ready` là bằng chứng local; không phải xác nhận production, scheduler hay dữ liệu provider hoàn chỉnh.
+
+### Forecast LIVE trong môi trường agent/sandbox
+
+`/api/forecast/live-preview` cố ý chạy một Python EOD bridge riêng để lấy dữ liệu mới; nó không dùng worker dài hạn. Vì vậy worker `:8787` vẫn healthy nhưng Forecast LIVE có thể trả `503` với `code: "EPERM"` nếu backend được chạy trong một sandbox chặn việc spawn child process. Đây không phải lỗi thiếu package, không cần bật lại worker, và không phải lý do để chuyển sang fixture.
+
+Trong trường hợp đó, dừng đúng backend đang giữ cổng `5000`, rồi chạy lại `npm.cmd start` từ terminal PowerShell local thông thường/ngoài sandbox. Giữ `NODE_ENV=development` và `FORECAST_LIVE_PREVIEW=true` trong `backend/.env`; sau đó kiểm tra qua cùng origin của UI:
+
+~~~powershell
+Invoke-RestMethod 'http://127.0.0.1:4173/api/forecast/live-preview?symbols=FPT,HPG,VHM&horizon=5'
+~~~
+
+Kết quả LIVE phải có `live: true`, `synthetic: false`, `provider: "vnstock"` và `gate.live_ready: true`. Đây vẫn chỉ là current-data prototype, không phải forecast đã được xác minh độ chính xác.
+
+Chỉ chuyển sang phần **Chạy thủ công** bên dưới nếu máy mới, dependency/config còn thiếu, hoặc cần migration/seed. Không chạy `migrate` hay `seed` như bước khởi động định kỳ.
 
 ## Chọn môi trường
 
 | Cách chạy | Điều kiện | Cấu hình |
 | --- | --- | --- |
-| Thủ công | Node.js/npm, PostgreSQL trên máy hoặc máy chủ truy cập được | backend/.env |
+| Thủ công | Node.js/npm, Python có lệnh `py`, PostgreSQL trên máy hoặc máy chủ truy cập được | backend/.env |
 | Docker Compose | Docker và Compose hoạt động | .env ở thư mục gốc |
 
-Dockerfile hiện dùng Node 22 và Compose dùng PostgreSQL 15. package.json backend khai báo tối thiểu Node 18/npm 9; đây là yêu cầu trong mã, không phải cam kết hỗ trợ mọi phiên bản. Các lệnh dưới dùng PowerShell, bắt đầu từ thư mục chứa dự án hiện tại. Dùng npm.cmd để tránh lỗi chặn npm.ps1.
+Dockerfile hiện dùng Node 22 và Compose dùng PostgreSQL 15. package.json backend khai báo tối thiểu Node 18/npm 9; đây là yêu cầu trong mã, không phải cam kết hỗ trợ mọi phiên bản. Worker cần Python 3.10 trở lên và `vnstock==4.0.8` theo `backend/requirements-vnstock.txt`. Các lệnh dưới dùng PowerShell, bắt đầu từ thư mục chứa dự án hiện tại. Dùng `py` cho worker và `npm.cmd` để tránh lỗi chặn `npm.ps1`.
 
 ## Chạy thủ công
 
@@ -78,11 +141,20 @@ Migrations không tự chạy khi dùng npm start/npm run dev thủ công. Chạ
 
 ### 2a. Ingest dữ liệu Vnstock EOD
 
-Cài bridge Python một lần:
+Kiểm tra bridge Python trước; chỉ cài khi import thất bại. Không tự tạo hay kích hoạt `.venv`: lệnh worker và các script trong tài liệu này đều dùng interpreter của `py`.
 
 ~~~powershell
-python -m pip install -r requirements-vnstock.txt
+py -c "import vnstock, vnai; print('vnstock/vnai OK')"
 ~~~
+
+Nếu lệnh trên thất bại, cài vào **chính interpreter đó**:
+
+~~~powershell
+py -m pip install -r requirements-vnstock.txt
+py -c "import vnstock, vnai; print('vnstock/vnai OK')"
+~~~
+
+Nếu `pip` báo `No matching distribution found`, kiểm tra `py -m pip config list -v` trước khi đổi Python hoặc tạo môi trường mới: một cấu hình index/offline khác với interpreter đang chạy có thể là nguyên nhân. Không cài lại package khi `py -c` đã import thành công.
 
 Đặt biến môi trường cho lần ingest thử nghiệm rồi chạy từ thư mục backend:
 
@@ -244,7 +316,9 @@ Giá seed có đơn vị VND. API chi tiết trả tối đa 20 giá mới nhấ
 | API trả danh sách rỗng | Kiểm tra đúng database và trạng thái seed |
 | UI không gọi được API | Backend cổng 5000; API_PROXY_TARGET nếu đổi cổng; log Vite |
 | Cổng 5000/5173 bận | Xác định tiến trình đang dùng; nếu đổi cổng, cập nhật proxy/CORS tương ứng |
-| Không tìm thấy package | Chạy npm.cmd ci tại đúng thư mục dịch vụ |
+| Không tìm thấy Node package | Chạy `npm.cmd ci` tại đúng thư mục dịch vụ |
+| `py -c "import vnstock"` thất bại | Xác nhận đúng interpreter bằng `py --version`, rồi cài `py -m pip install -r backend/requirements-vnstock.txt`; kiểm tra `py -m pip config list -v` nếu pip không thấy package |
+| Worker không lên `:8787` | Chạy từ `backend` bằng `py scripts/vnstock_worker.py`; giữ `VNSTOCK_WORKER_MAX_CONCURRENCY=1` và kiểm tra log của cửa sổ worker |
 | Compose báo sai mật khẩu sau khi đổi .env | Kiểm tra role trong database hiện hữu; không xóa volume để xử lý mặc định |
 | Compose backend không healthy | Kiểm tra lần lượt `docker compose logs worker`, worker health, migrations và kết nối PostgreSQL; không tăng worker concurrency để che lỗi provider |
 
@@ -260,7 +334,7 @@ $env:HTTPS_PROXY = ''
 $env:ALL_PROXY = ''
 $env:VNSTOCK_WORKER_MAX_CONCURRENCY = '1'
 cd .\backend
-python scripts/vnstock_worker.py
+py scripts/vnstock_worker.py
 ~~~
 
 Giữ concurrency 1 mặc định vì worker phục vụ nhiều caller nhưng upstream VCI dễ reset khi có request đồng thời. Chỉ tăng tối đa 4 sau khi đã đo lỗi và latency trong phiên giao dịch.
@@ -328,12 +402,12 @@ Script tạo ledger cô lập, xác nhận pending event khóa coverage/TWR, ki�
 Sau khi cài dependency backend, chạy trong thư mục `backend`:
 
 ```powershell
-npm run generate:forecast-preview
+npm.cmd run generate:forecast-preview
 ```
 
 Lệnh tạo `evidence/forecast-research-preview.json` từ fixture synthetic trước khi backend phục vụ endpoint. File không được commit. Khởi động lại backend sau khi cập nhật mã; Tổng quan sẽ hiển thị ngày tạo và cảnh báo nếu artifact quá 7 ngày. Đây không phải dữ liệu thị trường hay dự báo live.
 
-`npm run dev` đã tự chạy bước generate. Để kiểm tra riêng artifact trước khi bàn giao, dùng `npm run verify:forecast-preview`.
+`npm.cmd run dev` đã tự chạy bước generate. Để kiểm tra riêng artifact trước khi bàn giao, dùng `npm.cmd run verify:forecast-preview`.
 
 ### Checkpoint forecast sau EOD
 
