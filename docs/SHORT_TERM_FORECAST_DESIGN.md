@@ -143,6 +143,10 @@ The product question is whether a user can distinguish a current-data display th
 
 The panel separates five current-data checks (availability, integrity, coverage, input sessions and freshness) from the three market-evidence checks that remain pending (probability calibration, independent audit and provider validation). `market_accuracy_verified` stays false. It therefore communicates a shadow-monitoring boundary, never a buy/sell action, accuracy claim or return expectation. A malformed or missing disclosure makes the frontend reject the live payload rather than displaying an ambiguous state. This is presentation/provenance work only; it does not advance F3/F4, materialize snapshots or relax the forecast gate.
 
+### Navigation cache — 2026-10-22
+
+The Overview page unmounts when navigating away, so its local forecast state cannot be the cache boundary. A module-memory cache now retains only a contract-valid current-data preview for 60 seconds, keyed by normalized symbols and horizon. Returning during that interval restores the existing payload without a second provider bridge request; the UI labels this state. The cache is cleared on browser reload, is never persisted, does not cache errors and is bypassed by Retry. The 60-second bound is a responsiveness optimization, not a freshness or accuracy claim.
+
 ## Materialized research preview artifact — 2026-10-12
 
 `generate:forecast-preview` runs the synthetic replay before serving requests and atomically writes a small `forecast_research_preview_artifact_v1` envelope. Canonical SHA-256 covers generated time, seven-day stale window, report/model/split metadata and both presentation contracts. The endpoint reads at most 256 KiB and validates the full contract. It returns artifact hash, generated time, age and fresh/stale classification; these describe artifact generation only, not market-data freshness. The evidence directory is intentionally not committed.

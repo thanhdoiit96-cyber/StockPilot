@@ -33,7 +33,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
     const controller = new AbortController()
     if (currentPreviewEnabled) {
       setCurrentPreview({ status: 'loading' })
-      fetchForecastCurrentPreview(['FPT', 'HPG', 'VHM'], { signal: controller.signal, horizon }).then(setCurrentPreview).catch(error => {
+      fetchForecastCurrentPreview(['FPT', 'HPG', 'VHM'], { signal: controller.signal, horizon, forceReload: previewRetry > 0 }).then(setCurrentPreview).catch(error => {
         if (error?.name !== 'AbortError') setCurrentPreview({ status: 'unavailable', reason: 'request_failed' })
       })
       setPreview({ status: 'unavailable', reason: 'preview_disabled' })
@@ -135,7 +135,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
               <p className="outlook-outcome-legend">{outcomeLegend}</p>
               <div className="outlook-preview-status">
                 <p className={`outlook-note${stale ? ' is-stale' : ''}`}>
-                  {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Chưa có forecast hợp lệ để hiển thị', 'No valid forecast is available')}
+                  {currentPreview.status === 'loading' ? copy('Đang kiểm tra dữ liệu hiện tại…', 'Checking live current data…') : currentData ? copy(`Prototype ${horizon} phiên · ${currentPreview.as_of} · provider ${currentPreview.provider}${currentPreview.cache_status === 'memory' ? ' · hiển thị lại từ bộ nhớ (≤1 phút)' : ''} · chưa hiệu chỉnh/xác minh`, `${horizon}-session prototype · ${currentPreview.as_of} · provider ${currentPreview.provider}${currentPreview.cache_status === 'memory' ? ' · restored from memory (≤1 min)' : ''} · uncalibrated and unverified`) : preview.status === 'loading' ? copy('Đang kiểm tra bản research preview…', 'Checking the research preview…') : research ? copy(`Replay ${preview.as_of} · Artifact tạo ${new Date(preview.artifact_generated_at).toLocaleDateString('vi-VN')}${stale ? ' · Đã cũ' : ''} · Không phải dự báo live`, `Replay ${preview.as_of} · Artifact generated ${new Date(preview.artifact_generated_at).toLocaleDateString('en-US')}${stale ? ' · Stale' : ''} · Not a live forecast`) : copy('Chưa có forecast hợp lệ để hiển thị', 'No valid forecast is available')}
                 </p>
                 {(preview.status === 'unavailable' || currentPreview.status === 'unavailable') && (
                   <button type="button" className="ghost-btn small-btn" onClick={() => setPreviewRetry(value => value + 1)}>{copy('Thử lại', 'Retry')}</button>

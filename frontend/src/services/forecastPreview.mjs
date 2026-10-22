@@ -1,5 +1,12 @@
 import { isForecastBreadthTarget } from './forecastBreadth.mjs'
 
+const currentPreviewCache = new Map()
+const CURRENT_PREVIEW_CACHE_TTL_MS = 60_000
+
+function currentPreviewCacheKey(symbols, horizon) {
+  return `${horizon}:${Array.from(new Set(symbols)).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort().join(',') || 'FPT,HPG,VHM'}`
+}
+
 function isResearchPreviewEnabled() {
   const globalValue = typeof globalThis !== 'undefined' ? String(globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ || '') : ''
   const raw = globalValue || (typeof import.meta !== 'undefined' && import.meta?.env ? String(import.meta.env.VITE_ENABLE_FORECAST_RESEARCH || '') : '')
@@ -29,10 +36,14 @@ export async function fetchForecastResearchPreview(horizon, { signal } = {}) {
   return { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })) }
 }
 
-export async function fetchForecastCurrentPreview(symbols = ['FPT', 'HPG', 'VHM'], { signal, horizon = 5 } = {}) {
+export async function fetchForecastCurrentPreview(symbols = ['FPT', 'HPG', 'VHM'], { signal, horizon = 5, forceReload = false } = {}) {
   if (!isCurrentPreviewEnabled()) return { status: 'unavailable', reason: 'preview_disabled' }
   if (![1, 5].includes(horizon)) throw new Error('invalid_horizon')
-  const query = new URLSearchParams({ symbols: Array.from(new Set(symbols)).filter(Boolean).join(',') || 'FPT,HPG,VHM', horizon: String(horizon) })
+  const normalizedSymbols = Array.from(new Set(symbols)).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort()
+  const cacheKey = currentPreviewCacheKey(normalizedSymbols, horizon)
+  const cached = currentPreviewCache.get(cacheKey)
+  if (!forceReload && cached && cached.expiresAt > Date.now()) return { ...cached.data, cache_status: 'memory', cache_expires_at: new Date(cached.expiresAt).toISOString() }
+  const query = new URLSearchParams({ symbols: normalizedSymbols.join(',') || 'FPT,HPG,VHM', horizon: String(horizon) })
   const response = await fetch(`/api/forecast/live-preview?${query.toString()}`, { signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
   if (!response.ok) return { status: 'unavailable', reason: response.status === 404 ? 'preview_disabled' : 'request_failed' }
   const body = await response.json()
@@ -45,5 +56,7 @@ export async function fetchForecastCurrentPreview(symbols = ['FPT', 'HPG', 'VHM'
     && data.market_accuracy_verified === false && data.horizon_sessions === horizon && typeof data.as_of === 'string' && Number.isFinite(Date.parse(data.as_of))
     && validValidation && classes.every(name => Number.isFinite(values[name]) && values[name] >= 0 && values[name] <= 1) && Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) < 1e-6 && isForecastBreadthTarget(data.breadth_target)
   if (!valid) return { status: 'unavailable', reason: 'invalid_contract' }
-  return { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })) }
+  const normalized = { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })), cache_status: 'network' }
+  currentPreviewCache.set(cacheKey, { data: normalized, expiresAt: Date.now() + CURRENT_PREVIEW_CACHE_TTL_MS })
+  return normalized
 }
