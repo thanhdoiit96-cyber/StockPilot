@@ -53,6 +53,8 @@ Mở rộng VN30 bắt đầu tại F0 contract trong [VN30_FORECAST_UNIVERSE_DE
 
 Ưu tiên được chọn thay VN30 là [Liquid30](LIQUID30_FORECAST_UNIVERSE_DESIGN.md): Top 30 theo `traded_value` EOD toàn thị trường, chỉ phát hành khi coverage ≥95%. Theo ngoại lệ nghiên cứu tạm thời được phê duyệt, ≥65% có thể tạo rổ `partial_observed_universe` từ EOD đã quan sát, kèm numerator/denominator/scope và `research_only`; nó không phải toàn thị trường, không phát hành xác suất và không mở calibration. Coverage hiện 65,0%, nên chỉ đường nghiên cứu này khả dụng; release gate không hạ.
 
+Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi 0/549 row có đồng thời close, `traded_value` dương và `price_unit` cho phiên 2026-10-21. Bước phụ thuộc kế tiếp là xác minh mapping/provenance turnover trong ingestion; không thay bằng `close×volume` hoặc ranking từ dữ liệu không so sánh được.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.

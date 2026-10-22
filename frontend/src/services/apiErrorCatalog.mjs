@@ -155,6 +155,9 @@ const messages = {
   }
 }
 
+messages.vi.market_liquid30_readiness_failed = 'Không kiểm tra được trạng thái rổ Liquid30.'
+messages.en.market_liquid30_readiness_failed = 'Unable to inspect Liquid30 basket readiness.'
+
 export function localizeApiError(error, language = 'vi') {
   const code = error?.code
   return (language === 'en' ? messages.en[code] : messages.vi[code]) || error?.message || (language === 'en' ? 'The server could not process the request.' : 'Máy chủ không thể xử lý yêu cầu.')

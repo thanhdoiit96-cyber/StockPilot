@@ -25,7 +25,13 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const researchPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_RESEARCH__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_RESEARCH || '' : '')).toLowerCase() === 'true'
   const currentPreviewEnabled = String(globalThis.__VITE_ENABLE_FORECAST_LIVE__ || (typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env.VITE_ENABLE_FORECAST_LIVE || '' : '')).toLowerCase() === 'true'
   useEffect(() => { if (!currentPreviewEnabled) setEvidenceTab('research') }, [currentPreviewEnabled])
-  useEffect(() => { const controller = new AbortController(); fetchLiquid30Readiness({ signal: controller.signal }).then(setLiquid30).catch(() => setLiquid30({ status: 'unavailable' })); return () => controller.abort() }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchLiquid30Readiness({ signal: controller.signal }).then(setLiquid30).catch(error => {
+      if (error?.name !== 'AbortError') setLiquid30({ status: 'unavailable' })
+    })
+    return () => controller.abort()
+  }, [])
   useEffect(() => {
     if (!currentPreviewEnabled) { setLiveCohort({ status:'unavailable', reason:'preview_disabled' }); return undefined }
     const controller = new AbortController(); setLiveCohort({ status:'loading' })

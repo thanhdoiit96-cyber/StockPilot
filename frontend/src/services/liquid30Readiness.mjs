@@ -1,7 +1,8 @@
 export async function fetchLiquid30Readiness({ signal } = {}) {
   const response = await fetch('/api/stocks/liquid30-readiness', { signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
-  if (!response.ok) return { status: 'unavailable' }
-  const data = (await response.json())?.data
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) return { status: payload?.code === 'market_detail_failed' ? 'endpoint_unavailable' : 'unavailable' }
+  const data = payload?.data
   if (!['ready', 'partial_observed_universe', 'unavailable'].includes(data?.status)) return { status: 'unavailable' }
   const coverage = data?.coverage
   if (!Number.isInteger(coverage?.observed) || !Number.isInteger(coverage?.universe) || !Number.isFinite(Number(coverage?.ratio))) return { status: 'unavailable' }
