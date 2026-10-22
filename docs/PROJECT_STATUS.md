@@ -19,6 +19,7 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 - The implementation reuses the preview payload. It adds no provider request, polling, cache or persisted client state. The frontend rejects a live payload without this disclosure instead of implying readiness.
 - Recommendation remains at 0 eligible outcomes for the compatible `short_term_rule_v2`/20-session cohort. Its existing history/calibration UI continues to show pending/integrity states; no cross-model calibration is enabled.
 - Recommendation History now reads only stored EOD rows to show each pending symbol's observed/remaining session count. It does not manufacture an outcome, alter an immutable snapshot, query a provider or unlock calibration.
+- VN30 expansion F0 is specified in [VN30_FORECAST_UNIVERSE_DESIGN.md](VN30_FORECAST_UNIVERSE_DESIGN.md). Audit found no licensed point-in-time constituent source/schema in the current repository; index fixtures/series are not a constituent source. The work is therefore fail-closed at the readiness boundary and does not replace the three-symbol LIVE prototype.
 
 ## Các phần đã hoàn tất gần đây
 

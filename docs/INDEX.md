@@ -33,6 +33,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | --- | --- |
 | [ARCHITECTURE](ARCHITECTURE.md) | Kiến trúc mục tiêu |
 | [SHORT_TERM_FORECAST_DESIGN](SHORT_TERM_FORECAST_DESIGN.md) | Kế hoạch dự báo xác suất 1/5 phiên, dữ liệu, kiểm chứng và UI |
+| [VN30_FORECAST_UNIVERSE_DESIGN](VN30_FORECAST_UNIVERSE_DESIGN.md) | Contract VN30 point-in-time, readiness gate và shadow boundary |
 | [FOREIGN_FLOW_DESIGN](FOREIGN_FLOW_DESIGN.md) | Audit, contract và lộ trình dòng tiền khối ngoại theo mã/ngành |
 | [COMPANY_FUNDAMENTALS_DESIGN](COMPANY_FUNDAMENTALS_DESIGN.md) | Kiến trúc Hồ sơ, Cổ đông, Vốn và Tài chính trên trang Chi tiết mã |
 | [PROJECT_STRUCTURE](PROJECT_STRUCTURE.md) | Cấu trúc thư mục dự kiến |
