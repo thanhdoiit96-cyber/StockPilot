@@ -23,6 +23,7 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 - Product decision now prefers Liquid30 over VN30: [LIQUID30_FORECAST_UNIVERSE_DESIGN.md](LIQUID30_FORECAST_UNIVERSE_DESIGN.md) defines Top 30 by stored, verified EOD `traded_value` with a 95% whole-market coverage gate. Latest evidence is 357/549 (65.0%), so no ranking, shadow issuance or UI switch is permitted yet.
 - Liquid30 readiness service now enforces the contract against stored rows: same latest session, positive close/turnover, non-empty `price_unit`, 95% coverage, deterministic turnover ranking and exactly 30 constituents. It is not wired to issuance while runtime coverage is below gate.
 - Read-only coverage audit on 2026-10-22 confirms the 2026-10-21 EOD gap is 192/549: HSX 11/196 missing (94.4% covered), HNX 28/103 (72.8%) and UPCoM 153/250 (38.8%). Missing rows split into 48 never seen, 29 only previous session and 115 stale history. The final scheduled gap retry requested 192 but selected 25 without any traded match; treat UPCoM/provider capability and symbol mapping as the first remediation investigation, not a reason to lower Liquid30's 95% gate or repeatedly re-ingest the full universe.
+- User-approved temporary exception: Liquid30 may use a >=65% observed-EOD subset only as `partial_observed_universe` research. It must retain coverage/scope, cannot be called whole-market, and keeps market-accuracy/calibration gates closed.
 
 ## Các phần đã hoàn tất gần đây
 
