@@ -15,7 +15,11 @@ The market-breadth research universe is the 30 listed symbols with the highest v
 
 ## User experience
 
-The UI may say “Top 30 thanh khoản theo EOD” only when this contract is ready. It must show session, provider, coverage and an explicit research/shadow state. Below the 95% gate it shows unavailable with the coverage reason; it must not select Top 30 from the observed subset, backfill from an older session or retain yesterday's members.
+At the 95% release gate, the UI may say “Top 30 thanh khoản theo EOD” and must show session, provider, coverage and an explicit research/shadow state. Below that gate it shows unavailable with the coverage reason, except for the explicitly labelled, temporary research exception below. It must never backfill from an older session or retain yesterday's members.
+
+### Temporary observed-subset research exception
+
+The product owner approved one bounded exception on 2026-10-22: with at least 65% same-session verified EOD coverage, the backend may form an `observed_eod_subset` ranking for internal research. Its response is explicitly `partial_observed_universe` and `research_only: true`, retains the numerator, denominator, threshold and session, and is built only from stored database rows. It is not a whole-market Liquid30, cannot issue a probability, cannot be evaluated/calibrated as a whole-market forecast and must not silently become the 95% release path. Under 65%, or with fewer than 30 eligible rows, it remains unavailable.
 
 ## Evaluation and performance
 
@@ -23,4 +27,4 @@ The selected basket is frozen per issuance and evaluated only after the declared
 
 ## Current state
 
-The latest recorded EOD coverage is 357/549 (65.0%), below the 95% release gate. F0 is therefore defined but issuance, shadow snapshot and UI switch remain blocked. This is an honest unavailable state, not a forecast failure or a reason to lower the gate.
+The latest recorded EOD coverage is 357/549 (65.0%), below the 95% release gate. The bounded observed-subset readiness endpoint may expose a research basket at this level, but whole-market issuance, shadow evaluation and a live forecast/UI switch remain blocked. This is not a forecast failure or a reason to lower the release gate.

@@ -19,6 +19,7 @@ const { normalizeCompanyCapital, fetchCompanyCapital } = require('../services/co
 const { normalizeCompanyFinancials, fetchCompanyFinancials } = require('../services/companyFinancialService');
 const { normalizeCompanyNews, fetchCompanyNews } = require('../services/companyNewsService');
 const { readLatestCompanySnapshot } = require('../services/companySnapshotStore');
+const { buildLiquid30Readiness } = require('../services/liquid30Universe');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -158,6 +159,44 @@ module.exports = function(cacheService) {
     } catch (error) {
       console.error('[Stock Controller] Error checking market data quality:', error);
       return httpError(res, 500, 'market_quality_failed', 'Unable to inspect market data quality');
+    }
+  });
+
+  // This is deliberately a database-only research endpoint.  It never asks a
+  // market-data provider for a new quote while a dashboard is being rendered.
+  router.get('/liquid30-readiness', async (_req, res) => {
+    try {
+      const [rows] = await Stock.sequelize.query(`
+        WITH listed AS (
+          SELECT id, code, listing_status FROM stocks WHERE listing_status = 'listed'
+        ), latest AS (
+          SELECT MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date) AS session_date
+          FROM stock_prices WHERE provider = 'vnstock' AND interval = '1d' AND observed_at IS NOT NULL
+        ), session_prices AS (
+          SELECT DISTINCT ON (p.stock_id)
+            p.stock_id, (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS observed_at,
+            p.close, p.price, p.traded_value, p.price_unit
+          FROM stock_prices p CROSS JOIN latest
+          WHERE p.provider = 'vnstock' AND p.interval = '1d'
+            AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = latest.session_date
+          ORDER BY p.stock_id, p.observed_at DESC NULLS LAST, p.id DESC
+        )
+        SELECT l.id, l.code, l.listing_status, sp.stock_id, sp.observed_at, sp.close, sp.price, sp.traded_value, sp.price_unit
+        FROM listed l LEFT JOIN session_prices sp ON sp.stock_id = l.id
+      `);
+      const stocks = rows.map(row => ({ id: row.id, code: row.code, listing_status: row.listing_status }));
+      const prices = rows.filter(row => row.stock_id).map(row => ({
+        stock_id: row.stock_id, observed_at: row.observed_at, close: row.close,
+        price: row.price, traded_value: row.traded_value, price_unit: row.price_unit
+      }));
+      // The temporary 65% exception is research-only and is encoded in the
+      // response. Forecast issuance retains its separate validation gate.
+      const data = buildLiquid30Readiness({ stocks, prices, minimumCoverage: .65, allowObservedSubset: true });
+      res.set('Cache-Control', 'no-store');
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('[Stock Controller] Error building Liquid30 readiness:', error);
+      return httpError(res, 500, 'market_liquid30_readiness_failed', 'Unable to inspect Liquid30 readiness');
     }
   });
 

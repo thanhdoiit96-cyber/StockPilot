@@ -51,7 +51,7 @@ Tiếp tục data evidence, point-in-time availability, out-of-sample validation
 
 Mở rộng VN30 bắt đầu tại F0 contract trong [VN30_FORECAST_UNIVERSE_DESIGN.md](VN30_FORECAST_UNIVERSE_DESIGN.md): cần membership source point-in-time có quyền sử dụng, snapshot bất biến, 30-member/95% EOD gate và shadow evaluation riêng. Không hard-code hoặc suy ra constituent từ index/fixture hiện có.
 
-Ưu tiên được chọn thay VN30 là [Liquid30](LIQUID30_FORECAST_UNIVERSE_DESIGN.md): Top 30 theo `traded_value` EOD toàn thị trường, chỉ phát hành khi coverage ≥95%. Coverage hiện 65,0%, nên giữ unavailable; không hạ gate hoặc chọn từ subset quan sát được.
+Ưu tiên được chọn thay VN30 là [Liquid30](LIQUID30_FORECAST_UNIVERSE_DESIGN.md): Top 30 theo `traded_value` EOD toàn thị trường, chỉ phát hành khi coverage ≥95%. Theo ngoại lệ nghiên cứu tạm thời được phê duyệt, ≥65% có thể tạo rổ `partial_observed_universe` từ EOD đã quan sát, kèm numerator/denominator/scope và `research_only`; nó không phải toàn thị trường, không phát hành xác suất và không mở calibration. Coverage hiện 65,0%, nên chỉ đường nghiên cứu này khả dụng; release gate không hạ.
 
 ## Điều kiện nghiệm thu chung
 

@@ -81,6 +81,23 @@ describe('stock API', () => {
     expect(result.body.data.exchange_coverage).toEqual([{ exchange: 'HSX', listed: 200, covered: 189, missing: 11, coverage_pct: 94.5 }]);
     expect(JSON.stringify(result.body)).not.toContain('secret upstream detail');
   });
+  test('builds a database-only observed Liquid30 research basket with its coverage contract', async () => {
+    const listed = Array.from({ length: 46 }, (_, index) => ({
+      id: `id-${index}`, code: `S${String(index).padStart(2, '0')}`, listing_status: 'listed',
+      ...(index < 30 ? { stock_id: `id-${index}`, observed_at: '2026-10-21', close: '10', traded_value: String(1000 - index), price_unit: 'VND' } : {})
+    }));
+    Stock.sequelize.query.mockResolvedValueOnce([listed, {}]);
+    const result = await request(app).get('/api/stocks/liquid30-readiness');
+    expect(result.status).toBe(200);
+    expect(result.headers['cache-control']).toBe('no-store');
+    expect(result.body.data).toMatchObject({
+      status: 'partial_observed_universe', scope: 'observed_eod_subset', research_only: true,
+      as_of: '2026-10-21', coverage: { observed: 30, universe: 46, minimum: .65 }
+    });
+    expect(result.body.data.constituents).toHaveLength(30);
+    expect(result.body.data.constituents[0]).toMatchObject({ rank: 1, symbol: 'S00', traded_value: 1000 });
+    expect(Stock.sequelize.query.mock.calls[0][0]).toContain("interval = '1d'");
+  });
   test('disables administrative access without a configured key', async () => {
     delete process.env.ADMIN_API_KEY;
     expect((await request(app).post('/api/stocks/cache/clear').set('Authorization', 'Bearer test-admin-key')).status).toBe(503);
