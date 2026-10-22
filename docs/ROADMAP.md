@@ -55,6 +55,10 @@ Mở rộng VN30 bắt đầu tại F0 contract trong [VN30_FORECAST_UNIVERSE_DE
 
 Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi 0/549 row có đồng thời close, `traded_value` dương và `price_unit` cho phiên 2026-10-21. Bước phụ thuộc kế tiếp là xác minh mapping/provenance turnover trong ingestion; không thay bằng `close×volume` hoặc ranking từ dữ liệu không so sánh được.
 
+### 6. Exit guidance cho vị thế đang nắm giữ — thiết kế sẵn, chưa triển khai
+
+[PORTFOLIO_EXIT_GUIDANCE_DESIGN.md](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) chốt hướng rule-based theo biến động/xu hướng, dữ liệu EOD bất biến và shadow evaluation riêng. Nó không tái sử dụng outcome của mô hình mua, không tự bán, không dùng quote intraday làm trigger và chưa có bằng chứng để gọi là khuyến nghị đầu tư. Bước tiếp theo là audit quality/adjustment/cost basis của các vị thế đang nắm giữ trước khi viết schema hay UI.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.

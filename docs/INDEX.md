@@ -52,6 +52,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | [MARKET_INDEX_SERIES_DESIGN](MARKET_INDEX_SERIES_DESIGN.md) | Contract đề xuất cho provider series chỉ số, provenance và gate production |
 | [PORTFOLIO_EVENT_LEDGER_DESIGN](PORTFOLIO_EVENT_LEDGER_DESIGN.md) | Contract cổ tức, corporate action, entitlement và provenance |
 | [DECISION_JOURNAL_DESIGN](DECISION_JOURNAL_DESIGN.md) | Contract nhật ký quyết định, evidence snapshot và giới hạn v1 |
+| [PORTFOLIO_EXIT_GUIDANCE_DESIGN](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) | Đề xuất exit cho vị thế đang nắm giữ: dữ liệu, model, shadow evaluation và UX |
 | [RECOMMENDATION_CALIBRATION_DESIGN](RECOMMENDATION_CALIBRATION_DESIGN.md) | Phạm vi outcome, guard hiệu chỉnh và điều kiện mở calibration thật |
 | [RECOMMENDATION_EOD_AUTOMATION_DESIGN](RECOMMENDATION_EOD_AUTOMATION_DESIGN.md) | Cổng coverage theo universe mô hình và evidence tạo snapshot EOD |
 | [RELEASE_READINESS_DESIGN](RELEASE_READINESS_DESIGN.md) | Quyết định release, backup/restore, worker ownership và evidence trước M6 |

@@ -14,6 +14,8 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Forecast/recommendation experience update — 2026-10-22
 
+- Product analysis completed for exit guidance on held positions: [PORTFOLIO_EXIT_GUIDANCE_DESIGN.md](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) proposes a separately versioned EOD, volatility/trend rule model for `cut_loss`, `trailing_protect`, `take_profit_review`, `hold` and `unavailable`. It is shadow-first, records position/cost/input provenance, does not auto-sell or reuse buy-model outcomes, and remains unimplemented pending a held-position price/cost/adjustment audit.
+
 - Forecast current-data now exposes a fail-closed `validation` disclosure in the existing live-preview response. The expanded Evidence panel separates completed current-data checks from the pending probability-calibration, independent-audit and provider-validation gates. `market_accuracy_verified` remains false; this is a monitoring/provenance disclosure, not a live signal, recommendation or performance claim.
 - Returning to Overview now reuses a valid Forecast LIVE payload in module memory for at most 60 seconds, keyed by horizon and symbols. Retry bypasses it; errors are never cached and no data is persisted. This removes repeated bridge calls caused solely by page unmount/remount without masking freshness.
 - The implementation reuses the preview payload. It adds no provider request, polling, cache or persisted client state. The frontend rejects a live payload without this disclosure instead of implying readiness.
