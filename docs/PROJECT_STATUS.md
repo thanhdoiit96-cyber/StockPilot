@@ -21,6 +21,7 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 - Recommendation History now reads only stored EOD rows to show each pending symbol's observed/remaining session count. It does not manufacture an outcome, alter an immutable snapshot, query a provider or unlock calibration.
 - VN30 expansion F0 is specified in [VN30_FORECAST_UNIVERSE_DESIGN.md](VN30_FORECAST_UNIVERSE_DESIGN.md). Audit found no licensed point-in-time constituent source/schema in the current repository; index fixtures/series are not a constituent source. The work is therefore fail-closed at the readiness boundary and does not replace the three-symbol LIVE prototype.
 - Product decision now prefers Liquid30 over VN30: [LIQUID30_FORECAST_UNIVERSE_DESIGN.md](LIQUID30_FORECAST_UNIVERSE_DESIGN.md) defines Top 30 by stored, verified EOD `traded_value` with a 95% whole-market coverage gate. Latest evidence is 357/549 (65.0%), so no ranking, shadow issuance or UI switch is permitted yet.
+- Liquid30 readiness service now enforces the contract against stored rows: same latest session, positive close/turnover, non-empty `price_unit`, 95% coverage, deterministic turnover ranking and exactly 30 constituents. It is not wired to issuance while runtime coverage is below gate.
 
 ## Các phần đã hoàn tất gần đây
 

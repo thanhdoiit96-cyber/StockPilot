@@ -1,0 +1,5 @@
+const { buildLiquid30Readiness } = require('./liquid30Universe');
+const stocks = Array.from({ length: 30 }, (_, index) => ({ id: String(index), code: `S${index}`, listing_status: 'listed' }));
+const rows = stocks.map((stock, index) => ({ stock_id: stock.id, observed_at: '2026-10-22T00:00:00Z', close: 10, traded_value: index + 1, price_unit: 'VND_PER_SHARE' }));
+test('selects a deterministic top 30 only after whole-market coverage passes', () => { const result = buildLiquid30Readiness({ stocks, prices: rows }); expect(result.status).toBe('ready'); expect(result.constituents[0]).toMatchObject({ rank: 1, symbol: 'S29' }); });
+test('fails closed instead of ranking an incomplete market subset', () => expect(buildLiquid30Readiness({ stocks: [...stocks, { id: 'x', code: 'X', listing_status: 'listed' }, { id: 'y', code: 'Y', listing_status: 'listed' }], prices: rows })).toMatchObject({ status: 'unavailable', reason: 'market_coverage_below_threshold', constituents: [] }));
