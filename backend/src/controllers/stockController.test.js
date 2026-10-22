@@ -1,10 +1,10 @@
-jest.mock('../models', () => ({ Stock: { findAll: jest.fn(), findByPk: jest.fn() }, StockPrice: { findOne: jest.fn() } }));
+jest.mock('../models', () => ({ Stock: { findAll: jest.fn(), findByPk: jest.fn() }, StockPrice: { findOne: jest.fn() }, IndexMembershipSnapshot: { findOne: jest.fn() } }));
 jest.mock('../services/eodEvidence', () => ({ readLatestEodEvidence: jest.fn() }));
 jest.mock('../services/liveQuoteService', () => ({ liveQuoteService: { load: jest.fn(), health: jest.fn() } }));
 const express = require('express');
 const request = require('supertest');
 const { Op } = require('sequelize');
-const { Stock, StockPrice } = require('../models');
+const { Stock, StockPrice, IndexMembershipSnapshot } = require('../models');
 const { readLatestEodEvidence } = require('../services/eodEvidence');
 const { liveQuoteService } = require('../services/liveQuoteService');
 const createRouter = require('./stockController');
@@ -16,6 +16,7 @@ describe('stock API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     readLatestEodEvidence.mockReturnValue(null);
+    IndexMembershipSnapshot.findOne.mockResolvedValue(null);
     Stock.sequelize = { query: jest.fn().mockResolvedValue([[{ session_date: '2026-09-21' }, { session_date: '2026-09-18' }], {}]) };
     process.env.ADMIN_API_KEY = 'test-admin-key';
     cache = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), delete: jest.fn(), deleteByType: jest.fn(), clearAll: jest.fn() };
@@ -97,6 +98,15 @@ describe('stock API', () => {
     expect(result.body.data.constituents).toHaveLength(30);
     expect(result.body.data.constituents[0]).toMatchObject({ rank: 1, symbol: 'S00', traded_value: 1000 });
     expect(Stock.sequelize.query.mock.calls[0][0]).toContain("interval = '1d'");
+  });
+  test('fails closed when no sealed OfficialVN30 membership snapshot exists', async () => {
+    const result = await request(app).get('/api/stocks/vn30-readiness');
+    expect(result.status).toBe(200);
+    expect(result.headers['cache-control']).toBe('no-store');
+    expect(result.body.data).toEqual(expect.objectContaining({
+      status: 'unavailable', reason: 'membership_snapshot_unavailable', index_code: 'VN30', constituents: []
+    }));
+    expect(Stock.sequelize.query).not.toHaveBeenCalled();
   });
   test('disables administrative access without a configured key', async () => {
     delete process.env.ADMIN_API_KEY;

@@ -20,6 +20,7 @@ const { normalizeCompanyFinancials, fetchCompanyFinancials } = require('../servi
 const { normalizeCompanyNews, fetchCompanyNews } = require('../services/companyNewsService');
 const { readLatestCompanySnapshot } = require('../services/companySnapshotStore');
 const { buildLiquid30Readiness } = require('../services/liquid30Universe');
+const { buildOfficialIndexReadiness } = require('../services/officialIndexUniverse');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -39,7 +40,7 @@ const sectorCondition = sector => {
 const finiteEvidenceNumber = value => value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 
 module.exports = function(cacheService) {
-  const { Stock, StockPrice, ExternalFactor, CompanyDataSnapshot } = require('../models');
+  const { Stock, StockPrice, ExternalFactor, CompanyDataSnapshot, IndexMembershipSnapshot } = require('../models');
   const router = express.Router();
   const liveQuoteService = require('../services/liveQuoteService').liveQuoteService;
   const loadQuotes = symbols => liveQuoteService.load(symbols, { waitMs: 11000 });
@@ -197,6 +198,36 @@ module.exports = function(cacheService) {
     } catch (error) {
       console.error('[Stock Controller] Error building Liquid30 readiness:', error);
       return httpError(res, 500, 'market_liquid30_readiness_failed', 'Unable to inspect Liquid30 readiness');
+    }
+  });
+
+  // Membership is deliberately read only from a sealed, source-backed
+  // snapshot. This route never derives VN30 members from price or turnover.
+  router.get('/vn30-readiness', async (_req, res) => {
+    try {
+      const snapshot = await IndexMembershipSnapshot.findOne({
+        where: { index_code: 'VN30', status: 'sealed' },
+        include: [{ association: 'constituents' }],
+        order: [['effective_from', 'DESC'], ['ingested_at', 'DESC']]
+      });
+      if (!snapshot) {
+        res.set('Cache-Control', 'no-store');
+        return res.json({ success: true, data: buildOfficialIndexReadiness() });
+      }
+      const plainSnapshot = typeof snapshot.get === 'function' ? snapshot.get({ plain: true }) : snapshot;
+      const symbols = (plainSnapshot.constituents || []).map(item => String(item.symbol || '').trim().toUpperCase()).filter(Boolean);
+      const [rows] = symbols.length ? await Stock.sequelize.query(`
+        SELECT DISTINCT ON (s.code) s.code AS symbol,
+          (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS observed_at, p.close, p.price
+        FROM stocks s JOIN stock_prices p ON p.stock_id = s.id
+        WHERE s.code = ANY($1::text[]) AND p.provider = 'vnstock' AND p.interval = '1d'
+        ORDER BY s.code, p.observed_at DESC NULLS LAST, p.id DESC
+      `, { bind: [symbols] }) : [[]];
+      res.set('Cache-Control', 'no-store');
+      return res.json({ success: true, data: buildOfficialIndexReadiness({ snapshot: plainSnapshot, prices: rows }) });
+    } catch (error) {
+      console.error('[Stock Controller] Error building OfficialVN30 readiness:', error);
+      return httpError(res, 500, 'market_vn30_readiness_failed', 'Unable to inspect OfficialVN30 readiness');
     }
   });
 

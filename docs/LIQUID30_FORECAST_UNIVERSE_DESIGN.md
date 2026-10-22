@@ -1,5 +1,7 @@
 # Liquid30 forecast universe — F0 contract
 
+> Deferred: `OfficialVN30` is the selected fixed universe. This document and the database-only readiness implementation are retained as research history; Liquid30 must not drive Overview UI, forecast issuance or the active roadmap. See [OfficialVN30 contract](VN30_FORECAST_UNIVERSE_DESIGN.md).
+
 ## Decision
 
 The market-breadth research universe is the 30 listed symbols with the highest verified `traded_value` in one EOD session. It is not VN30, an index forecast or a security-selection list. This replaces neither the current three-symbol LIVE prototype nor its validation gate until separate shadow evidence passes.

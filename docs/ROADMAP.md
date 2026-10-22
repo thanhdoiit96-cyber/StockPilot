@@ -49,11 +49,9 @@ Pending progress is display-only: it may count distinct stored EOD sessions afte
 
 Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Current-data UI nay công bố riêng các điều kiện dữ liệu và những điều kiện market-evidence còn chờ, nhưng đó chỉ là disclosure không phải mở gate. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.
 
-Mở rộng VN30 bắt đầu tại F0 contract trong [VN30_FORECAST_UNIVERSE_DESIGN.md](VN30_FORECAST_UNIVERSE_DESIGN.md): cần membership source point-in-time có quyền sử dụng, snapshot bất biến, 30-member/95% EOD gate và shadow evaluation riêng. Không hard-code hoặc suy ra constituent từ index/fixture hiện có.
+Rổ được chọn là [OfficialVN30](VN30_FORECAST_UNIVERSE_DESIGN.md): 30 thành viên theo publication VN30 point-in-time có quyền sử dụng, snapshot bất biến, 30-member/95% EOD gate và shadow evaluation riêng. Không hard-code, scrape không được cấp quyền hoặc suy ra constituent từ index/fixture/turnover hiện có.
 
-Ưu tiên được chọn thay VN30 là [Liquid30](LIQUID30_FORECAST_UNIVERSE_DESIGN.md): Top 30 theo `traded_value` EOD toàn thị trường, chỉ phát hành khi coverage ≥95%. Theo ngoại lệ nghiên cứu tạm thời được phê duyệt, ≥65% có thể tạo rổ `partial_observed_universe` từ EOD đã quan sát, kèm numerator/denominator/scope và `research_only`; nó không phải toàn thị trường, không phát hành xác suất và không mở calibration. Coverage hiện 65,0%, nên chỉ đường nghiên cứu này khả dụng; release gate không hạ.
-
-Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi 0/549 row có đồng thời close, `traded_value` dương và `price_unit` cho phiên 2026-10-21. Bước phụ thuộc kế tiếp là xác minh mapping/provenance turnover trong ingestion; không thay bằng `close×volume` hoặc ranking từ dữ liệu không so sánh được.
+Migration/readiness boundary đã có nhưng chưa có source membership được cấu hình: `GET /api/stocks/vn30-readiness` trả `membership_snapshot_unavailable` một cách fail-closed. Bước phụ thuộc kế tiếp là quyết định nguồn, quyền lưu trữ và ingest niêm phong; sau đó mới thêm history/basis gate và forecast shadow. Liquid30 là nghiên cứu defer, không phải fallback tự động và không còn hiển thị trên Overview.
 
 ### 6. Exit guidance cho vị thế đang nắm giữ — shadow UI hoàn tất, scheduler đóng
 

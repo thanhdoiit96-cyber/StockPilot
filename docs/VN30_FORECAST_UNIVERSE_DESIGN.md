@@ -1,40 +1,39 @@
-# VN30 forecast universe — F0 contract
+# OfficialVN30 forecast universe — selected contract
 
 ## Decision
 
-The current three-symbol LIVE preview is not a VN30 forecast. VN30 expansion starts as a research/shadow universe and does not replace the Overview payload until its evidence gates pass.
+`OfficialVN30` is the selected fixed research basket. It means the 30 constituents in an official, point-in-time VN30 membership publication—not a daily Top 30 by turnover and not a list inferred from price data. The current FPT/HPG/VHM LIVE preview remains a separate three-symbol prototype until this contract, its EOD gate and shadow evaluation are complete.
 
-The chosen approach is a versioned, point-in-time membership snapshot. A static environment list or today's constituents must never be used to reinterpret an older forecast. This avoids survivorship bias and prevents presenting an arbitrary large-cap basket as VN30.
+This choice prioritizes a stable, explainable universe and avoids ranking the incomplete current EOD market. The alternative `Liquid30` implementation is retained only as deferred research; it no longer drives the Overview UI or forecast roadmap.
 
-## User and product boundary
+## Product and data boundary
 
-The user needs a breadth forecast whose scope is understandable: which constituents were included, how complete the EOD input was, and why a run is unavailable. The output remains a three-class breadth probability for research/shadow monitoring; it is not a security selection, return forecast, trading instruction or validated market-performance claim.
+The intended user needs a breadth scope they can audit: membership source, effective dates, member count and EOD completeness. `OfficialVN30` stays research/shadow-only. It is not a security-selection list, return forecast, trading instruction or verified performance claim.
 
-## Required data contract
+Membership must come from a source the deployment is authorized to retain and use. A deployment must record the source identifier, URL, publication time, source hash and applicable rights/retention decision before ingest. The repository currently has no configured production membership source or license evidence; no constituent list is hard-coded or scraped.
 
-Each membership snapshot must contain:
+## Implemented storage and readiness boundary
 
-- `index_code=VN30`, effective-from/to dates, source identifier and source publication time;
-- exactly the provider-issued constituent identifiers, with no inferred substitutes;
-- an immutable membership hash and ingest timestamp;
-- EOD provenance for every member: provider, interval, price basis, observed/fetched time and availability evidence.
+Migration `045_create_index_membership_snapshots` creates immutable snapshot and constituent records. A usable row must have:
 
-Each forecast issuance must reference one sealed membership snapshot, never a mutable current list. It needs at least 30 valid constituents, 60 consecutive eligible EOD sessions per member and current-session close coverage of at least 95%. A missing member, invalid price basis, unknown availability time, calendar ambiguity or failed hash returns `unavailable`; it does not reduce the denominator silently.
+- `index_code=VN30`, `status=sealed`, effective-from/to dates, source identifier/URL, publication time and source hash;
+- exactly 30 unique symbols, the declared member count of 30 and a membership SHA-256;
+- separately retained constituent rows linked to that immutable snapshot.
 
-## Flow and ownership
+`GET /api/stocks/vn30-readiness` is database-only and never calls a provider. With no sealed snapshot it returns `unavailable: membership_snapshot_unavailable`. With valid membership it checks the latest stored VNStock daily session and requires at least 29/30 (95%) members with a positive close. It can only return `ready_for_shadow`, never issue probabilities, select a replacement list or enable calibration.
 
-1. A dedicated membership ingest records a new source-backed VN30 snapshot without changing past rows.
-2. Readiness evaluates membership integrity, history, current EOD coverage and provider/license provenance.
-3. Only a ready snapshot can issue a shadow forecast and immutable input/evidence hash.
-4. The evaluator attaches future outcomes after 1/5 distinct provider sessions and compares against sealed baselines.
-5. The Overview can display VN30 only after separate validation, calibration and audit gates. Until then the existing three-symbol preview stays clearly labelled.
+## Required next flow
+
+1. Approve and configure the membership source, rights and retention policy.
+2. Implement a dedicated source ingest that validates, hashes and seals one new snapshot without modifying past snapshots.
+3. Add 60-session per-member EOD history and price-basis/provenance checks before issuance.
+4. Seal a shadow forecast with its membership/input hashes; attach outcomes after 1/5 distinct provider sessions.
+5. Require independent out-of-sample evaluation, calibration and audit before replacing the Overview prototype.
 
 ## UX and performance
 
-Readiness must show `unavailable`, `partial` or `ready`, with included/missing counts and source/as-of metadata. It must not show a probability for partial coverage. Desktop and mobile use the same concise status rather than exposing constituent lists by default. The initial implementation must read stored EOD/membership data only; it must not trigger thirty provider requests from page navigation. Request, payload and bridge latency are measured before an eventual UI switch.
+Overview shows a concise OfficialVN30 status. Missing membership says exactly that and keeps the FPT/HPG/VHM prototype label; it does not claim insufficient whole-market turnover data. The readiness payload contains no constituent list in an unavailable state. Page navigation makes one local API request and triggers neither provider requests nor polling.
 
-## Current blocker and acceptance
+## Acceptance
 
-No licensed, point-in-time VN30 constituent source is configured in this repository. Therefore no membership table, fixture list or forecast switch is created in F0. The next implementation phase begins only when source rights, source schema and retention policy are supplied.
-
-Acceptance for that phase: immutable membership rows, membership-hash verification, 30-member and 95% EOD gates, unavailable/partial UI states, shadow issuance/evaluation and an independent out-of-sample report. A successful build or synthetic fixture is not proof of VN30 market accuracy.
+Before a forecast/UI switch: authorized source evidence, immutable snapshot ingestion, membership/hash verification, 30-member/95% EOD and history gates, shadow issuance/evaluation and an independent out-of-sample report. A build, fixture or readiness response is not evidence of market accuracy.

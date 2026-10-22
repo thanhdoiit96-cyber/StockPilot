@@ -157,6 +157,8 @@ const messages = {
 
 messages.vi.market_liquid30_readiness_failed = 'Không kiểm tra được trạng thái rổ Liquid30.'
 messages.en.market_liquid30_readiness_failed = 'Unable to inspect Liquid30 basket readiness.'
+messages.vi.market_vn30_readiness_failed = 'Không kiểm tra được trạng thái rổ OfficialVN30.'
+messages.en.market_vn30_readiness_failed = 'Unable to inspect OfficialVN30 basket readiness.'
 messages.vi.portfolio_exit_guidance_failed = 'Không tải được trạng thái thoát vị thế.'
 messages.en.portfolio_exit_guidance_failed = 'Unable to load position exit guidance.'
 

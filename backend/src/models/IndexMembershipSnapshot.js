@@ -1,0 +1,5 @@
+module.exports = (sequelize, DataTypes) => {
+  const IndexMembershipSnapshot = sequelize.define('IndexMembershipSnapshot', { id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true }, index_code: { type: DataTypes.STRING(24), allowNull: false }, status: { type: DataTypes.STRING(20), allowNull: false }, effective_from: { type: DataTypes.DATEONLY, allowNull: false }, effective_to: DataTypes.DATEONLY, source_identifier: { type: DataTypes.STRING(160), allowNull: false }, source_url: { type: DataTypes.TEXT, allowNull: false }, source_published_at: DataTypes.DATE, member_count: { type: DataTypes.INTEGER, allowNull: false }, membership_sha256: { type: DataTypes.STRING(64), allowNull: false }, source_sha256: { type: DataTypes.STRING(64), allowNull: false }, ingested_at: DataTypes.DATE }, { tableName: 'index_membership_snapshots', underscored: true, timestamps: false });
+  IndexMembershipSnapshot.associate = models => { IndexMembershipSnapshot.hasMany(models.IndexMembershipConstituent, { foreignKey: 'snapshot_id', as: 'constituents' }); };
+  return IndexMembershipSnapshot;
+};
