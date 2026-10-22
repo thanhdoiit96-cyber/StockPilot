@@ -64,7 +64,7 @@ test('development exposes a normalized live-preview response using current data 
   }));
   const response = await request(app({ NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' }, () => artifact, listHistory, async () => [snapshot], currentDataFetcher)).get('/api/forecast/live-preview').query({ symbols: 'FPT', maximum_staleness_days: 7, horizon: 5 });
   expect(response.status).toBe(200);
-  expect(response.body.data).toMatchObject({ status: 'live_preview', mode: 'live', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: 5, breadth_target: { version: 'breadth_forward_v1', point_estimate_available: false } });
+  expect(response.body.data).toMatchObject({ status: 'live_preview', mode: 'live', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: 5, breadth_target: { version: 'breadth_forward_v1', point_estimate_available: false }, validation: { status: 'monitoring', calibration_validated: false, independent_audit_validated: false, provider_validation_completed: false, market_accuracy_verified: false } });
   expect(Array.isArray(response.body.data.probabilities)).toBe(true);
   expect(response.body.data.probabilities.length).toBe(3);
   expect(response.body.data.model.summary.top_class).toBeTruthy();

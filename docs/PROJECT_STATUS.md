@@ -12,6 +12,12 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 - Check read-only sau khung retry cùng ngày vẫn ghi EOD `2026-10-21` là 357/549 mã (65,0%), thiếu 192 và `ready=false`; evidence mới nhất là gap retry lúc `12:45:00Z` (19:45 ICT), còn 192 mã. Backend `ready`, worker concurrency 1 và frontend/proxy `/api/ready` đều trả thành công. Không chạy lại ingest hoặc nới gate vì chưa có tín hiệu provider mới.
 - Cookie auth dùng same-origin `/api` qua proxy frontend. Không lưu hoặc ghi secret trong tài liệu.
 
+## Forecast/recommendation experience update — 2026-10-22
+
+- Forecast current-data now exposes a fail-closed `validation` disclosure in the existing live-preview response. The expanded Evidence panel separates completed current-data checks from the pending probability-calibration, independent-audit and provider-validation gates. `market_accuracy_verified` remains false; this is a monitoring/provenance disclosure, not a live signal, recommendation or performance claim.
+- The implementation reuses the preview payload. It adds no provider request, polling, cache or persisted client state. The frontend rejects a live payload without this disclosure instead of implying readiness.
+- Recommendation remains at 0 eligible outcomes for the compatible `short_term_rule_v2`/20-session cohort. Its existing history/calibration UI continues to show pending/integrity states; no cross-model calibration is enabled.
+
 ## Các phần đã hoàn tất gần đây
 
 ### Khôi phục mật khẩu: thiết kế sẵn, chưa triển khai

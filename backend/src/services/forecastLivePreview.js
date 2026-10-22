@@ -116,6 +116,22 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
       staleness_ok: true,
       live_ready: true
     },
+    // `live_ready` above means the bounded current-data probe can render.  It
+    // must not be interpreted as a verified market forecast.  Keep the
+    // separate gate in the payload so clients can say exactly what is still
+    // missing without issuing a second provider request.
+    validation: {
+      status: 'monitoring',
+      current_data_ready: true,
+      evidence_integrity: true,
+      coverage_ok: true,
+      minimum_samples_ok: true,
+      staleness_ok: true,
+      calibration_validated: false,
+      independent_audit_validated: false,
+      provider_validation_completed: false,
+      market_accuracy_verified: false
+    },
     notice,
     current_data: {
       rows: rows.length,

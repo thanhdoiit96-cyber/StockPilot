@@ -51,6 +51,7 @@ test('loads a valid current-data preview only when the live flag is explicitly e
         research_only: false,
         market_accuracy_verified: false,
         horizon_sessions: 5,
+        validation: { status: 'monitoring', current_data_ready: true, evidence_integrity: true, coverage_ok: true, minimum_samples_ok: true, staleness_ok: true, calibration_validated: false, independent_audit_validated: false, provider_validation_completed: false, market_accuracy_verified: false },
         breadth_target: forecastBreadthTarget,
         probabilities: [{ class: 'declining', value: .2 }, { class: 'advancing', value: .5 }, { class: 'balanced', value: .3 }]
       }
@@ -60,4 +61,11 @@ test('loads a valid current-data preview only when the live flag is explicitly e
   assert.equal(result.status, 'live_preview')
   assert.equal(result.live, true)
   assert.deepEqual(result.probabilities.map(item => item.class), ['advancing', 'balanced', 'declining'])
+})
+test('fails closed when the live preview omits its market-validation disclosure', async t => {
+  const originalFetch = global.fetch; const originalLiveFlag = globalThis.__VITE_ENABLE_FORECAST_LIVE__
+  t.after(() => { global.fetch = originalFetch; globalThis.__VITE_ENABLE_FORECAST_LIVE__ = originalLiveFlag })
+  globalThis.__VITE_ENABLE_FORECAST_LIVE__ = 'true'
+  global.fetch = async () => ({ ok: true, json: async () => ({ success: true, data: { status: 'live_preview', mode: 'live', provider: 'vnstock', as_of: '2026-10-12T00:00:00Z', live: true, synthetic: false, research_only: false, market_accuracy_verified: false, horizon_sessions: 5, breadth_target: forecastBreadthTarget, probabilities: [{ class: 'declining', value: .2 }, { class: 'advancing', value: .5 }, { class: 'balanced', value: .3 }] } }) })
+  assert.equal((await fetchForecastCurrentPreview(['FPT'])).reason, 'invalid_contract')
 })

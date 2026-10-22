@@ -45,7 +45,7 @@ Gate EOD của snapshot dùng coverage của universe đủ 50 phiên lịch s�
 
 ### 5. Forecast/live data — giữ research gate
 
-Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.
+Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Current-data UI nay công bố riêng các điều kiện dữ liệu và những điều kiện market-evidence còn chờ, nhưng đó chỉ là disclosure không phải mở gate. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.
 
 ## Điều kiện nghiệm thu chung
 

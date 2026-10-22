@@ -38,9 +38,12 @@ export async function fetchForecastCurrentPreview(symbols = ['FPT', 'HPG', 'VHM'
   const body = await response.json()
   const data = body?.data
   const classes = ['advancing', 'balanced', 'declining'], values = Object.fromEntries((data?.probabilities || []).map(item => [item.class, item.value]))
+  const validation = data?.validation
+  const validValidation = validation?.status === 'monitoring' && validation.market_accuracy_verified === false
+    && ['current_data_ready', 'evidence_integrity', 'coverage_ok', 'minimum_samples_ok', 'staleness_ok', 'calibration_validated', 'independent_audit_validated', 'provider_validation_completed'].every(key => typeof validation[key] === 'boolean')
   const valid = body?.success === true && data?.status === 'live_preview' && data.mode === 'live' && data.live === true && data.synthetic === false && data.research_only === false
     && data.market_accuracy_verified === false && data.horizon_sessions === horizon && typeof data.as_of === 'string' && Number.isFinite(Date.parse(data.as_of))
-    && classes.every(name => Number.isFinite(values[name]) && values[name] >= 0 && values[name] <= 1) && Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) < 1e-6 && isForecastBreadthTarget(data.breadth_target)
+    && validValidation && classes.every(name => Number.isFinite(values[name]) && values[name] >= 0 && values[name] <= 1) && Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) < 1e-6 && isForecastBreadthTarget(data.breadth_target)
   if (!valid) return { status: 'unavailable', reason: 'invalid_contract' }
   return { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })) }
 }

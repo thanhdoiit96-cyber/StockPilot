@@ -61,6 +61,17 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
   const breadthForecast = summarizeForecastBreadth(forecastPayload?.probabilities, forecastPayload?.breadth_target)
   const breadthLabel = breadthForecast ? labels[forecastClasses.indexOf(breadthForecast.scenario)] : null
   const breadthTone = breadthForecast ? forecastOutcomeTone(breadthForecast.scenario) : null
+  const validation = currentPreview.validation
+  const validationItems = validation ? [
+    ['current_data_ready', copy('Dữ liệu hiện tại', 'Current data')],
+    ['evidence_integrity', copy('Toàn vẹn bằng chứng', 'Evidence integrity')],
+    ['coverage_ok', copy('Độ phủ đầu vào', 'Input coverage')],
+    ['minimum_samples_ok', copy('Số phiên đầu vào', 'Input sessions')],
+    ['staleness_ok', copy('Độ mới dữ liệu', 'Data freshness')],
+    ['calibration_validated', copy('Hiệu chỉnh xác suất', 'Probability calibration')],
+    ['independent_audit_validated', copy('Rà soát độc lập', 'Independent audit')],
+    ['provider_validation_completed', copy('Xác thực provider', 'Provider validation')]
+  ] : []
   const formatPercent = value => formatForecastPercent(value, en ? 'en-US' : 'vi-VN') || '—'
   const breadthThreshold = breadthForecast ? (breadthForecast.band.minimum === 0 ? `< ${formatPercent(breadthForecast.band.maximum)} %` : breadthForecast.band.maximum === 1 ? `> ${formatPercent(breadthForecast.band.minimum)} %` : `${formatPercent(breadthForecast.band.minimum)}–${formatPercent(breadthForecast.band.maximum)} %`) : null
   const watched = new Set(watchlistSymbols.map(value => String(value).toUpperCase()))
@@ -190,6 +201,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
             </div>
             <div role="tabpanel" className="forecast-evidence-panel">
               {evidenceTab === 'current' ? (
+                <>
                 <div className="forecast-current-evidence">
                   <span className="chip neutral">{copy('Đang theo dõi', 'Monitoring')}</span>
                   <div>
@@ -197,6 +209,16 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
                     <p>{liveCohort.status === 'loading' ? copy('Đang đọc cohort current-data…', 'Loading the current-data cohort…') : liveCohort.status === 'live_cohort' ? copy(`${liveCohort.predictions} dự báo · ${liveCohort.pending} pending. Score bị khóa cho đến đủ ${liveCohort.minimum_samples} outcome; baseline chỉ mở khi được seal đồng thời với dự báo.`, `${liveCohort.predictions} predictions · ${liveCohort.pending} pending. Scores stay locked until ${liveCohort.minimum_samples} outcomes; the baseline also requires contemporaneous sealing.`) : copy(`Phát hành từ EOD ${currentPreview.as_of || 'hiện tại'}. Chỉ được chấm điểm sau đủ ${horizon} phiên provider distinct; dữ liệu tháng 3 không tham gia phép đo này.`, `Issued from ${currentPreview.as_of || 'current'} EOD. It is scored only after ${horizon} distinct provider sessions; March data is excluded from this measurement.`)}</p>
                   </div>
                 </div>
+                {currentData && validation && <div className="forecast-validation-gate" role="status">
+                  <div>
+                    <strong>{copy('Cổng xác minh forecast', 'Forecast validation gate')}</strong>
+                    <p>{copy('Các điều kiện dữ liệu bên dưới chỉ cho phép theo dõi shadow. Ba điều kiện cuối chưa đạt, nên xác suất này không phải forecast đã xác minh hoặc khuyến nghị đầu tư.', 'The data conditions below only permit shadow monitoring. The final three conditions are still pending, so these probabilities are not a verified forecast or investment recommendation.')}</p>
+                  </div>
+                  <ul aria-label={copy('Trạng thái cổng xác minh', 'Forecast validation status')}>
+                    {validationItems.map(([key, label]) => <li key={key} className={validation[key] ? 'is-ready' : 'is-pending'}><span aria-hidden="true">{validation[key] ? '✓' : '○'}</span>{label}<small>{validation[key] ? copy('Đạt', 'Ready') : copy('Chờ', 'Pending')}</small></li>)}
+                  </ul>
+                </div>}
+                </>
               ) : (
                 <>
                   <div className="forecast-research-notice" role="note">

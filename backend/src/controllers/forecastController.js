@@ -149,6 +149,7 @@ function createForecastController({ env = process.env, loadArtifact, listHistory
           breadth_target: preview.breadth_target,
           model: preview.model,
           gate: preview.gate,
+          validation: preview.validation,
           notice: preview.notice,
           current_data: preview.current_data
         }
