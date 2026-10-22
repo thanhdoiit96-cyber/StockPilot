@@ -43,6 +43,8 @@ Recommendation snapshot theo lịch chỉ được coi là tự động hoàn t�
 
 Gate EOD của snapshot dùng coverage của universe đủ 50 phiên lịch sử theo model, đồng thời vẫn lưu coverage toàn bộ mã listed để theo dõi ingestion. Chi tiết và tiêu chí nghiệm thu: [RECOMMENDATION_EOD_AUTOMATION_DESIGN.md](RECOMMENDATION_EOD_AUTOMATION_DESIGN.md).
 
+Pending progress is display-only: it may count distinct stored EOD sessions after the snapshot, but cannot imply an outcome, return or calibration before the full horizon and integrity checks.
+
 ### 5. Forecast/live data — giữ research gate
 
 Tiếp tục data evidence, point-in-time availability, out-of-sample validation và shadow evaluation. Current-data UI nay công bố riêng các điều kiện dữ liệu và những điều kiện market-evidence còn chờ, nhưng đó chỉ là disclosure không phải mở gate. Không mở UI live signal hoặc diễn giải market performance trước khi tất cả gate đạt.

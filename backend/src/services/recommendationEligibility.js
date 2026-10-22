@@ -15,7 +15,12 @@ function assessRun(run, prices = []) {
   const integrity = Boolean(plain.snapshot_sha256 && plain.snapshot_sha256 === recommendationSnapshotHash(plain));
   return { ...plain, recommendations: (plain.recommendations || []).map(item => {
     const reasons = [];
-    if (!measured(item)) return { ...item, statistics_eligible: false, measurement_status: 'pending', exclusion_reasons: [] };
+    if (!measured(item)) {
+      const horizon = Number(item.horizon_days);
+      const window = observationWindow({ rows: prices.filter(row => row.stock_id === item.stock_id), asOf: plain.as_of, provider: plain.provider, horizonDays: horizon });
+      return { ...item, statistics_eligible: false, measurement_status: 'pending', exclusion_reasons: [],
+        observed_session_count: window.days.length, remaining_session_count: Math.max(0, horizon - window.days.length) };
+    }
     if (!integrity) reasons.push('snapshot_unverified');
     const end = sessionDate(item.evaluated_at);
     if (!end) reasons.push('invalid_evaluation_boundary');
@@ -45,13 +50,15 @@ function assessRun(run, prices = []) {
 }
 
 async function assessRuns(runs, StockPrice) {
-  const items = runs.flatMap(run => (run.recommendations || []).filter(measured));
+  const items = runs.flatMap(run => run.recommendations || []);
   if (!items.length) return runs.map(run => assessRun(run));
   const dates = runs.map(run => sessionDate(run.as_of)).filter(Boolean).sort();
-  const ends = items.map(item => sessionDate(item.evaluated_at)).filter(Boolean).sort();
-  const prices = dates.length && ends.length ? await StockPrice.findAll({
+  const ends = items.filter(measured).map(item => sessionDate(item.evaluated_at)).filter(Boolean).sort();
+  const currentSession = sessionDate(new Date());
+  const through = [currentSession, ends.at(-1)].filter(Boolean).sort().at(-1);
+  const prices = dates.length && through ? await StockPrice.findAll({
     attributes: ['stock_id', 'provider', 'interval', 'observed_at', 'close', 'price', 'currency', 'price_unit', 'is_adjusted'],
-    where: { stock_id: { [Op.in]: [...new Set(items.map(item => item.stock_id).filter(Boolean))] }, observed_at: { [Op.gte]: new Date(`${dates[0]}T00:00:00+07:00`), [Op.lt]: new Date(new Date(`${ends.at(-1)}T00:00:00+07:00`).getTime() + 86400000) } }, raw: true,
+    where: { stock_id: { [Op.in]: [...new Set(items.map(item => item.stock_id).filter(Boolean))] }, observed_at: { [Op.gte]: new Date(`${dates[0]}T00:00:00+07:00`), [Op.lt]: new Date(new Date(`${through}T00:00:00+07:00`).getTime() + 86400000) } }, raw: true,
   }) : [];
   return runs.map(run => assessRun(run, prices));
 }

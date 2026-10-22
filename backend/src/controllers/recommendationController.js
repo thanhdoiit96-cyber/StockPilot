@@ -301,7 +301,7 @@ router.get('/history/:id', async (req, res) => {
       evaluated_at: item.evaluated_at,
       evaluation_evidence: item.evaluation_evidence || null,
       statistics_eligible: item.statistics_eligible, measurement_status: item.measurement_status,
-      exclusion_reasons: item.exclusion_reasons, observed_session_count: item.observed_session_count,
+      exclusion_reasons: item.exclusion_reasons, observed_session_count: item.observed_session_count, remaining_session_count: item.remaining_session_count,
       forward_return_pct: hasReturn ? Number(item.forward_return_pct) : null,
       outcome: hasReturn && item.outcome && item.outcome !== 'pending' ? item.outcome : 'pending', stock: item.stock,
     };

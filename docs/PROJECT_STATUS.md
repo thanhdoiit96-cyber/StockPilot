@@ -17,6 +17,7 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 - Forecast current-data now exposes a fail-closed `validation` disclosure in the existing live-preview response. The expanded Evidence panel separates completed current-data checks from the pending probability-calibration, independent-audit and provider-validation gates. `market_accuracy_verified` remains false; this is a monitoring/provenance disclosure, not a live signal, recommendation or performance claim.
 - The implementation reuses the preview payload. It adds no provider request, polling, cache or persisted client state. The frontend rejects a live payload without this disclosure instead of implying readiness.
 - Recommendation remains at 0 eligible outcomes for the compatible `short_term_rule_v2`/20-session cohort. Its existing history/calibration UI continues to show pending/integrity states; no cross-model calibration is enabled.
+- Recommendation History now reads only stored EOD rows to show each pending symbol's observed/remaining session count. It does not manufacture an outcome, alter an immutable snapshot, query a provider or unlock calibration.
 
 ## Các phần đã hoàn tất gần đây
 
