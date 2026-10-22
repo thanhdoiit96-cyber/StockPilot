@@ -10,7 +10,9 @@ This choice prioritizes a stable, explainable universe and avoids ranking the in
 
 The intended user needs a breadth scope they can audit: membership source, effective dates, member count and EOD completeness. `OfficialVN30` stays research/shadow-only. It is not a security-selection list, return forecast, trading instruction or verified performance claim.
 
-Membership must come from a source the deployment is authorized to retain and use. The selected product policy is `internal_research_only`: no public distribution, commercial use, constituent publication or OfficialVN30 forecast release. This label reduces product scope; it does not itself grant source rights. A deployment must record the source identifier, URL, publication time, source hash and a non-secret reference to the applicable written usage/retention decision before ingest. No constituent list is hard-coded or scraped.
+Membership must come from a source the deployment is authorized to retain and use. The selected product policy is `internal_research_only`: no public distribution, commercial use, constituent publication or OfficialVN30 forecast release. This label reduces product scope; it does not itself grant source rights. No constituent list is hard-coded or scraped.
+
+An administrator may now seal a manually reviewed 30-symbol manifest through the admin-only `POST /api/stocks/vn30-membership-snapshots` endpoint. It accepts only an HTTPS `hsx.vn` source URL, hashes the canonical source/membership and never fetches arbitrary remote content. If no written evidence is yet available, the explicit `owner-attested-internal-research-pending` reference is stored as `rights_verification=owner_attested_pending`; it remains non-public/non-commercial and must be superseded by a new immutable snapshot once verification is supplied.
 
 ## Implemented storage and readiness boundary
 
@@ -19,9 +21,11 @@ Migrations `045`/`046` create immutable snapshot/constituent records and lock th
 - `index_code=VN30`, `status=sealed`, effective-from/to dates, source identifier/URL, publication time and source hash;
 - exactly 30 unique symbols, the declared member count of 30 and a membership SHA-256;
 - separately retained constituent rows linked to that immutable snapshot.
-- a non-placeholder `rights_evidence_ref`; without it, readiness is `membership_rights_unverified`.
+- a non-placeholder `rights_evidence_ref`; a user-attested pending reference is visibly marked pending, while an absent/invalid reference yields `membership_rights_unverified`.
 
 `GET /api/stocks/vn30-readiness` is database-only and never calls a provider. With no sealed snapshot it returns `unavailable: membership_snapshot_unavailable`; without recorded rights evidence it returns `membership_rights_unverified`. With valid membership it checks the latest stored VNStock daily session and requires at least 29/30 (95%) members with a positive close. It can only return `ready_for_shadow`, marked `internal_research_only` and `publication_permitted=false`; it never returns constituents, issues probabilities, selects a replacement list or enables calibration.
+
+The EOD session must fall inside the snapshot's effective date range. Historical membership therefore cannot become a current basket merely because it has 30 symbols.
 
 ## Required next flow
 

@@ -34,6 +34,8 @@ app.js kiểm tra kết nối, tạo CacheService(sequelize), khởi tạo clean
 | GET | /api/stocks | Danh sách cổ phiếu, lọc sàn/ngành/trạng thái niêm yết, giá gần nhất, cache 5 phút |
 | GET | /api/stocks/export.csv | CSV EOD read-only theo cùng q/sector/exchange/coverage/sort/direction/pinned, tối đa 2.000 dòng, không cache |
 | GET | /api/stocks/breadth/history | Chuỗi A/D và volume breadth EOD theo 1–60 session, tùy chọn sàn/ngành, cache 5 phút; trả continuity và không nội suy dữ liệu thiếu |
+| GET | /api/stocks/vn30-readiness | Trạng thái EOD của membership OfficialVN30 đã niêm phong; database-only, không trả constituents, không gọi provider hay phát hành forecast |
+| POST | /api/stocks/vn30-membership-snapshots | Nạp manifest OfficialVN30 nội bộ; cần khóa quản trị, đúng 30 mã và HTTPS URL HOSE; niêm phong hashes, không fetch URL từ server |
 | GET | /api/stocks/:id | Chi tiết, sàn/trạng thái niêm yết và tối đa 20 giá, mới nhất trước; cache 5 phút |
 | GET | /api/stocks/:id/company-profile | Hồ sơ doanh nghiệp local-first, bổ sung từ Vnstock khi khả dụng; cache provider 360 phút/fallback 15 phút |
 | GET | /api/stocks/:id/company-people | Cổ đông lớn và lãnh đạo từ provider, contract độc lập và trạng thái unavailable/partial; cache 360 phút |
@@ -66,6 +68,8 @@ GET dữ liệu cổ phiếu trả { success, data, source }; source là cache h
 Stock list/detail include nullable `exchange`, `listing_status` (`listed`, `delisted`, or `unknown`), and `listing_checked_at`. Listing metadata comes from VCI. Delisted symbols remain searchable and retain their historical prices; status does not remove or mutate price history. Apply migrations 013 and 014 before using these fields. `npm run sync:vnstock-listing` refreshes listing metadata only for codes already present in `stocks`; it does not create symbols or ingest prices. The weekday metadata-only scheduler runs at 15:15 Asia/Ho_Chi_Minh by default; configure `VNSTOCK_LISTING_SYNC_ENABLED=false` to disable it or set `VNSTOCK_LISTING_SYNC_CRON` and `VNSTOCK_LISTING_SYNC_TIMEZONE` to customize it. The full universe ingestion also updates listing metadata for rows it processes.
 
 Khóa quản trị dùng Authorization: Bearer <ADMIN_API_KEY>. Auth/JWT, watchlist, portfolio, recommendations và analysis có các router riêng; API cổ phiếu không đại diện cho toàn bộ API ứng dụng.
+
+OfficialVN30 chỉ là `internal_research_only`: endpoint ingest nhận `source_identifier`, `source_url`, `source_published_at`, `effective_from`, `effective_to` tùy chọn và mảng đúng 30 `symbols`. Nếu chưa có chứng cứ quyền bằng văn bản, bỏ `rights_evidence_ref` để ghi rõ `owner_attested_pending`; điều này không mở phát hành công khai/thương mại, không trả thành viên qua readiness API và phải được thay bằng một snapshot immutable mới khi chứng cứ có mặt. Xem [contract OfficialVN30](../docs/VN30_FORECAST_UNIVERSE_DESIGN.md).
 
 Watchlist hỗ trợ `GET /api/watchlist`, `POST /api/watchlist`, `PATCH /api/watchlist/:symbol` và `DELETE /api/watchlist/:symbol`. `PATCH` chỉ cập nhật bản ghi thuộc authenticated user, nhận `status` trong `WATCHING | RESEARCHING | PAUSED` và `note` tối đa 280 ký tự; response gồm `metadata_updated_at` của lần sửa cuối. Đây là ghi chú/trạng thái cá nhân, không phải tín hiệu hay khuyến nghị đầu tư.
 

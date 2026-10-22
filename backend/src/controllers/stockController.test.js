@@ -33,6 +33,7 @@ describe('stock API', () => {
     expect((await request(app).post('/api/stocks/cache/clear')).status).toBe(401);
     expect(Stock.findByPk).not.toHaveBeenCalled();
     expect(cache.clearAll).not.toHaveBeenCalled();
+    expect((await request(app).post('/api/stocks/vn30-membership-snapshots').send({})).status).toBe(401);
   });
   test('exposes the shared sector catalog for frontend filters', async () => {
     const result = await request(app).get('/api/stocks/sectors');

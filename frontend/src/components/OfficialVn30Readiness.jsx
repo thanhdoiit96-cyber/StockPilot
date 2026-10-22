@@ -6,6 +6,7 @@ export default function OfficialVn30Readiness({ state, language = 'vi' }) {
     <div>
       <strong>{copy('Rổ OfficialVN30', 'OfficialVN30 basket')}</strong>
       <small className="official-vn30-research-label">{copy('NGHIÊN CỨU NỘI BỘ · KHÔNG PHÁT HÀNH CÔNG KHAI/HAY THƯƠNG MẠI', 'INTERNAL RESEARCH · NOT FOR PUBLIC OR COMMERCIAL DISTRIBUTION')}</small>
+      {state.rightsVerification === 'owner_attested_pending' && <small className="official-vn30-rights-pending">{copy('Quyền sử dụng: chủ sở hữu xác nhận tạm thời; đang chờ chứng cứ xác minh.', 'Usage rights: temporarily owner-attested; verification evidence is pending.')}</small>}
       <p>{ready
         ? copy(`Đã có membership snapshot và ${coverage.observed}/${coverage.universe} mã có EOD phiên ${state.sessionDate}. Chỉ sẵn sàng theo dõi shadow; chưa thay forecast 3 mã hoặc phát hành xác suất.`, `A membership snapshot and EOD for ${coverage.observed}/${coverage.universe} symbols exist for ${state.sessionDate}. Shadow monitoring only; this does not replace the three-symbol forecast or issue probabilities.`)
         : state.status === 'loading'

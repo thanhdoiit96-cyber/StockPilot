@@ -159,6 +159,10 @@ messages.vi.market_liquid30_readiness_failed = 'Không kiểm tra được trạ
 messages.en.market_liquid30_readiness_failed = 'Unable to inspect Liquid30 basket readiness.'
 messages.vi.market_vn30_readiness_failed = 'Không kiểm tra được trạng thái rổ OfficialVN30.'
 messages.en.market_vn30_readiness_failed = 'Unable to inspect OfficialVN30 basket readiness.'
+messages.vi.market_vn30_membership_invalid = 'Manifest OfficialVN30 không hợp lệ.'
+messages.en.market_vn30_membership_invalid = 'The OfficialVN30 manifest is invalid.'
+messages.vi.market_vn30_membership_ingest_failed = 'Không thể niêm phong membership OfficialVN30.'
+messages.en.market_vn30_membership_ingest_failed = 'Unable to seal OfficialVN30 membership.'
 messages.vi.portfolio_exit_guidance_failed = 'Không tải được trạng thái thoát vị thế.'
 messages.en.portfolio_exit_guidance_failed = 'Unable to load position exit guidance.'
 

@@ -24,3 +24,17 @@ test('only becomes ready for shadow after 95 percent member EOD coverage', () =>
   });
   expect(buildOfficialIndexReadiness({ snapshot, prices }).constituents).toBeUndefined();
 });
+
+test('keeps a user-attested source explicitly pending verification and non-public', () => {
+  const prices = symbols.slice(0, 29).map(symbol => ({ symbol, observed_at: '2026-10-21', close: 10 }));
+  expect(buildOfficialIndexReadiness({ snapshot: { ...snapshot, rights_evidence_ref: 'owner-attested-internal-research-pending' }, prices })).toMatchObject({
+    status: 'ready_for_shadow', rights_verification: 'owner_attested_pending', publication_permitted: false
+  });
+});
+
+test('does not apply an historical membership snapshot to a newer EOD session', () => {
+  const prices = symbols.slice(0, 29).map(symbol => ({ symbol, observed_at: '2026-10-21', close: 10 }));
+  expect(buildOfficialIndexReadiness({ snapshot: { ...snapshot, effective_to: '2026-09-30' }, prices })).toMatchObject({
+    status: 'unavailable', reason: 'membership_not_effective_for_session', as_of: '2026-10-21'
+  });
+});

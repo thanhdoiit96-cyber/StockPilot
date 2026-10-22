@@ -21,6 +21,7 @@ const { normalizeCompanyNews, fetchCompanyNews } = require('../services/companyN
 const { readLatestCompanySnapshot } = require('../services/companySnapshotStore');
 const { buildLiquid30Readiness } = require('../services/liquid30Universe');
 const { buildOfficialIndexReadiness } = require('../services/officialIndexUniverse');
+const { buildOfficialVn30MembershipManifest } = require('../services/officialIndexMembershipIngest');
 const sectorForStock = stock => sectorForCode(stock?.code) || sectorFromIndustry(stock?.industry) || 'other';
 const ALL_SECTOR_INDUSTRY_PATTERNS = [...new Set(Object.values(SECTOR_INDUSTRY_LIKE).flat())];
 const sectorCondition = sector => {
@@ -40,7 +41,7 @@ const sectorCondition = sector => {
 const finiteEvidenceNumber = value => value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 
 module.exports = function(cacheService) {
-  const { Stock, StockPrice, ExternalFactor, CompanyDataSnapshot, IndexMembershipSnapshot } = require('../models');
+  const { Stock, StockPrice, ExternalFactor, CompanyDataSnapshot, IndexMembershipSnapshot, IndexMembershipConstituent } = require('../models');
   const router = express.Router();
   const liveQuoteService = require('../services/liveQuoteService').liveQuoteService;
   const loadQuotes = symbols => liveQuoteService.load(symbols, { waitMs: 11000 });
@@ -228,6 +229,30 @@ module.exports = function(cacheService) {
     } catch (error) {
       console.error('[Stock Controller] Error building OfficialVN30 readiness:', error);
       return httpError(res, 500, 'market_vn30_readiness_failed', 'Unable to inspect OfficialVN30 readiness');
+    }
+  });
+
+  // This intentionally accepts a reviewed manifest rather than fetching a
+  // remote document: the admin supplies the exact official source and scope.
+  router.post('/vn30-membership-snapshots', requireAdmin, async (req, res) => {
+    const schema = Joi.object({
+      source_identifier: Joi.string().trim().max(160).required(), source_url: Joi.string().uri({ scheme: ['https'] }).max(2000).required(),
+      source_published_at: Joi.date().iso().required(), effective_from: Joi.date().iso().required(), effective_to: Joi.date().iso().allow(null),
+      rights_evidence_ref: Joi.string().trim().max(240).optional(), symbols: Joi.array().items(Joi.string().trim().max(12)).length(30).required()
+    });
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) return httpError(res, 400, 'market_vn30_membership_invalid', error.details.map(item => item.message).join('; '));
+    try {
+      const manifest = buildOfficialVn30MembershipManifest(value);
+      const created = await IndexMembershipSnapshot.sequelize.transaction(async transaction => {
+        const snapshot = await IndexMembershipSnapshot.create({ ...manifest, symbols: undefined }, { transaction });
+        await IndexMembershipConstituent.bulkCreate(manifest.symbols.map(symbol => ({ snapshot_id: snapshot.id, symbol, source_identifier: manifest.source_identifier })), { transaction });
+        return snapshot;
+      });
+      return res.status(201).json({ success: true, data: { id: created.id, index_code: 'VN30', effective_from: manifest.effective_from, effective_to: manifest.effective_to, member_count: 30, usage_scope: 'internal_research_only', rights_verification: manifest.rights_evidence_ref === 'owner-attested-internal-research-pending' ? 'owner_attested_pending' : 'recorded', publication_permitted: false } });
+    } catch (error) {
+      console.error('[Stock Controller] Error sealing OfficialVN30 membership:', error);
+      return httpError(res, 500, 'market_vn30_membership_ingest_failed', 'Unable to seal OfficialVN30 membership');
     }
   });
 

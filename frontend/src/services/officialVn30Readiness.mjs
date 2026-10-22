@@ -10,6 +10,7 @@ export async function fetchOfficialVn30Readiness({ signal } = {}) {
     reason: data.reason || null,
     distribution: data.distribution || 'internal_research_only',
     publicationPermitted: data.publication_permitted === true,
+    rightsVerification: data.rights_verification || null,
     sessionDate: data.as_of || null,
     coverage: Number.isInteger(coverage?.observed) && Number.isInteger(coverage?.universe) ? coverage : null,
     membership: data.membership || null

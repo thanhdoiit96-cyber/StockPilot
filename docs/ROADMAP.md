@@ -51,7 +51,7 @@ Tiếp tục data evidence, point-in-time availability, out-of-sample validation
 
 Rổ được chọn là [OfficialVN30](VN30_FORECAST_UNIVERSE_DESIGN.md): 30 thành viên theo publication VN30 point-in-time có quyền sử dụng, snapshot bất biến, 30-member/95% EOD gate và shadow evaluation riêng. Không hard-code, scrape không được cấp quyền hoặc suy ra constituent từ index/fixture/turnover hiện có.
 
-OfficialVN30 bị khóa ở chế độ `internal_research_only`: không phát hành công khai/thương mại, không trả constituent qua readiness API và không phát hành forecast. `GET /api/stocks/vn30-readiness` fail-closed với `membership_snapshot_unavailable` hoặc `membership_rights_unverified`. Bước phụ thuộc kế tiếp là ingest niêm phong ghi reference cho quyền lưu trữ/sử dụng nội bộ; sau đó mới thêm history/basis gate và forecast shadow. Liquid30 là nghiên cứu defer, không phải fallback tự động và không còn hiển thị trên Overview.
+OfficialVN30 bị khóa ở chế độ `internal_research_only`: không phát hành công khai/thương mại, không trả constituent qua readiness API và không phát hành forecast. Admin-only manifest ingest hiện chỉ nhận đúng 30 mã cùng HTTPS URL HOSE, canonical hashes và reference quyền; owner-attested pending được ghi rõ, không được hiểu là quyền đã xác minh. `GET /api/stocks/vn30-readiness` vẫn fail-closed với thiếu snapshot/quyền. Bước tiếp theo là nạp công bố HOSE kỳ đang hiệu lực, rồi thêm history/basis gate và forecast shadow. Liquid30 là nghiên cứu defer, không phải fallback tự động và không còn hiển thị trên Overview.
 
 ### 6. Exit guidance cho vị thế đang nắm giữ — shadow UI hoàn tất, scheduler đóng
 
