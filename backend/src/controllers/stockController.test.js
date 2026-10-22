@@ -59,7 +59,7 @@ describe('stock API', () => {
   });
   test('exposes bounded trade-priority evidence without raw provider errors', async () => {
     Stock.sequelize.query
-      .mockResolvedValueOnce([[{ session_date: '2026-10-02', listed: 551, covered: 354, missing: 197, missing_symbols: ['ABC'] }], {}])
+      .mockResolvedValueOnce([[{ session_date: '2026-10-02', listed: 551, covered: 354, missing: 197, missing_symbols: ['ABC'], exchange_coverage: [{ exchange: 'HSX', listed: 200, covered: 189, missing: 11 }] }], {}])
       .mockResolvedValueOnce([[{ never_seen: 10, previous_session: 20, stale_history: 167 }], {}]);
     readLatestEodEvidence.mockReturnValue({
       file: 'eod-retry-2026-10-02-test.json',
@@ -78,6 +78,7 @@ describe('stock API', () => {
       last_run_selected_traded: 18,
       last_run_trade_priority: { enabled: true, probed: 215, batches: 2, failed_batches: 1, matched: 18, had_error: true }
     });
+    expect(result.body.data.exchange_coverage).toEqual([{ exchange: 'HSX', listed: 200, covered: 189, missing: 11, coverage_pct: 94.5 }]);
     expect(JSON.stringify(result.body)).not.toContain('secret upstream detail');
   });
   test('disables administrative access without a configured key', async () => {

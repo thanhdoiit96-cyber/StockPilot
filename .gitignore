@@ -10,6 +10,7 @@ backend/scripts/__pycache__/
 backend/*.err
 frontend/*-runtime.err
 *.log
+.runtime-logs/
 .env
 .env.*
 !.env.example

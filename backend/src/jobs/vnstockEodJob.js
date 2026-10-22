@@ -108,8 +108,9 @@ async function findCurrentSessionTradedSymbols(symbols, sessionDate, {
 function startVnstockEodJob({
   cacheService,
   logger = console,
-  schedule = process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5',
-  retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
+  schedule = process.env.VNSTOCK_EOD_CRON || '5 15 * * 1-5',
+  retrySchedule = process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '15,30,45 15 * * 1-5',
+  lateRetrySchedule = process.env.VNSTOCK_EOD_LATE_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
   tradePriorityLoader = findCurrentSessionTradedSymbols
 } = {}) {
   // Keep daily EOD ingestion on by default so a fresh deployment cannot silently
@@ -287,6 +288,7 @@ function startVnstockEodJob({
   task.runOnce = runOnce;
   task.retryGaps = retryGaps;
   task.retryTask = cron.schedule(retrySchedule, retryGaps, { timezone: process.env.VNSTOCK_EOD_TIMEZONE || 'Asia/Ho_Chi_Minh' });
+  task.lateRetryTask = cron.schedule(lateRetrySchedule, retryGaps, { timezone: process.env.VNSTOCK_EOD_TIMEZONE || 'Asia/Ho_Chi_Minh' });
   return task;
 }
 

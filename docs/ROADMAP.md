@@ -1,6 +1,6 @@
 ﻿# Lộ trình hoàn thiện dự án
 
-Cập nhật: 2026-10-21. Lịch sử roadmap và checkpoint đã thay thế được giữ tại [ROADMAP_2026-10-19.md](archive/ROADMAP_2026-10-19.md). Bản này là nguồn ưu tiên, phụ thuộc và tiêu chí nghiệm thu hiện hành.
+Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế được giữ tại [ROADMAP_2026-10-19.md](archive/ROADMAP_2026-10-19.md). Bản này là nguồn ưu tiên, phụ thuộc và tiêu chí nghiệm thu hiện hành.
 
 ## Nguyên tắc phát triển
 
@@ -14,10 +14,10 @@ Cập nhật: 2026-10-21. Lịch sử roadmap và checkpoint đã thay thế đ�
 | Mốc | Trạng thái | Điều kiện còn lại |
 | --- | --- | --- |
 | A — Nền tảng | Code/config chính hoàn thành | Archive tài liệu, dọn sạch 38 warning ESLint, release gate và contract template backend/frontend an toàn đã hoàn thành; verification tiếp tục theo thay đổi |
-| B — Frontend/lifecycle | Lazy-load và request ownership chính hoàn thành | Chẩn đoán live 2026-10-20 xác nhận hàng đầu tiên gắn vào DOM 4 ms sau panel mount; số 30 giây ban đầu là harness đọc locator lỗi không tồn tại. Baseline API 5 mẫu 2026-10-21 ghi quote p50/p95 683/1.732 ms nhưng BCG thiếu quote ở cả 5 mẫu: harness, endpoint và Bảng giá nay công bố coverage/mã thiếu, dùng EOD trung thực cho phần còn lại thay vì coi HTTP 200 là đầy đủ. Vite local fallback dùng IPv4 `127.0.0.1:5000` để tránh request treo khi backend chỉ bind IPv4. Chỉ tách App.jsx khi baseline browser mới cho thấy lợi ích |
-| C — Readiness dữ liệu | Local readiness database/worker hoàn thành | Chưa xác nhận scheduler/worker production hoặc provider rights |
+| B — Frontend/lifecycle | Lazy-load và request ownership chính hoàn thành | Chẩn đoán live 2026-10-20 xác nhận hàng đầu tiên gắn vào DOM 4 ms sau panel mount; số 30 giây ban đầu là harness đọc locator lỗi không tồn tại. Baseline API 5 mẫu 2026-10-21 ghi quote p50/p95 683/1.732 ms; đo lại 2026-10-22 ghi 952/3.762 ms. Cả hai vẫn thiếu BCG ở 5/5 mẫu (39/40 mã): harness, endpoint và Bảng giá công bố coverage/mã thiếu, dùng EOD trung thực cho phần còn lại thay vì coi HTTP 200 là đầy đủ. Vite local fallback dùng IPv4 `127.0.0.1:5000` để tránh request treo khi backend chỉ bind IPv4. Chỉ tách App.jsx khi baseline browser mới cho thấy lợi ích |
+| C — Readiness dữ liệu | Database/worker local và EOD scheduler sau phiên đã cấu hình | EOD local chạy từ 15:05 ICT, retry đến 19:45 và worker healthy, nhưng phiên 2026-10-21 chỉ phủ 357/549 mã (65,0%); gap tập trung UPCoM (coverage 38,8%, so với HSX 94,4% và HNX 72,8%). Chưa xác nhận scheduler/worker production, provider rights hoặc coverage đủ để mở các tính năng phụ thuộc |
 | D — Tính năng người dùng | Allocation target, decision journal và accessibility/mobile hoàn thành | Hạng mục còn lại có dependency bên ngoài |
-| M6 — Phát hành | Chưa bắt đầu | Deploy, backup/restore, observability và evidence production |
+| M6 — Phát hành | Tạm hoãn theo quyết định sản phẩm | Preflight local và [RELEASE_READINESS_DESIGN.md](RELEASE_READINESS_DESIGN.md) được giữ để tiếp tục khi có authority môi trường đích. Không triển khai hay suy diễn production readiness trong thời gian tạm hoãn |
 
 ## Ưu tiên tiếp theo theo dependency
 

@@ -17,6 +17,23 @@ const SECTORS = {
 };
 const sectorFor = code => Object.entries(SECTORS).find(([, codes]) => codes.includes(code))?.[0] || 'other';
 
+function conciseReport(report, output) {
+  return {
+    generated_at: report.generated_at,
+    minimum_observations: report.minimum_observations,
+    universe_size: report.universe_size,
+    eligible_symbols: report.eligible_symbols,
+    incomplete_symbols: report.incomplete_symbols,
+    sectors: Object.fromEntries(Object.entries(report.sectors).map(([name, sector]) => [name, {
+      universe: sector.universe,
+      eligible: sector.eligible,
+      incomplete: sector.incomplete
+    }])),
+    detail_output: output,
+    detail_hint: 'Set SECTOR_READINESS_VERBOSE=true to print the full symbol-level report.'
+  };
+}
+
 async function main() {
   const minimum = Math.max(1, Number(process.env.VNSTOCK_MIN_OBSERVATIONS || 50));
   const stocks = await models.Stock.findAll({ attributes: ['id', 'code', 'name', 'industry'], order: [['code', 'ASC']] });
@@ -34,7 +51,13 @@ async function main() {
   const report = { generated_at: new Date().toISOString(), minimum_observations: minimum, universe_size: coverage.length, eligible_symbols: coverage.filter(item => item.eligible).length, incomplete_symbols: coverage.filter(item => !item.eligible).length, sectors, incomplete: coverage.filter(item => !item.eligible) };
   const output = process.env.SECTOR_READINESS_OUTPUT || path.resolve(__dirname, '../evidence/sector-readiness-latest.json');
   fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify(report, null, 2));
+  // The evidence remains complete for audit; terminal output stays actionable
+  // unless an operator explicitly requests the large symbol-level listing.
+  console.log(JSON.stringify(process.env.SECTOR_READINESS_VERBOSE === 'true' ? report : conciseReport(report, output), null, 2));
 }
 
-main().catch(error => { console.error(error.stack || error); process.exitCode = 1; }).finally(async () => { await models.sequelize.close(); });
+if (require.main === module) {
+  main().catch(error => { console.error(error.stack || error); process.exitCode = 1; }).finally(async () => { await models.sequelize.close(); });
+}
+
+module.exports = { conciseReport };

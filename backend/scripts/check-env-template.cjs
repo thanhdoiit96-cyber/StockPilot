@@ -14,7 +14,7 @@ const expectedKeys = [
   'RATE_LIMIT_WINDOW_MS', 'RATE_LIMIT_MAX_REQUESTS',
   'VNSTOCK_WORKER_URL', 'READINESS_REQUIRE_WORKER', 'READINESS_TIMEOUT_MS',
   'FORECAST_RESEARCH_PREVIEW', 'FORECAST_LIVE_PREVIEW',
-  'VNSTOCK_EOD_ENABLED', 'VNSTOCK_LISTING_SYNC_ENABLED', 'QUOTE_FRESHNESS_ENABLED',
+  'VNSTOCK_EOD_ENABLED', 'VNSTOCK_EOD_CRON', 'VNSTOCK_EOD_GAP_RETRY_CRON', 'VNSTOCK_EOD_LATE_GAP_RETRY_CRON', 'VNSTOCK_LISTING_SYNC_ENABLED', 'QUOTE_FRESHNESS_ENABLED',
   'RECOMMENDATION_EVALUATION_ENABLED', 'RECOMMENDATION_LIFECYCLE_CHECK_ENABLED', 'RECOMMENDATIONS_AFTER_INGEST',
   'FORECAST_LIVE_CYCLE_ENABLED', 'VNSTOCK_FOREIGN_FLOW_ENABLED', 'COMPANY_DATA_SYNC_ENABLED'
 ].sort();
@@ -46,6 +46,9 @@ function main() {
   assert.equal(env.JWT_SECRET, 'development-only-change-me');
   assert.doesNotThrow(() => parseAllowedOrigins(env.CORS_ORIGIN));
   for (const key of safeDefaults) assert.equal(env[key], 'false', `${key} must default to false`);
+  assert.equal(env.VNSTOCK_EOD_CRON, '5 15 * * 1-5');
+  assert.equal(env.VNSTOCK_EOD_GAP_RETRY_CRON, '15,30,45 15 * * 1-5');
+  assert.equal(env.VNSTOCK_EOD_LATE_GAP_RETRY_CRON, '*/15 16-19 * * 1-5');
   console.log(`PASS: backend .env.example contract (${expectedKeys.length} active keys; preview and scheduler defaults are safe)`);
 }
 

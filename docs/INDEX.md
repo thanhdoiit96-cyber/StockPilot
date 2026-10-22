@@ -52,6 +52,7 @@ Các tài liệu dưới đây lưu thiết kế mục tiêu hoặc ví dụ đ�
 | [DECISION_JOURNAL_DESIGN](DECISION_JOURNAL_DESIGN.md) | Contract nhật ký quyết định, evidence snapshot và giới hạn v1 |
 | [RECOMMENDATION_CALIBRATION_DESIGN](RECOMMENDATION_CALIBRATION_DESIGN.md) | Phạm vi outcome, guard hiệu chỉnh và điều kiện mở calibration thật |
 | [RECOMMENDATION_EOD_AUTOMATION_DESIGN](RECOMMENDATION_EOD_AUTOMATION_DESIGN.md) | Cổng coverage theo universe mô hình và evidence tạo snapshot EOD |
+| [RELEASE_READINESS_DESIGN](RELEASE_READINESS_DESIGN.md) | Quyết định release, backup/restore, worker ownership và evidence trước M6 |
 | [DATABASE_SCHEMA](DATABASE_SCHEMA.md) | Schema mục tiêu; schema chạy thực tế do migrations quản lý |
 | [CACHING_STRATEGY](CACHING_STRATEGY.md) | Chiến lược và ví dụ cache; hành vi hiện có ở Backend README |
 | [DATA_FLOW](DATA_FLOW.md) | Luồng dữ liệu mục tiêu |

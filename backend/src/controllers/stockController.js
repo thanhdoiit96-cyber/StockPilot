@@ -53,23 +53,31 @@ module.exports = function(cacheService) {
       const requestedSession = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.session || '')) ? String(req.query.session) : null;
       const [summaryRows] = await Stock.sequelize.query(`
         WITH listed AS (
-          SELECT id, code FROM stocks WHERE listing_status = 'listed'
+          SELECT id, code, exchange FROM stocks WHERE listing_status = 'listed'
         ), latest AS (
           SELECT COALESCE($1::date, MAX((observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date)) AS session_date
           FROM stock_prices WHERE provider = 'vnstock' AND interval = '1d' AND observed_at IS NOT NULL
         ), coverage AS (
-          SELECT l.code, l.id, EXISTS (
+          SELECT l.code, l.id, l.exchange, EXISTS (
             SELECT 1 FROM stock_prices p WHERE p.stock_id = l.id AND p.provider = 'vnstock' AND p.interval = '1d'
               AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = latest.session_date
           ) AS covered
           FROM listed l CROSS JOIN latest
-        )
+        ), summary AS (
         SELECT latest.session_date::text AS session_date,
           (SELECT COUNT(*)::int FROM listed) AS listed,
           COUNT(*) FILTER (WHERE coverage.covered)::int AS covered,
           COUNT(*) FILTER (WHERE NOT coverage.covered)::int AS missing,
           ARRAY_REMOVE(ARRAY_AGG(coverage.code ORDER BY coverage.code) FILTER (WHERE NOT coverage.covered), NULL) AS missing_symbols
         FROM latest CROSS JOIN coverage GROUP BY latest.session_date
+        ), exchange_summary AS (
+          SELECT COALESCE(exchange, 'unknown') AS exchange, COUNT(*)::int AS listed,
+            COUNT(*) FILTER (WHERE covered)::int AS covered,
+            COUNT(*) FILTER (WHERE NOT covered)::int AS missing
+          FROM coverage GROUP BY COALESCE(exchange, 'unknown')
+        )
+        SELECT summary.*, COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT('exchange', exchange, 'listed', listed, 'covered', covered, 'missing', missing) ORDER BY exchange) FROM exchange_summary), '[]'::jsonb) AS exchange_coverage
+        FROM summary
       `, { bind: [requestedSession] });
       const summary = summaryRows[0] || { session_date: null, listed: 0, covered: 0, missing: 0, missing_symbols: [] };
       const [breakdownRows] = summary.session_date ? await Stock.sequelize.query(`
@@ -95,6 +103,11 @@ module.exports = function(cacheService) {
       } catch (_) { /* evidence is optional operational metadata */ }
       const retryPasses = Math.max(0, Number(process.env.VNSTOCK_EOD_GAP_RETRIES || 2));
       const coveragePct = Number(summary.listed) ? Number((Number(summary.covered) / Number(summary.listed) * 100).toFixed(1)) : null;
+      const exchangeCoverage = Array.isArray(summary.exchange_coverage) ? summary.exchange_coverage.map(row => {
+        const listed = Number(row?.listed || 0);
+        const covered = Number(row?.covered || 0);
+        return { exchange: String(row?.exchange || 'unknown'), listed, covered, missing: Number(row?.missing || 0), coverage_pct: listed ? Number((covered / listed * 100).toFixed(1)) : null };
+      }) : [];
       const tradePriority = lastEodRun?.evidence?.trade_priority;
       const normalizedTradePriority = tradePriority && typeof tradePriority === 'object' ? {
         enabled: tradePriority.enabled !== false,
@@ -112,6 +125,7 @@ module.exports = function(cacheService) {
         missing: Number(summary.missing || 0),
         coverage_pct: coveragePct,
         missing_symbols: summary.missing_symbols || [],
+        exchange_coverage: exchangeCoverage,
         missing_breakdown: {
           never_seen: Number(breakdown.never_seen || 0),
           previous_session: Number(breakdown.previous_session || 0),
@@ -121,8 +135,9 @@ module.exports = function(cacheService) {
         provider: health,
         eod_retry: {
           mode: 'scheduled',
-          schedule: process.env.VNSTOCK_EOD_CRON || '30 15 * * 1-5',
-          gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
+          schedule: process.env.VNSTOCK_EOD_CRON || '5 15 * * 1-5',
+          gap_schedule: process.env.VNSTOCK_EOD_GAP_RETRY_CRON || '15,30,45 15 * * 1-5',
+          late_gap_schedule: process.env.VNSTOCK_EOD_LATE_GAP_RETRY_CRON || '*/15 16-19 * * 1-5',
           configured_passes: retryPasses,
           last_run_at: lastEodRun?.evidence?.checked_at || null,
           last_run_mode: lastEodRun?.mode || null,

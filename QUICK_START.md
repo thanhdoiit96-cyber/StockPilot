@@ -165,7 +165,7 @@ $env:VNSTOCK_TO='2026-09-17'
 npm.cmd run ingest:vnstock
 ~~~
 
-Nếu không đặt `VNSTOCK_SYMBOLS`, lệnh dùng các mã hiện có trong bảng `stocks`. Lệnh ghi dữ liệu qua ingestion service và xóa cache cổ phiếu khi có thay đổi. Scheduler chỉ bật khi đặt `VNSTOCK_EOD_ENABLED=true`; lịch mặc định `30 10 * * 1-5` theo múi giờ `Asia/Ho_Chi_Minh`.
+Nếu không đặt `VNSTOCK_SYMBOLS`, lệnh dùng các mã hiện có trong bảng `stocks`. Lệnh ghi dữ liệu qua ingestion service và xóa cache cổ phiếu khi có thay đổi. Scheduler chỉ bật khi đặt `VNSTOCK_EOD_ENABLED=true`; lịch EOD chính mặc định `5 15 * * 1-5`, sau đó retry các gap lúc 15:15, 15:30, 15:45 và mỗi 15 phút từ 16:00 đến 19:45, theo múi giờ `Asia/Ho_Chi_Minh`. Coverage chưa đủ vẫn được ghi là incomplete, không được coi là EOD hoàn chỉnh.
 
 ### 2b. Đăng ký EODHD để đối chiếu nội bộ
 
