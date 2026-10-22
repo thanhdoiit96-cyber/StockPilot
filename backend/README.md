@@ -139,6 +139,10 @@ Test dùng mock nằm cạnh mã: [cacheService.test.js](src/services/cacheServi
 
 Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_STATUS. ESLint đã được cấu hình và là bước đầu của `npm run verify:release`.
 
+## Exit-guidance dry-run
+
+Exit guidance has no scheduler. To create internal evidence without writing an exit snapshot or calling a provider, run `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=<id>`. The command requires an explicit session/owner/trigger and writes one immutable aggregate audit run only; a holding without EOD exactly on that session fails closed. It is not a sell recommendation or a production worker/lock substitute.
+
 ## Current quote endpoints
 
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.

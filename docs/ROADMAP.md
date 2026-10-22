@@ -63,6 +63,8 @@ Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến th
 
 `GET /api/portfolio/exit-guidance` chỉ trả snapshot shadow niêm phong gần nhất hoặc unavailable, không tạo snapshot/call provider khi đọc. Audit đã xác nhận writer `createPositionExitSnapshot` chưa có caller; vì vậy `no_shadow_snapshot` hiện là trạng thái mong đợi, không phải worker bị mất. Writer cũng đang đọc tối đa 200.000 row EOD toàn cục và chỉ nhận `portfolioId`, chưa đạt ngân sách truy vấn theo held symbol hay ownership scheduler. Contract [current-holding reconciliation](PORTFOLIO_CURRENT_HOLDINGS_RECONCILIATION_DESIGN.md), migration immutable `044`, pure reconciler và atomic sealing trước exit snapshot đã hoàn tất. [EOD generator design](PORTFOLIO_EXIT_EOD_GENERATOR_DESIGN.md) đã chốt durable owner/lock, held-symbol bounded query và dry-run gate. Bước tiếp theo cần evidence worker ownership và tối thiểu năm dry-run EOD trước khi thêm scheduler/config; sau đó mới baseline shadow ngoài mẫu. Scheduler, calibration và bất kỳ hành vi bán tự động nào vẫn đóng.
 
+Exit EOD generator now has migration `047` and a manual bounded dry-run path; it has no scheduler. The first valid evidence run for 2026-10-21 covered 23/23 candidate holdings with exact-session EOD (aggregate: 19 hold, 2 cut-loss, 2 unavailable) and made zero provider calls; it created neither exit snapshots nor orders. Four further valid EOD dry-runs plus worker-owner/lock evidence are required before considering scheduler/config; automatic sales and calibration remain closed.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.

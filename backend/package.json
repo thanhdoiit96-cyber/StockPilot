@@ -34,6 +34,7 @@
     "verify:release": "npm run lint && npm run check:env-template && npm run test -- --runInBand",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
+    "dry-run:exit-guidance-eod": "node scripts/dry-run-position-exit-eod.cjs",
     "seed": "sequelize-cli db:seed:all",
     "ingest:vnstock": "node scripts/ingest-vnstock-eod.cjs",
     "ingest:vnstock-foreign-flow": "node scripts/ingest-vnstock-foreign-flow.cjs",

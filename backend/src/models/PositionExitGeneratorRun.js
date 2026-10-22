@@ -1,0 +1,4 @@
+module.exports = (sequelize, DataTypes) => sequelize.define('PositionExitGeneratorRun', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true }, run_key: { type: DataTypes.STRING(64), allowNull: false }, trigger_id: { type: DataTypes.STRING(160), allowNull: false },
+  provider: { type: DataTypes.STRING(80), allowNull: false }, session_date: { type: DataTypes.DATEONLY, allowNull: false }, model: { type: DataTypes.STRING(80), allowNull: false }, owner_id: { type: DataTypes.STRING(160), allowNull: false }, mode: { type: DataTypes.STRING(24), allowNull: false }, status: { type: DataTypes.STRING(30), allowNull: false }, input_evidence: { type: DataTypes.JSONB, allowNull: false }, result_summary: { type: DataTypes.JSONB, allowNull: false }, created_at: { type: DataTypes.DATE, allowNull: false }
+}, { tableName: 'position_exit_generator_runs', underscored: true, timestamps: false });
