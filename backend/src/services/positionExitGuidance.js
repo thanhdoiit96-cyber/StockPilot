@@ -46,9 +46,11 @@ function unavailable(reason, details = {}) {
   return { version: 'position_exit_rule_v1', status: 'unavailable', research_only: true, reason, ...details };
 }
 
-function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnappliedCorporateAction = false, minimumSessions = 60 } = {}) {
-  const averageCost = number(position.avg_cost);
-  const quantity = number(position.quantity);
+function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnappliedCorporateAction = false, holdingReconciliation = null, minimumSessions = 60 } = {}) {
+  if (holdingReconciliation && holdingReconciliation.status !== 'reconciled') return unavailable(holdingReconciliation.reason || 'holding_reconciliation_unavailable', { reconciliation_version: holdingReconciliation.reconciliation_version || null });
+  const reconciledPosition = holdingReconciliation ? { ...position, quantity: holdingReconciliation.quantity, avg_cost: holdingReconciliation.avg_cost, first_traded_at: holdingReconciliation.first_traded_at || position.first_traded_at } : position;
+  const averageCost = number(reconciledPosition.avg_cost);
+  const quantity = number(reconciledPosition.quantity);
   if (!averageCost || averageCost <= 0 || !quantity || quantity <= 0) return unavailable('position_cost_or_quantity_invalid');
   if (hasUnappliedCorporateAction) return unavailable('unapplied_corporate_action');
   const rows = uniqueDailyRows(priceRows);
@@ -66,7 +68,7 @@ function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnapplied
   const sma20 = average(closes.slice(-20));
   const sma50 = average(closes.slice(-50));
   if (atr == null || rsi == null || sma20 == null || sma50 == null) return unavailable('insufficient_indicator_history', { as_of: latest.session_date });
-  const effectiveEntryDate = sessionDate(position.first_traded_at) || rows[0].session_date;
+  const effectiveEntryDate = sessionDate(reconciledPosition.first_traded_at) || rows[0].session_date;
   const sinceEntry = rows.filter(row => row.session_date >= effectiveEntryDate);
   if (!sinceEntry.length) return unavailable('entry_after_available_eod', { as_of: latest.session_date });
   const highestSinceEntry = Math.max(...sinceEntry.map(row => row.close));
@@ -85,7 +87,7 @@ function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnapplied
   return {
     version: 'position_exit_rule_v1', status, research_only: true, as_of: latest.session_date,
     provider, interval: latest.interval || '1d', price_basis: { price_unit: priceUnit, currency, is_adjusted: adjusted },
-    position: { stock_id: position.stock_id || null, symbol: position.symbol || null, quantity, average_cost: averageCost, effective_entry_date: effectiveEntryDate },
+    position: { stock_id: reconciledPosition.stock_id || null, symbol: reconciledPosition.symbol || null, quantity, average_cost: averageCost, effective_entry_date: effectiveEntryDate },
     reference: { close, highest_close_since_entry: Number(highestSinceEntry.toFixed(6)) },
     levels: { initial_stop: Number(initialStop.toFixed(6)), active_stop: Number(trailingStop.toFixed(6)), take_profit_review: Number(target.toFixed(6)), trailing_armed: profitArmed },
     indicators: { atr14: atr, rsi14: rsi, sma20: Number(sma20.toFixed(6)), sma50: Number(sma50.toFixed(6)), bearish_trend: bearishTrend },

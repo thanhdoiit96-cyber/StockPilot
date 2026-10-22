@@ -44,11 +44,12 @@ function applyEvent(state, event) {
   return { value: { ...state, quantity: state.quantity + Math.round(exercised), cost: state.cost + cash } };
 }
 
-function reconcileStockHolding(stockId, transactions = [], events = []) {
-  const relevantEvents = events.map(plain).filter(event => String(event.stock_id) === String(stockId) && activeEvent(event));
+function reconcileStockHolding(stockId, transactions = [], events = [], asOf = null) {
+  const inScope = value => !asOf || String(value) <= asOf;
+  const relevantEvents = events.map(plain).filter(event => String(event.stock_id) === String(stockId) && activeEvent(event) && inScope(event.effective_date || event.record_date || event.payment_date));
   const cashEvents = relevantEvents.filter(event => event.event_type === 'CASH_DIVIDEND');
   const shareEvents = relevantEvents.filter(event => event.event_type !== 'CASH_DIVIDEND').sort(eventOrder);
-  const rows = transactions.map(plain).filter(transaction => String(transaction.stock_id) === String(stockId)).sort(transactionOrder);
+  const rows = transactions.map(plain).filter(transaction => String(transaction.stock_id) === String(stockId) && inScope(dateOf(transaction.traded_at))).sort(transactionOrder);
   if (!rows.length) return unavailable(stockId, 'no_transaction_history');
   let state = { quantity: 0, cost: 0, first_traded_at: rows[0].traded_at, last_traded_at: rows.at(-1).traded_at };
   const timeline = [...rows.map(row => ({ kind: 'transaction', date: dateOf(row.traded_at), row })), ...shareEvents.map(row => ({ kind: 'event', date: row.effective_date, row }))].sort((a, b) => String(a.date).localeCompare(String(b.date)) || (a.kind === 'event' ? -1 : b.kind === 'event' ? 1 : transactionOrder(a.row, b.row)));
@@ -70,9 +71,9 @@ function reconcileStockHolding(stockId, transactions = [], events = []) {
   return { stock_id: stockId, status: 'reconciled', reconciliation_version: 'current_holding_reconciliation_v1', quantity: state.quantity, cost: Number(state.cost.toFixed(6)), avg_cost: Number((state.cost / state.quantity).toFixed(6)), first_traded_at: state.first_traded_at, last_traded_at: state.last_traded_at, cash_event_count: cashEvents.length, applied_event_ids: shareEvents.map(event => event.id).filter(Boolean) };
 }
 
-function reconcileCurrentHoldings({ transactions = [], events = [] } = {}) {
+function reconcileCurrentHoldings({ transactions = [], events = [], asOf = null } = {}) {
   const stockIds = [...new Set(transactions.map(plain).map(transaction => transaction?.stock_id).filter(Boolean))];
-  return stockIds.map(stockId => reconcileStockHolding(stockId, transactions, events));
+  return stockIds.map(stockId => reconcileStockHolding(stockId, transactions, events, asOf));
 }
 
 module.exports = { reconcileCurrentHoldings, reconcileStockHolding };
