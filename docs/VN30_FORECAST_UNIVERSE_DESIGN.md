@@ -10,17 +10,18 @@ This choice prioritizes a stable, explainable universe and avoids ranking the in
 
 The intended user needs a breadth scope they can audit: membership source, effective dates, member count and EOD completeness. `OfficialVN30` stays research/shadow-only. It is not a security-selection list, return forecast, trading instruction or verified performance claim.
 
-Membership must come from a source the deployment is authorized to retain and use. A deployment must record the source identifier, URL, publication time, source hash and applicable rights/retention decision before ingest. The repository currently has no configured production membership source or license evidence; no constituent list is hard-coded or scraped.
+Membership must come from a source the deployment is authorized to retain and use. The selected product policy is `internal_research_only`: no public distribution, commercial use, constituent publication or OfficialVN30 forecast release. This label reduces product scope; it does not itself grant source rights. A deployment must record the source identifier, URL, publication time, source hash and a non-secret reference to the applicable written usage/retention decision before ingest. No constituent list is hard-coded or scraped.
 
 ## Implemented storage and readiness boundary
 
-Migration `045_create_index_membership_snapshots` creates immutable snapshot and constituent records. A usable row must have:
+Migrations `045`/`046` create immutable snapshot/constituent records and lock their allowed `usage_scope` to `internal_research_only`. A usable row must have:
 
 - `index_code=VN30`, `status=sealed`, effective-from/to dates, source identifier/URL, publication time and source hash;
 - exactly 30 unique symbols, the declared member count of 30 and a membership SHA-256;
 - separately retained constituent rows linked to that immutable snapshot.
+- a non-placeholder `rights_evidence_ref`; without it, readiness is `membership_rights_unverified`.
 
-`GET /api/stocks/vn30-readiness` is database-only and never calls a provider. With no sealed snapshot it returns `unavailable: membership_snapshot_unavailable`. With valid membership it checks the latest stored VNStock daily session and requires at least 29/30 (95%) members with a positive close. It can only return `ready_for_shadow`, never issue probabilities, select a replacement list or enable calibration.
+`GET /api/stocks/vn30-readiness` is database-only and never calls a provider. With no sealed snapshot it returns `unavailable: membership_snapshot_unavailable`; without recorded rights evidence it returns `membership_rights_unverified`. With valid membership it checks the latest stored VNStock daily session and requires at least 29/30 (95%) members with a positive close. It can only return `ready_for_shadow`, marked `internal_research_only` and `publication_permitted=false`; it never returns constituents, issues probabilities, selects a replacement list or enables calibration.
 
 ## Required next flow
 
@@ -32,7 +33,7 @@ Migration `045_create_index_membership_snapshots` creates immutable snapshot and
 
 ## UX and performance
 
-Overview shows a concise OfficialVN30 status. Missing membership says exactly that and keeps the FPT/HPG/VHM prototype label; it does not claim insufficient whole-market turnover data. The readiness payload contains no constituent list in an unavailable state. Page navigation makes one local API request and triggers neither provider requests nor polling.
+Overview shows a persistent “Nghiên cứu nội bộ · không phát hành công khai/hay thương mại” label. Missing membership or rights evidence says exactly that and keeps the FPT/HPG/VHM prototype label; it does not claim insufficient whole-market turnover data. The readiness payload never contains the constituent list. Page navigation makes one local API request and triggers neither provider requests nor polling.
 
 ## Acceptance
 

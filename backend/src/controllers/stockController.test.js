@@ -104,7 +104,7 @@ describe('stock API', () => {
     expect(result.status).toBe(200);
     expect(result.headers['cache-control']).toBe('no-store');
     expect(result.body.data).toEqual(expect.objectContaining({
-      status: 'unavailable', reason: 'membership_snapshot_unavailable', index_code: 'VN30', constituents: []
+      status: 'unavailable', reason: 'membership_snapshot_unavailable', index_code: 'VN30', distribution: 'internal_research_only'
     }));
     expect(Stock.sequelize.query).not.toHaveBeenCalled();
   });
