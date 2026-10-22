@@ -59,6 +59,8 @@ Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi
 
 [PORTFOLIO_EXIT_GUIDANCE_DESIGN.md](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) chốt hướng rule-based theo biến động/xu hướng, dữ liệu EOD bất biến và shadow evaluation riêng. Nó không tái sử dụng outcome của mô hình mua, không tự bán, không dùng quote intraday làm trigger và chưa có bằng chứng để gọi là khuyến nghị đầu tư. Bước tiếp theo là audit quality/adjustment/cost basis của các vị thế đang nắm giữ trước khi viết schema hay UI.
 
+Audit mã nguồn đã xác nhận weighted-average cost basis từ ledger giao dịch, nhưng corporate action hiện chỉ được áp trong valuation history. Engine thuần `position_exit_rule_v1` đã có và fail-closed với vị thế có corporate action chưa áp dụng; bước tiếp theo là migration/snapshot ledger cho exit guidance, rồi mới có read API và UI shadow.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
