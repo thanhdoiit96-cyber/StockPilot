@@ -55,15 +55,15 @@ Mở rộng VN30 bắt đầu tại F0 contract trong [VN30_FORECAST_UNIVERSE_DE
 
 Hiện đường nghiên cứu cũng chưa mở được: kiểm tra runtime ghi 0/549 row có đồng thời close, `traded_value` dương và `price_unit` cho phiên 2026-10-21. Bước phụ thuộc kế tiếp là xác minh mapping/provenance turnover trong ingestion; không thay bằng `close×volume` hoặc ranking từ dữ liệu không so sánh được.
 
-### 6. Exit guidance cho vị thế đang nắm giữ — thiết kế sẵn, chưa triển khai
+### 6. Exit guidance cho vị thế đang nắm giữ — shadow UI hoàn tất, scheduler đóng
 
-[PORTFOLIO_EXIT_GUIDANCE_DESIGN.md](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) chốt hướng rule-based theo biến động/xu hướng, dữ liệu EOD bất biến và shadow evaluation riêng. Nó không tái sử dụng outcome của mô hình mua, không tự bán, không dùng quote intraday làm trigger và chưa có bằng chứng để gọi là khuyến nghị đầu tư. Bước tiếp theo là audit quality/adjustment/cost basis của các vị thế đang nắm giữ trước khi viết schema hay UI.
+[PORTFOLIO_EXIT_GUIDANCE_DESIGN.md](PORTFOLIO_EXIT_GUIDANCE_DESIGN.md) chốt hướng rule-based theo biến động/xu hướng, dữ liệu EOD bất biến và shadow evaluation riêng. Nó không tái sử dụng outcome của mô hình mua, không tự bán, không dùng quote intraday làm trigger và chưa có bằng chứng để gọi là khuyến nghị đầu tư.
 
-Audit mã nguồn đã xác nhận weighted-average cost basis từ ledger giao dịch, nhưng corporate action hiện chỉ được áp trong valuation history. Engine thuần `position_exit_rule_v1` đã có và fail-closed với vị thế có corporate action chưa áp dụng; bước tiếp theo là migration/snapshot ledger cho exit guidance, rồi mới có read API và UI shadow.
+Audit mã nguồn đã xác nhận weighted-average cost basis từ ledger giao dịch, nhưng corporate action hiện chỉ được áp trong valuation history. Engine thuần `position_exit_rule_v1` đã có và fail-closed với vị thế có corporate action chưa áp dụng.
 
-Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến theo portfolio chứa provenance/hash và cả trạng thái unavailable. Bước tiếp theo là read-only API theo ownership, sau đó UI shadow; không nối scheduler cho đến khi contract corporate-action/current-holding reconciliation được kiểm chứng.
+Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến theo portfolio chứa provenance/hash và cả trạng thái unavailable. Read-only API theo ownership và UI shadow trong Danh mục/Tổng quan cũng hoàn tất: UI chỉ gọi API khi tab này đang active, hiển thị rõ snapshot EOD hoặc unavailable, và không có thao tác lệnh. Không nối scheduler cho đến khi contract corporate-action/current-holding reconciliation được kiểm chứng.
 
-Read-only API theo ownership đã hoàn tất: `GET /api/portfolio/exit-guidance` chỉ trả snapshot shadow niêm phong gần nhất hoặc unavailable, không tạo snapshot/call provider khi đọc. Bước tiếp theo là UI shadow cho Danh mục; scheduler và bất kỳ hành vi bán tự động nào vẫn đóng.
+`GET /api/portfolio/exit-guidance` chỉ trả snapshot shadow niêm phong gần nhất hoặc unavailable, không tạo snapshot/call provider khi đọc. Bước tiếp theo chỉ là audit đối soát corporate-action/current holdings, xác minh snapshot generation ownership và đánh giá shadow ngoài mẫu; scheduler, calibration và bất kỳ hành vi bán tự động nào vẫn đóng.
 
 ## Điều kiện nghiệm thu chung
 

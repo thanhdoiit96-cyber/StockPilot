@@ -13,6 +13,7 @@ import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioDecisionJournal from "./components/PortfolioDecisionJournal.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
 import PortfolioPositions from "./components/PortfolioPositions.jsx";
+import PortfolioExitGuidance from "./components/PortfolioExitGuidance.jsx";
 import PortfolioPerformance from "./components/PortfolioPerformance.jsx";
 import PortfolioPerformanceHistory from "./components/PortfolioPerformanceHistory.jsx";
 import PortfolioCashFlows from "./components/PortfolioCashFlows.jsx";
@@ -1994,7 +1995,11 @@ function lv() {
               onAddToWatchlist: addToWatchlist,
               language: profileLanguage,
               timezone: profileTimezone
-            }) }), O.jsx(PortfolioAllocation, {
+            }) }), O.jsx(PortfolioExitGuidance, {
+              token: ue.token,
+              active: authVerification.status === "verified" && re === "portfolio" && portfolioTab === "overview",
+              language: profileLanguage
+            }), O.jsx(PortfolioAllocation, {
             allocations: Wt,
             positions: mi,
             quoteCount: Oo.filter(symbol => di[symbol]).length,
