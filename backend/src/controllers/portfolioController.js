@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const { Op, QueryTypes } = require('sequelize');
-const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, PortfolioAllocationTarget, PortfolioDecision, Stock, StockPrice, sequelize } = require('../models');
+const { Portfolio, PortfolioTransaction, PortfolioCashFlow, PortfolioEvent, PortfolioAllocationTarget, PortfolioDecision, PositionExitRun, Stock, StockPrice, sequelize } = require('../models');
 const requireAuth = require('../middleware/requireAuth');
 const { normalizeTransactionPrice, normalizeRecommendationContext, uniqueForwardSessions, evaluateRecommendationEntry, summarizePortfolioHoldings, summarizePortfolioTransactions, summarizeInvestmentPerformance } = require('../services/portfolioAccounting');
 const { normalizePortfolioImportRows, validatePortfolioImport, validatePortfolioTimeline } = require('../services/portfolioImport');
@@ -138,6 +138,29 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('[Portfolio] Load failed:', error.message);
     httpError(res, 500, 'portfolio_load_failed', 'Không tải được danh mục. Vui lòng thử lại.');
+  }
+});
+
+router.get('/exit-guidance', async (req, res) => {
+  try {
+    const portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
+    if (!portfolio) return res.json({ success: true, data: { status: 'unavailable', reason: 'no_portfolio', guidance: [] } });
+    const run = PositionExitRun ? await PositionExitRun.findOne({
+      where: { portfolio_id: portfolio.id }, order: [['as_of', 'DESC'], ['created_at', 'DESC']],
+      include: [{ association: 'guidance', include: [{ association: 'stock', attributes: ['code', 'name'] }] }]
+    }) : null;
+    if (!run) return res.json({ success: true, data: { status: 'unavailable', reason: 'no_shadow_snapshot', guidance: [] } });
+    const value = run.toJSON ? run.toJSON() : run;
+    return res.json({ success: true, data: {
+      status: 'shadow', research_only: true, run_id: value.id, as_of: value.as_of, provider: value.provider, model: value.model,
+      snapshot_sha256: value.snapshot_sha256, guidance: (value.guidance || []).map(item => {
+        const entry = item.toJSON ? item.toJSON() : item;
+        return { stock_id: entry.stock_id, symbol: entry.stock?.code || null, name: entry.stock?.name || null, status: entry.status, ...entry.payload };
+      })
+    } });
+  } catch (error) {
+    console.error('[Portfolio] Exit guidance load failed:', error.message);
+    return httpError(res, 500, 'portfolio_exit_guidance_failed', 'Unable to load exit guidance');
   }
 });
 

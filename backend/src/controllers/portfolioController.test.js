@@ -1,7 +1,7 @@
 jest.mock('../models', () => ({
   Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), findOne: jest.fn(), bulkCreate: jest.fn() },
   PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioAllocationTarget: { findAll: jest.fn(), destroy: jest.fn(), bulkCreate: jest.fn() },
-  PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioDecision: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn(), count: jest.fn() },
+  PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioDecision: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn(), count: jest.fn() }, PositionExitRun: { findOne: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
   sequelize: { transaction: jest.fn(), query: jest.fn() }
 }));
@@ -23,6 +23,7 @@ beforeEach(() => {
   models.PortfolioEvent.findAll.mockResolvedValue([]);
   models.PortfolioDecision.findAll.mockResolvedValue([]);
   models.PortfolioDecision.count.mockResolvedValue(0);
+  models.PositionExitRun.findOne.mockResolvedValue(null);
   models.Stock.findAll.mockResolvedValue([{ id: 's', code: 'FPT', name: 'FPT Corp' }]);
   models.Stock.findOne.mockResolvedValue({ id: 's', code: 'FPT', name: 'FPT Corp' });
   models.StockPrice.findAll.mockResolvedValue([{ stock_id: 's', close: 60000, observed_at: '2026-09-24T00:00:00Z' }]);
@@ -30,6 +31,20 @@ beforeEach(() => {
   models.sequelize.query.mockResolvedValue([{ session_date: '2026-09-24' }]);
 });
 const app = express(); app.use(express.json()); app.use('/portfolio', router);
+
+test('reads only the latest sealed exit-guidance snapshot owned by the signed-in portfolio', async () => {
+  models.PositionExitRun.findOne.mockResolvedValue({ id: 'exit-run', as_of: '2026-10-21', provider: 'vnstock', model: 'position_exit_rule_v1', snapshot_sha256: 'a'.repeat(64), guidance: [{ stock_id: 's', status: 'hold', payload: { research_only: true, reasons: ['no_exit_trigger'] }, stock: { code: 'FPT', name: 'FPT Corp' } }], toJSON() { return { id: this.id, as_of: this.as_of, provider: this.provider, model: this.model, snapshot_sha256: this.snapshot_sha256, guidance: this.guidance }; } });
+  const response = await request(app).get('/portfolio/exit-guidance');
+  expect(response.status).toBe(200);
+  expect(response.body.data).toMatchObject({ status: 'shadow', research_only: true, run_id: 'exit-run', guidance: [{ symbol: 'FPT', status: 'hold', reasons: ['no_exit_trigger'] }] });
+  expect(models.PositionExitRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { portfolio_id: 'p' } }));
+});
+
+test('does not generate exit guidance during a read when no shadow snapshot exists', async () => {
+  const response = await request(app).get('/portfolio/exit-guidance');
+  expect(response.status).toBe(200);
+  expect(response.body.data).toEqual({ status: 'unavailable', reason: 'no_shadow_snapshot', guidance: [] });
+});
 
 test('empty intraday leaves ledger positions and EOD fallback intact', async () => {
   liveQuoteService.load.mockResolvedValue({});

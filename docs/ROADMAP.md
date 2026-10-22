@@ -63,6 +63,8 @@ Audit mã nguồn đã xác nhận weighted-average cost basis từ ledger giao 
 
 Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến theo portfolio chứa provenance/hash và cả trạng thái unavailable. Bước tiếp theo là read-only API theo ownership, sau đó UI shadow; không nối scheduler cho đến khi contract corporate-action/current-holding reconciliation được kiểm chứng.
 
+Read-only API theo ownership đã hoàn tất: `GET /api/portfolio/exit-guidance` chỉ trả snapshot shadow niêm phong gần nhất hoặc unavailable, không tạo snapshot/call provider khi đọc. Bước tiếp theo là UI shadow cho Danh mục; scheduler và bất kỳ hành vi bán tự động nào vẫn đóng.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
