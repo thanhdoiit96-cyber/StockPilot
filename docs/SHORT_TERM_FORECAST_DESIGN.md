@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Baseline input parity — 2026-10-23
+
+Build new v3 baselines from the preview's participating symbols and Vietnam cutoff. Reject invalid/missing availability, conflicting closes, or rows after the cutoff rather than silently train a different basket. Only selected symbols affect training; preserve legacy baseline calls and sealed data. Pass scope explicitly at materialization and seal policy/symbol metadata in baseline. This is preferable to expanding provider history or guessing membership. No additional requests/schema; bounded row normalization before existing baseline computation. Acceptance covers excluded symbols, future rows, missing availability and clean baseline output. Historical baseline comparisons remain legacy and are not upgraded by inference.
+
 ### Outcome evidence availability — 2026-10-23
 
 For v3 inputs, require every row used to establish origin and the selected shared-session horizon to have a valid fetched timestamp, at/after that date's 15:00 Vietnam close and observation timestamp, and no later than evaluation time. Pending reasons distinguish invalid time, premature fetch and future availability. Checking only target prices is cheaper but misses evidence used to count the horizon; choose the bounded full selected window. Preserve legacy and sealed outcomes. This is a conservative availability proxy, not provider publication certification. No new requests or storage schema; test pending-to-ready without database writes. Verify mixed-cohort UI disclosure at desktop/mobile with isolated mocked data and request counts.

@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Baseline input parity implemented (2026-10-23): live materialization uses preview participation/cutoff and seals temporal policy; issuance checks parity. Legacy evidence remains unchanged. Next: baseline policy validation and historical comparison compatibility; runtime materialization and accuracy remain unverified.
+
 Outcome availability guard and mixed-cohort browser verification completed (2026-10-23). v3 requires fetched evidence after local close and no later than evaluation time across the selected horizon; mock desktop/mobile disclosures pass. Next: baseline participation/temporal-contract audit; fetched time remains an availability proxy, not provider publication certification.
 
 Cohort identity UI and v3 Vietnam-date evaluation implemented (2026-10-23). Separate disclosures reuse current requests; mixed counts do not unlock pooled scores. Target-close/conflicting-price guards apply to v3 outcomes; legacy records stay immutable. Remaining: mixed-cohort visual fixture and outcome availability-time audit.

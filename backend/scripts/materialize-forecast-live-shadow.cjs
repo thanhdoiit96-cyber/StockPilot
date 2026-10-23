@@ -20,7 +20,7 @@ const { buildContemporaneousLiveBaseline } = require('../src/services/forecastLi
   const results = [];
   for (const horizon of [1, 5]) {
     const preview = buildLiveForecastPreview({ currentData, horizon, modelVersion: 'forecast_current_softmax_prototype_v2' });
-    const baseline = buildContemporaneousLiveBaseline(currentData, horizon);
+    const baseline = buildContemporaneousLiveBaseline(currentData, horizon, { inputScope: preview.current_data.input_scope });
     const result = await createLiveShadowSnapshot({ models, preview, currentData, baseline, license, env: { ...process.env, NODE_ENV: 'development', FORECAST_LIVE_PREVIEW: 'true' } });
     results.push({ horizon_sessions: horizon, status: result.status, id: result.snapshot.id, as_of: result.snapshot.as_of, evidence_sha256: result.snapshot.payload.provenance.evidence_sha256 });
   }

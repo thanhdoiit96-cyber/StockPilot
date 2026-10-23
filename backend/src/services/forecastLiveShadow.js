@@ -17,6 +17,14 @@ function validateLiveShadowInput({ preview, currentData, baseline, license = 'pe
     dataset: row.source?.dataset || null, fetched_at: row.fetched_at || null })).sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)) || String(a.observed_at).localeCompare(String(b.observed_at)));
   if (evidenceRows.some(row => !row.symbol || !row.observed_at || !Number.isFinite(Number(row.close)))) throw new Error('Invalid live shadow evidence');
   if (baseline && (baseline.version !== 'forecast_live_baseline_v1' || baseline.horizon_sessions !== preview.horizon_sessions || baseline.completed_outcomes < 20 || !/^[a-f0-9]{64}$/.test(baseline.training_hash || ''))) throw new Error('Invalid live shadow baseline');
+  if (baseline && scope?.contract_version === 'vn_observation_dates_v3') {
+    const policy = baseline.input_policy;
+    if (policy?.input_contract_version !== scope.contract_version || policy.as_of_date !== scope.as_of_date
+      || JSON.stringify(policy.symbols) !== JSON.stringify([...new Set(scope.used_symbols)].sort())
+      || policy.availability_policy !== 'fetched_after_close_before_issuance_v1'
+      || !Number.isFinite(Date.parse(baseline.fit_cutoff)) || Date.parse(baseline.fit_cutoff) > Date.parse(preview.fetched_at)
+      || baseline.training_to > scope.as_of_date) throw new Error('Live baseline input policy mismatch');
+  }
   return { version: baseline ? 'forecast_live_shadow_payload_v2' : 'forecast_live_shadow_payload_v1', mode: 'local_live_preview', shadow: true, synthetic: false, research_only: false, live: true, market_accuracy_verified: false,
     provider: preview.provider, model_version: preview.model_version || 'forecast_current_softmax_prototype_v1', horizon_sessions: preview.horizon_sessions, as_of: asOf, target_session: null,
     issued_at: new Date(preview.fetched_at).toISOString(), probabilities: CLASSES.map(name => ({ class: name, value: values[name] })),
