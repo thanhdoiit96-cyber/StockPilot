@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Baseline eligibility disclosure — 2026-10-23
+
+Within each existing cohort disclosure, show eligible measured results against the per-group threshold and measured results with missing/incompatible baselines separately. Missing metadata displays unknown, not zero. Reuse response and native details; no requests, polling or layout additions. Validate count pairs before display. Positive-path scoring must be verified on compatible v3 synthetic evidence, without claiming real performance or lowering the production threshold.
+
 ### Baseline comparison validation — 2026-10-23
 
 Use one validator at issuance and cohort scoring for baseline probabilities, sample count, dates/hash and v3 participation policy. A valid payload hash proves integrity, not statistical compatibility. Reject malformed new issuance; retain historical measured counts while excluding incompatible baselines from score eligibility and reporting the excluded count. Prefer this bounded validation over rewriting history or failing the entire history page. No schema, provider requests or UI changes. Acceptance covers missing/duplicate probabilities, invalid dates/counts, mismatched scope and valid compatible comparisons.

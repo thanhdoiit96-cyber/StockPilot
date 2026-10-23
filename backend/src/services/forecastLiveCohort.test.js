@@ -1,7 +1,30 @@
 const { artifactHash } = require('./forecastArtifact');
 const { buildLiveCohortSummary } = require('./forecastLiveCohort');
+const { buildContemporaneousLiveBaseline } = require('./forecastLiveBaseline');
 const row = (outcome = null) => { const payload = { version:'forecast_live_shadow_payload_v1', probabilities:[{class:'declining',value:.2},{class:'balanced',value:.3},{class:'advancing',value:.5}] }; const stored={ id:'1',provider:'vnstock',horizon_sessions:5,as_of:'2026-10-13',synthetic:false,research_only:false,payload,payload_sha256:artifactHash(payload),outcome }; return stored; };
 test('keeps current-data scoring closed below the measured sample gate', () => expect(buildLiveCohortSummary([row()], { horizon:5, minimumSamples:20 })).toMatchObject({ status:'live_cohort',synthetic:false,predictions:1,measured:0,pending:1,score_gate:{status:'insufficient_samples',samples:0,minimum_samples:20},model_scores:null }));
+
+test('twenty compatible v3 outcomes open finite baseline comparisons without an accuracy claim', () => {
+  const rows = Array.from({ length: 20 }, (_, index) => {
+    const asOf = `2026-10-${String(index + 1).padStart(2, '0')}`, issuedAt = `${asOf}T10:00:00Z`;
+    const scope = { contract_version: 'vn_observation_dates_v3', as_of_date: asOf, used_symbols: ['FPT'] };
+    const history = Array.from({ length: 30 }, (_, day) => {
+      const date = new Date(Date.parse(`${asOf}T00:00:00Z`) - (29 - day) * 86400000).toISOString().slice(0, 10);
+      return { instrument: { symbol: 'FPT' }, observed_at: `${date}T00:00:00Z`, fetched_at: `${date}T09:00:00Z`, quote: { close: 100 + day } };
+    });
+    const stored = row(); stored.id = String(index); stored.as_of = asOf;
+    stored.payload = { ...stored.payload, version: 'forecast_live_shadow_payload_v2', issued_at: issuedAt, model_version: 'test-model', provenance: { input_contract_version: scope.contract_version, input_scope: scope }, baseline_snapshot: buildContemporaneousLiveBaseline({ rows: history, fetched_at: issuedAt }, 5, { inputScope: scope }) };
+    stored.payload_sha256 = artifactHash(stored.payload);
+    const payload = { snapshot_sha256: stored.payload_sha256, actual_class: 'advancing' };
+    stored.outcome = { payload, payload_sha256: artifactHash(payload) };
+    return stored;
+  });
+  const result = buildLiveCohortSummary(rows, { horizon: 5 });
+  expect(result).toMatchObject({ baseline_eligible_measured: 20, baseline_ineligible_measured: 0, score_gate: { status: 'available' }, market_accuracy_verified: false, baseline_comparison: { status: 'available' } });
+  expect(result.model_scores.brier_multiclass_sum).toBeCloseTo(.38);
+  expect(Number.isFinite(result.baseline_comparison.frequency.brier_delta)).toBe(true);
+  expect(buildLiveCohortSummary(rows.slice(0, 19), { horizon: 5 }).model_scores).toBeNull();
+});
 
 test('hashed but malformed historical baselines cannot unlock scores', () => {
   const rows = Array.from({ length: 20 }, () => {

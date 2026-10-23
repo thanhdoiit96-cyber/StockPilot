@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Baseline eligibility disclosure and positive scoring path completed (2026-10-23): UI shows per-group compatible/ineligible measured counts; synthetic 19/20 threshold tests pass. Real local h5 has 9 predictions/4 measured with 2 eligible and 2 ineligible; mixed aggregate scores remain closed. Next: baseline exclusion-reason disclosure without provider expansion.
+
 Baseline compatibility gate strengthened (2026-10-23): shared issuance/scoring validation excludes malformed or incompatible historical baselines while preserving measured counts. Next: UI baseline eligibility counts and positive-path same-policy comparison verification. Runtime/historical database audit remains unperformed.
 
 Baseline input parity implemented (2026-10-23): live materialization uses preview participation/cutoff and seals temporal policy; issuance checks parity. Legacy evidence remains unchanged. Next: baseline policy validation and historical comparison compatibility; runtime materialization and accuracy remain unverified.
