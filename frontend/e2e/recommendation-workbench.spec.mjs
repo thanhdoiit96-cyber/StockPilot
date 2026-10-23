@@ -97,6 +97,13 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()
   await expect(page.locator('.personalized-list')).toContainText('FPT')
+  const signal = page.locator('.recommendation-signal')
+  await expect(signal).toContainText('Chưa có theo dõi outcome')
+  await expect(signal).toContainText('20 phiên giao dịch')
+  await expect(signal.locator('.recommendation-signal-factors')).toContainText('100/100')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await signal.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+  await page.setViewportSize({ width: 1440, height: 900 })
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Xuất CSV đề xuất', exact: true }).click()
   const download = await downloadPromise

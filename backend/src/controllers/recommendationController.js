@@ -232,7 +232,16 @@ router.get('/latest', async (req, res) => {
     if (!run) return res.json({ success: true, data: { status: 'unavailable', recommendations: [] } });
     const calibrationRuns = await assessRuns(await RecommendationRun.findAll({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, limit: 40, order: [['as_of', 'DESC'], ['created_at', 'DESC']], include: historyInclude }), StockPrice);
     const learning = deriveCalibration(calibrationRuns, { targetModel: 'personalized_rule_v1', targetHorizonDays: Number(process.env.RECOMMENDATION_HORIZON || 20) });
-    return res.json({ success: true, data: { status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning, recommendations: (run.recommendations || []).map(item => ({ id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock })) } });
+    const assessed = calibrationRuns.find(item => String(item.id) === String(run.id));
+    const states = new Map((assessed?.recommendations || []).map(item => [String(item.id), item]));
+    return res.json({ success: true, data: {
+      status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning,
+      recommendations: (run.recommendations || []).map(item => {
+        const state = states.get(String(item.id));
+        return { id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock,
+          statistics_eligible: state?.statistics_eligible === true, measurement_status: state?.measurement_status || 'untracked', observed_session_count: state?.observed_session_count ?? null, remaining_session_count: state?.remaining_session_count ?? null, exclusion_reasons: state?.exclusion_reasons || [] };
+      })
+    } });
   } catch (error) { console.error('[Recommendation Controller] Error fetching latest run:', error); return httpError(res, 500, 'recommendation_latest_failed', 'Error fetching recommendations'); }
 });
 

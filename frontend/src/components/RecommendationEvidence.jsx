@@ -1,15 +1,24 @@
 import { uiText } from "../services/uiCatalog.mjs";
 import { recommendationEvidence } from '../services/recommendationEvidence.mjs'
+import { recommendationSignal } from '../services/recommendationSignal.mjs'
 
-const number = value => value == null ? '—' : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(value)
-const dateTime = value => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value)) : 'Chưa có thời điểm'
 
 export default function RecommendationEvidence({ item, criteria = [], language = 'vi' }) {
   const ui = text => uiText(language, text)
   const en = language === 'en'
   const text = (vi, english) => en ? english : vi
+  const number = value => value == null ? '—' : new Intl.NumberFormat(en ? 'en-US' : 'vi-VN', { maximumFractionDigits: 2 }).format(value)
+  const dateTime = value => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value)) : text('Chưa có thời điểm', 'Time unavailable')
   const evidence = recommendationEvidence(item, criteria)
-  return <details className="recommendation-evidence" lang={language}>
+  const signal = recommendationSignal(item, criteria)
+  const score = value => new Intl.NumberFormat(en ? 'en-US' : 'vi-VN', { maximumFractionDigits: 1 }).format(value)
+  const labels = { pending: text('Đang chờ đủ kỳ hạn', 'Awaiting horizon'), eligible: text('Outcome đủ điều kiện kiểm chứng', 'Eligible measured outcome'), excluded: text('Outcome bị loại khỏi thống kê', 'Outcome excluded from statistics'), untracked: text('Chưa có theo dõi outcome', 'Outcome tracking unavailable') }
+  return <section className="recommendation-signal" aria-label={text('Cơ sở và vòng đời tín hiệu', 'Signal evidence and lifecycle')} lang={language}>
+    <div className="recommendation-signal-heading"><strong>{text('Cơ sở xếp hạng', 'Ranking explanation')}</strong><span className={`chip ${signal.state === 'excluded' ? 'warning' : 'neutral'}`}>{labels[signal.state]}</span></div>
+    <p className="recommendation-signal-progress">{text('Giá tham chiếu ghi nhận', 'Reference observed')}: {dateTime(evidence.observedAt)}</p>
+    {signal.supporting.length ? <dl className="recommendation-signal-factors"><div><dt>{text('Tiêu chí điểm cao nhất', 'Highest-scoring criteria')}</dt><dd>{signal.supporting.map(factor => `${ui(factor.label)} ${score(factor.score)}/100`).join(' · ')}</dd></div>{signal.review && <div><dt>{text('Tiêu chí cần xem kỹ', 'Criterion to review')}</dt><dd>{ui(signal.review.label)} {score(signal.review.score)}/100</dd></div>}</dl> : <p className="muted-text">{text('Chưa có chi tiết điểm để giải thích thứ hạng.', 'Criterion scores are unavailable for explaining this ranking.')}</p>}
+    <p className="recommendation-signal-progress">{text('Kỳ hạn', 'Horizon')}: {signal.horizon == null ? '—' : `${signal.horizon} ${text('phiên giao dịch', 'trading sessions')}`}{signal.state === 'pending' && signal.observed != null ? ` · ${text('Đã quan sát', 'Observed')} ${signal.observed} ${text('phiên', 'sessions')}` : ''}{signal.returnPct != null ? ` · ${text('Biến động EOD từ giá tham chiếu', 'EOD change from reference')}: ${signal.returnPct > 0 ? '+' : ''}${score(signal.returnPct)}%` : ''}</p>
+    <details className="recommendation-evidence">
     <summary>{text('Xem bằng chứng chấm điểm', 'View scoring evidence')}</summary>
     <div className="recommendation-evidence-body">
       <dl className="recommendation-provenance">
@@ -24,5 +33,6 @@ export default function RecommendationEvidence({ item, criteria = [], language =
       {evidence.sources.length > 0 && <div className="recommendation-citations"><strong>{text('Nguồn ngoài hệ thống đã xác minh', 'Verified external sources')}</strong><ul>{evidence.sources.map(source => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><small>{source.source} · {dateTime(source.publishedAt)} · {source.type}</small></li>)}</ul></div>}
       <p className="muted-text recommendation-evidence-note">{text('Điểm số dùng provenance kỹ thuật. Nguồn ngoài hệ thống được liệt kê riêng để tham khảo, không được cộng điểm và không chứng minh quan hệ nhân quả.', 'Scores use technical provenance. External sources are listed separately for reference; they are not scored and do not prove causality.')}</p>
     </div>
-  </details>
+    </details>
+  </section>
 }

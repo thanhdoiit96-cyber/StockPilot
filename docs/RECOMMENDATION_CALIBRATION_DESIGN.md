@@ -1,5 +1,9 @@
 # Hiệu chỉnh Đề xuất theo bằng chứng
 
+## Signal explanation UI decision — 2026-10-23
+
+Users need to distinguish ranking evidence from measured signal outcomes. Extend the existing scoring-evidence component with a compact visible explanation: highest two criterion scores, lowest distinct criterion for review, declared horizon, price timestamp and explicit evaluation state. These are relative score comparisons, not newly invented trading thresholds. Only `statistics_eligible=true` together with `measurement_status=eligible` permits a validated outcome label; excluded/pending are displayed separately, and absent tracking fields mean untracked. Personalized results must not inherit scheduled-model evidence. Reuse the current response; add no request, polling, persistence or model change. Existing native details keep full provenance available by keyboard. Acceptance: missing/malformed evidence remains unknown; eligible/excluded/pending remain distinguishable; mobile layout and browser evidence disclosure pass.
+
 ## Mục tiêu và phạm vi
 
 Tài liệu này ghi quyết định cho việc dùng outcome lịch sử để hiệu chỉnh trọng số Đề xuất. Người dùng cần biết liệu kết quả lịch sử có đang làm thay đổi điểm xếp hạng hay không; hệ thống không được diễn giải một tập outcome nhỏ, không cùng mô hình, thành bằng chứng cho đề xuất cá nhân hóa.

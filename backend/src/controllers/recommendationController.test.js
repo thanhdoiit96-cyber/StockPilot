@@ -80,6 +80,14 @@ describe('saved recommendation API', () => {
     expect(RecommendationRun.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { provider: 'vnstock', model: 'short_term_rule_v2' }, order: [['as_of', 'DESC'], ['created_at', 'DESC']] }));
   });
 
+  test('latest result never claims measured eligibility without matching assessed evidence', async () => {
+    RecommendationRun.findOne.mockResolvedValue({ id: 'unassessed', recommendations: [{ id: 'r', score: 70, outcome: 'positive', forward_return_pct: 10 }] });
+    RecommendationRun.findAll.mockResolvedValue([]);
+    const response = await request(app).get('/api/recommendations/latest');
+    expect(response.status).toBe(200);
+    expect(response.body.data.recommendations[0]).toMatchObject({ statistics_eligible: false, measurement_status: 'untracked', observed_session_count: null });
+  });
+
   test('returns the latest stored snapshot without generating data on a read request', async () => {
     const stale = { id: 'stale-run', as_of: '2026-10-14', created_at: '2026-10-15T09:00:00.000Z', horizon_days: 20, provider: 'vnstock', model: 'short_term_rule_v2', universe_size: 48, selected_count: 2, status: 'completed', recommendations: [] };
     RecommendationRun.findOne.mockResolvedValue(stale);
