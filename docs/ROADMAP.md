@@ -71,6 +71,8 @@ The pure evaluation contract is implemented as `position_exit_shadow_evaluation_
 
 Migration `050` adds the immutable, one-per-guidance evaluation ledger and a create-or-return persistence boundary. Collection/reporting remains deferred: no scheduler, UI publication or performance claim is enabled.
 
+A bounded database-only evaluation runner is implemented (100 guidance records; 20 subsequent EOD rows each). It reports `no_snapshots` honestly and does not call a provider. It is deliberately not scheduled until immutable exit snapshot generation has an authorized owner.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
