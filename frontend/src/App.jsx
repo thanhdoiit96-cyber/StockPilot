@@ -1980,12 +1980,12 @@ function lv() {
             cash: ((pe == null ? void 0 : pe.cash_flows) || []).length,
             watchlist: pt.length
           }
-        }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioPerformance, {
+        }), O.jsxs("div", { className: "personal-grid portfolio-overview-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioPerformance, {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
             loading: Ir,
             language: profileLanguage
-          }), O.jsx("article", { className: "panel portfolio-panel", children: O.jsx(PortfolioPositions, {
+          }), O.jsx("article", { className: "panel portfolio-panel portfolio-positions-panel", children: O.jsx(PortfolioPositions, {
               positions: mi,
               closedPositions: (pe == null ? void 0 : pe.closed_positions) || [],
               loading: Ir,
@@ -1995,7 +1995,7 @@ function lv() {
               onAddToWatchlist: addToWatchlist,
               language: profileLanguage,
               timezone: profileTimezone
-            }) }), O.jsx(PortfolioExitGuidance, {
+            }) }), O.jsxs("aside", { className: "portfolio-overview-aside", "aria-label": profileLanguage === "en" ? "Portfolio review tools" : "Công cụ rà soát danh mục", children: [O.jsx(PortfolioExitGuidance, {
               token: ue.token,
               active: authVerification.status === "verified" && re === "portfolio" && portfolioTab === "overview",
               language: profileLanguage
@@ -2023,7 +2023,7 @@ function lv() {
               }
             },
             language: profileLanguage
-          }), O.jsx(PortfolioPerformanceHistory, {
+          })] }), O.jsx(PortfolioPerformanceHistory, {
             token: ue.token,
             active: authVerification.status === "verified" && re === "portfolio",
             refreshKey: pe,
