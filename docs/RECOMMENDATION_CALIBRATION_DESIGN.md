@@ -2,6 +2,8 @@
 
 ## Signal explanation UI decision — 2026-10-23
 
+History follow-up: show model/horizon cohort progress before outcome statistics, reusing the existing summary request. Do not aggregate distinct models/horizons into one success rate. Summary failure must display retry rather than a no-data state. Missing counts remain unavailable; only explicit server readiness marks a cohort comparable. Sector concentration means share of selected symbols in a frozen snapshot, not monetary portfolio exposure; no new allocation/ranking rule is inferred. No additional initial request, polling or cached persistence is introduced.
+
 Users need to distinguish ranking evidence from measured signal outcomes. Extend the existing scoring-evidence component with a compact visible explanation: highest two criterion scores, lowest distinct criterion for review, declared horizon, price timestamp and explicit evaluation state. These are relative score comparisons, not newly invented trading thresholds. Only `statistics_eligible=true` together with `measurement_status=eligible` permits a validated outcome label; excluded/pending are displayed separately, and absent tracking fields mean untracked. Personalized results must not inherit scheduled-model evidence. Reuse the current response; add no request, polling, persistence or model change. Existing native details keep full provenance available by keyboard. Acceptance: missing/malformed evidence remains unknown; eligible/excluded/pending remain distinguishable; mobile layout and browser evidence disclosure pass.
 
 ## Mục tiêu và phạm vi
