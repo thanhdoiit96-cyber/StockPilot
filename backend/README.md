@@ -147,6 +147,8 @@ Exit guidance has no scheduler. To create internal evidence without writing an e
 
 `EXIT_GUIDANCE_EOD_WORKER_ENABLED=true EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run run:exit-guidance-lease-worker` starts an explicit lease-only owner process. It records immutable aggregate `acquired`/`renewed`/`released`/`lease_lost` events, emits matching logs, renews every 30 seconds, releases on a normal exit, and never schedules/generates exit guidance. Use `-- --max-heartbeats=1` for one local observation cycle. It remains disabled by default and is not added to the web process or Compose.
 
+`GET /api/ops/exit-guidance-worker?limit=1..50` is an admin-only read of the configured lease's active/expired status and bounded aggregate lifecycle events. It never starts a worker or returns portfolio, holding, cost, provider, or guidance data. With no `ADMIN_API_KEY`, it correctly returns `503` rather than exposing operations data.
+
 ## Current quote endpoints
 
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.

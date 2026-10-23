@@ -36,6 +36,7 @@ const requireAdmin = require('./middleware/requireAdmin');
 const requestMetrics = require('./middleware/requestMetrics');
 const { createRequestMetrics } = require('./services/requestMetrics');
 const { createReadinessProbe } = require('./services/readinessService');
+const { readPositionExitWorkerOps } = require('./services/positionExitWorkerOps');
 
 // Initialize Express app
 const app = express();
@@ -153,6 +154,17 @@ app.get('/api/ops/metrics', requireAdmin, async (req, res) => {
     worker = { available: false };
   }
   return res.json({ success: true, data: { backend: metrics.snapshot(), worker } });
+});
+
+app.get('/api/ops/exit-guidance-worker', requireAdmin, async (req, res) => {
+  try {
+    const { PositionExitWorkerLeaseEvent, sequelize: modelsSequelize } = require('./models');
+    const leaseKey = process.env.EXIT_GUIDANCE_EOD_LEASE_KEY || 'position-exit-eod:vnstock:position_exit_rule_v1';
+    const data = await readPositionExitWorkerOps({ sequelize: modelsSequelize, PositionExitWorkerLeaseEvent, leaseKey, limit: req.query.limit });
+    return res.json({ success: true, data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Unable to read exit-guidance worker operations' });
+  }
 });
 
 app.get('/api/ops/metrics/prometheus', requireAdmin, async (req, res) => {
