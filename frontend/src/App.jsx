@@ -1991,6 +1991,7 @@ function lv() {
               loading: Ir,
               error: bt,
               onOpenDetail: openLinkedStock,
+              onTrade: (position, side) => { kt({ symbol: position.symbol, side, quantity: "", price: position.market_price == null ? "" : String(position.market_price), fees: "", traded_at: (new Date()).toISOString().slice(0, 10), recommendation_context: null }); setPortfolioTab("transactions"); },
               watchlistSymbols: [...yt],
               onAddToWatchlist: addToWatchlist,
               language: profileLanguage,

@@ -12,7 +12,7 @@ const openDetail = (event, position, callback) => {
   callback?.(position.stock_id)
 }
 
-function PositionRow({ position, onOpenDetail, watched, onAddToWatchlist, language, timezone }) {
+function PositionRow({ position, onOpenDetail, onTrade, watched, onAddToWatchlist, language, timezone }) {
   const t = key => translate(language, key)
   const number = value => formatNumber(value, language, { maximumFractionDigits: 4 })
   const money = value => value == null ? '-' : formatMoney(value, language, { maximumFractionDigits: 2 })
@@ -21,8 +21,9 @@ function PositionRow({ position, onOpenDetail, watched, onAddToWatchlist, langua
     <td><div className="portfolio-symbol-actions"><StockDetailLink className="symbol portfolio-detail-link" stockId={position.stock_id} symbol={position.symbol} onOpenDetail={onOpenDetail}>{position.symbol}</StockDetailLink><QuickWatchlistButton symbol={position.symbol} watched={watched} onAdd={onAddToWatchlist} /></div></td>
     <td>{number(position.quantity)}</td><td>{money(position.avg_cost)}</td>
     <td>{money(position.market_price)}<small className="data-time">{position.quote ? `${t('portfolio.positions.intraday')} · ${dateTime(position.quote.observed_at)}` : t('portfolio.positions.eod')}</small></td>
-    <td className={Number(position.unrealized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.unrealized_pnl)}</td>
+    <td className={Number(position.unrealized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.unrealized_pnl)}<small>{position.avg_cost > 0 && position.market_price != null ? `${((Number(position.market_price) / Number(position.avg_cost) - 1) * 100).toFixed(2)}%` : '-'}</small></td>
     <td className={Number(position.realized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.realized_pnl)}</td>
+    <td className="portfolio-trade-actions"><button type="button" className="ghost-btn small-btn portfolio-trade-buy" onClick={event => { event.stopPropagation(); onTrade?.(position, 'BUY') }}>Mua</button><button type="button" className="ghost-btn small-btn portfolio-trade-sell" onClick={event => { event.stopPropagation(); onTrade?.(position, 'SELL') }}>Bán</button></td>
   </tr>
 }
 
@@ -37,7 +38,7 @@ function ClosedPositionRow({ position, onOpenDetail, watched, onAddToWatchlist, 
   </tr>
 }
 
-export default function PortfolioPositions({ positions = [], closedPositions = [], loading = false, error = '', onOpenDetail, watchlistSymbols = [], onAddToWatchlist, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
+export default function PortfolioPositions({ positions = [], closedPositions = [], loading = false, error = '', onOpenDetail, onTrade, watchlistSymbols = [], onAddToWatchlist, language = 'vi', timezone = 'Asia/Ho_Chi_Minh' }) {
   const t = key => translate(language, key)
   const [filter, setFilter] = useState(() => { try { return sessionStorage.getItem('stockpilot-portfolio-position-filter') === 'closed' ? 'closed' : 'open' } catch { return 'open' } })
   const [query, setQuery] = useState(() => { try { return sessionStorage.getItem('stockpilot-portfolio-position-query') || '' } catch { return '' } })
@@ -68,7 +69,7 @@ export default function PortfolioPositions({ positions = [], closedPositions = [
     {!loading && !error && query.trim() && !rows.length ? <p role="status">{t('portfolio.positions.noMatch')}</p> : null}
     {!loading && !error && <div className="table-wrap portfolio-table">
       <table aria-label={t(closed ? 'portfolio.positions.closedTable' : 'portfolio.positions.openTable')}>
-        {closed ? <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.positions.status')}</th><th>{t('portfolio.positions.lastClosed')}</th><th>{t('portfolio.positions.realized')}</th></tr></thead><tbody>{rows.map(position => <ClosedPositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="4">{t('portfolio.positions.noClosed')}</td></tr> : null}</tbody></> : <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.transaction.quantity')}</th><th>{t('portfolio.positions.avgCost')}</th><th>{t('portfolio.positions.currentPrice')}</th><th>{t('portfolio.positions.unrealized')}</th><th>{t('portfolio.positions.realized')}</th></tr></thead><tbody>{rows.map(position => <PositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="6">{t('portfolio.positions.noOpen')}</td></tr> : null}</tbody></>}
+        {closed ? <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.positions.status')}</th><th>{t('portfolio.positions.lastClosed')}</th><th>{t('portfolio.positions.realized')}</th></tr></thead><tbody>{rows.map(position => <ClosedPositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="4">{t('portfolio.positions.noClosed')}</td></tr> : null}</tbody></> : <><thead><tr><th>{t('portfolio.positions.symbol')}</th><th>{t('portfolio.transaction.quantity')}</th><th>{t('portfolio.positions.avgCost')}</th><th>{t('portfolio.positions.currentPrice')}</th><th>{t('portfolio.positions.unrealized')}</th><th>{t('portfolio.positions.realized')}</th><th>Thao tác</th></tr></thead><tbody>{rows.map(position => <PositionRow key={position.stock_id} position={position} onOpenDetail={onOpenDetail} onTrade={onTrade} watched={watched.has(String(position.symbol).toUpperCase())} onAddToWatchlist={onAddToWatchlist} language={language} timezone={timezone} />)}{!loading && !error && !query.trim() && !rows.length ? <tr><td colSpan="7">{t('portfolio.positions.noOpen')}</td></tr> : null}</tbody></>}
       </table>
     </div>}
   </section>
