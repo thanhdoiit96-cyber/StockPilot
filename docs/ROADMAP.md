@@ -65,6 +65,8 @@ Migration/snapshot ledger `043` đã hoàn tất local: snapshot bất biến th
 
 Exit EOD generator has migration `047`, a manual bounded dry-run path, and five valid local-development dry-runs for 2026-10-16/19/20/21/22. Each observed 23/23 candidate holdings with exact-session EOD, made zero provider calls and created neither exit snapshots nor orders. Migrations `048`/`049` supply atomic expiring ownership, heartbeat/fencing and immutable aggregate lifecycle audit events, with a bounded admin-only read endpoint. Local concurrent-owner evidence confirms a second owner is rejected while the first heartbeats the lease. An explicit lease-only worker and opt-in Compose `exit-guidance-observe` profile are ready for environment-owned verification; neither schedules or generates guidance. Docker is unavailable locally, so the Compose profile remains unverified. The remaining dependency is deployment authority and evidence of that dedicated worker process/queue continuously owning the lease outside a local command; scheduler/config, automatic sales and calibration remain closed.
 
+Model-integrity follow-up (2026-10-23) is complete: a recent bounded EOD window no longer fabricates the high-water mark for holdings that predate the window (`entry_before_available_eod`); an armed trailing position now reaches `trailing_protect` on the documented bearish-trend condition. The next exit-specific milestone remains an explicit, separately approved snapshot-generation owner followed by the predeclared 1/5/20-session shadow-evaluation cohort. It cannot be replaced with aggregate dry-run counts or buy-recommendation outcomes.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.

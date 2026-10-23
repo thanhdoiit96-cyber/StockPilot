@@ -46,6 +46,7 @@ const reasonCopy = {
     mixed_price_basis: 'Price basis or provenance is inconsistent.',
     position_cost_or_quantity_invalid: 'A valid cost basis or position quantity is missing.',
     insufficient_indicator_history: 'There is not enough history for the indicators.',
+    entry_before_available_eod: 'Available EOD data does not cover the entry date, so the high-water mark since entry cannot be established.',
     entry_after_available_eod: 'The position entry date is after the available EOD data.'
   }
 }

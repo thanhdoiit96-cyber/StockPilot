@@ -143,6 +143,7 @@ Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
+- Exit-guidance audit 2026-10-23: model now fails closed as `entry_before_available_eod` when a bounded EOD window cannot establish the entry-linked high-water mark, and an armed trailing stop now enters `trailing_protect` on its documented bearish-SMA condition. Targeted engine tests pass 5/5; backend lint passes; frontend tests pass 113/113 and production build/bundle integrity pass outside the sandbox. This added no snapshot, provider request, order, notification, scheduler, calibration or automated action. Shadow evaluation remains blocked by its honest dependency: frozen snapshots plus 1/5/20 subsequent EOD sessions are required for coverage/pending/excluded cohorts, MAE/MFE and boundary crossings; aggregate dry-runs and buy outcomes cannot substitute.
 1. Chạy lại baseline 5 mẫu hoặc browser trace khi thay đổi lifecycle; theo dõi `missing_symbols` của quote provider và chỉ tách `App.jsx` khi số đo mới chứng minh lợi ích. Nền tảng lint, release gate và contract cấu hình backend/frontend hiện đã được chuẩn hóa.
 2. Duy trì gate Đề xuất: không hiệu chỉnh hay diễn giải hiệu quả khi outcome chưa hợp lệ.
 3. Khi thay đổi tính năng, cập nhật tài liệu thiết kế chịu trách nhiệm, file này và [ROADMAP.md](ROADMAP.md); đưa record cũ vào archive thay vì kéo dài tài liệu hiện hành.

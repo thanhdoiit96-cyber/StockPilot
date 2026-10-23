@@ -13,3 +13,7 @@ test('presents exit statuses as review-only labels', () => {
 test('does not invent an explanation for an unknown exit reason', () => {
   assert.match(exitGuidanceReason('unknown_reason'), /Snapshot/)
 })
+
+test('explains when an entry predates the available EOD window', () => {
+  assert.match(exitGuidanceReason('entry_before_available_eod', 'en'), /high-water mark/)
+})

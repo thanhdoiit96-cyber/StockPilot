@@ -69,6 +69,14 @@ function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnapplied
   const sma50 = average(closes.slice(-50));
   if (atr == null || rsi == null || sma20 == null || sma50 == null) return unavailable('insufficient_indicator_history', { as_of: latest.session_date });
   const effectiveEntryDate = sessionDate(reconciledPosition.first_traded_at) || rows[0].session_date;
+  // The trailing stop is defined from the highest close since entry. A bounded
+  // EOD window cannot truthfully reconstruct that high-water mark when the
+  // position predates the first stored row, so do not infer one from partial
+  // history.
+  if (effectiveEntryDate < rows[0].session_date) return unavailable('entry_before_available_eod', {
+    as_of: latest.session_date,
+    coverage: { observed: rows.length, minimum: minimumSessions, earliest_session: rows[0].session_date }
+  });
   const sinceEntry = rows.filter(row => row.session_date >= effectiveEntryDate);
   if (!sinceEntry.length) return unavailable('entry_after_available_eod', { as_of: latest.session_date });
   const highestSinceEntry = Math.max(...sinceEntry.map(row => row.close));
@@ -83,6 +91,7 @@ function buildPositionExitGuidance({ position = {}, priceRows = [], hasUnapplied
   let status = 'hold'; let reasons = ['no_exit_trigger'];
   if (close <= trailingStop) { status = 'cut_loss'; reasons = ['close_at_or_below_active_stop']; }
   else if (profitArmed && (close - trailingStop) <= .5 * atr) { status = 'trailing_protect'; reasons = ['trailing_stop_armed', 'close_near_active_stop']; }
+  else if (profitArmed && bearishTrend) { status = 'trailing_protect'; reasons = ['trailing_stop_armed', 'trend_weakened']; }
   else if (close >= target && momentumWeakening) { status = 'take_profit_review'; reasons = ['profit_target_reached', bearishTrend ? 'trend_weakened' : 'rsi_left_overbought']; }
   return {
     version: 'position_exit_rule_v1', status, research_only: true, as_of: latest.session_date,

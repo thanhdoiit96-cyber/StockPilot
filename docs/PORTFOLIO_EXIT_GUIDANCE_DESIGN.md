@@ -36,7 +36,7 @@ Research on stop-loss policies does not support assuming they always add value: 
 For each open position, calculate from one frozen daily EOD session only:
 
 1. User-owned position quantity and average cost, reconstructed by the existing portfolio ledger. A position with no valid positive cost is `unavailable`.
-2. At least 60 distinct same-provider daily EOD closes ending at `as_of`; ATR(14), SMA(20), SMA(50), RSI(14), and the highest close since the effective entry session are all derived from that same series.
+2. At least 60 distinct same-provider daily EOD closes ending at `as_of`; ATR(14), SMA(20), SMA(50), and RSI(14) are derived from that same series. When a trailing stop needs the highest close since the effective entry session, the stored series must also cover that entry session continuously. A bounded recent window that begins after entry is `unavailable`; it must not infer a high-water mark from partial history. A later version may use an independently sealed, entry-linked high-water record, but may not silently substitute one.
 3. Positive close, currency/price-unit compatibility, provider, interval, price-adjustment basis and session date. Missing, stale or mixed-basis inputs fail closed.
 4. An optional market-regime overlay only when a separately defined breadth/index dataset has same-session provenance and passes its own coverage gate. If unavailable, the overlay is `unavailable`; it must not fabricate a market trend or by itself create a sell state.
 

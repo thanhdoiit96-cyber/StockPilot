@@ -13,6 +13,13 @@ test('fails closed when price basis or a corporate action is not safe', () => {
   expect(buildPositionExitGuidance({ position, priceRows: mixed })).toMatchObject({ status: 'unavailable', reason: 'mixed_price_basis' });
 });
 
+test('fails closed when the bounded EOD window cannot establish the high-water mark since entry', () => {
+  const olderPosition = { ...position, first_traded_at: '2025-12-01T00:00:00.000Z' };
+  expect(buildPositionExitGuidance({ position: olderPosition, priceRows: rows() })).toMatchObject({
+    status: 'unavailable', reason: 'entry_before_available_eod', coverage: { earliest_session: '2026-01-01' }
+  });
+});
+
 test('emits a reproducible protective exit state only from stored EOD inputs', () => {
   const falling = rows({ close: 120 }).map((row, index) => ({ ...row, close: 120 - index, high: 121 - index, low: 119 - index }));
   const result = buildPositionExitGuidance({ position, priceRows: falling });
@@ -25,4 +32,14 @@ test('does not turn a profit target into a sell state without weakening momentum
   const result = buildPositionExitGuidance({ position, priceRows: rows({ close: 100 }) });
   expect(result.status).toBe('hold');
   expect(result.levels.take_profit_review).toBeGreaterThan(position.avg_cost);
+});
+
+test('asks to review profit protection when an armed trailing position has a bearish trend', () => {
+  const weakening = rows({ close: 108 }).map((row, index) => {
+    const close = index < 40 ? 108 : 108 - (index - 40) * .15;
+    return { ...row, close, high: close + 1, low: close - 1 };
+  });
+  const result = buildPositionExitGuidance({ position, priceRows: weakening });
+  expect(result).toMatchObject({ status: 'trailing_protect', reasons: ['trailing_stop_armed', 'trend_weakened'] });
+  expect(result.reference.close).toBeGreaterThan(result.levels.active_stop);
 });
