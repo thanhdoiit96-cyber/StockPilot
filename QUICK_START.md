@@ -222,7 +222,7 @@ Set-Location .
 if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
 ~~~
 
-Đặt DB_PASSWORD riêng trong .env gốc; đặt ADMIN_API_KEY nếu cần quản trị. Compose hiện chỉ lấy hai biến này từ .env gốc; các biến khác của template không tự được truyền vào container.
+Đặt DB_PASSWORD riêng trong .env gốc; đặt ADMIN_API_KEY nếu cần quản trị. Compose mặc định chỉ chạy bốn dịch vụ demo. `EXIT_GUIDANCE_EOD_OWNER_ID` chỉ cần khi chủ động bật profile quan sát lease bên dưới; nó không bật scheduler hay tạo đề xuất.
 
 ~~~powershell
 docker compose up --build -d
@@ -238,7 +238,9 @@ docker compose exec backend npm run seed
 
 Mở http://localhost:5173. API ở http://localhost:5000/api/health.
 
-Compose có bốn dịch vụ: postgres, worker Vnstock, backend và frontend. Worker chỉ mở cổng 8787 trong mạng Compose, giữ concurrency 1 và backend gọi qua `http://worker:8787`; scheduler EOD vẫn chỉ bật khi cấu hình rõ `VNSTOCK_EOD_ENABLED=true`. Database trong container tên stock_analyst, user stock_analyst_user; PostgreSQL không mở cổng ra máy host. Cấu hình này khác database thủ công và không cần chỉnh cho giống nhau.
+Compose mặc định có bốn dịch vụ: postgres, worker Vnstock, backend và frontend. Worker chỉ mở cổng 8787 trong mạng Compose, giữ concurrency 1 và backend gọi qua `http://worker:8787`; scheduler EOD vẫn chỉ bật khi cấu hình rõ `VNSTOCK_EOD_ENABLED=true`. Database trong container tên stock_analyst, user stock_analyst_user; PostgreSQL không mở cổng ra máy host. Cấu hình này khác database thủ công và không cần chỉnh cho giống nhau.
+
+Chỉ để kiểm chứng vòng đời owner trong Compose, đặt `EXIT_GUIDANCE_EOD_OWNER_ID` không bí mật trong `.env` rồi chạy `docker compose --profile exit-guidance-observe up -d`. Service `exit-guidance-worker` chờ backend healthy, chỉ acquire/renew/release lease và ghi audit aggregate; không có cron, ingestion, snapshot exit hay lệnh giao dịch. Không bật profile này như bằng chứng production hoặc thay thế authority triển khai.
 
 Cả bốn dịch vụ có healthcheck và `restart: unless-stopped`; backend chờ PostgreSQL + worker healthy, frontend chờ backend healthy. `docker compose ps` phải hiển thị trạng thái healthy trước khi smoke UI/API. Đây là restart policy của Compose, không phải cam kết tự khởi động Docker Engine sau reboot.
 

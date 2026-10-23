@@ -73,6 +73,28 @@ services:
       retries: 5
       start_period: 30s
     command: ["sh", "-c", "npm run migrate && npm start"]
+  exit-guidance-worker:
+    build: ./backend
+    profiles: ["exit-guidance-observe"]
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 75s
+    logging: *default-logging
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: stock_analyst
+      DB_USER: stock_analyst_user
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in root .env}
+      EXIT_GUIDANCE_EOD_WORKER_ENABLED: "true"
+      EXIT_GUIDANCE_EOD_OWNER_ID: ${EXIT_GUIDANCE_EOD_OWNER_ID:-}
+      EXIT_GUIDANCE_EOD_LEASE_KEY: position-exit-eod:vnstock:position_exit_rule_v1
+      EXIT_GUIDANCE_EOD_LEASE_MS: "60000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: ["sh", "-c", "test -n \"$$EXIT_GUIDANCE_EOD_OWNER_ID\" || { echo 'EXIT_GUIDANCE_EOD_OWNER_ID is required'; exit 78; }; exec npm run run:exit-guidance-lease-worker"]
   frontend:
     build: ./frontend
     restart: unless-stopped
