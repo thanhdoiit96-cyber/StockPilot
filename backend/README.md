@@ -149,6 +149,8 @@ Exit guidance has no scheduler. To create internal evidence without writing an e
 
 `GET /api/ops/exit-guidance-worker?limit=1..50` is an admin-only read of the configured lease's active/expired status and bounded aggregate lifecycle events. It never starts a worker or returns portfolio, holding, cost, provider, or guidance data. With no `ADMIN_API_KEY`, it correctly returns `503` rather than exposing operations data.
 
+`EXIT_GUIDANCE_EVALUATION_ENABLED=true npm run evaluate:exit-guidance-shadow -- --limit=1..100` is an explicit, one-shot shadow-evaluation command. It reads only sealed exit guidance and stored subsequent EOD rows, writes immutable pending/evaluated/excluded evidence only when absent, and makes no provider request. It is not a scheduler, does not create guidance snapshots, does not alter model parameters, and returns `no_snapshots` when no sealed guidance exists.
+
 ## Current quote endpoints
 
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.

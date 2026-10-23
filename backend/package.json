@@ -35,6 +35,7 @@
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "dry-run:exit-guidance-eod": "node scripts/dry-run-position-exit-eod.cjs",
+    "evaluate:exit-guidance-shadow": "node scripts/evaluate-position-exit-shadow.cjs",
     "verify:exit-guidance-worker-lease": "node scripts/verify-position-exit-worker-lease.cjs",
     "run:exit-guidance-lease-worker": "node scripts/run-position-exit-lease-worker.cjs",
     "seed": "sequelize-cli db:seed:all",
