@@ -7,6 +7,7 @@ import { translate } from '../services/i18n.mjs'
 import { sortPositions } from '../services/positionView.mjs'
 
 const openDetail = (event, position, callback) => {
+  if (event?.target !== event?.currentTarget && event?.target?.closest('button, a, input, select')) return
   if (event && event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return
   event?.preventDefault()
   callback?.(position.stock_id)
@@ -17,11 +18,15 @@ function PositionRow({ position, onOpenDetail, onTrade, watched, onAddToWatchlis
   const number = value => formatNumber(value, language, { maximumFractionDigits: 4 })
   const money = value => value == null ? '-' : formatMoney(value, language, { maximumFractionDigits: 2 })
   const dateTime = value => formatDateTime(value, language, timezone)
+  const pnl = position.unrealized_pnl == null ? null : Number(position.unrealized_pnl)
+  const tone = pnl == null || !Number.isFinite(pnl) ? 'neutral' : pnl > 0 ? 'positive' : pnl < 0 ? 'negative' : 'neutral'
+  const cost = Number(position.avg_cost) * Number(position.quantity)
+  const percent = pnl != null && Number.isFinite(pnl) && cost > 0 ? pnl / cost * 100 : null
   return <tr className="portfolio-row-clickable" role="link" tabIndex="0" aria-label={`${t('portfolio.positions.openDetail')} ${position.symbol}`} onClick={event => openDetail(event, position, onOpenDetail)} onKeyDown={event => openDetail(event, position, onOpenDetail)}>
     <td><div className="portfolio-symbol-actions"><StockDetailLink className="symbol portfolio-detail-link" stockId={position.stock_id} symbol={position.symbol} onOpenDetail={onOpenDetail}>{position.symbol}</StockDetailLink><QuickWatchlistButton symbol={position.symbol} watched={watched} onAdd={onAddToWatchlist} /></div></td>
     <td>{number(position.quantity)}</td><td>{money(position.avg_cost)}</td>
     <td>{money(position.market_price)}<small className="data-time">{position.quote ? `${t('portfolio.positions.intraday')} · ${dateTime(position.quote.observed_at)}` : t('portfolio.positions.eod')}</small></td>
-    <td className={Number(position.unrealized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.unrealized_pnl)}<small>{position.avg_cost > 0 && position.market_price != null ? `${((Number(position.market_price) / Number(position.avg_cost) - 1) * 100).toFixed(2)}%` : '-'}</small></td>
+    <td className={tone}>{money(position.unrealized_pnl)}<small className="position-return">{percent == null ? '—' : `${percent > 0 ? '+' : ''}${formatNumber(percent, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}</small></td>
     <td className={Number(position.realized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.realized_pnl)}</td>
     <td className="portfolio-trade-actions"><button type="button" className="ghost-btn small-btn portfolio-trade-buy" onClick={event => { event.stopPropagation(); onTrade?.(position, 'BUY') }}>Mua</button><button type="button" className="ghost-btn small-btn portfolio-trade-sell" onClick={event => { event.stopPropagation(); onTrade?.(position, 'SELL') }}>Bán</button></td>
   </tr>

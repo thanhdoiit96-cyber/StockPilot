@@ -59,6 +59,8 @@ export default function PortfolioExitGuidance({ token, active, language = 'vi' }
   const data = state.data
   const guidance = Array.isArray(data?.guidance) ? data.guidance : []
   const unavailable = data?.status === 'unavailable'
+  const attention = guidance.filter(item => ['cut_loss', 'trailing_protect', 'take_profit_review'].includes(item.status))
+  const monitoring = guidance.filter(item => !['cut_loss', 'trailing_protect', 'take_profit_review'].includes(item.status))
   return <section className="panel portfolio-exit-guidance" aria-labelledby={titleId} aria-busy={state.status === 'loading'} lang={language}>
     <div className="exit-guidance-heading">
       <div><span className="eyebrow accent">{en ? 'EOD shadow' : 'Shadow EOD'}</span><h3 id={titleId}>{en ? 'Position exit review' : 'Rà soát thoát vị thế'}</h3><p className="muted-text">{en ? 'A sealed EOD research snapshot. It does not place or change any order.' : 'Snapshot nghiên cứu EOD đã niêm phong. Không đặt hoặc thay đổi bất kỳ lệnh nào.'}</p></div>
@@ -68,7 +70,8 @@ export default function PortfolioExitGuidance({ token, active, language = 'vi' }
     {!data && state.status === 'loading' ? <div className="exit-guidance-empty" role="status"><strong>{en ? 'Reading the sealed shadow snapshot…' : 'Đang đọc snapshot shadow đã niêm phong…'}</strong></div> : null}
     {unavailable ? <div className="exit-guidance-empty"><strong>{en ? 'No EOD shadow snapshot is available yet.' : 'Chưa có snapshot shadow EOD.'}</strong><p>{en ? 'The app will not infer an exit signal from live quotes or incomplete data.' : 'Ứng dụng không suy diễn tín hiệu thoát từ quote live hoặc dữ liệu chưa đầy đủ.'}</p></div> : null}
     {data?.status === 'shadow' && !guidance.length ? <div className="exit-guidance-empty"><strong>{en ? 'No open positions were recorded in this snapshot.' : 'Snapshot không ghi nhận vị thế mở.'}</strong></div> : null}
-    {guidance.length ? <ul className="exit-guidance-list">{guidance.map(item => <GuidanceItem key={item.stock_id || item.symbol} item={item} language={language} />)}</ul> : null}
+    {attention.length ? <ul className="exit-guidance-list">{attention.map(item => <GuidanceItem key={item.stock_id || item.symbol} item={item} language={language} />)}</ul> : null}
+    {monitoring.length ? <details className="exit-monitoring-group"><summary>{en ? `Monitoring / unavailable (${monitoring.length})` : `Theo dõi / chưa đủ dữ liệu (${monitoring.length})`}</summary><ul className="exit-guidance-list">{monitoring.map(item => <GuidanceItem key={item.stock_id || item.symbol} item={item} language={language} />)}</ul></details> : null}
     {data?.status === 'shadow' ? <p className="exit-guidance-note">{en ? `Research-only · ${data.model || 'position_exit_rule_v1'} · ${data.provider || 'unknown provider'}` : `Chỉ phục vụ nghiên cứu · ${data.model || 'position_exit_rule_v1'} · ${data.provider || 'không rõ provider'}`}</p> : null}
   </section>
 }

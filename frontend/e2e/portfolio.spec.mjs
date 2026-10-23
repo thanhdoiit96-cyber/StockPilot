@@ -1,6 +1,26 @@
 import { test, expect } from '@playwright/test'
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000}]
 const list={success:true,data:stocks,pagination:{page:1,pageSize:25,total:1,totalPages:1}}
+
+test('portfolio layout and keyboard trade actions remain usable across screen sizes', async ({ page }) => {
+  await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10, avg_cost: 100000, market_price: 120000, unrealized_pnl: 200000, realized_pnl: 0 }])
+  await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    const grid = page.locator('.portfolio-overview-grid')
+    expect(await grid.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await page.screenshot({ path: `test-results/portfolio-layout-${width}.png`, fullPage: true })
+  }
+  for (const [label, side] of [['Mua', 'BUY'], ['Bán', 'SELL']]) {
+    const button = page.locator('.portfolio-trade-actions').getByRole('button', { name: label, exact: true })
+    await button.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('.transaction-form')).toBeVisible()
+    await expect(page.locator('.transaction-form select').first()).toHaveValue(side)
+    await expect(page.getByLabel('Mã giao dịch')).toHaveValue('FPT')
+    await page.locator('#portfolio-tab-overview').click()
+  }
+})
 test('cash-flow create and edit fields share transaction styling on desktop and mobile', async ({ page }) => {
   await boot(page, [], [], [], [], null, [{ id: 'cf-style', type: 'DEPOSIT', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: '' }])
   await page.getByRole('tab', { name: /Dòng tiền/ }).click()
