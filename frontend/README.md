@@ -2,8 +2,6 @@
 
 Ứng dụng React 18/Vite, viết bằng JavaScript và CSS. Cách chạy và build nằm ở [QUICK_START](../QUICK_START.md); kết quả kiểm tra và công việc tiếp theo nằm ở [PROJECT_STATUS](../docs/PROJECT_STATUS.md).
 
-Docker production image dùng multi-stage build: Vite build ở stage Node, sau đó Nginx chỉ phục vụ `dist` và reverse-proxy same-origin `/api` tới service `backend`. Không đưa Vite dev server, `.env`, test artifacts hoặc `node_modules` vào runtime image. Compose và cách chạy thuộc [QUICK_START](../QUICK_START.md); Docker Engine/Compose phải có trước khi xem đây là một runtime đã được kiểm chứng.
-
 Điều hướng responsive: trên 960px sidebar sticky và có thể thu gọn; từ 960px trở xuống sidebar nằm trong luồng trang, menu ngang luôn hiện nhãn và ẩn toggle desktop. Tài khoản vẫn truy cập được bằng bàn phím, preference thu gọn được giữ khi trở lại desktop. Trên mobile cần cuộn lên đầu để chuyển trang; không dùng sidebar overlay che form/biểu đồ.
 
 Trang Danh mục cá nhân gồm Tổng quan, Giao dịch, Dòng tiền, Watchlist. Tổng quan hiển thị kết quả, vị thế/phân bổ trước lịch sử TWR/MWR; Giao dịch gồm form, nhật ký CSV và theo dõi đề xuất. Các panel giữ mounted và dùng `hidden`, nên chuyển tab giữ bộ lọc, bản nháp, trạng thái mutation và khoảng lịch sử mà không gọi lại history chỉ vì chuyển tab. State ở bộ nhớ, không phục hồi sau reload hoặc rời trang. Mũi tên trái/phải và Home/End chọn tab; `aria-controls` liên kết từng panel riêng. Mobile dùng hai cột để thấy đủ bốn tab. Nút thêm từ Bảng giá/Đề xuất/Chi tiết mở đúng tab Giao dịch.

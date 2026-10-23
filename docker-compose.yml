@@ -11,8 +11,8 @@ services:
     stop_grace_period: 30s
     logging: *default-logging
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-stock_analyst}
-      POSTGRES_USER: ${POSTGRES_USER:-stock_analyst_user}
+      POSTGRES_DB: stock_analyst
+      POSTGRES_USER: stock_analyst_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in root .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -52,8 +52,8 @@ services:
       PORT: 5000
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB:-stock_analyst}
-      DB_USER: ${POSTGRES_USER:-stock_analyst_user}
+      DB_NAME: stock_analyst
+      DB_USER: stock_analyst_user
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in root .env}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       CORS_ORIGIN: http://localhost:5173
@@ -84,8 +84,8 @@ services:
       NODE_ENV: development
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB:-stock_analyst}
-      DB_USER: ${POSTGRES_USER:-stock_analyst_user}
+      DB_NAME: stock_analyst
+      DB_USER: stock_analyst_user
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in root .env}
       EXIT_GUIDANCE_EOD_WORKER_ENABLED: "true"
       EXIT_GUIDANCE_EOD_OWNER_ID: ${EXIT_GUIDANCE_EOD_OWNER_ID:-}
@@ -101,13 +101,15 @@ services:
     init: true
     stop_grace_period: 15s
     logging: *default-logging
+    environment:
+      API_PROXY_TARGET: http://backend:5000
     ports:
-      - "127.0.0.1:5173:80"
+      - "127.0.0.1:5173:5173"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
