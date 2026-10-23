@@ -29,6 +29,18 @@ function evaluateLiveShadowEvidence(snapshotInput, rows = [], now = new Date()) 
   if (future.length < horizon) return { status: 'pending', reason: 'target_session_not_observed', sessions_observed: future.length, sessions_required: horizon };
   const target = future[horizon - 1], evidence = [];
   if (vietnamDates && now.getTime() < Date.parse(`${target}T15:00:00+07:00`)) return { status: 'pending', reason: 'target_session_not_closed' };
+  if (vietnamDates) {
+    for (const session of [origin, ...future.slice(0, horizon)]) {
+      for (const symbol of symbols) {
+        const row = bySymbol.get(symbol).get(session);
+        const fetched = typeof row.fetched_at === 'string' ? Date.parse(row.fetched_at) : NaN;
+        const observed = Date.parse(row.observed_at);
+        if (!Number.isFinite(fetched) || !Number.isFinite(observed)) return { status: 'pending', reason: 'invalid_evidence_availability' };
+        if (fetched > now.getTime()) return { status: 'pending', reason: 'evidence_not_yet_available' };
+        if (fetched < Math.max(observed, Date.parse(`${session}T15:00:00+07:00`))) return { status: 'pending', reason: 'evidence_fetched_before_close' };
+      }
+    }
+  }
   let advancing = 0;
   for (const symbol of symbols) {
     const start = bySymbol.get(symbol).get(origin), end = bySymbol.get(symbol).get(target);

@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Outcome evidence availability — 2026-10-23
+
+For v3 inputs, require every row used to establish origin and the selected shared-session horizon to have a valid fetched timestamp, at/after that date's 15:00 Vietnam close and observation timestamp, and no later than evaluation time. Pending reasons distinguish invalid time, premature fetch and future availability. Checking only target prices is cheaper but misses evidence used to count the horizon; choose the bounded full selected window. Preserve legacy and sealed outcomes. This is a conservative availability proxy, not provider publication certification. No new requests or storage schema; test pending-to-ready without database writes. Verify mixed-cohort UI disclosure at desktop/mobile with isolated mocked data and request counts.
+
 ### Cohort disclosure and evaluation dates — 2026-10-23
 
 Display separate provider/model/input-contract groups within existing current-data evidence, using native disclosure and existing requests. Aggregate outcomes are counts, not eligibility toward a pooled threshold. Validate mixed response children and totals before displaying. For v3 issuance, evaluate observation dates in Vietnam time, reject conflicting same-date prices, and wait until target EOD close; retain legacy date policy for historical snapshots. Version new outcomes separately. This avoids rewriting sealed evidence; no extra provider calls, pagination or polling. Acceptance: UTC-to-Vietnam boundary, conflicting prices, premature target, mixed cohort contract and responsive UI build/smoke.

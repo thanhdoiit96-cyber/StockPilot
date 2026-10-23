@@ -7,11 +7,27 @@ test('v3 uses Vietnam dates, waits for close and rejects conflicting prices', ()
   const stored = snapshot();
   stored.payload.provenance = { symbols: ['FPT'], input_contract_version: 'vn_observation_dates_v3' };
   stored.payload_sha256 = artifactHash(stored.payload);
-  const origin = { ...row('FPT', '2026-10-12', 100), observed_at: '2026-10-12T18:00:00Z' };
-  const target = { ...row('FPT', '2026-10-13', 110), observed_at: '2026-10-13T18:00:00Z' };
+  const origin = { ...row('FPT', '2026-10-12', 100), observed_at: '2026-10-12T18:00:00Z', fetched_at: '2026-10-13T09:00:00Z' };
+  const target = { ...row('FPT', '2026-10-13', 110), observed_at: '2026-10-13T18:00:00Z', fetched_at: '2026-10-14T09:00:00Z' };
   expect(evaluateLiveShadowEvidence(stored, [origin, target], new Date('2026-10-14T07:00:00Z')).reason).toBe('target_session_not_closed');
   expect(evaluateLiveShadowEvidence(stored, [origin, target], new Date('2026-10-14T09:00:00Z'))).toMatchObject({ status: 'ready', payload: { version: 'forecast_live_outcome_payload_v2', target_session: '2026-10-14', actual_class: 'advancing' } });
   expect(evaluateLiveShadowEvidence(stored, [origin, target, { ...target, quote: { close: 90 } }]).reason).toBe('conflicting_session_prices');
+});
+
+test.each([
+  [null, 'invalid_evidence_availability'],
+  ['invalid', 'invalid_evidence_availability'],
+  ['2026-10-14T10:00:00Z', 'evidence_not_yet_available'],
+  ['2026-10-14T07:00:00Z', 'evidence_fetched_before_close']
+])('v3 keeps unavailable evidence pending (%s)', (fetched_at, reason) => {
+  const stored = snapshot();
+  stored.payload.provenance = { symbols: ['FPT'], input_contract_version: 'vn_observation_dates_v3' };
+  stored.payload_sha256 = artifactHash(stored.payload);
+  const origin = row('FPT', '2026-10-13', 100);
+  const target = { ...row('FPT', '2026-10-14', 110), fetched_at };
+  expect(evaluateLiveShadowEvidence(stored, [origin, target], new Date('2026-10-14T09:00:00Z'))).toMatchObject({ status: 'pending', reason });
+  target.fetched_at = '2026-10-14T08:30:00Z';
+  expect(evaluateLiveShadowEvidence(stored, [origin, target], new Date('2026-10-14T09:00:00Z')).status).toBe('ready');
 });
 test('keeps a live shadow pending until N complete provider sessions exist', () => {
   const rows = ['FPT','HPG','VHM'].map(symbol => row(symbol, '2026-10-13', 100));

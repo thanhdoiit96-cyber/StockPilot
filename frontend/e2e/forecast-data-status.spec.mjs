@@ -3,10 +3,16 @@ import { forecastBreadthTarget } from '../src/services/forecastBreadth.mjs'
 
 for (const width of [1280, 390]) test(`compact forecast discloses partial inputs and supports retry (${width})`, async ({ page }) => {
   let requests = 0
+  let cohortRequests = 0
   await page.setViewportSize({ width, height: 900 })
   await page.addInitScript(() => { globalThis.__VITE_ENABLE_FORECAST_LIVE__ = 'true' })
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url()), path = url.pathname
+    if (path === '/api/forecast/live-cohort') {
+      cohortRequests++
+      const group = { cohort_identity: ['vnstock', 'softmax-v1', 'vn_observation_dates_v3'], horizon_sessions: Number(url.searchParams.get('horizon')), minimum_samples: 20, predictions: 2, measured: 1, pending: 1 }
+      return route.fulfill({ json: { success: true, data: { version: 'forecast_live_cohort_summary_v1', status: 'live_cohort', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: group.horizon_sessions, minimum_samples: 20, predictions: 4, measured: 2, pending: 2, score_gate: { status: 'mixed_cohorts', samples: 2 }, model_scores: null, cohorts: [group, { ...group, cohort_identity: ['vnstock', 'softmax-v1', 'legacy_unspecified'] }] } } })
+    }
     if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'fixture@example.com', role: 'user', preferred_language: 'vi' } } })
     if (path === '/api/forecast/live-preview') {
       requests++
@@ -27,4 +33,11 @@ for (const width of [1280, 390]) test(`compact forecast discloses partial inputs
   await page.getByRole('button', { name: 'Mở rộng', exact: true }).click()
   await expect(status).toContainText('1/3 mã được dùng')
   expect(requests).toBe(2)
+  const evidence = page.locator('.forecast-current-evidence')
+  await expect(evidence).toContainText('không cộng mẫu')
+  await evidence.locator('summary').filter({ hasText: 'vn_observation_dates_v3' }).click()
+  await expect(evidence.locator('details[open]')).toContainText('2 dự báo · 1 đã đo · 1 đang chờ')
+  await expect(evidence).toContainText('Phiên bản cũ chưa xác định')
+  expect(await evidence.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+  expect(cohortRequests).toBe(2) // Initial load plus explicit preview retry; disclosure adds none.
 })
