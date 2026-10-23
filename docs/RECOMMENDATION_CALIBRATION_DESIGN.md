@@ -2,6 +2,8 @@
 
 ## Signal explanation UI decision — 2026-10-23
 
+Exclusion breakdown: history/cohort summaries expose counts per exclusion reason using only assessed excluded rows. Each reason counts a signal once; a signal may have multiple reasons, so reason counts must not be summed as distinct signals. Pending/eligible signals never enter this breakdown. Keep native disclosure within each model/horizon progress card, localize known reasons, and use a neutral fallback for unknown codes. Reuse existing history responses with no added query, provider dependency or polling.
+
 Concentration correction: latest risk disclosure must derive from verified snapshot taxonomy, never the monitor's hard-coded current sector map. Denominator is the number of selected symbols. Only complete frozen-taxonomy coverage permits a maximum-sector percentage/warning at the existing 60% threshold; partial/unverified snapshots disclose coverage with no concentration conclusion. Personal rankings must not display scheduled snapshot risk as their own. Reuse loaded snapshot rows; no disk reads, query, provider call or calibration change is required.
 
 History follow-up: show model/horizon cohort progress before outcome statistics, reusing the existing summary request. Do not aggregate distinct models/horizons into one success rate. Summary failure must display retry rather than a no-data state. Missing counts remain unavailable; only explicit server readiness marks a cohort comparable. Sector concentration means share of selected symbols in a frozen snapshot, not monetary portfolio exposure; no new allocation/ranking rule is inferred. No additional initial request, polling or cached persistence is introduced.

@@ -1,4 +1,5 @@
 const reasons = {
+  unspecified_evidence_failure: ['Chưa có chi tiết lỗi bằng chứng', 'Evidence failure details unavailable'],
   snapshot_unverified: ['Chưa xác minh bản chụp gốc', 'Original snapshot not verified'],
   insufficient_observed_sessions: ['Chưa đủ phiên giá quan sát', 'Insufficient observed price sessions'],
   invalid_evaluation_boundary: ['Thiếu kỳ hạn hoặc ngày đánh giá hợp lệ', 'Invalid horizon or evaluation date'],

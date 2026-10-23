@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { recommendationConcentration } = require('../services/recommendationConcentration');
+const { summarizeRecommendationExclusions } = require('../services/recommendationExclusions');
 const router = express.Router();
 const { RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice } = require('../models');
 const { SavedRecommendation } = require('../models');
@@ -94,6 +95,7 @@ function buildHistorySummary(items = []) {
   return {
     measured_count: measured.length,
     excluded_count: items.filter(item => item.measurement_status === 'excluded').length,
+    exclusion_breakdown: summarizeRecommendationExclusions(items),
     pending_count: items.filter(item => item.measurement_status !== 'excluded' && item.statistics_eligible !== true).length,
     positive_count: positive,
     negative_count: negative,

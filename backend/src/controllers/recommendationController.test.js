@@ -164,6 +164,7 @@ describe('saved recommendation API', () => {
     expect(detail.body.data.summary).toMatchObject({ measured_count: 1, hit_rate_pct: 100 });
     const cohort = await request(app).get('/api/recommendations/history/summary');
     expect(cohort.body.data.cohorts[0]).toMatchObject({ measured_count: 1, excluded_count: 1, hit_rate_pct: 100, average_forward_return_pct: 5 });
+    expect(cohort.body.data.cohorts[0].exclusion_breakdown).toEqual([{ reason: 'snapshot_unverified', count: 1 }]);
   });
 
   test('groups completed outcomes by immutable model and horizon with a sample gate', async () => {

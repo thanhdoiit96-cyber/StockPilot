@@ -37,7 +37,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'fixture@example.com', role: 'user', preferred_language: 'vi' } } })
       let data = []
       if (path === '/api/recommendations/history') data = [run]
-      else if (path === '/api/recommendations/history/summary') data = { cohorts: [{ model: 'short_term_rule_v2', horizon_days: 20, selected_count: 1, measured_count: 0, pending_count: 0, excluded_count: 1, minimum_samples: 15, status: 'insufficient_samples' }], sector_cohorts: [] }
+      else if (path === '/api/recommendations/history/summary') data = { cohorts: [{ model: 'short_term_rule_v2', horizon_days: 20, selected_count: 1, measured_count: 0, pending_count: 0, excluded_count: 1, minimum_samples: 15, status: 'insufficient_samples', exclusion_breakdown: [{ reason: 'snapshot_unverified', count: 1 }, { reason: 'insufficient_observed_sessions', count: 1 }] }], sector_cohorts: [] }
       else if (path === '/api/recommendations/history/run-legacy') data = { ...run, horizon_days: 20, summary: run, recommendations: [{ id: 'rec', rank: 1, stock: { code: 'FPT' }, score: 80, entry_price: 100, outcome: 'positive', forward_return_pct: 99, statistics_eligible: false, measurement_status: 'excluded', exclusion_reasons: ['snapshot_unverified', 'insufficient_observed_sessions'] }] }
       else if (path === '/api/recommendations/latest') data = { recommendations: [] }
       else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [] }
@@ -66,6 +66,10 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await expect(progress).toContainText('short_term_rule_v2')
     await expect(progress).toContainText('0/15')
     await expect(progress.locator('progress')).toHaveAttribute('value', '0')
+    await progress.locator('.cohort-exclusion-reasons summary').click()
+    await expect(progress).toContainText('Chưa xác minh bản chụp gốc')
+    await expect(progress).toContainText('không cộng các số này')
+    await expect(progress.locator('.cohort-exclusion-reasons li')).toHaveCount(2)
     expect(await progress.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
     await page.getByRole('button', { name: 'Xem báo cáo', exact: true }).click()
     const detail = page.locator('.snapshot-report-detail')
