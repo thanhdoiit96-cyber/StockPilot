@@ -24,11 +24,20 @@ function buildLiveCohortSummary(rows, { horizon, minimumSamples = 20 } = {}) {
     if(row.payload.version==='forecast_live_shadow_payload_v2'&&row.payload.baseline_snapshot){ const score=items=>{const mapped=Object.fromEntries(items.map(item=>[item.class,item.value]));return{brier:CLASSES.reduce((sum,name)=>sum+(mapped[name]-Number(name===truth))**2,0),log:-Math.log(Math.max(1e-15,mapped[truth]))}}; baselineEligible.push({model,frequency:score(row.payload.baseline_snapshot.frequency_probabilities),persistence:score(row.payload.baseline_snapshot.persistence_probabilities)}); }
   }
 
-  const eligible=baselineEligible.length>=minimumSamples, baselineMean=(type,key)=>baselineEligible.reduce((sum,item)=>sum+item[type][key],0)/Math.max(1,baselineEligible.length);
+  const groups = new Map();
+  for (const row of rows) {
+    const key = JSON.stringify([row.provider, row.payload.model_version || row.model_version || 'legacy_unspecified', row.payload.provenance?.input_contract_version || 'legacy_unspecified']);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+  const mixed = groups.size > 1;
+  const eligible=!mixed && baselineEligible.length>=minimumSamples, baselineMean=(type,key)=>baselineEligible.reduce((sum,item)=>sum+item[type][key],0)/Math.max(1,baselineEligible.length);
   return { version: 'forecast_live_cohort_summary_v1', status: 'live_cohort', source: 'snapshot_store', provider: rows[0]?.provider || 'vnstock', horizon_sessions: horizon,
     synthetic: false, research_only: false, live: true, market_accuracy_verified: false, minimum_samples: minimumSamples,
+    cohort_identity: groups.size === 1 ? JSON.parse(groups.keys().next().value) : null,
+    ...(mixed ? { cohorts: [...groups.values()].map(group => buildLiveCohortSummary(group, { horizon, minimumSamples })) } : {}),
     predictions: rows.length, measured: measured.length, pending: rows.length - measured.length, date_range: { from: rows[0]?.as_of || null, to: rows.at(-1)?.as_of || null },
-    baseline_eligible_measured:baselineEligible.length, score_gate: eligible ? { status:'available', samples:baselineEligible.length, minimum_samples:minimumSamples }
+    baseline_eligible_measured:baselineEligible.length, score_gate: mixed ? { status: 'mixed_cohorts', reason: 'provider_model_or_input_contract_differs', samples: measured.length, minimum_samples: minimumSamples } : eligible ? { status:'available', samples:baselineEligible.length, minimum_samples:minimumSamples }
       : measured.length >= minimumSamples ? { status: 'awaiting_baseline', reason: 'contemporaneous_baseline_not_sealed', samples: baselineEligible.length, minimum_samples: minimumSamples }
       : { status: 'insufficient_samples', reason: 'minimum_measured_samples_not_met', samples: measured.length, minimum_samples: minimumSamples },
     model_scores: eligible ? { brier_multiclass_sum:baselineMean('model','brier'),log_loss:baselineMean('model','log') } : null,

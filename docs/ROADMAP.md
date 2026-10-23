@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Immutable forecast input provenance completed (2026-10-23): freeze actual participation and contract, separate generation identities and cohort scores by provider/model/contract, retain legacy evidence. Next: cohort identity disclosure in UI and evaluator Vietnam-date consistency; no accuracy or calibration claim.
+
 Common forecast endpoint-date alignment completed (2026-10-23): input contract v3 excludes stale/future-ending members and exposes reasons using existing response/UI. Next: verify input-contract provenance in immutable issuance/evaluation cohorts. Intermediate-date completeness and forecast accuracy remain unverified.
 
 Forecast distinct-date input correction completed (2026-10-23): versioned input scope requires 21 distinct Vietnam dates; duplicates cannot satisfy history and ambiguous prices/timestamps exclude the symbol with UI disclosure. No new provider dependency. Follow-up: common as-of alignment across participating symbols; exchange-calendar completeness and accuracy validation remain open.

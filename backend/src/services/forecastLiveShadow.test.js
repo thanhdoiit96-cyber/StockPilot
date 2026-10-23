@@ -1,10 +1,23 @@
 const { validateLiveShadowInput, createLiveShadowSnapshot } = require('./forecastLiveShadow');
+const { snapshotGenerationKey } = require('./forecastSnapshotStore');
 const currentData = { status: 'current_data_ready', provider: 'vnstock', synthetic: false, live: true, rows: [{ instrument: { symbol: 'FPT' }, observed_at: '2026-10-12T00:00:00Z', quote: { close: '100' }, source: { provider: 'vnstock', dataset: 'daily' }, fetched_at: '2026-10-13T00:00:00Z' }] };
 const preview = { status: 'live_preview', provider: 'vnstock', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: 5,
   as_of: '2026-10-12T00:00:00Z', fetched_at: '2026-10-13T00:00:00Z', probabilities: [{ class: 'advancing', value: .4 }, { class: 'balanced', value: .35 }, { class: 'declining', value: .25 }] };
 test('seals current-data probabilities and provenance without pretending target outcome exists', () => {
   expect(validateLiveShadowInput({ preview, currentData })).toMatchObject({ version: 'forecast_live_shadow_payload_v1', shadow: true, as_of: '2026-10-12', target_session: null,
     provenance: { observations: 1, symbols: ['FPT'], license_status: 'pending_validation' }, outcome_policy: { status: 'pending' } });
+});
+
+test('freezes participating symbols and separates contract generation identities', () => {
+  const scope = { contract_version: 'vn_observation_dates_v3', as_of_date: '2026-10-12', used_symbols: ['FPT'], missing_symbols: ['HPG'] };
+  const data = { ...currentData, rows: [...currentData.rows, { ...currentData.rows[0], instrument: { symbol: 'HPG' } }] };
+  const legacy = validateLiveShadowInput({ preview, currentData: data });
+  const payload = validateLiveShadowInput({ preview: { ...preview, current_data: { input_scope: scope } }, currentData: data });
+  expect(payload.provenance.symbols).toEqual(['FPT']);
+  expect(payload.provenance.input_scope).toEqual(scope);
+  expect(snapshotGenerationKey(payload)).not.toBe(snapshotGenerationKey(legacy));
+  scope.used_symbols.push('HPG');
+  expect(payload.provenance.input_scope.used_symbols).toEqual(['FPT']);
 });
 test('creates a live shadow once and requires explicit development opt-in', async () => {
   let saved;

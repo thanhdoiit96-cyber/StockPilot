@@ -34,7 +34,11 @@ function validateSnapshot(input) {
     target_session: validDate(input.target_session) && input.target_session > input.as_of ? input.target_session : null, split_hash: input.split_hash, training_hash: input.training_hash,
     probabilities: CLASSES.map(name => ({ class: name, value: values[name] })), ...(baseline_snapshot ? { baseline_snapshot } : {}) };
 }
-function snapshotGenerationKey(payload) { return keyHash([payload.provider, payload.model_version, payload.horizon_sessions, payload.as_of]); }
+function snapshotGenerationKey(payload) {
+  const identity = [payload.provider, payload.model_version, payload.horizon_sessions, payload.as_of];
+  if (payload.provenance?.input_contract_version) identity.push(payload.provenance.input_contract_version);
+  return keyHash(identity);
+}
 function verifySnapshot(row) { const value = plain(row); return Boolean(value?.payload_sha256 && value.payload_sha256 === artifactHash(value.payload)); }
 
 function validateOutcome(snapshot, input) {

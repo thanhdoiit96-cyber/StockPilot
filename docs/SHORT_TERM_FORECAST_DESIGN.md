@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Immutable input provenance — 2026-10-23
+
+Freeze disclosed input scope and contract in live issuance; evaluate only participating symbols. Preserve legacy snapshots and their generation keys. Versioned contracts extend new generation identities so a previous same-day contract cannot mask a new issuance. Cohort summaries partition by provider/model/input contract; mixed top-level summaries retain counts but suppress pooled scores. Prefer payload metadata over a database column because existing JSON payloads are hashed and immutable; no migration or new query is needed. Legacy missing contracts remain explicitly legacy-unspecified. Acceptance: contract-specific identity, frozen participating symbols, mixed-cohort score closure and unchanged legacy reads. No UI or provider request changes; bounded in-memory grouping only.
+
 ### Common observation cutoff — 2026-10-23
 
 Users must not see returns ending on different dates averaged as one current basket. Use the declared as-of Vietnam date (or newest valid row date when absent); exclude symbols whose latest positive close is older or later. Reject invalid declared as-of. Prefer explicit exclusions over backdating the entire basket or forward-filling missing prices. Expose cutoff and reason in existing input scope/UI; clean synchronized input is unchanged. This aligns endpoints only, not all intermediate trading dates. Acceptance covers stale/future members, invalid cutoff and order independence. Existing grouping/sorting budget is retained with one additional linear date scan, no new requests or persistence.

@@ -9,7 +9,9 @@ function validateLiveShadowInput({ preview, currentData, baseline, license = 'pe
     || ![1, 5].includes(preview.horizon_sessions) || !Array.isArray(preview.probabilities) || !Array.isArray(currentData.rows) || !currentData.rows.length) throw new Error('Invalid live shadow input');
   const values = Object.fromEntries(preview.probabilities.map(item => [item.class, item.value]));
   if (CLASSES.some(name => !Number.isFinite(values[name]) || values[name] < 0 || values[name] > 1) || Math.abs(CLASSES.reduce((sum, name) => sum + values[name], 0) - 1) > 1e-6) throw new Error('Invalid live shadow probabilities');
-  const asOf = String(preview.as_of || '').slice(0, 10);
+  const scope = preview.current_data?.input_scope;
+  const asOf = scope?.contract_version === 'vn_observation_dates_v3' ? scope.as_of_date : String(preview.as_of || '').slice(0, 10);
+  if (scope && (!['vn_observation_dates_v2', 'vn_observation_dates_v3'].includes(scope.contract_version) || !Array.isArray(scope.used_symbols) || !scope.used_symbols.length || scope.used_symbols.some(symbol => !currentData.rows.some(row => row.instrument?.symbol === symbol)))) throw new Error('Invalid live shadow input scope');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf) || !Number.isFinite(Date.parse(preview.fetched_at))) throw new Error('Invalid live shadow time');
   const evidenceRows = currentData.rows.map(row => ({ symbol: row.instrument?.symbol, observed_at: row.observed_at, close: row.quote?.close, provider: row.source?.provider || currentData.provider,
     dataset: row.source?.dataset || null, fetched_at: row.fetched_at || null })).sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)) || String(a.observed_at).localeCompare(String(b.observed_at)));
@@ -18,8 +20,8 @@ function validateLiveShadowInput({ preview, currentData, baseline, license = 'pe
   return { version: baseline ? 'forecast_live_shadow_payload_v2' : 'forecast_live_shadow_payload_v1', mode: 'local_live_preview', shadow: true, synthetic: false, research_only: false, live: true, market_accuracy_verified: false,
     provider: preview.provider, model_version: preview.model_version || 'forecast_current_softmax_prototype_v1', horizon_sessions: preview.horizon_sessions, as_of: asOf, target_session: null,
     issued_at: new Date(preview.fetched_at).toISOString(), probabilities: CLASSES.map(name => ({ class: name, value: values[name] })),
-    provenance: { license, license_status: 'pending_validation', evidence_sha256: artifactHash(evidenceRows), observations: evidenceRows.length,
-      symbols: [...new Set(evidenceRows.map(row => row.symbol))].sort(), oldest_observed_at: evidenceRows.reduce((oldest, row) => row.observed_at < oldest ? row.observed_at : oldest, evidenceRows[0].observed_at),
+    provenance: { ...(scope ? { input_contract_version: scope.contract_version, input_scope: JSON.parse(JSON.stringify(scope)) } : {}), license, license_status: 'pending_validation', evidence_sha256: artifactHash(evidenceRows), observations: evidenceRows.length,
+      symbols: [...new Set(scope ? scope.used_symbols : evidenceRows.map(row => row.symbol))].sort(), oldest_observed_at: evidenceRows.reduce((oldest, row) => row.observed_at < oldest ? row.observed_at : oldest, evidenceRows[0].observed_at),
       newest_observed_at: evidenceRows.reduce((latest, row) => row.observed_at > latest ? row.observed_at : latest, evidenceRows[0].observed_at), feature_policy: 'per_symbol_returns_1_5_20_then_basket_mean_v1' }, ...(baseline ? { baseline_snapshot: baseline } : {}),
     outcome_policy: { version: 'nth_distinct_provider_session_after_as_of_v1', horizon_sessions: preview.horizon_sessions, status: 'pending' } };
 }
