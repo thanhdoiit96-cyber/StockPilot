@@ -1,5 +1,9 @@
 # EOD generator cho exit-guidance shadow
 
+## Implementation status (2026-10-23)
+
+Migration `047` supplies immutable aggregate dry-run audit records. The manual command uses one bounded 65-EOD-row-per-held-symbol query and a PostgreSQL transaction-scoped advisory lock keyed by `(provider, session_date, model)`; it returns `lock_unavailable` before reading or writing if another transaction owns that key. Five valid local-development sessions (2026-10-16/19/20/21/22) met the exact-session coverage gate with zero provider calls. This is evidence for the bounded command only: it does not provide a deployed worker owner, durable queue, lease/heartbeat, fencing token, or scheduler, and it never creates an exit snapshot or order.
+
 ## Quyết định
 
 Generator chỉ là một tác vụ internal, EOD-owned, tạo snapshot shadow cho danh mục có holding đã `reconciled`. Nó không được gọi từ HTTP read, UI, request đăng nhập, cron của nhiều instance hay provider bridge. Không có auto-sell, notification hoặc mutation portfolio.

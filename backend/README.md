@@ -141,7 +141,7 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Exit-guidance dry-run
 
-Exit guidance has no scheduler. To create internal evidence without writing an exit snapshot or calling a provider, run `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=<id>`. The command requires an explicit session/owner/trigger and writes one immutable aggregate audit run only; a holding without EOD exactly on that session fails closed. It is not a sell recommendation or a production worker/lock substitute.
+Exit guidance has no scheduler. To create internal evidence without writing an exit snapshot or calling a provider, run `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=<id>`. The command requires an explicit session/owner/trigger, takes a PostgreSQL transaction-scoped advisory lock for `(provider, session, model)`, and writes one immutable aggregate audit run only. If another invocation holds that lock, it returns `lock_unavailable`; a holding without EOD exactly on that session fails closed. It is not a sell recommendation or evidence of a production worker, durable lease/heartbeat, or scheduler.
 
 ## Current quote endpoints
 

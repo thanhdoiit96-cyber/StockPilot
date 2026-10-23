@@ -11,7 +11,7 @@ if (!sessionDate || !ownerId) {
   console.error('Usage: EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD [--trigger=id]');
   process.exitCode = 2;
 } else {
-  runPositionExitEodDryRun({ Portfolio, PortfolioTransaction, PortfolioEvent, StockPrice, PositionExitGeneratorRun, sessionDate, triggerId, ownerId })
+  runPositionExitEodDryRun({ Portfolio, PortfolioTransaction, PortfolioEvent, StockPrice, PositionExitGeneratorRun, sequelize, sessionDate, triggerId, ownerId })
     .then(result => { console.log(JSON.stringify(result)); })
     .catch(error => { console.error(`Exit-guidance dry-run failed: ${error.message}`); process.exitCode = 1; })
     .finally(async () => { await sequelize.close(); });

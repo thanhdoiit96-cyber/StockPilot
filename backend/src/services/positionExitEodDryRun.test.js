@@ -27,6 +27,24 @@ test('does not surface an exit rule for a holding without an exact EOD session',
   expect(result.result_summary).toMatchObject({ holdings_with_session_eod: 0, guidance_statuses: { unavailable_eod_session_missing: 1 } });
 });
 
+test('uses a transaction-scoped PostgreSQL advisory lock when a sequelize owner is provided', async () => {
+  const deps = dependencies();
+  const transaction = 'transaction';
+  const sequelize = { transaction: jest.fn(async (_options, callback) => callback(transaction)), query: jest.fn().mockResolvedValue([[{ locked: true }]]) };
+  await runPositionExitEodDryRun({ ...deps, sequelize, sessionDate: '2026-10-21', triggerId: 'eod-run-lock', ownerId: 'worker-a' });
+  expect(sequelize.query).toHaveBeenCalledWith(expect.stringContaining('pg_try_advisory_xact_lock'), expect.objectContaining({ transaction }));
+  expect(deps.PositionExitGeneratorRun.create).toHaveBeenCalledWith(expect.any(Object), { transaction });
+});
+
+test('does not read or write when the advisory lock is unavailable', async () => {
+  const deps = dependencies();
+  const sequelize = { transaction: jest.fn(async (_options, callback) => callback('transaction')), query: jest.fn().mockResolvedValue([[{ locked: false }]]) };
+  await expect(runPositionExitEodDryRun({ ...deps, sequelize, sessionDate: '2026-10-21', triggerId: 'eod-run-locked', ownerId: 'worker-a' })).resolves.toEqual({ status: 'lock_unavailable', session_date: '2026-10-21' });
+  expect(deps.PositionExitGeneratorRun.findOne).not.toHaveBeenCalled();
+  expect(deps.Portfolio.findAll).not.toHaveBeenCalled();
+  expect(deps.PositionExitGeneratorRun.create).not.toHaveBeenCalled();
+});
+
 test('is idempotent for the same trigger and refuses incomplete invocation identity', async () => {
   const deps = dependencies(); deps.PositionExitGeneratorRun.findOne.mockResolvedValue({ id: 'existing' });
   await expect(runPositionExitEodDryRun({ ...deps, sessionDate: '2026-10-21', triggerId: 'eod-run-1', ownerId: 'worker-a' })).resolves.toEqual({ status: 'run_exists', run_id: 'existing', session_date: '2026-10-21' });
