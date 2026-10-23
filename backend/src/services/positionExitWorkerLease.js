@@ -56,7 +56,8 @@ async function releasePositionExitWorkerLease({ sequelize, leaseKey, ownerId, fe
   validate({ sequelize, leaseKey, ownerId });
   if (!Number.isInteger(Number(fencingToken)) || Number(fencingToken) < 1) throw new Error('fencingToken must be a positive integer');
   const [rows] = await sequelize.query(`
-    DELETE FROM position_exit_worker_leases
+    UPDATE position_exit_worker_leases
+    SET lease_expires_at = NOW(), heartbeat_at = NOW(), updated_at = NOW()
     WHERE lease_key = $1 AND owner_id = $2 AND fencing_token = $3
     RETURNING lease_key, owner_id, fencing_token
   `, { bind: [leaseKey, ownerId, fencingToken] });

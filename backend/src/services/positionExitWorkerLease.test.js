@@ -25,6 +25,13 @@ test('renews and releases only with the current owner and fencing token', async 
   await expect(releasePositionExitWorkerLease({ sequelize, leaseKey: 'exit-guidance', ownerId: 'worker-a', fencingToken: 2 })).resolves.toEqual({ status: 'lost' });
 });
 
+test('expires rather than deletes a released lease so the next owner receives a newer token', async () => {
+  const sequelize = database([{ lease_key: 'exit-guidance', owner_id: 'worker-a', fencing_token: '3' }]);
+  await releasePositionExitWorkerLease({ sequelize, leaseKey: 'exit-guidance', ownerId: 'worker-a', fencingToken: 3 });
+  expect(sequelize.query).toHaveBeenCalledWith(expect.stringContaining('SET lease_expires_at = NOW()'), expect.any(Object));
+  expect(sequelize.query.mock.calls[0][0]).not.toContain('DELETE FROM');
+});
+
 test('rejects unsafe lease configuration', async () => {
   const sequelize = database([]);
   await expect(acquirePositionExitWorkerLease({ sequelize, leaseKey: 'x', ownerId: 'a', leaseMs: 1 })).rejects.toThrow('leaseMs');

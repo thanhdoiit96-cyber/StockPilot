@@ -145,6 +145,8 @@ Exit guidance has no scheduler. To create internal evidence without writing an e
 
 `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run verify:exit-guidance-worker-lease` is a separate database preflight. It atomically acquires a 60-second lease, checks a heartbeat renewal, then releases it; the lease carries a monotonically increasing fencing token and cannot be renewed/released by an old owner. It does not ingest data, generate guidance, create an order, or start a scheduler. A successful local preflight is not production worker evidence.
 
+`EXIT_GUIDANCE_EOD_WORKER_ENABLED=true EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run run:exit-guidance-lease-worker` starts an explicit lease-only owner process. It emits only aggregate lease lifecycle logs, renews every 30 seconds, releases on a normal exit, and never schedules/generates exit guidance. Use `-- --max-heartbeats=1` for one local observation cycle. It remains disabled by default and is not added to the web process or Compose.
+
 ## Current quote endpoints
 
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.
