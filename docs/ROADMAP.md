@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Recommendation browser baseline recorded (2026-10-23): five desktop/mobile navigation samples with real local read data and isolated account, p50 visible-content latency 136–167 ms; tab return does not refetch cohort summary. Existing lifecycle is retained without cache/render refactor. These are instrumented local measurements; provider-backed forecast and actual-account end-to-end timing remain separate work.
+
 Prediction database-read baseline recorded (2026-10-23): current runtime health/contracts verified after backend restart; five samples per endpoint show p50 ~20 ms latest, ~12 ms history, ~22 ms history summary and ~3 ms forecast cohort, max payload <16 kB. No measured justification for cache/pagination/refactor here. Live-preview/provider and browser-render latency are separate pending measurements; the existing script intentionally excludes provider-backed generation.
 
 Forecast freshness/input-scope disclosure completed (2026-10-23): always-visible as-of/age and feature-derived participating/missing symbols, plus compact retry, reuse existing preview response. Mocked desktop/mobile request counts show expansion requires no extra preview request. Next: read-only local payload/latency baseline for recommendation and forecast APIs, then optimize only demonstrated bottlenecks.
