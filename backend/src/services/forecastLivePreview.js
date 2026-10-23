@@ -9,7 +9,7 @@ function safeNumber(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
-function buildFeatureVector(rows = [], includedSymbols = []) {
+function buildFeatureVector(rows = [], includedSymbols = [], exclusions = []) {
   const bySymbol = new Map();
   for (const row of rows) {
     const symbol = row.instrument?.symbol;
@@ -18,8 +18,22 @@ function buildFeatureVector(rows = [], includedSymbols = []) {
     bySymbol.get(symbol).push(row);
   }
   const vectors = [...bySymbol.values()].map(symbolRows => {
-    const closes = symbolRows.sort((a, b) => Date.parse(a.observed_at) - Date.parse(b.observed_at)).map(row => safeNumber(row.quote?.close)).filter(value => value > 0);
-    if (closes.length < 21) return null;
+    const sessions = new Map();
+    let reason = null;
+    for (const row of symbolRows) {
+      const timestamp = typeof row.observed_at === 'string' ? Date.parse(row.observed_at) : NaN;
+      if (!Number.isFinite(timestamp)) { reason = 'invalid_observation_time'; continue; }
+      const close = safeNumber(row.quote?.close);
+      if (close <= 0) continue;
+      const date = new Date(timestamp + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      if (sessions.has(date) && sessions.get(date) !== close) reason = reason || 'conflicting_session_prices';
+      sessions.set(date, close);
+    }
+    const closes = [...sessions.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, close]) => close);
+    if (reason || closes.length < 21) {
+      exclusions.push({ symbol: symbolRows[0].instrument.symbol, reason: reason || 'insufficient_distinct_dates', distinct_dates: closes.length });
+      return null;
+    }
     includedSymbols.push(symbolRows[0].instrument.symbol);
     const computeReturns = (lookback) => {
     if (closes.length < lookback + 1) return 0;
@@ -50,7 +64,8 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
 
   const rows = [...currentData.rows].sort((a, b) => Date.parse(a.observed_at) - Date.parse(b.observed_at));
   const includedSymbols = [];
-  const vector = buildFeatureVector(rows, includedSymbols);
+  const exclusions = [];
+  const vector = buildFeatureVector(rows, includedSymbols, exclusions);
   const requestedSymbols = [...new Set(currentData.requested_symbols || [])];
   if (!vector) {
     const error = new Error('live_forecast_preview_unavailable:insufficient_history');
@@ -137,7 +152,7 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
     },
     notice,
     current_data: {
-      input_scope: { requested_symbols: requestedSymbols, used_symbols: includedSymbols.sort(), missing_symbols: requestedSymbols.filter(symbol => !includedSymbols.includes(symbol)), minimum_close_observations: 21 },
+      input_scope: { requested_symbols: requestedSymbols, used_symbols: includedSymbols.sort(), missing_symbols: requestedSymbols.filter(symbol => !includedSymbols.includes(symbol)), minimum_close_observations: 21, minimum_distinct_dates: 21, contract_version: 'vn_observation_dates_v2', exclusions },
       rows: rows.length,
       newest_observed_at: currentData.as_of,
       stale: Number(currentData.staleness_days || 0) > Number(currentData.maximum_staleness_days || 7)

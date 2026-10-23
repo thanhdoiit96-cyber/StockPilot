@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Distinct-date input contract — 2026-10-23
+
+Preview users need duplicate rows to never masquerade as 21 sessions. Group positive closes by Vietnam observation date; collapse identical prices and exclude a symbol with conflicting same-date prices or invalid timestamps. Require 21 distinct dates. Prefer exclusion over choosing the latest conflicting row because revision provenance is unavailable. Keep clean-input formulas unchanged and expose contract version plus exclusion reasons; this does not certify exchange-calendar completeness. UI uses the existing missing-input disclosure. Acceptance: duplicates cannot satisfy the window, equivalent timestamps group together, clean probabilities stay unchanged, mixed baskets disclose excluded symbols. Budget: one linear grouping pass plus date sorting, no new I/O, polling, persistence or provider calls. Historical sealed predictions stay immutable.
+
 ### Current-data preview usability follow-up — 2026-10-23
 
 Expose data age and actual model input scope in both compact and expanded outlook. Compute participating symbols at the existing feature-vector step: only symbols whose valid-close history actually enters the model count as used. Disclose requested/used/missing symbols without interpreting input coverage as whole-market representation. Freshness uses the server-provided staleness and maximum-staleness values; no local trading-calendar claim is inferred. Add a compact retry for failed preview loads. Reuse payloads/cache and existing retry state; no polling, new endpoint/request, persistence or model-weight change. Acceptance includes partially usable symbol history, missing metadata, compact errors, responsive disclosure and request-count verification.
