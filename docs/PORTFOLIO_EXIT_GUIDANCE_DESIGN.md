@@ -58,6 +58,8 @@ Proposed read contract: `GET /api/portfolio/exit-guidance` returns only the auth
 
 Evaluation is model-specific and separate from buy recommendation outcomes. For each frozen signal, record 1/5/20 distinct subsequent EOD sessions, maximum adverse/favourable excursion, whether the stop/target boundary was crossed, and an explicitly defined counterfactual baseline. Do not call a signal “correct” merely because a later close is lower/higher. Publish action counts, coverage, pending/excluded cohorts and confidence intervals only after a predeclared minimum sample and stable out-of-sample window; no parameter tuning or automatic calibration before that gate.
 
+The implemented pure evaluator is `position_exit_shadow_evaluation_v1`. It accepts only a frozen guidance payload and later stored EOD rows, returns `pending` until 20 distinct subsequent sessions exist, and returns `excluded` for malformed frozen inputs. Its output deliberately contains observations, MAE/MFE and boundary crossings but no `correct` flag, score, ranking or parameter mutation. Persistence/reporting remains closed until sealed exit snapshots exist.
+
 ## UI/UX
 
 Place this in **Danh mục**, next to each existing open position, not inside the buy-focused **Đề xuất** page:
