@@ -15,10 +15,12 @@ test('renews the lease then releases it without generating any guidance', async 
   lease.acquirePositionExitWorkerLease.mockResolvedValue({ status: 'acquired', fencing_token: '4' });
   lease.renewPositionExitWorkerLease.mockResolvedValue({ status: 'renewed' });
   lease.releasePositionExitWorkerLease.mockResolvedValue({ status: 'released' });
-  const result = await runPositionExitLeaseOnlyWorker({ sequelize: {}, leaseKey: 'exit', ownerId: 'worker-a', leaseMs: 15000, maxHeartbeats: 1, wait: jest.fn().mockResolvedValue(), logger: { info: jest.fn() } });
+  const recordEvent = jest.fn().mockResolvedValue();
+  const result = await runPositionExitLeaseOnlyWorker({ sequelize: {}, leaseKey: 'exit', ownerId: 'worker-a', leaseMs: 15000, maxHeartbeats: 1, wait: jest.fn().mockResolvedValue(), logger: { info: jest.fn() }, recordEvent });
   expect(result).toEqual({ status: 'completed', heartbeats: 1, fencing_token: 4 });
   expect(lease.renewPositionExitWorkerLease).toHaveBeenCalledWith(expect.objectContaining({ fencingToken: 4 }));
   expect(lease.releasePositionExitWorkerLease).toHaveBeenCalledWith(expect.objectContaining({ fencingToken: 4 }));
+  expect(recordEvent.mock.calls.map(call => call[0].eventType)).toEqual(['acquired', 'renewed', 'released']);
 });
 
 test('does not run when a different owner holds the lease', async () => {
