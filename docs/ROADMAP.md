@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Exit shadow evaluation lifecycle v2 (2026-10-23): migration `051` preserves legacy records and permits immutable 1/5/20-session results per guidance/version. Pending horizons remain retryable; completed guidance no longer occupies the bounded scan. Price reads deduplicate Vietnam sessions, exclude the signal date and validate basis/hash. Evaluation reporting separates horizon cohorts from legacy evidence. This foundation precedes signal-lifecycle UI and explanatory recommendation enhancements; calibration remains gated by valid outcomes.
+
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
 - Frontend thay đổi: unit/contract, production build và bundle integrity; browser smoke khi sửa luồng tương tác.
 - Tài liệu: cập nhật PROJECT_STATUS, file thiết kế chịu trách nhiệm và INDEX/link khi thêm hoặc di chuyển tài liệu.

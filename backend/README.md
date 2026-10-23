@@ -149,7 +149,7 @@ Exit guidance has no scheduler. To create internal evidence without writing an e
 
 `GET /api/ops/exit-guidance-worker?limit=1..50` is an admin-only read of the configured lease's active/expired status and bounded aggregate lifecycle events. It never starts a worker or returns portfolio, holding, cost, provider, or guidance data. With no `ADMIN_API_KEY`, it correctly returns `503` rather than exposing operations data.
 
-`EXIT_GUIDANCE_EVALUATION_ENABLED=true npm run evaluate:exit-guidance-shadow -- --limit=1..100` is an explicit, one-shot shadow-evaluation command. It reads only sealed exit guidance and stored subsequent EOD rows, writes immutable pending/evaluated/excluded evidence only when absent, and makes no provider request. It is not a scheduler, does not create guidance snapshots, does not alter model parameters, and returns `no_snapshots` when no sealed guidance exists.
+`EXIT_GUIDANCE_EVALUATION_ENABLED=true npm run evaluate:exit-guidance-shadow -- --limit=1..100` is an explicit, one-shot shadow-evaluation command. Apply migration `051` first. It verifies the guidance payload hash, reads up to 20 distinct Vietnam EOD sessions strictly after the signal date, and checks provider/price basis. V2 seals independent immutable results for horizons 1/5/20; pending horizons are counted but never persisted, so they can mature on subsequent invocations. Legacy v1 rows remain untouched. `created` counts inserted horizon records; `pending` counts waiting guidance/horizon pairs. Completed v2 guidance is excluded from the bounded scan. No provider request or scheduler is added. The report separates v2 horizon cohorts from legacy records and cannot infer waiting counts from sealed records alone.
 
 ## Current quote endpoints
 

@@ -11,3 +11,12 @@ test('does not replace an immutable evaluation', async () => {
   await expect(sealPositionExitEvaluation({ PositionExitEvaluation, guidanceId: 'guidance-1', evaluation })).resolves.toEqual({ status: 'evaluation_exists', evaluation_id: 'existing' });
   expect(PositionExitEvaluation.create).not.toHaveBeenCalled();
 });
+
+test('v2 does not persist pending and seals each horizon independently with concurrent-safe creation', async () => {
+  const PositionExitEvaluation = { findOne: jest.fn().mockResolvedValue(null), findOrCreate: jest.fn().mockResolvedValue([{ id: 'h1' }, true]) };
+  const value = { version: 'position_exit_shadow_evaluation_v2', horizon_days: 1, status: 'pending' };
+  expect(await sealPositionExitEvaluation({ PositionExitEvaluation, guidanceId: 'g', evaluation: value })).toEqual({ status: 'pending' });
+  expect(PositionExitEvaluation.findOne).not.toHaveBeenCalled();
+  await sealPositionExitEvaluation({ PositionExitEvaluation, guidanceId: 'g', evaluation: { ...value, status: 'evaluated' } });
+  expect(PositionExitEvaluation.findOrCreate).toHaveBeenCalledWith(expect.objectContaining({ where: { guidance_id: 'g', horizon_days: 1, schema_version: value.version } }));
+});
