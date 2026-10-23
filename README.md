@@ -6,7 +6,7 @@ Bản hiện tại có tài khoản và quản lý phiên, bảng giá, watchlis
 
 ## Bắt đầu
 
-- **Chạy ứng dụng:** [QUICK_START.md](QUICK_START.md), bắt đầu tại “Khởi động lại local đã cấu hình”. Bản local chạy bằng ba tiến trình: Python worker (`py`), backend và frontend. Hướng dẫn kiểm tra package trước và chỉ cài khi thiếu; không tạo `.venv` chỉ để chạy lại một máy đã cấu hình. Khi chạy qua agent/sandbox, xem mục Forecast LIVE: endpoint này cần backend được phép spawn Python bridge riêng.
+- **Chạy ứng dụng:** [QUICK_START.md](QUICK_START.md), bắt đầu tại “Khởi động lại local đã cấu hình”. Bản local chạy bằng ba tiến trình: Python worker (`py`), backend và frontend; Compose đóng gói bốn runtime tương ứng (PostgreSQL, worker, backend, frontend Nginx). Hướng dẫn kiểm tra package trước và chỉ cài khi thiếu; không tạo `.venv` chỉ để chạy lại một máy đã cấu hình. Khi chạy qua agent/sandbox, xem mục Forecast LIVE: endpoint này cần backend được phép spawn Python bridge riêng.
 - **Bảng lệnh build/run:** [RUN_COMMANDS.md](RUN_COMMANDS.md), gồm các lệnh PowerShell để chạy worker, backend, frontend và kiểm thử.
 - **Tiếp tục phát triển:** đọc [AGENTS.md](AGENTS.md), [tiến độ và bàn giao](docs/PROJECT_STATUS.md), rồi [lộ trình](docs/ROADMAP.md).
 - **Tra cứu kỹ thuật:** [chỉ mục tài liệu](docs/INDEX.md), [backend](backend/README.md), [frontend](frontend/README.md).
