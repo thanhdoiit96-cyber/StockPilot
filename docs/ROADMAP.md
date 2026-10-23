@@ -73,6 +73,8 @@ Migration `050` adds the immutable, one-per-guidance evaluation ledger and a cre
 
 A bounded database-only evaluation runner is implemented (100 guidance records; 20 subsequent EOD rows each). It reports `no_snapshots` honestly and does not call a provider. It is deliberately not scheduled until immutable exit snapshot generation has an authorized owner.
 
+Migration `050` is applied locally. Its first bounded opt-in evaluation returned `no_snapshots` with zero provider requests, as expected before exit guidance snapshots are generated.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
