@@ -69,6 +69,8 @@ Model-integrity follow-up (2026-10-23) is complete: a recent bounded EOD window 
 
 The pure evaluation contract is implemented as `position_exit_shadow_evaluation_v1`: it exposes pending/evaluated/excluded cohort mechanics, 1/5/20-session observations, MAE/MFE and boundary crossings without a correctness flag or parameter mutation. Its persistence/report remains intentionally deferred until immutable exit snapshots exist.
 
+Migration `050` adds the immutable, one-per-guidance evaluation ledger and a create-or-return persistence boundary. Collection/reporting remains deferred: no scheduler, UI publication or performance claim is enabled.
+
 ## Điều kiện nghiệm thu chung
 
 - Backend thay đổi hành vi: test liên quan, migration khi đổi schema và lint không có warning hoặc error mới.
