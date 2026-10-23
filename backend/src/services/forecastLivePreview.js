@@ -9,7 +9,7 @@ function safeNumber(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
-function buildFeatureVector(rows = []) {
+function buildFeatureVector(rows = [], includedSymbols = []) {
   const bySymbol = new Map();
   for (const row of rows) {
     const symbol = row.instrument?.symbol;
@@ -20,6 +20,7 @@ function buildFeatureVector(rows = []) {
   const vectors = [...bySymbol.values()].map(symbolRows => {
     const closes = symbolRows.sort((a, b) => Date.parse(a.observed_at) - Date.parse(b.observed_at)).map(row => safeNumber(row.quote?.close)).filter(value => value > 0);
     if (closes.length < 21) return null;
+    includedSymbols.push(symbolRows[0].instrument.symbol);
     const computeReturns = (lookback) => {
     if (closes.length < lookback + 1) return 0;
     const latest = closes[closes.length - 1];
@@ -48,7 +49,9 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
   }
 
   const rows = [...currentData.rows].sort((a, b) => Date.parse(a.observed_at) - Date.parse(b.observed_at));
-  const vector = buildFeatureVector(rows);
+  const includedSymbols = [];
+  const vector = buildFeatureVector(rows, includedSymbols);
+  const requestedSymbols = [...new Set(currentData.requested_symbols || [])];
   if (!vector) {
     const error = new Error('live_forecast_preview_unavailable:insufficient_history');
     error.code = 'live_forecast_preview_unavailable';
@@ -134,6 +137,7 @@ function buildLiveForecastPreview({ currentData, horizon = 5, modelVersion = 'so
     },
     notice,
     current_data: {
+      input_scope: { requested_symbols: requestedSymbols, used_symbols: includedSymbols.sort(), missing_symbols: requestedSymbols.filter(symbol => !includedSymbols.includes(symbol)), minimum_close_observations: 21 },
       rows: rows.length,
       newest_observed_at: currentData.as_of,
       stale: Number(currentData.staleness_days || 0) > Number(currentData.maximum_staleness_days || 7)

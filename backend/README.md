@@ -141,6 +141,8 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Exit-guidance dry-run
 
+Forecast live-preview `current_data.input_scope` reports requested/used/missing symbol lists and the existing 21-close-observation requirement. Used symbols come from the actual feature-vector step. This metadata does not certify distinct exchange-session history, market-wide coverage or model accuracy; formulas and gates are unchanged. Older responses without scope remain displayable with an unknown-scope disclosure.
+
 Recommendation history summaries expose `exclusion_breakdown: [{ reason, count }]` per run/cohort. Counts include assessed excluded rows only, deduplicated per reason within each signal. Multiple reasons can overlap; their counts must not be summed as distinct signals. Missing details use `unspecified_evidence_failure`. This projection reuses assessed rows and does not add database/provider requests.
 
 Latest recommendation `risk` and `monitor:recommendations` derive sector concentration exclusively from verified `rationale.snapshot_taxonomy.industry`. The denominator is selected-symbol count. `taxonomy_incomplete`/`snapshot_unverified` return no maximum-sector percentage or warning; `classified_count` and `missing_taxonomy_count` explain coverage. Existing snapshots are never reclassified from current stock metadata. Monitor outcome statistics use the same eligibility checks as history. The monitor keeps its legacy snapshot-hash field for the existing verification command and includes the stored canonical hash separately.

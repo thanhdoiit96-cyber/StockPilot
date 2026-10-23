@@ -6,6 +6,7 @@ import { summarizeForecastBreadth } from '../services/forecastBreadth.mjs'
 import { forecastOutcomeTone, formatForecastPercent } from '../services/forecastDisplay.mjs'
 import { fetchOfficialVn30Readiness } from '../services/officialVn30Readiness.mjs'
 import OfficialVn30Readiness from './OfficialVn30Readiness.jsx'
+import ForecastDataStatus from './ForecastDataStatus.jsx'
 
 export default function ShortTermOutlook({ language = 'vi', recommendations = [], onOpenDetail, onOpenIdeas, onAddToWatchlist, watchlistSymbols = [] }) {
   const [horizon, setHorizon] = useState(() => {
@@ -111,6 +112,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
         </div>
       </header>
 
+      <ForecastDataStatus payload={forecastPayload} status={currentPreviewEnabled ? currentPreview.status : preview.status} language={language} retry={() => setPreviewRetry(value => value + 1)} />
       {isCompact ? (
         <div className="outlook-compact-summary" aria-live="polite">
           <div className="outlook-compact-header">

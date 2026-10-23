@@ -14,3 +14,8 @@ test('builds basket features per symbol instead of treating different symbols as
 test('rejects a basket when no symbol has a complete 21-session history', () => {
   expect(() => buildLiveForecastPreview({ currentData: { provider: 'vnstock', rows: rows('AAA', 100, 1).slice(0, 20) } })).toThrow('insufficient_history');
 });
+
+test('discloses only symbols whose history actually enters the model', () => {
+  const preview = buildLiveForecastPreview({ currentData: { provider: 'vnstock', requested_symbols: ['AAA', 'BBB', 'CCC'], rows: [...rows('AAA', 100, 1), ...rows('BBB', 200, -1).slice(0, 20)] } });
+  expect(preview.current_data.input_scope).toEqual({ requested_symbols: ['AAA', 'BBB', 'CCC'], used_symbols: ['AAA'], missing_symbols: ['BBB', 'CCC'], minimum_close_observations: 21 });
+});

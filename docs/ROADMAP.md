@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Forecast freshness/input-scope disclosure completed (2026-10-23): always-visible as-of/age and feature-derived participating/missing symbols, plus compact retry, reuse existing preview response. Mocked desktop/mobile request counts show expansion requires no extra preview request. Next: read-only local payload/latency baseline for recommendation and forecast APIs, then optimize only demonstrated bottlenecks.
+
 Recommendation history exclusion breakdown completed (2026-10-23): reason counts follow assessed model/horizon cohorts with explicit overlapping-count explanation and localized disclosure. No extra query/request or provider dependency. Next product priority: forecast data-age/coverage usability; performance changes require request/payload measurements first.
 
 Frozen-sector concentration disclosure completed (2026-10-23): API/monitor/UI use verified snapshot taxonomy, publish missing coverage, and distinguish selected-symbol share from personal capital exposure. Local evidence has 1/5 taxonomy coverage; concentration remains unknown. Existing snapshot creation already freezes available industry; no legacy backfill or provider expansion. Next: cohort exclusion-reason breakdown and its UI.
