@@ -38,6 +38,7 @@
     "evaluate:exit-guidance-shadow": "node scripts/evaluate-position-exit-shadow.cjs",
     "verify:exit-guidance-worker-lease": "node scripts/verify-position-exit-worker-lease.cjs",
     "run:exit-guidance-lease-worker": "node scripts/run-position-exit-lease-worker.cjs",
+    "run:exit-guidance-eod-shadow": "node scripts/run-position-exit-eod-shadow.cjs",
     "seed": "sequelize-cli db:seed:all",
     "ingest:vnstock": "node scripts/ingest-vnstock-eod.cjs",
     "ingest:vnstock-foreign-flow": "node scripts/ingest-vnstock-foreign-flow.cjs",

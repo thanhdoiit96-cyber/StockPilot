@@ -32,12 +32,12 @@ function preparePositionExitSnapshot({ portfolioId, transactions = [], events = 
 function positionExitGenerationKey({ portfolioId, asOf, provider, inputHash }) { return hash({ portfolio_id: portfolioId, as_of: asOf, provider, model: 'position_exit_rule_v1', input_provenance_sha256: inputHash }); }
 function positionExitSnapshotHash({ portfolioId, asOf, provider, inputHash, guidance }) { return hash({ version: 'position_exit_snapshot_v1', portfolio_id: portfolioId, as_of: asOf, provider, input_provenance_sha256: inputHash, guidance: guidance.map(item => ({ stock_id: item.stock_id, status: item.status, payload: item })).sort((a, b) => String(a.stock_id).localeCompare(String(b.stock_id))) }); }
 
-async function createPositionExitSnapshot({ PortfolioTransaction, PortfolioEvent, StockPrice, PositionExitRun, PositionExitGuidance, HoldingReconciliationRun, HoldingReconciliationApplication, sequelize, portfolioId, provider = 'vnstock', now = new Date() } = {}) {
+async function createPositionExitSnapshot({ PortfolioTransaction, PortfolioEvent, StockPrice, PositionExitRun, PositionExitGuidance, HoldingReconciliationRun, HoldingReconciliationApplication, sequelize, portfolioId, provider = 'vnstock', now = new Date(), transactions: suppliedTransactions, events: suppliedEvents, priceRows: suppliedPriceRows } = {}) {
   const write = async transaction => {
     const [transactions, events, priceRows] = await Promise.all([
-      PortfolioTransaction.findAll({ where: { portfolio_id: portfolioId }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']], transaction }),
-      PortfolioEvent.findAll({ where: { portfolio_id: portfolioId }, transaction }),
-      StockPrice.findAll({ where: { provider, interval: '1d' }, order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000, transaction })
+      suppliedTransactions || PortfolioTransaction.findAll({ where: { portfolio_id: portfolioId }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']], transaction }),
+      suppliedEvents || PortfolioEvent.findAll({ where: { portfolio_id: portfolioId }, transaction }),
+      suppliedPriceRows || StockPrice.findAll({ where: { provider, interval: '1d' }, order: [['observed_at', 'ASC'], ['id', 'ASC']], limit: 200000, transaction })
     ]);
     const preliminary = preparePositionExitSnapshot({ portfolioId, transactions, events, priceRows, provider });
     if (!preliminary.as_of) return { status: 'eod_unavailable', guidance: preliminary.guidance.length };
