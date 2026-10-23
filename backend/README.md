@@ -143,6 +143,8 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 Exit guidance has no scheduler. To create internal evidence without writing an exit snapshot or calling a provider, run `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=<id>`. The command requires an explicit session/owner/trigger, takes a PostgreSQL transaction-scoped advisory lock for `(provider, session, model)`, and writes one immutable aggregate audit run only. If another invocation holds that lock, it returns `lock_unavailable`; a holding without EOD exactly on that session fails closed. It is not a sell recommendation or evidence of a production worker, durable lease/heartbeat, or scheduler.
 
+`EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run verify:exit-guidance-worker-lease` is a separate database preflight. It atomically acquires a 60-second lease, checks a heartbeat renewal, then releases it; the lease carries a monotonically increasing fencing token and cannot be renewed/released by an old owner. It does not ingest data, generate guidance, create an order, or start a scheduler. A successful local preflight is not production worker evidence.
+
 ## Current quote endpoints
 
 - `GET /api/stocks`: default page size is 200, maximum 500; pagination total is the database count. Query `listing_status=listed|delisted|unknown` giới hạn trạng thái niêm yết; cache key và pagination phản ánh giá trị đã chuẩn hóa.
