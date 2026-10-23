@@ -12,15 +12,25 @@ test('portfolio layout and keyboard trade actions remain usable across screen si
     await page.screenshot({ path: `test-results/portfolio-layout-${width}.png`, fullPage: true })
   }
   for (const [label, side] of [['Mua', 'BUY'], ['Bán', 'SELL']]) {
-    const button = page.locator('.portfolio-trade-actions').getByRole('button', { name: label, exact: true })
+    const button = page.locator('.portfolio-trade-actions').getByRole('button', { name: `${label} FPT`, exact: true })
     await button.focus()
     await page.keyboard.press('Enter')
     await expect(page.locator('.transaction-form')).toBeVisible()
+    await expect(page.locator('.transaction-form input[type="number"]').first()).toBeFocused()
     await expect(page.locator('.transaction-form select').first()).toHaveValue(side)
     await expect(page.getByLabel('Mã giao dịch')).toHaveValue('FPT')
     await page.locator('#portfolio-tab-overview').click()
   }
 })
+test('English position actions open a focused transaction draft', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('stockpilot-language', 'en'))
+  await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10, avg_cost: 100000 }], [], [], [], null, [], null, { id: 'en', email: 'en@example.com', role: 'admin', preferred_language: 'en' })
+  await page.locator('.portfolio-trade-actions').getByRole('button', { name: 'Sell FPT', exact: true }).click()
+  await expect(page.locator('.transaction-form select').first()).toHaveValue('SELL')
+  await expect(page.locator('.transaction-form input[type="number"]').first()).toBeFocused()
+  await expect(page.locator('.transaction-form input[type="number"]').first()).toHaveValue('')
+})
+
 test('cash-flow create and edit fields share transaction styling on desktop and mobile', async ({ page }) => {
   await boot(page, [], [], [], [], null, [{ id: 'cf-style', type: 'DEPOSIT', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: '' }])
   await page.getByRole('tab', { name: /Dòng tiền/ }).click()

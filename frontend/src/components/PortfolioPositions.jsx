@@ -28,7 +28,7 @@ function PositionRow({ position, onOpenDetail, onTrade, watched, onAddToWatchlis
     <td>{money(position.market_price)}<small className="data-time">{position.quote ? `${t('portfolio.positions.intraday')} · ${dateTime(position.quote.observed_at)}` : t('portfolio.positions.eod')}</small></td>
     <td className={tone}>{money(position.unrealized_pnl)}<small className="position-return">{percent == null ? '—' : `${percent > 0 ? '+' : ''}${formatNumber(percent, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}</small></td>
     <td className={Number(position.realized_pnl) >= 0 ? 'positive' : 'negative'}>{money(position.realized_pnl)}</td>
-    <td className="portfolio-trade-actions"><button type="button" className="ghost-btn small-btn portfolio-trade-buy" onClick={event => { event.stopPropagation(); onTrade?.(position, 'BUY') }}>Mua</button><button type="button" className="ghost-btn small-btn portfolio-trade-sell" onClick={event => { event.stopPropagation(); onTrade?.(position, 'SELL') }}>Bán</button></td>
+    <td className="portfolio-trade-actions"><button type="button" className="ghost-btn small-btn portfolio-trade-buy" aria-label={`${t('portfolio.transaction.buy')} ${position.symbol}`} onClick={event => { event.stopPropagation(); onTrade?.(position, 'BUY') }}>{t('portfolio.transaction.buy')}</button><button type="button" className="ghost-btn small-btn portfolio-trade-sell" aria-label={`${t('portfolio.transaction.sell')} ${position.symbol}`} onClick={event => { event.stopPropagation(); onTrade?.(position, 'SELL') }}>{t('portfolio.transaction.sell')}</button></td>
   </tr>
 }
 
