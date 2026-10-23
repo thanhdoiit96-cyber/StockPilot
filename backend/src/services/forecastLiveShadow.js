@@ -2,6 +2,7 @@
 const { artifactHash } = require('./forecastArtifact');
 const { snapshotGenerationKey, verifySnapshot } = require('./forecastSnapshotStore');
 const CLASSES = ['declining', 'balanced', 'advancing'];
+const { validLiveBaseline } = require('./forecastLiveBaselineValidation');
 
 function validateLiveShadowInput({ preview, currentData, baseline, license = 'personal_research_only' } = {}) {
   if (preview?.status !== 'live_preview' || preview.synthetic !== false || preview.live !== true || preview.research_only !== false || preview.market_accuracy_verified !== false
@@ -16,7 +17,7 @@ function validateLiveShadowInput({ preview, currentData, baseline, license = 'pe
   const evidenceRows = currentData.rows.map(row => ({ symbol: row.instrument?.symbol, observed_at: row.observed_at, close: row.quote?.close, provider: row.source?.provider || currentData.provider,
     dataset: row.source?.dataset || null, fetched_at: row.fetched_at || null })).sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)) || String(a.observed_at).localeCompare(String(b.observed_at)));
   if (evidenceRows.some(row => !row.symbol || !row.observed_at || !Number.isFinite(Number(row.close)))) throw new Error('Invalid live shadow evidence');
-  if (baseline && (baseline.version !== 'forecast_live_baseline_v1' || baseline.horizon_sessions !== preview.horizon_sessions || baseline.completed_outcomes < 20 || !/^[a-f0-9]{64}$/.test(baseline.training_hash || ''))) throw new Error('Invalid live shadow baseline');
+  if (baseline && !validLiveBaseline(baseline, { horizon: preview.horizon_sessions, asOf, issuedAt: preview.fetched_at, scope })) throw new Error('Invalid live shadow baseline');
   if (baseline && scope?.contract_version === 'vn_observation_dates_v3') {
     const policy = baseline.input_policy;
     if (policy?.input_contract_version !== scope.contract_version || policy.as_of_date !== scope.as_of_date

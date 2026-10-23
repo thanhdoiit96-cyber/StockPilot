@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Baseline comparison validation — 2026-10-23
+
+Use one validator at issuance and cohort scoring for baseline probabilities, sample count, dates/hash and v3 participation policy. A valid payload hash proves integrity, not statistical compatibility. Reject malformed new issuance; retain historical measured counts while excluding incompatible baselines from score eligibility and reporting the excluded count. Prefer this bounded validation over rewriting history or failing the entire history page. No schema, provider requests or UI changes. Acceptance covers missing/duplicate probabilities, invalid dates/counts, mismatched scope and valid compatible comparisons.
+
 ### Baseline input parity — 2026-10-23
 
 Build new v3 baselines from the preview's participating symbols and Vietnam cutoff. Reject invalid/missing availability, conflicting closes, or rows after the cutoff rather than silently train a different basket. Only selected symbols affect training; preserve legacy baseline calls and sealed data. Pass scope explicitly at materialization and seal policy/symbol metadata in baseline. This is preferable to expanding provider history or guessing membership. No additional requests/schema; bounded row normalization before existing baseline computation. Acceptance covers excluded symbols, future rows, missing availability and clean baseline output. Historical baseline comparisons remain legacy and are not upgraded by inference.

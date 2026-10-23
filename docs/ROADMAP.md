@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Baseline compatibility gate strengthened (2026-10-23): shared issuance/scoring validation excludes malformed or incompatible historical baselines while preserving measured counts. Next: UI baseline eligibility counts and positive-path same-policy comparison verification. Runtime/historical database audit remains unperformed.
+
 Baseline input parity implemented (2026-10-23): live materialization uses preview participation/cutoff and seals temporal policy; issuance checks parity. Legacy evidence remains unchanged. Next: baseline policy validation and historical comparison compatibility; runtime materialization and accuracy remain unverified.
 
 Outcome availability guard and mixed-cohort browser verification completed (2026-10-23). v3 requires fetched evidence after local close and no later than evaluation time across the selected horizon; mock desktop/mobile disclosures pass. Next: baseline participation/temporal-contract audit; fetched time remains an availability proxy, not provider publication certification.

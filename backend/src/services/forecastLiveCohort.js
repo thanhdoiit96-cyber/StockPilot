@@ -1,6 +1,7 @@
 'use strict';
 const { artifactHash } = require('./forecastArtifact');
 const { verifySnapshot } = require('./forecastSnapshotStore');
+const { validLiveBaseline, validProbabilities } = require('./forecastLiveBaselineValidation');
 const CLASSES = ['declining', 'balanced', 'advancing'];
 const plain = value => value?.get ? value.get({ plain: true }) : value;
 
@@ -18,10 +19,13 @@ function buildLiveCohortSummary(rows, { horizon, minimumSamples = 20 } = {}) {
     if (!verifySnapshot(row) || row.synthetic !== false || row.research_only !== false || row.horizon_sessions !== horizon) throw new Error('Live cohort integrity failed');
     if (!row.outcome) continue;
     const outcome = plain(row.outcome);
+    if (!validProbabilities(row.payload.probabilities)) throw new Error('Invalid live cohort probabilities');
     if (outcome.payload_sha256 !== artifactHash(outcome.payload) || outcome.payload?.snapshot_sha256 !== row.payload_sha256 || !CLASSES.includes(outcome.payload?.actual_class)) throw new Error('Live outcome integrity failed');
     const values = Object.fromEntries(row.payload.probabilities.map(item => [item.class, item.value])), truth = outcome.payload.actual_class;
     const model={ brier: CLASSES.reduce((sum, name) => sum + (values[name] - Number(name === truth)) ** 2, 0), log: -Math.log(Math.max(1e-15, values[truth])) }; measured.push(model);
-    if(row.payload.version==='forecast_live_shadow_payload_v2'&&row.payload.baseline_snapshot){ const score=items=>{const mapped=Object.fromEntries(items.map(item=>[item.class,item.value]));return{brier:CLASSES.reduce((sum,name)=>sum+(mapped[name]-Number(name===truth))**2,0),log:-Math.log(Math.max(1e-15,mapped[truth]))}}; baselineEligible.push({model,frequency:score(row.payload.baseline_snapshot.frequency_probabilities),persistence:score(row.payload.baseline_snapshot.persistence_probabilities)}); }
+    const scope = row.payload.provenance?.input_scope;
+    const scopePresent = row.payload.provenance?.input_contract_version !== 'vn_observation_dates_v3' || scope?.contract_version === 'vn_observation_dates_v3';
+    if(row.payload.version==='forecast_live_shadow_payload_v2' && scopePresent && validLiveBaseline(row.payload.baseline_snapshot, { horizon, asOf: row.as_of, issuedAt: row.payload.issued_at, scope })){ const score=items=>{const mapped=Object.fromEntries(items.map(item=>[item.class,item.value]));return{brier:CLASSES.reduce((sum,name)=>sum+(mapped[name]-Number(name===truth))**2,0),log:-Math.log(Math.max(1e-15,mapped[truth]))}}; baselineEligible.push({model,frequency:score(row.payload.baseline_snapshot.frequency_probabilities),persistence:score(row.payload.baseline_snapshot.persistence_probabilities)}); }
   }
 
   const groups = new Map();
@@ -37,6 +41,7 @@ function buildLiveCohortSummary(rows, { horizon, minimumSamples = 20 } = {}) {
     cohort_identity: groups.size === 1 ? JSON.parse(groups.keys().next().value) : null,
     ...(mixed ? { cohorts: [...groups.values()].map(group => buildLiveCohortSummary(group, { horizon, minimumSamples })) } : {}),
     predictions: rows.length, measured: measured.length, pending: rows.length - measured.length, date_range: { from: rows[0]?.as_of || null, to: rows.at(-1)?.as_of || null },
+    baseline_ineligible_measured: measured.length - baselineEligible.length,
     baseline_eligible_measured:baselineEligible.length, score_gate: mixed ? { status: 'mixed_cohorts', reason: 'provider_model_or_input_contract_differs', samples: measured.length, minimum_samples: minimumSamples } : eligible ? { status:'available', samples:baselineEligible.length, minimum_samples:minimumSamples }
       : measured.length >= minimumSamples ? { status: 'awaiting_baseline', reason: 'contemporaneous_baseline_not_sealed', samples: baselineEligible.length, minimum_samples: minimumSamples }
       : { status: 'insufficient_samples', reason: 'minimum_measured_samples_not_met', samples: measured.length, minimum_samples: minimumSamples },
