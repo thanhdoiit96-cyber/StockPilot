@@ -1,6 +1,6 @@
 ﻿# Trạng thái và bàn giao dự án
 
-Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
+Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút gọn này nằm tại [PROJECT_STATUS_2026-10-19.md](archive/PROJECT_STATUS_2026-10-19.md). Tài liệu này chỉ giữ hiện trạng có thể dùng để tiếp tục công việc.
 
 ## Hiện trạng chạy local
 
@@ -24,6 +24,7 @@ Cập nhật: 2026-10-22. Lịch sử checkpoint chi tiết trước lần rút 
 
 - Exit EOD generator foundation now has local migration `047` for immutable aggregate dry-run evidence and an explicit `npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=id` command. It requires `EXIT_GUIDANCE_EOD_OWNER_ID`, queries only open holding `stock_id`s through one 65-EOD-row-per-symbol window (cap 100 holdings), makes zero provider requests and does not create exit/reconciliation snapshots. Session coverage is fail-closed: a holding without EOD exactly on the requested session is counted only as `unavailable_eod_session_missing`, never as cut-loss/take-profit/hold.
 - Local dry-run evidence is 1/5 required before any scheduler consideration: immutable run `00f43a86-fa2d-4792-bee0-3a7586a48e45` for `2026-10-21` (owner `local-development-manual`, trigger `manual-2026-10-22-03`) saw 45 portfolios, attempted 3, found 23 holding candidates and 23/23 exact-session EOD; aggregate rule states were hold 19, cut-loss 2 and unavailable 2. The two earlier runs (`4a895471-572c-435e-a064-6aa1246b4760`, `9242e0d8-0e48-421b-bb8a-f4f255e10962`) predated the timezone-correct exact-session gate and are not counted as evidence. No provider call, exit snapshot, order, notification or scheduler was created. Targeted exit tests now pass 10/10 and backend lint passes.
+- Dry-run evidence is now 2/5: immutable run `41c12794-4b09-4774-adda-7dcae434c494` for `2026-10-22` (same local development owner; trigger `manual-2026-10-23-01`) again saw 45 portfolios, attempted 3 and covered 23/23 candidate holdings on the exact session. Aggregate rule states were hold 21 and cut-loss 2. It made zero provider calls and created no exit snapshot, order, notification or scheduler. This is local development evidence only; three further valid runs and durable worker-owner/lock evidence remain required.
 
 - Forecast current-data now exposes a fail-closed `validation` disclosure in the existing live-preview response. The expanded Evidence panel separates completed current-data checks from the pending probability-calibration, independent-audit and provider-validation gates. `market_accuracy_verified` remains false; this is a monitoring/provenance disclosure, not a live signal, recommendation or performance claim.
 - Returning to Overview now reuses a valid Forecast LIVE payload in module memory for at most 60 seconds, keyed by horizon and symbols. Retry bypasses it; errors are never cached and no data is persisted. This removes repeated bridge calls caused solely by page unmount/remount without masking freshness.
