@@ -141,6 +141,8 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Exit-guidance dry-run
 
+Latest recommendation `risk` and `monitor:recommendations` derive sector concentration exclusively from verified `rationale.snapshot_taxonomy.industry`. The denominator is selected-symbol count. `taxonomy_incomplete`/`snapshot_unverified` return no maximum-sector percentage or warning; `classified_count` and `missing_taxonomy_count` explain coverage. Existing snapshots are never reclassified from current stock metadata. Monitor outcome statistics use the same eligibility checks as history. The monitor keeps its legacy snapshot-hash field for the existing verification command and includes the stored canonical hash separately.
+
 The latest recommendation response also includes per-item `measurement_status`, `statistics_eligible`, `observed_session_count`, `remaining_session_count` and `exclusion_reasons`, projected from the already-assessed scheduled cohort. Missing matching evidence is `untracked`; clients must not interpret a stored outcome alone as eligible.
 
 Exit guidance has no scheduler. To create internal evidence without writing an exit snapshot or calling a provider, run `EXIT_GUIDANCE_EOD_OWNER_ID=<owner> npm run dry-run:exit-guidance-eod -- --session=YYYY-MM-DD --trigger=<id>`. The command requires an explicit session/owner/trigger, takes a PostgreSQL transaction-scoped advisory lock for `(provider, session, model)`, and writes one immutable aggregate audit run only. If another invocation holds that lock, it returns `lock_unavailable`; a holding without EOD exactly on that session fails closed. It is not a sell recommendation or evidence of a production worker, durable lease/heartbeat, or scheduler.

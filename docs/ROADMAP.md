@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Frozen-sector concentration disclosure completed (2026-10-23): API/monitor/UI use verified snapshot taxonomy, publish missing coverage, and distinguish selected-symbol share from personal capital exposure. Local evidence has 1/5 taxonomy coverage; concentration remains unknown. Existing snapshot creation already freezes available industry; no legacy backfill or provider expansion. Next: cohort exclusion-reason breakdown and its UI.
+
 History cohort progress UI completed (2026-10-23): visible per-model/horizon evidence counts, server comparison threshold, explicit loading/error/retry, and detailed statistics under disclosure reuse the summary request. Next: frozen-sector concentration explanation and data-quality breakdown, without new provider dependence or calibration from individual outcomes.
 
 Recommendation explanation/lifecycle UI completed (2026-10-23): compact per-symbol criterion comparison, declared horizon, reference timestamp and backend eligibility disclosure reuse the existing payload. Personalized results honestly disclose unavailable outcome tracking. No ranking weights, provider dependencies or automatic calibration changed. Follow-up: model/horizon cohort history usability and evidence-based concentration analysis.

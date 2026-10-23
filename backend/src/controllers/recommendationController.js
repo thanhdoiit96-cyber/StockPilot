@@ -1,8 +1,7 @@
 'use strict';
 
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const { recommendationConcentration } = require('../services/recommendationConcentration');
 const router = express.Router();
 const { RecommendationRun, RecommendationEvaluationEvent, Stock, StockPrice } = require('../models');
 const { SavedRecommendation } = require('../models');
@@ -177,15 +176,7 @@ function buildPendingIntegrityCoverage(runs = []) {
   return { pending_runs: snapshots.length, verified_runs: snapshots.filter(item => item.status === 'verified').length, blocked_runs: snapshots.filter(item => item.status === 'blocked').length, snapshots };
 }
 
-function readSnapshotRisk(runId) {
-  const evidencePath = path.resolve(__dirname, '../../evidence/recommendation-monitor-latest.json');
-  try {
-    if (!fs.existsSync(evidencePath)) return null;
-    const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
-    if (evidence.run?.id !== runId) return null;
-    return { concentration_warning: evidence.status?.concentration_warning || null, max_sector_share_pct: evidence.status?.max_sector_share_pct ?? null, measured: evidence.status?.measured ?? 0, pending: evidence.status?.pending ?? 0 };
-  } catch (_) { return null; }
-}
+function readSnapshotRisk(run) { return recommendationConcentration(run, verifyRecommendationSnapshot(run).valid === true); }
 
 router.get('/readiness', async (req, res) => {
   try {
@@ -235,7 +226,7 @@ router.get('/latest', async (req, res) => {
     const assessed = calibrationRuns.find(item => String(item.id) === String(run.id));
     const states = new Map((assessed?.recommendations || []).map(item => [String(item.id), item]));
     return res.json({ success: true, data: {
-      status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run.id), learning,
+      status: run.status, run: { id: run.id, as_of: run.as_of, horizon_days: run.horizon_days, provider: run.provider, model: run.model, universe_size: run.universe_size, selected_count: run.selected_count, created_at: run.created_at }, risk: readSnapshotRisk(run), learning,
       recommendations: (run.recommendations || []).map(item => {
         const state = states.get(String(item.id));
         return { id: item.id, rank: item.rank, score: Number(item.score), horizon_days: item.horizon_days, entry_price: item.entry_price == null ? null : Number(item.entry_price), rationale: item.rationale, evaluated_at: item.evaluated_at, forward_return_pct: item.forward_return_pct == null ? null : Number(item.forward_return_pct), outcome: item.outcome, stock: item.stock,

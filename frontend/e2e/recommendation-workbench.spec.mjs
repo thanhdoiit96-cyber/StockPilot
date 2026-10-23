@@ -1,6 +1,23 @@
 import { test, expect } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
+for (const complete of [true, false]) test(`scheduled sector disclosure uses snapshot symbol counts (${complete})`, async ({ page }) => {
+  await page.setViewportSize({ width: complete ? 1280 : 390, height: 900 })
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'fixture@example.com', role: 'user', preferred_language: 'vi' } } })
+    const data = path === '/api/recommendations/latest' ? { recommendations: [], risk: { basis: 'selected_symbol_count', status: complete ? 'complete' : 'taxonomy_incomplete', selected_count: 5, classified_count: complete ? 5 : 3, max_sector: complete ? 'banking_finance' : null, max_sector_share_pct: complete ? 60 : null, concentration_warning: complete ? 'sector_concentration_at_or_above_60_pct' : null } } : path === '/api/portfolio' ? { positions: [], recommendation_entries: [] } : []
+    await route.fulfill({ json: { success: true, data } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Đề xuất', exact: true }).click()
+  const disclosure = page.locator('.recommendation-concentration')
+  await expect(disclosure).toContainText('không thể hiện tỷ trọng vốn')
+  await expect(disclosure).toContainText(complete ? '60%' : 'chưa thể kết luận')
+  if (!complete) await expect(disclosure).not.toContainText('60%')
+  expect(await disclosure.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
+
 test('Recommendation mutation error is localized and recoverable', async ({ page }) => {
   await page.route('**/api/**', async route => {
     const request = route.request(); const path = new URL(request.url()).pathname

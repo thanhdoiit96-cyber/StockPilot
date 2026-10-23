@@ -1551,6 +1551,10 @@ th {
 
 .recommendation-signal { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); min-width: 0; }
 .recommendation-cohort-progress { margin: 18px 0; }
+.recommendation-concentration { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-soft); }
+.recommendation-concentration > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.recommendation-concentration p { margin: 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.recommendation-concentration small { color: var(--muted); line-height: 1.5; }
 .recommendation-cohort-progress h4 { margin-bottom: 6px; }
 .cohort-progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 .cohort-progress-card { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-soft); }
