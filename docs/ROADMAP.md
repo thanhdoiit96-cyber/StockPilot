@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Prediction database-read baseline recorded (2026-10-23): current runtime health/contracts verified after backend restart; five samples per endpoint show p50 ~20 ms latest, ~12 ms history, ~22 ms history summary and ~3 ms forecast cohort, max payload <16 kB. No measured justification for cache/pagination/refactor here. Live-preview/provider and browser-render latency are separate pending measurements; the existing script intentionally excludes provider-backed generation.
+
 Forecast freshness/input-scope disclosure completed (2026-10-23): always-visible as-of/age and feature-derived participating/missing symbols, plus compact retry, reuse existing preview response. Mocked desktop/mobile request counts show expansion requires no extra preview request. Next: read-only local payload/latency baseline for recommendation and forecast APIs, then optimize only demonstrated bottlenecks.
 
 Recommendation history exclusion breakdown completed (2026-10-23): reason counts follow assessed model/horizon cohorts with explicit overlapping-count explanation and localized disclosure. No extra query/request or provider dependency. Next product priority: forecast data-age/coverage usability; performance changes require request/payload measurements first.

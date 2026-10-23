@@ -76,6 +76,7 @@
     "audit:chart-history": "node scripts/audit-chart-history.cjs",
     "probe:eodhd-session": "node scripts/probe-eodhd-session.cjs",
     "measure:scale": "node scripts/measure-scale.cjs",
+    "measure:prediction-reads": "node scripts/measure-prediction-reads.cjs",
     "classify:universe-gaps": "node scripts/classify-universe-gaps.cjs",
     "probe:vnstock-history-gaps": "node scripts/probe-vnstock-history-gaps.cjs"
   },

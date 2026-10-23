@@ -141,6 +141,8 @@ Xem lệnh kiểm tra trong QUICK_START và kết quả có ngày trong PROJECT_
 
 ## Exit-guidance dry-run
 
+`npm run measure:prediction-reads` measures five sequential GET samples per local database-read endpoint (latest recommendations, history, history summary and forecast live cohort). Reports successful sample count, response-body bytes and nearest-rank p50/p95; with five samples p95 is the maximum, not a stable tail-latency estimate. It excludes live-preview/personalized generation because those paths can call a provider. `MEASURE_API_ORIGIN` may select another loopback port. The command writes no artifact and prints no response bodies or credentials; confirm current response contracts before interpreting results after code changes.
+
 Forecast live-preview `current_data.input_scope` reports requested/used/missing symbol lists and the existing 21-close-observation requirement. Used symbols come from the actual feature-vector step. This metadata does not certify distinct exchange-session history, market-wide coverage or model accuracy; formulas and gates are unchanged. Older responses without scope remain displayable with an unknown-scope disclosure.
 
 Recommendation history summaries expose `exclusion_breakdown: [{ reason, count }]` per run/cohort. Counts include assessed excluded rows only, deduplicated per reason within each signal. Multiple reasons can overlap; their counts must not be summed as distinct signals. Missing details use `unspecified_evidence_failure`. This projection reuses assessed rows and does not add database/provider requests.
