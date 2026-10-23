@@ -8,8 +8,12 @@ export async function fetchForecastLiveCohort(horizon, { signal, minimumSamples 
   const valid = data?.version === 'forecast_live_cohort_summary_v1' && data.status === 'live_cohort' && data.synthetic === false && data.research_only === false && data.live === true
     && data.market_accuracy_verified === false && data.horizon_sessions === horizon && data.minimum_samples === minimumSamples
     && Number.isInteger(data.predictions) && Number.isInteger(data.measured) && Number.isInteger(data.pending) && data.predictions === data.measured + data.pending
-    && ['insufficient_samples','awaiting_baseline','available'].includes(data.score_gate?.status) && Number.isInteger(data.score_gate.samples)
-  return valid ? data : { status:'unavailable', reason:'invalid_contract' }
+    && ['insufficient_samples','awaiting_baseline','available','mixed_cohorts'].includes(data.score_gate?.status) && Number.isInteger(data.score_gate.samples)
+  const mixedValid = data?.score_gate?.status !== 'mixed_cohorts' || (data.model_scores === null && Array.isArray(data.cohorts) && data.cohorts.length > 1
+    && data.cohorts.every(group => Array.isArray(group.cohort_identity) && group.cohort_identity.length === 3 && group.cohort_identity.every(value => typeof value === 'string')
+      && group.horizon_sessions === horizon && group.minimum_samples === minimumSamples && ['predictions','measured','pending'].every(key => Number.isInteger(group[key]) && group[key] >= 0) && group.predictions === group.measured + group.pending)
+    && ['predictions','measured','pending'].every(key => data.cohorts.reduce((sum, group) => sum + group[key], 0) === data[key]))
+  return valid && mixedValid ? data : { status:'unavailable', reason:'invalid_contract' }
 }
 
 export async function fetchForecastResearchHistory(horizon, { signal, cursor, limit = 7 } = {}) {

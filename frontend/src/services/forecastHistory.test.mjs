@@ -1,5 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+
+test('mixed cohorts require matching child counts and suppress pooled scores', async t => {
+  const original = global.fetch; t.after(() => { global.fetch = original })
+  const group = { cohort_identity: ['vnstock', 'model', 'v3'], horizon_sessions: 5, minimum_samples: 20, predictions: 1, measured: 0, pending: 1 }
+  const data = { version: 'forecast_live_cohort_summary_v1', status: 'live_cohort', synthetic: false, research_only: false, live: true, market_accuracy_verified: false, horizon_sessions: 5, minimum_samples: 20, predictions: 2, measured: 0, pending: 2, score_gate: { status: 'mixed_cohorts', samples: 0 }, model_scores: null, cohorts: [group, { ...group, cohort_identity: ['vnstock', 'model', 'legacy_unspecified'] }] }
+  global.fetch = async () => ({ ok: true, json: async () => ({ data }) })
+  assert.equal((await fetchForecastLiveCohort(5)).status, 'live_cohort')
+  data.pending = 3
+  assert.equal((await fetchForecastLiveCohort(5)).reason, 'invalid_contract')
+})
 import { fetchForecastLiveCohort, fetchForecastResearchHistory, fetchForecastResearchCohorts, mergeForecastHistory } from './forecastHistory.mjs'
 
 const entry = { horizon_sessions: 5, as_of: '2025-01-01', outcome_status: 'measured', predicted_class: 'advancing', actual_class: 'balanced', confidence: .6,

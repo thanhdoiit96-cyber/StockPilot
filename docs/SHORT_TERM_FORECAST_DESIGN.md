@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Cohort disclosure and evaluation dates — 2026-10-23
+
+Display separate provider/model/input-contract groups within existing current-data evidence, using native disclosure and existing requests. Aggregate outcomes are counts, not eligibility toward a pooled threshold. Validate mixed response children and totals before displaying. For v3 issuance, evaluate observation dates in Vietnam time, reject conflicting same-date prices, and wait until target EOD close; retain legacy date policy for historical snapshots. Version new outcomes separately. This avoids rewriting sealed evidence; no extra provider calls, pagination or polling. Acceptance: UTC-to-Vietnam boundary, conflicting prices, premature target, mixed cohort contract and responsive UI build/smoke.
+
 ### Immutable input provenance — 2026-10-23
 
 Freeze disclosed input scope and contract in live issuance; evaluate only participating symbols. Preserve legacy snapshots and their generation keys. Versioned contracts extend new generation identities so a previous same-day contract cannot mask a new issuance. Cohort summaries partition by provider/model/input contract; mixed top-level summaries retain counts but suppress pooled scores. Prefer payload metadata over a database column because existing JSON payloads are hashed and immutable; no migration or new query is needed. Legacy missing contracts remain explicitly legacy-unspecified. Acceptance: contract-specific identity, frozen participating symbols, mixed-cohort score closure and unchanged legacy reads. No UI or provider request changes; bounded in-memory grouping only.

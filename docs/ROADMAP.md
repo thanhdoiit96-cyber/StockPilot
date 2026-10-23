@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Cohort identity UI and v3 Vietnam-date evaluation implemented (2026-10-23). Separate disclosures reuse current requests; mixed counts do not unlock pooled scores. Target-close/conflicting-price guards apply to v3 outcomes; legacy records stay immutable. Remaining: mixed-cohort visual fixture and outcome availability-time audit.
+
 Immutable forecast input provenance completed (2026-10-23): freeze actual participation and contract, separate generation identities and cohort scores by provider/model/contract, retain legacy evidence. Next: cohort identity disclosure in UI and evaluator Vietnam-date consistency; no accuracy or calibration claim.
 
 Common forecast endpoint-date alignment completed (2026-10-23): input contract v3 excludes stale/future-ending members and exposes reasons using existing response/UI. Next: verify input-contract provenance in immutable issuance/evaluation cohorts. Intermediate-date completeness and forecast accuracy remain unverified.
