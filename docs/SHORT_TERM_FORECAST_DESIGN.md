@@ -4,6 +4,10 @@ Ngày: 2026-10-12. Trạng thái: đề xuất phát triển, chưa triển khai
 
 ## Mục tiêu và phạm vi
 
+### Common observation cutoff — 2026-10-23
+
+Users must not see returns ending on different dates averaged as one current basket. Use the declared as-of Vietnam date (or newest valid row date when absent); exclude symbols whose latest positive close is older or later. Reject invalid declared as-of. Prefer explicit exclusions over backdating the entire basket or forward-filling missing prices. Expose cutoff and reason in existing input scope/UI; clean synchronized input is unchanged. This aligns endpoints only, not all intermediate trading dates. Acceptance covers stale/future members, invalid cutoff and order independence. Existing grouping/sorting budget is retained with one additional linear date scan, no new requests or persistence.
+
 ### Distinct-date input contract — 2026-10-23
 
 Preview users need duplicate rows to never masquerade as 21 sessions. Group positive closes by Vietnam observation date; collapse identical prices and exclude a symbol with conflicting same-date prices or invalid timestamps. Require 21 distinct dates. Prefer exclusion over choosing the latest conflicting row because revision provenance is unavailable. Keep clean-input formulas unchanged and expose contract version plus exclusion reasons; this does not certify exchange-calendar completeness. UI uses the existing missing-input disclosure. Acceptance: duplicates cannot satisfy the window, equivalent timestamps group together, clean probabilities stay unchanged, mixed baskets disclose excluded symbols. Budget: one linear grouping pass plus date sorting, no new I/O, polling, persistence or provider calls. Historical sealed predictions stay immutable.

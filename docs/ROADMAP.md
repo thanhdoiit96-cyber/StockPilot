@@ -77,6 +77,8 @@ Migration `050` is applied locally. Its first bounded opt-in evaluation returned
 
 ## Điều kiện nghiệm thu chung
 
+Common forecast endpoint-date alignment completed (2026-10-23): input contract v3 excludes stale/future-ending members and exposes reasons using existing response/UI. Next: verify input-contract provenance in immutable issuance/evaluation cohorts. Intermediate-date completeness and forecast accuracy remain unverified.
+
 Forecast distinct-date input correction completed (2026-10-23): versioned input scope requires 21 distinct Vietnam dates; duplicates cannot satisfy history and ambiguous prices/timestamps exclude the symbol with UI disclosure. No new provider dependency. Follow-up: common as-of alignment across participating symbols; exchange-calendar completeness and accuracy validation remain open.
 
 Recommendation browser baseline recorded (2026-10-23): five desktop/mobile navigation samples with real local read data and isolated account, p50 visible-content latency 136–167 ms; tab return does not refetch cohort summary. Existing lifecycle is retained without cache/render refactor. These are instrumented local measurements; provider-backed forecast and actual-account end-to-end timing remain separate work.

@@ -17,7 +17,19 @@ test('rejects a basket when no symbol has a complete 21-session history', () => 
 
 test('discloses only symbols whose history actually enters the model', () => {
   const preview = buildLiveForecastPreview({ currentData: { provider: 'vnstock', requested_symbols: ['AAA', 'BBB', 'CCC'], rows: [...rows('AAA', 100, 1), ...rows('BBB', 200, -1).slice(0, 20)] } });
-  expect(preview.current_data.input_scope).toMatchObject({ requested_symbols: ['AAA', 'BBB', 'CCC'], used_symbols: ['AAA'], missing_symbols: ['BBB', 'CCC'], minimum_close_observations: 21, minimum_distinct_dates: 21, contract_version: 'vn_observation_dates_v2' });
+  expect(preview.current_data.input_scope).toMatchObject({ requested_symbols: ['AAA', 'BBB', 'CCC'], used_symbols: ['AAA'], missing_symbols: ['BBB', 'CCC'], minimum_close_observations: 21, minimum_distinct_dates: 21, contract_version: 'vn_observation_dates_v3', as_of_date: '2026-09-21' });
+});
+
+test.each([[-1, 'stale_symbol_date'], [1, 'after_as_of_date']])('excludes a complete history ending on a different date (%s)', (shift, reason) => {
+  const good = rows('AAA', 100, 1);
+  const other = rows('BBB', 200, 1).map(row => ({ ...row, observed_at: new Date(Date.parse(row.observed_at) + shift * 86400000).toISOString() }));
+  const result = buildLiveForecastPreview({ currentData: { as_of: '2026-09-21T00:00:00Z', requested_symbols: ['AAA', 'BBB'], rows: [...good, ...other].reverse() } });
+  expect(result.current_data.input_scope).toMatchObject({ used_symbols: ['AAA'], exclusions: [{ symbol: 'BBB', reason }] });
+  expect(result.probabilities).toEqual(buildLiveForecastPreview({ currentData: { rows: good } }).probabilities);
+});
+
+test('invalid explicit cutoff is not replaced silently', () => {
+  expect(() => buildLiveForecastPreview({ currentData: { as_of: 'invalid', rows: rows('AAA', 100, 1) } })).toThrow('invalid_as_of');
 });
 
 test('duplicate dates cannot satisfy the history requirement', () => {

@@ -143,6 +143,10 @@ Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Điểm tiếp tục
 
+- Runtime check after the cutoff update: `/api/health` success and `/api/ready` ready with database/worker available at 2026-10-23 09:51 UTC. This supersedes the earlier pending-backend-reload note; provider forecast verification remains separate.
+
+- 2026-10-23 — Common forecast cutoff implemented: v3 input contract excludes complete histories ending before/after the declared Vietnam as-of date; absent as-of derives newest valid positive-close date, invalid explicit as-of rejects preview. UI explains exclusions. 23 backend tests and lint pass; two mocked browser desktop/mobile checks and harness production build/bundle pass. Restarted verified local backend PID 13792 as PID 5736 to load both date-quality changes. No provider-backed forecast verification or accuracy claim. Intermediate-date completeness remains unverified. Next: audit immutable forecast issuance provenance so evaluations can distinguish input-contract versions before comparing cohorts.
+
 - Additional verification for distinct-date input correction: mocked browser checks at 1280px and 390px pass for partial input disclosure, retry and expansion without extra preview requests. Build retains existing Vite chunk-size/CJS warnings. Running backend must reload the new service before live requests use this contract; provider-backed runtime verification was not performed.
 
 - 2026-10-23 — Forecast preview input correction: require 21 distinct Vietnam observation dates, collapse identical duplicates, exclude conflicting same-date prices and invalid timestamps. Versioned input metadata exposes exclusions; UI explains missing eligibility and reasons. Clean-input probabilities stay unchanged. Verification: 20 backend service/controller tests, backend lint, frontend production build/bundle pass. No provider calls or historical snapshot changes. This is date deduplication, not certified exchange-calendar coverage or calibrated accuracy. Next: audit common as-of alignment across basket symbols before treating mixed-date inputs as a synchronized market signal.
