@@ -7,7 +7,10 @@ export default function PortfolioPerformance({ performance, positions, loading =
   const money = value => value == null ? t('portfolio.common.noData') : formatMoney(value, language)
   const percent = value => value == null ? t('portfolio.common.noData') : `${Number(value) >= 0 ? '+' : ''}${formatNumber(value, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
   if (loading) return <section className="panel performance-panel" aria-busy="true" lang={language}><p className="muted-text">{t('portfolio.performance.loading')}</p></section>
-  if (!performance || performance.status === 'empty') return <section className="panel performance-panel" aria-labelledby="performance-title" lang={language}><div className="performance-heading"><div><span className="eyebrow accent">{t('portfolio.performance.eyebrow')}</span><h3 id="performance-title">{t('portfolio.performance.start')}</h3></div><span className="chip neutral">{t('portfolio.performance.emptyChip')}</span></div><p className="muted-text">{t('portfolio.performance.emptyText')}</p></section>
+  if (!performance || performance.status === 'empty') {
+    const hasPositions = Array.isArray(positions) && positions.length > 0
+    return <section className="panel performance-panel" aria-labelledby="performance-title" lang={language}><div className="performance-heading"><div><span className="eyebrow accent">{t('portfolio.performance.eyebrow')}</span><h3 id="performance-title">{hasPositions ? (language === 'en' ? 'Performance is not available yet' : 'Chưa có tổng hợp hiệu suất') : t('portfolio.performance.start')}</h3></div><span className="chip neutral">{t('portfolio.performance.emptyChip')}</span></div><p className="muted-text">{hasPositions ? (language === 'en' ? 'Your positions are shown below. Portfolio performance data is not available yet.' : 'Các vị thế đang nắm giữ được hiển thị bên dưới. Chưa có đủ dữ liệu tổng hợp hiệu suất danh mục.') : t('portfolio.performance.emptyText')}</p></section>
+  }
   const livePositions = Array.isArray(positions) ? positions : null
   const pricedPositions = livePositions?.filter(item => item.market_value != null && Number.isFinite(Number(item.market_value)))
   const liveComplete = livePositions ? pricedPositions.length === livePositions.length : performance.status === 'complete'

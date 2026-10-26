@@ -4,6 +4,8 @@ Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Hiện trạng chạy local
 
+- Khởi động lại local ngày 2026-10-26 09:23 ICT: UI production preview đã build/bundle thành công tại `http://127.0.0.1:4173/`; backend readiness, UI và proxy health trả 200. Worker khởi động chậm rồi trả `ok=true`, concurrency 1; readiness xác nhận database/worker khả dụng. Dùng dependency hiện hữu, không cài lại, migrate hoặc seed. Đã mở trình duyệt; chưa xác minh forecast provider LIVE trong lần khởi động này.
+
 - UI Vite Preview: `http://localhost:4173/`; backend: `http://localhost:5000`.
 - `GET /api/ready` đã xác nhận database và worker local khả dụng. Đây là bằng chứng development, không phải production readiness.
 - Kiểm tra vận hành lại ngày 2026-10-21: worker Vnstock (`:8787`) trả `200` với concurrency `1`; backend health/ready (`:5000`) và UI preview (`:4173`) đều trả `200`. Readiness ghi database khả dụng (99 ms) và worker khả dụng (1 ms). Các tiến trình được giữ chạy local; không suy diễn kết quả này thành xác nhận scheduler, provider hoặc production.
@@ -142,6 +144,8 @@ Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút 
 - Chưa kiểm chứng deploy production, worker/scheduler production, backup/restore hoặc browser flow bằng tài khoản development thật trong checkpoint hiện tại.
 
 ## Điểm tiếp tục
+
+- 2026-10-26 — Portfolio UI refinement: compact secondary heading, consistent performance-card padding, shorter allocation audit in keyboard-accessible native disclosure, compact save action, horizontally scrollable mobile tabs and focusable holdings table with sticky symbol column. Existing Buy/Sell, drafts and full-width reading order preserved. Corrected misleading first-transaction prompt when positions already exist but performance is unavailable. Verification: 116 frontend tests, 3 mocked browser flows (layout at 1440/1024/390, keyboard Buy/Sell, English Sell, retained drafts/tabs), production build/bundle pass. Inspected desktop/mobile screenshots; no new requests, cache or financial formula changes. Local preview serves rebuilt assets. No live-account mutation performed. Next: review populated decision-journal and multi-position allocation states with representative data before further structural redesign.
 
 - 2026-10-23 — Baseline eligibility UI delivered inside existing cohort disclosures: compatible count/threshold and missing-or-incompatible measured count; missing metadata stays unknown. Five cohort tests pass including synthetic v3 19→20 threshold and finite score comparison with accuracy unverified. Backend lint and two mocked desktop/mobile browser cases pass, including counts/no overflow/no extra disclosure request; harness production build/bundle passed. Backend restarted as PID 16328; ready with database/worker available at 10:22 UTC. Read-only real h5 cohort response: 9 predictions, 4 measured, 5 pending, 2 baseline eligible and 2 ineligible, mixed model cohorts with aggregate scores closed. This applies the prior baseline gate too; no provider request or database write. Next: explain per-cohort baseline exclusion reasons so users can distinguish missing evidence from incompatible metadata; retain model-specific thresholds.
 

@@ -5,10 +5,19 @@ const list={success:true,data:stocks,pagination:{page:1,pageSize:25,total:1,tota
 test('portfolio layout and keyboard trade actions remain usable across screen sizes', async ({ page }) => {
   await boot(page, [{ stock_id: 'a', symbol: 'FPT', quantity: 10, avg_cost: 100000, market_price: 120000, unrealized_pnl: 200000, realized_pnl: 0 }])
   await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
+  await expect(page.locator('.performance-panel')).toContainText('Chưa có tổng hợp hiệu suất')
+  await expect(page.locator('.performance-panel')).not.toContainText('Bắt đầu từ giao dịch đầu tiên')
+  const audit = page.locator('details.portfolio-data-audit')
+  await expect(audit).not.toHaveAttribute('open', '')
+  await audit.locator('summary').focus()
+  await page.keyboard.press('Enter')
+  await expect(audit).toHaveAttribute('open', '')
+  await audit.locator('summary').click()
   for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 900 })
     const grid = page.locator('.portfolio-overview-grid')
     expect(await grid.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await page.evaluate(() => window.scrollTo(0, 0))
     await page.screenshot({ path: `test-results/portfolio-layout-${width}.png`, fullPage: true })
   }
   for (const [label, side] of [['Mua', 'BUY'], ['Bán', 'SELL']]) {

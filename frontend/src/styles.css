@@ -1613,7 +1613,7 @@ th {
     grid-template-columns: 1fr;
   }
 }
-.performance-panel { grid-column: 1 / -1; display: grid; gap: 18px; overflow: hidden; background: linear-gradient(135deg, rgba(20, 184, 166, .12), rgba(15, 23, 42, .94) 48%); }
+.performance-panel { grid-column: 1 / -1; display: grid; gap: 18px; padding: 20px; overflow: hidden; background: linear-gradient(135deg, rgba(20, 184, 166, .12), rgba(15, 23, 42, .94) 48%); }
 .performance-history-panel { grid-column: 1 / -1; display: grid; gap: 16px; overflow: hidden; }
 .performance-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .performance-history-heading h3 { margin: 5px 0 4px; font-size: clamp(19px, 2vw, 24px); }
@@ -2352,6 +2352,29 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(94, 234, 212
 /* Consistent investor workspace hierarchy */
 .personal-page, .detail-page, .advisor-page { display: grid; gap: 18px; }
 .personal-page > .page-heading, .detail-page > .page-heading { margin-bottom: 0; }
+.personal-page > .page-heading { padding: 0; }
+.personal-page > .page-heading h2 { margin: 0; font-size: 18px; line-height: 1.4; letter-spacing: -.01em; }
+.personal-page > .page-heading p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.personal-page .portfolio-section-tabs { margin-bottom: 0; box-shadow: none; }
+.personal-page .performance-heading h3 { margin: 6px 0; font-size: 20px; }
+.personal-page .performance-heading { flex-wrap: wrap; gap: 10px; }
+.personal-page .performance-heading > .chip { flex-shrink: 0; white-space: nowrap; }
+.personal-page .performance-panel > p { margin: 0; }
+.personal-page .portfolio-data-audit summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+.personal-page .portfolio-data-audit summary:focus-visible,
+.personal-page .portfolio-table:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.personal-page .portfolio-table td { font-variant-numeric: tabular-nums; }
+.personal-page .allocation-target-form > button { justify-self: start; min-width: 140px; }
+@media (max-width: 700px) {
+  .personal-page .performance-panel { padding: 16px; }
+  .personal-page .portfolio-section-tabs { width: 100%; margin-inline: 0; overflow-x: auto; }
+  .personal-page .portfolio-section-tabs [role="tablist"] { flex-wrap: nowrap; width: max-content; }
+  .personal-page .portfolio-section-tabs button { min-height: 44px; flex-shrink: 0; }
+  .personal-page .portfolio-table { max-width: 100%; overflow-x: auto; }
+  .personal-page .portfolio-table th:first-child,
+  .personal-page .portfolio-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); }
+  .personal-page .portfolio-trade-actions button { min-height: 40px; }
+}
 .portfolio-panel, .allocation-panel, .watchlist-panel, .detail-chart-panel, .summary-panel, .technical-panel, .advisor-page { box-shadow: 0 12px 30px rgba(2, 8, 23, .16); }
 .recommendation-command-header + .recommendation-risk-banner { margin-top: -4px; margin-bottom: 0; }
 @media (max-width: 1050px) { .criteria-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -4,6 +4,10 @@ Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ## Nguyên tắc phát triển
 
+### Portfolio UI refinement — 2026-10-26
+
+For portfolio owners scanning holdings and recording trades, retain the full-width reading order and existing tabs rather than introducing another navigation layer. Browser inspection at 1440/1024/390 found duplicate large headings, missing performance-card padding and excessive always-visible audit detail. Compact the secondary heading, normalize card spacing, collapse allocation audit into keyboard-accessible native disclosure, and keep mobile tabs on a scrollable row with visible focus. Keep trade actions and allocation editing directly available. No new requests/polling/cache or financial calculations. Acceptance: desktop/mobile screenshots, no page overflow, keyboard Buy/Sell and English actions, build/bundle; data remains mocked for browser verification.
+
 - Không hạ gate evidence để mở forecast, recommendation, provider scope hoặc tín hiệu đầu tư.
 - Mọi số liệu tài chính mới cần `as_of`, provenance và trạng thái unavailable/stale trung thực.
 - Đo request, payload và render trước khi thêm pagination, polling, cache hoặc virtualization.
