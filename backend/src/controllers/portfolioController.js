@@ -13,6 +13,13 @@ const { normalizeAllocationTargets, summarizeAllocationTargets } = require('../s
 const { MAX_DECISIONS, normalizeDecisionInput, snapshotRecommendationEvidence, presentDecision, presentDecisionEvidence } = require('../services/portfolioDecisionJournal');
 const { httpError } = require('../utils/httpError');
 const router = express.Router();
+const { portfolioCashBalance } = require('../services/portfolioCashBalance');
+async function cashFor(portfolioId, transactions, transaction) {
+  const options = { where: { portfolio_id: portfolioId }, transaction, ...(transaction ? { lock: true } : {}) };
+  const cashFlows = await PortfolioCashFlow.findAll(options);
+  const events = await PortfolioEvent.findAll(options);
+  return portfolioCashBalance({ transactions, cashFlows, events });
+}
 router.use(requireAuth);
 
 const loadPortfolioQuotes = symbols => require('../services/liveQuoteService').liveQuoteService.load(symbols, { waitMs: 1500 });
@@ -112,6 +119,7 @@ router.get('/', async (req, res) => {
     closed_positions: closedPositions,
     position_counts: { open: positions.length, closed: closedPositions.length },
     performance,
+    cash: portfolioCashBalance({ transactions, cashFlows, events: await PortfolioEvent.findAll({ where: { portfolio_id: portfolio.id } }) }),
     allocation_targets: allocationTargetSummary,
     decisions: decisions.map(presentDecision),
     decision_evidence: recommendationTransactions.map(presentDecisionEvidence).filter(Boolean),
@@ -367,7 +375,10 @@ router.post('/cash-flows', async (req, res) => {
   try {
     let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] });
     if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
-    const flow = await PortfolioCashFlow.create({ portfolio_id: portfolio.id, ...input.value });
+    const flow = await sequelize.transaction(async transaction => {
+      await Portfolio.findOne({ where: { id: portfolio.id }, transaction, lock: true });
+      return PortfolioCashFlow.create({ portfolio_id: portfolio.id, ...input.value }, { transaction });
+    });
     return res.status(201).json({ success: true, data: flow });
   } catch (error) {
     console.error('[Portfolio] Create cash flow failed:', error.message);
@@ -383,7 +394,10 @@ router.put('/cash-flows/:cashFlowId', async (req, res) => {
     if (!portfolio) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
     const flow = await PortfolioCashFlow.findOne({ where: { id: req.params.cashFlowId, portfolio_id: portfolio.id } });
     if (!flow) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
-    await flow.update({ ...input.value, updated_at: new Date() });
+    await sequelize.transaction(async transaction => {
+      await Portfolio.findOne({ where: { id: portfolio.id }, transaction, lock: true });
+      await flow.update({ ...input.value, updated_at: new Date() }, { transaction });
+    });
     return res.json({ success: true, data: flow });
   } catch (error) {
     console.error('[Portfolio] Update cash flow failed:', error.message);
@@ -398,7 +412,10 @@ router.delete('/cash-flows/:cashFlowId', async (req, res) => {
     if (!portfolio) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
     const flow = await PortfolioCashFlow.findOne({ where: { id: req.params.cashFlowId, portfolio_id: portfolio.id } });
     if (!flow) return res.status(404).json({ success: false, message: 'Không tìm thấy dòng tiền.' });
-    await flow.destroy();
+    await sequelize.transaction(async transaction => {
+      await Portfolio.findOne({ where: { id: portfolio.id }, transaction, lock: true });
+      await flow.destroy({ transaction });
+    });
     return res.json({ success: true, data: { id: flow.id } });
   } catch (error) {
     console.error('[Portfolio] Delete cash flow failed:', error.message);
@@ -414,8 +431,19 @@ router.post('/transactions', async (req, res) => {
   let portfolio = await Portfolio.findOne({ where: { user_id: req.user.sub }, order: [['created_at', 'ASC']] }); if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' });
   const stock = await Stock.findOne({ where: { code: symbol } }); if (!stock) return httpError(res, 404, 'portfolio_stock_not_found', 'Không tìm thấy mã cổ phiếu');
   if (side === 'SELL') { const existing = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id, stock_id: stock.id }, order: [['traded_at', 'ASC'], ['created_at', 'ASC'], ['id', 'ASC']] }); const position = summarizePortfolioTransactions(existing, new Map()).find(item => item.stock_id === stock.id); if (!position || position.quantity < quantity) return httpError(res, 400, 'portfolio_transaction_sell_exceeds_position', 'Số lượng bán vượt vị thế hiện có'); }
-  const transaction = await PortfolioTransaction.create({ portfolio_id: portfolio.id, stock_id: stock.id, side, quantity, price, fees, traded_at: tradedAt, recommendation_context: recommendationContext });
-  res.status(201).json({ success: true, data: transaction });
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      await Portfolio.findOne({ where: { id: portfolio.id, user_id: req.user.sub }, transaction, lock: true });
+      const existing = await PortfolioTransaction.findAll({ where: { portfolio_id: portfolio.id }, transaction });
+      const candidate = { portfolio_id: portfolio.id, stock_id: stock.id, side, quantity, price, fees, traded_at: tradedAt, recommendation_context: recommendationContext };
+      if (validatePortfolioTimeline([...existing, candidate]).length) return { invalid: true };
+      if (side === 'BUY' && (await cashFor(portfolio.id, [...existing, candidate], transaction)).status !== 'available') return { insufficient: true };
+      return { data: await PortfolioTransaction.create(candidate, { transaction }) };
+    });
+    if (result.insufficient) return httpError(res, 422, 'portfolio_insufficient_cash', 'Không đủ tiền mặt hợp lệ. Kiểm tra dòng tiền và phí giao dịch.');
+    if (result.invalid) return httpError(res, 422, 'portfolio_transaction_sell_exceeds_position', 'Số lượng bán vượt vị thế tại thời điểm giao dịch.');
+    return res.status(201).json({ success: true, data: result.data });
+  } catch (error) { return httpError(res, 500, 'portfolio_transaction_update_failed', 'Không thể ghi giao dịch.'); }
 });
 
 function normalizeTransactionMutation(body) {
@@ -451,12 +479,14 @@ router.put('/transactions/:transactionId', async (req, res) => {
         ...input
       } : item);
       const timelineErrors = validatePortfolioTimeline(candidate);
+      if (input.side === 'BUY' && (await cashFor(portfolio.id, candidate, transaction)).status !== 'available') return { status: 'insufficient' };
       if (timelineErrors.length) return { status: 'invalid', message: timelineErrors[0].message, errors: timelineErrors };
       await target.update(input, { transaction });
       return { status: 'updated', transaction: target };
     });
     if (result.status === 'not_found') return httpError(res, 404, 'portfolio_transaction_not_found', 'Không tìm thấy giao dịch');
     if (result.status === 'invalid') return res.status(422).json({ success: false, message: result.message, errors: result.errors || [] });
+    if (result.status === 'insufficient') return httpError(res, 422, 'portfolio_insufficient_cash', 'Không đủ tiền mặt hợp lệ.');
     return res.json({ success: true, data: result.transaction });
   } catch (error) {
     console.error('[Portfolio] Update transaction failed:', error.message);
@@ -513,6 +543,7 @@ router.post('/transactions/import', async (req, res) => {
         ...(dryRun ? {} : { lock: true })
       }) : [];
       const validation = validatePortfolioImport({ rows: normalized.rows, stocks, existingTransactions });
+      if (!validation.errors.length && validation.rows.some(row => row.side === 'BUY') && (await cashFor(portfolio?.id || null, [...existingTransactions, ...validation.rows], transaction)).status !== 'available') validation.errors.push({ row: null, field: 'cash', message: 'Không đủ tiền mặt hợp lệ cho các giao dịch mua. Kiểm tra dòng tiền và phí.' });
       if (validation.errors.length) return { valid: false, dry_run: dryRun, row_count: normalized.rows.length, errors: validation.errors };
       if (dryRun) return { valid: true, dry_run: true, row_count: validation.rows.length, errors: [] };
       if (!portfolio) portfolio = await Portfolio.create({ user_id: req.user.sub, name: 'Danh mục chính' }, { transaction });

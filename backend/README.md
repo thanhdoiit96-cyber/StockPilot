@@ -4,6 +4,8 @@ Hướng dẫn cài đặt, khởi chạy và kiểm tra nằm ở [QUICK_START]
 
 ## Thành phần
 
+Portfolio cash: `GET /api/portfolio` returns `cash.status`, `balance`, `available_to_buy`, `as_of` and ledger basis separately from stock valuations. BUY create/update/import checks the chronological cash ledger including fees inside a portfolio-locked transaction. Cash-flow mutations share the portfolio lock. Insufficient/unknown cash returns `portfolio_insufficient_cash` (422; imports return row/field errors). Historical cash-flow corrections remain allowed, may invalidate prior funding and block subsequent purchases. Confirmed dividends/rights cash effects participate; pending due events block verified cash. This is recorded cash, not margin or broker-settled buying power. Existing unfunded transactions are not rewritten; correct dated cash flows first. No migration is required.
+
 Hồ sơ: migration 026 bổ sung `full_name`, `phone`, `date_of_birth` nullable; migration 027 bổ sung `preferred_language` và `timezone` có default. `/api/auth/profile` PATCH chỉ cập nhật các field hồ sơ được gửi; null xóa field tùy chọn, email/role không chỉnh sửa. Các response auth user gồm trường mới. Validation/ownership và giới hạn tại [thiết kế hồ sơ](../docs/PERSONAL_PROFILE_DESIGN.md).
 
 | Mã nguồn | Trách nhiệm |

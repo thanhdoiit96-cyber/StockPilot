@@ -4,6 +4,12 @@ Trạng thái: thiết kế đã chốt; migration/model/validator/API nền đ�
 
 ## 1. Bài toán và tiêu chí thành công
 
+### Tiền mặt và điều kiện mua — 2026-10-26
+
+Tiền mặt theo sổ được tách khỏi giá trị cổ phiếu: nạp trừ rút, trừ tiền mua/phí, cộng tiền bán sau phí, cộng cổ tức tiền đã xác nhận đến ngày thanh toán, trừ tiền thực hiện quyền đã xác nhận. Không suy diễn sức mua margin hay T+ từ sổ này. Sự kiện đến hạn chưa xác nhận khiến tiền khả dụng chưa xác minh; dữ liệu lịch sử âm giữ nguyên và chặn mua cho đến khi sửa dòng tiền đúng ngày. Cùng timestamp: tiền nạp/cổ tức, tiền bán, rồi các khoản chi; tiền tương lai không được cấp cho giao dịch trước đó.
+
+Ghi mua mới, sửa thành mua và import mua kiểm tra toàn bộ timeline trong transaction khóa portfolio; ghi nạp/rút dùng cùng khóa. Chỉnh sửa dòng tiền phục vụ sửa sổ vẫn được phép và có thể khiến trạng thái chuyển thiếu tiền; lần mua tiếp theo sẽ bị chặn. Không tự xóa giao dịch cũ, thêm tiền hoặc đổi giá trị tài sản thành tiền mặt. UI đọc `cash` từ API, công bố trạng thái/số dư riêng và tiền mua dự kiến gồm phí; backend là nơi quyết định cuối cùng. Không thêm provider call hoặc migration; thêm một lần đọc event ở GET và hai lần đọc cash/event khi kiểm tra mua. Kiểm thử cần bao gồm đủ đúng số tiền, thiếu phí, tiền nạp sau ngày mua, sửa/import, khóa và trạng thái UI thiếu metadata.
+
 Daily valuation hiện dựng lại vị thế và tiền mặt từ giao dịch, nạp/rút và giá EOD. Chuỗi sẽ sai nếu trong thời gian nắm giữ có cổ tức, chia cổ phiếu, split hoặc quyền mua mà không có sự kiện tương ứng. Event ledger phải:
 
 - gắn sự kiện với đúng portfolio và mã chứng khoán;

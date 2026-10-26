@@ -9,6 +9,7 @@ import MarketBreadth from "./components/MarketBreadth.jsx";
 import ForeignFlowPanel from "./components/ForeignFlowPanel.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
 import ShortTermOutlook from "./components/ShortTermOutlook.jsx";
+import PortfolioCashSummary, { purchaseExceedsCash } from "./components/PortfolioCashSummary.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioDecisionJournal from "./components/PortfolioDecisionJournal.jsx";
 import PortfolioLedger from "./components/PortfolioLedger.jsx";
@@ -1980,7 +1981,7 @@ function lv() {
             cash: ((pe == null ? void 0 : pe.cash_flows) || []).length,
             watchlist: pt.length
           }
-        }), O.jsxs("div", { className: "personal-grid portfolio-overview-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioPerformance, {
+        }), O.jsxs("div", { className: "personal-grid portfolio-overview-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-overview", "aria-labelledby": "portfolio-tab-overview", hidden: portfolioTab !== "overview", tabIndex: 0, children: [O.jsx(PortfolioCashSummary, { cash: pe?.cash, language: profileLanguage, onFunding: () => setPortfolioTab("cash") }), O.jsx(PortfolioPerformance, {
             performance: pe == null ? void 0 : pe.performance,
             positions: mi,
             loading: Ir,
@@ -2032,7 +2033,7 @@ function lv() {
             timezone: profileTimezone
           })] }), O.jsxs("div", { className: "personal-grid portfolio-tab-panel", role: "tabpanel", id: "portfolio-panel-transactions", "aria-labelledby": "portfolio-tab-transactions", hidden: portfolioTab !== "transactions", tabIndex: 0, children: [O.jsxs("article", { className: "panel portfolio-panel transaction-entry-panel", children: [O.jsx("h3", {
               children: tr("portfolio.transaction.title")
-            }), O.jsxs("form", {
+            }), O.jsx(PortfolioCashSummary, { cash: pe?.cash, draft: Ie, language: profileLanguage, onFunding: () => setPortfolioTab("cash") }), O.jsxs("form", {
               className: "transaction-form",
               onSubmit: Zh,
               children: [O.jsxs("label", {
@@ -2088,10 +2089,12 @@ function lv() {
                   }),
                   required: true
                 })]
+              }), O.jsxs("label", {
+                children: [profileLanguage === "en" ? "Fees (VND)" : "Phí giao dịch (VND)", O.jsx("input", { type: "number", min: "0", step: "0.01", value: Ie.fees, onChange: d => kt({ ...Ie, fees: d.target.value }) })]
               }), O.jsx("button", {
                 className: "primary-btn",
                 type: "submit",
-                disabled: transactionSubmitting,
+                disabled: transactionSubmitting || purchaseExceedsCash(pe?.cash, Ie),
                 "aria-busy": transactionSubmitting,
                 children: tr(transactionSubmitting ? "portfolio.transaction.saving" : "portfolio.transaction.save")
               })]

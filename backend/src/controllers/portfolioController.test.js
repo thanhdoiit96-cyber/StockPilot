@@ -1,5 +1,5 @@
 jest.mock('../models', () => ({
-  Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), findOne: jest.fn(), bulkCreate: jest.fn() },
+  Portfolio: { findOne: jest.fn(), create: jest.fn() }, PortfolioTransaction: { findAll: jest.fn(), findOne: jest.fn(), bulkCreate: jest.fn(), create: jest.fn() },
   PortfolioCashFlow: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioAllocationTarget: { findAll: jest.fn(), destroy: jest.fn(), bulkCreate: jest.fn() },
   PortfolioEvent: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() }, PortfolioDecision: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn(), count: jest.fn() }, PositionExitRun: { findOne: jest.fn() },
   Stock: { findAll: jest.fn(), findOne: jest.fn() }, StockPrice: { findAll: jest.fn() },
@@ -18,7 +18,7 @@ beforeEach(() => {
   models.Portfolio.findOne.mockResolvedValue({ id: 'p', user_id: 'user-a' });
   models.PortfolioTransaction.findAll.mockResolvedValue([{ id: 'tx-1', stock_id: 's', side: 'BUY', quantity: 10, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z', created_at: '2026-09-24T02:01:00Z', recommendation_context: null, Stock: { code: 'FPT', name: 'FPT Corp' } }]);
   models.PortfolioTransaction.bulkCreate.mockResolvedValue([{ id: 'import-1' }]);
-  models.PortfolioCashFlow.findAll.mockResolvedValue([]);
+  models.PortfolioCashFlow.findAll.mockResolvedValue([{ type: 'DEPOSIT', amount: 10000000, occurred_at: '2026-01-01T00:00:00Z' }]);
   models.PortfolioAllocationTarget.findAll.mockResolvedValue([]);
   models.PortfolioEvent.findAll.mockResolvedValue([]);
   models.PortfolioDecision.findAll.mockResolvedValue([]);
@@ -31,6 +31,35 @@ beforeEach(() => {
   models.sequelize.query.mockResolvedValue([{ session_date: '2026-09-24' }]);
 });
 const app = express(); app.use(express.json()); app.use('/portfolio', router);
+
+test('rejects unfunded buys before writing and locks the portfolio', async () => {
+  models.PortfolioCashFlow.findAll.mockResolvedValue([]);
+  const response = await request(app).post('/portfolio/transactions').send({ side: 'BUY', symbol: 'FPT', quantity: 1, price: 50000, traded_at: '2026-10-01T09:00:00Z' });
+  expect(response.status).toBe(422);
+  expect(response.body.code).toBe('portfolio_insufficient_cash');
+  expect(models.PortfolioTransaction.create).not.toHaveBeenCalled();
+  expect(models.Portfolio.findOne).toHaveBeenCalledWith(expect.objectContaining({ lock: true, transaction: expect.anything() }));
+});
+
+test('import and edit cannot bypass the cash gate', async () => {
+  models.PortfolioCashFlow.findAll.mockResolvedValue([]);
+  const imported = await request(app).post('/portfolio/transactions/import').send({ dry_run: false, rows: [{ symbol: 'FPT', side: 'BUY', quantity: '1', price: '50000', traded_at: '2026-10-01T09:00:00Z' }] });
+  expect(imported.status).toBe(422);
+  expect(models.PortfolioTransaction.bulkCreate).not.toHaveBeenCalled();
+  const edited = await request(app).put('/portfolio/transactions/tx-1').send({ side: 'BUY', quantity: 11, price: 50000, fees: 0, traded_at: '2026-09-24T02:00:00Z' });
+  expect(edited.status).toBe(422);
+  expect(edited.body.code).toBe('portfolio_insufficient_cash');
+});
+
+test('funded purchase is persisted atomically and cash is disclosed separately', async () => {
+  models.PortfolioTransaction.create.mockResolvedValue({ id: 'new-buy' });
+  const response = await request(app).post('/portfolio/transactions').send({ side: 'BUY', symbol: 'FPT', quantity: 1, price: 50000, traded_at: '2026-10-01T09:00:00Z' });
+  expect(response.status).toBe(201);
+  expect(models.PortfolioTransaction.create).toHaveBeenCalledWith(expect.objectContaining({ side: 'BUY' }), expect.objectContaining({ transaction: expect.anything() }));
+  liveQuoteService.load.mockResolvedValue({});
+  const result = await request(app).get('/portfolio');
+  expect(result.body.data.cash).toMatchObject({ status: 'available', balance: 9500000 });
+});
 
 test('reads only the latest sealed exit-guidance snapshot owned by the signed-in portfolio', async () => {
   models.PositionExitRun.findOne.mockResolvedValue({ id: 'exit-run', as_of: '2026-10-21', provider: 'vnstock', model: 'position_exit_rule_v1', snapshot_sha256: 'a'.repeat(64), guidance: [{ stock_id: 's', status: 'hold', payload: { research_only: true, reasons: ['no_exit_trigger'] }, stock: { code: 'FPT', name: 'FPT Corp' } }], toJSON() { return { id: this.id, as_of: this.as_of, provider: this.provider, model: this.model, snapshot_sha256: this.snapshot_sha256, guidance: this.guidance }; } });
@@ -120,7 +149,7 @@ test('creates a validated cash flow inside the authenticated portfolio', async (
   models.PortfolioCashFlow.create.mockResolvedValue({ id: 'cf-1', type: 'DEPOSIT', amount: 1000000 });
   const response = await request(app).post('/portfolio/cash-flows').send({ type: 'deposit', amount: 1000000, occurred_at: '2026-10-01T03:00:00Z', note: 'Vốn ban đầu' });
   expect(response.status).toBe(201);
-  expect(models.PortfolioCashFlow.create).toHaveBeenCalledWith(expect.objectContaining({ portfolio_id: 'p', type: 'DEPOSIT', amount: 1000000, note: 'Vốn ban đầu' }));
+  expect(models.PortfolioCashFlow.create).toHaveBeenCalledWith(expect.objectContaining({ portfolio_id: 'p', type: 'DEPOSIT', amount: 1000000, note: 'Vốn ban đầu' }), expect.objectContaining({ transaction: expect.anything() }));
 });
 
 test('rejects invalid cash flows before writing', async () => {
@@ -135,7 +164,7 @@ test('updates only a cash flow owned by the authenticated portfolio', async () =
   const response = await request(app).put('/portfolio/cash-flows/cf-1').send({ type: 'withdrawal', amount: 200000, occurred_at: '2026-10-01T03:00:00Z', note: '' });
   expect(response.status).toBe(200);
   expect(models.PortfolioCashFlow.findOne).toHaveBeenCalledWith({ where: { id: 'cf-1', portfolio_id: 'p' } });
-  expect(update).toHaveBeenCalledWith(expect.objectContaining({ type: 'WITHDRAWAL', amount: 200000, note: null, updated_at: expect.any(Date) }));
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ type: 'WITHDRAWAL', amount: 200000, note: null, updated_at: expect.any(Date) }), expect.objectContaining({ transaction: expect.anything() }));
 });
 
 test('requires confirmation and ownership before deleting a cash flow', async () => {
