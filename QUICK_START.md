@@ -351,6 +351,12 @@ npm.cmd run start -- --host 127.0.0.1 --port 4173 --strictPort
 
 Kiểm chứng qua UI proxy: chạy `node scripts/verify-live-quotes.cjs` trong backend. Script lưu số mã, độ phủ quote, thời gian phản hồi và mã thiếu trong thư mục evidence.
 
+### Đề xuất vẫn hiển thị phiên cũ
+
+`RECOMMENDATIONS_AFTER_INGEST=true` trong `backend/.env` bật kiểm tra tạo đề xuất sau ingestion, sau mỗi gap retry (kể cả không còn gap) và một lần khi backend khởi động. Chạy bù chỉ đọc EOD đã lưu, không gọi provider. Điều kiện giữ nguyên: tất cả mã niêm yết có ít nhất 50 phiên lịch sử trước phiên mục tiêu phải có EOD hợp lệ đúng phiên đó. Không dùng tỷ lệ coverage toàn thị trường hay mốc 65% để thay gate này.
+
+Trong backend, chạy `npm.cmd run check:recommendation-lifecycle` để đọc trạng thái: `awaiting_coverage` kèm số mã còn thiếu nghĩa là chưa thể tạo mới. `RECOMMENDATION_EVALUATION_ENABLED` chỉ đánh giá kết quả đã có, không tạo đề xuất. Mở trang hoặc bấm Làm mới không tạo snapshot. UI giữ bản đã lưu, phân biệt phiên EOD và thời điểm tạo; không đổi ngày của bản cũ thành ngày mới. Sau thay đổi cấu hình/mã backend cần khởi động lại khi ingestion đã kết thúc.
+
 ### Kiểm chứng callback EOD trên nhóm nhỏ
 
 Sau khi ingestion đang chạy đã kết thúc, kiểm chứng cùng callback với scheduler (ghi dữ liệu qua upsert thật):

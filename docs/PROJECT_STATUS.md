@@ -4,6 +4,14 @@ Cập nhật: 2026-10-23. Lịch sử checkpoint chi tiết trước lần rút 
 
 ## Hiện trạng chạy local
 
+### Recommendation freshness recovery — 2026-10-26
+
+- Fixed the missing refresh path after gap retries (including no-gap retries) and added opt-in local startup catch-up through `RECOMMENDATIONS_AFTER_INGEST`. All use the existing complete EOD coverage gate for listed symbols with 50 prior sessions; no provider calls, threshold changes, snapshot rewriting or GET mutations. Existing writer preserves immutable generation-key idempotency.
+- Lifecycle readiness now checks model-eligible coverage instead of treating a single latest EOD observation as sufficient. UI discloses `awaiting_coverage`, keeps the saved snapshot, separates EOD session from creation time and removes the misleading 07:00 timestamp for date-only EOD references. No extra UI request/polling; readiness adds one coverage query only when no current snapshot exists, and catch-up adds one per invocation. Query latency has not been benchmarked.
+- Read-only local audit: 23/10 still covers 114/123 eligible symbols; missing VTQ, VWS, X26, XDH, XHC, XMC, XMD, XMP, YTC. During the 26/10 ingestion, readiness showed 65/123 for that session, so no newer snapshot was forced. These are point-in-time database measurements, not provider availability or accuracy claims.
+- Verified: 41 targeted backend tests (refresh/checkpoint/job/persistence), backend lint, 116 frontend tests, production build/bundle integrity and two mocked browser checks at 1280/390px. Browser checks cover coverage counts, EOD date-only labels, actual creation time, read-only refresh and no horizontal overflow; they are not live generation evidence.
+- Runtime handoff: backend PID 7956 still runs the previous code because `/api/stocks/data-quality` reports `running=true`, `phase=scheduled_ingest`, session 26/10, started 08:05Z. Do not interrupt ingestion. UI build is applied to preview; next safe action is wait for runtime idle, verify port owner, restart backend outside sandbox, then check `/api/ready`, lifecycle-readiness and startup catch-up logs. No new snapshot is expected until coverage is complete. No migration or dependency installation needed.
+
 - Khởi động lại local ngày 2026-10-26 09:23 ICT: UI production preview đã build/bundle thành công tại `http://127.0.0.1:4173/`; backend readiness, UI và proxy health trả 200. Worker khởi động chậm rồi trả `ok=true`, concurrency 1; readiness xác nhận database/worker khả dụng. Dùng dependency hiện hữu, không cài lại, migrate hoặc seed. Đã mở trình duyệt; chưa xác minh forecast provider LIVE trong lần khởi động này.
 
 - UI Vite Preview: `http://localhost:4173/`; backend: `http://localhost:5000`.

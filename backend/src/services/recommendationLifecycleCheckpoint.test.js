@@ -1,6 +1,15 @@
 'use strict';
+jest.mock('../market-data/eodCoverage', () => ({ eodCoverage: jest.fn().mockResolvedValue({ symbols: 123, covered: 123, missing_symbols: [] }) }));
+jest.mock('../models', () => ({ sequelize: { query: jest.fn() } }));
 
 const { readRecommendationLifecycleCheckpoint } = require('./recommendationLifecycleCheckpoint');
+const { eodCoverage } = require('../market-data/eodCoverage');
+
+test('does not report generation readiness for a partially ingested session', async () => {
+  eodCoverage.mockResolvedValueOnce({ symbols: 123, covered: 114, missing_symbols: ['MISSING'] });
+  const report = await readRecommendationLifecycleCheckpoint({ StockPrice: { findOne: jest.fn().mockResolvedValue({ observed_at: '2026-10-23T00:00:00Z' }) }, RecommendationRun: { findOne: jest.fn().mockResolvedValue(null) }, now: new Date('2026-10-26T02:00:00Z') });
+  expect(report).toMatchObject({ status: 'awaiting_coverage', expected_session: '2026-10-23', can_generate: false, coverage: { covered: 114 } });
+});
 
 test('reads only the newest EOD observation and reports the generation gate', async () => {
   const StockPrice = { findOne: jest.fn().mockResolvedValue({ observed_at: '2026-10-08T00:00:00.000Z' }) };

@@ -10,12 +10,15 @@ export default function RecommendationEvidence({ item, criteria = [], language =
   const number = value => value == null ? '—' : new Intl.NumberFormat(en ? 'en-US' : 'vi-VN', { maximumFractionDigits: 2 }).format(value)
   const dateTime = value => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value)) : text('Chưa có thời điểm', 'Time unavailable')
   const evidence = recommendationEvidence(item, criteria)
+  const priceTime = evidence.priceSource === 'EOD' && evidence.observedAt && Number.isFinite(Date.parse(evidence.observedAt))
+    ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { dateStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(evidence.observedAt))
+    : dateTime(evidence.observedAt)
   const signal = recommendationSignal(item, criteria)
   const score = value => new Intl.NumberFormat(en ? 'en-US' : 'vi-VN', { maximumFractionDigits: 1 }).format(value)
   const labels = { pending: text('Đang chờ đủ kỳ hạn', 'Awaiting horizon'), eligible: text('Outcome đủ điều kiện kiểm chứng', 'Eligible measured outcome'), excluded: text('Outcome bị loại khỏi thống kê', 'Outcome excluded from statistics'), untracked: text('Chưa có theo dõi outcome', 'Outcome tracking unavailable') }
   return <section className="recommendation-signal" aria-label={text('Cơ sở và vòng đời tín hiệu', 'Signal evidence and lifecycle')} lang={language}>
     <div className="recommendation-signal-heading"><strong>{text('Cơ sở xếp hạng', 'Ranking explanation')}</strong><span className={`chip ${signal.state === 'excluded' ? 'warning' : 'neutral'}`}>{labels[signal.state]}</span></div>
-    <p className="recommendation-signal-progress">{text('Giá tham chiếu ghi nhận', 'Reference observed')}: {dateTime(evidence.observedAt)}</p>
+    <p className="recommendation-signal-progress">{evidence.priceSource === 'EOD' ? text('Phiên giá tham chiếu EOD', 'Reference EOD session') : text('Giá tham chiếu ghi nhận', 'Reference observed')}: {priceTime}</p>
     {signal.supporting.length ? <dl className="recommendation-signal-factors"><div><dt>{text('Tiêu chí điểm cao nhất', 'Highest-scoring criteria')}</dt><dd>{signal.supporting.map(factor => `${ui(factor.label)} ${score(factor.score)}/100`).join(' · ')}</dd></div>{signal.review && <div><dt>{text('Tiêu chí cần xem kỹ', 'Criterion to review')}</dt><dd>{ui(signal.review.label)} {score(signal.review.score)}/100</dd></div>}</dl> : <p className="muted-text">{text('Chưa có chi tiết điểm để giải thích thứ hạng.', 'Criterion scores are unavailable for explaining this ranking.')}</p>}
     <p className="recommendation-signal-progress">{text('Kỳ hạn', 'Horizon')}: {signal.horizon == null ? '—' : `${signal.horizon} ${text('phiên giao dịch', 'trading sessions')}`}{signal.state === 'pending' && signal.observed != null ? ` · ${text('Đã quan sát', 'Observed')} ${signal.observed} ${text('phiên', 'sessions')}` : ''}{signal.returnPct != null ? ` · ${text('Biến động EOD từ giá tham chiếu', 'EOD change from reference')}: ${signal.returnPct > 0 ? '+' : ''}${score(signal.returnPct)}%` : ''}</p>
     <details className="recommendation-evidence">
@@ -23,7 +26,7 @@ export default function RecommendationEvidence({ item, criteria = [], language =
     <div className="recommendation-evidence-body">
       <dl className="recommendation-provenance">
         <div><dt>{text('Mô hình', 'Model')}</dt><dd>{evidence.model || text('Chưa công bố', 'Not disclosed')}</dd></div><div><dt>{text('Nguồn giá', 'Price source')}</dt><dd>{evidence.priceSource || text('Chưa xác định', 'Unknown')}</dd></div>
-        <div><dt>{text('Thời điểm giá', 'Price time')}</dt><dd>{dateTime(evidence.observedAt)}</dd></div><div><dt>{text('Số phiên đầu vào', 'Input sessions')}</dt><dd>{evidence.observations ?? text('Chưa công bố', 'Not disclosed')}</dd></div>
+        <div><dt>{evidence.priceSource === 'EOD' ? text('Phiên EOD', 'EOD session') : text('Thời điểm giá', 'Price time')}</dt><dd>{priceTime}</dd></div><div><dt>{text('Số phiên đầu vào', 'Input sessions')}</dt><dd>{evidence.observations ?? text('Chưa công bố', 'Not disclosed')}</dd></div>
       </dl>
       <div className="recommendation-indicator-evidence" aria-label={ui("Chỉ báo đầu vào")}>
         <span>Xu hướng <b>{evidence.trend || 'Chưa có'}</b></span><span>{ui("RSI14")} <b>{number(evidence.rsi14)}</b></span><span>Momentum 10 phiên <b>{number(evidence.momentum10)}</b></span>

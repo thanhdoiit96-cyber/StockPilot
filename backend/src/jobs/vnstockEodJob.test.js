@@ -3,7 +3,7 @@ jest.mock('../market-data/vnstockEodIngestion', () => ({ ingestVnstockEod: jest.
 jest.mock('../market-data/eodCoverage', () => ({ eodCoverage: jest.fn() }));
 jest.mock('node:fs/promises', () => ({ mkdir: jest.fn(), writeFile: jest.fn() }));
 jest.mock('../models', () => ({}));
-jest.mock('../services/recommendationPersistence', () => ({ generateRecommendationSnapshot: jest.fn() }));
+jest.mock('../services/recommendationPersistence', () => ({ ...jest.requireActual('../services/recommendationPersistence'), generateRecommendationSnapshot: jest.fn() }));
 
 const cron = require('node-cron');
 const startVnstockEodJob = require('./vnstockEodJob');
@@ -144,9 +144,11 @@ describe('vnstock EOD scheduler', () => {
   });
 
   test('exposes a scheduled gap retry task that only requests missing symbols', async () => {
+    process.env.RECOMMENDATIONS_AFTER_INGEST = 'true';
     ingestVnstockEod.mockResolvedValue({ received: 1 });
     eodCoverage
       .mockResolvedValueOnce({ symbols: 2, covered: 1, missing_symbols: ['VPB'] })
+      .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] })
       .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] })
       .mockResolvedValueOnce({ symbols: 2, covered: 2, missing_symbols: [] });
     const tradePriorityLoader = jest.fn().mockResolvedValue({ symbols: ['VPB'], probed: 1, batches: 1, failed_batches: 0, errors: [] });
@@ -158,6 +160,18 @@ describe('vnstock EOD scheduler', () => {
     expect(saved.trade_priority).toEqual(expect.objectContaining({ enabled: true, matched: 1 }));
     expect(saved.selected_traded).toBe(1);
     expect(task.retryTask).toBeTruthy();
+    expect(generateRecommendationSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  test('no-gap retry still catches up the recommendation snapshot without ingestion', async () => {
+    process.env.RECOMMENDATIONS_AFTER_INGEST = 'true';
+    eodCoverage.mockResolvedValue({ symbols: 123, covered: 123, missing_symbols: [] });
+    generateRecommendationSnapshot.mockResolvedValue({ status: 'snapshot_exists', run_id: 'sealed' });
+    const task = startVnstockEodJob({ logger: { info: jest.fn(), error: jest.fn() } });
+    const report = await task.retryGaps();
+    expect(report.recommendations).toMatchObject({ status: 'snapshot_exists', run_id: 'sealed' });
+    expect(ingestVnstockEod).not.toHaveBeenCalled();
+    expect(generateRecommendationSnapshot).toHaveBeenCalledTimes(1);
   });
 
   test('puts currently traded gaps before fair-order fallback without fabricating EOD rows', async () => {

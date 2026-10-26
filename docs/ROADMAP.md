@@ -4,6 +4,12 @@ Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ## Nguyên tắc phát triển
 
+### Recommendation freshness recovery — 2026-10-26
+
+Implementation and targeted tests/build/browser verification completed. Local coverage remains incomplete (23/10: 114/123); runtime backend restart is pending completion of active 26/10 ingestion. Live recovery/generation remains unverified; next checkpoint is idle-safe restart and read-only readiness/log verification, not a relaxed gate.
+
+Use the existing complete model-eligible EOD coverage gate for scheduled ingestion, gap retry (including no-gap retries), startup catch-up and lifecycle disclosure. Catch-up reads stored data only and respects RECOMMENDATIONS_AFTER_INGEST; never generate on GET or UI mount. Existing generation keys preserve idempotency. UI distinguishes EOD session from issuance timestamp and names missing coverage rather than promising a new snapshot after every close. No provider expansion or lowered threshold. Acceptance: incomplete coverage skips, retry and startup recover when eligible, duplicate calls do not create new identities, date-only EOD labels, live 23/10 coverage audit and frontend build.
+
 ### Cash-backed portfolio purchases — 2026-10-26
 
 Implemented follow-up: stricter cash evidence validation and first-deficit repair guidance, tested at API/UI boundaries. Corporate-action concurrent mutation audit remains open; no broker settlement inference introduced.

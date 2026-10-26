@@ -297,6 +297,9 @@ async function initializeApp() {
       if (isLocalServerProcess) {
         CacheCleanupJob(cacheService);
         logger.info('[Scheduler] Cache cleanup job initialized');
+        require('./services/recommendationRefresh').refreshRecommendations({ models: require('./models') })
+          .then(report => logger.info(`[Recommendations startup catch-up] ${JSON.stringify(report)}`))
+          .catch(error => logger.error(`[Recommendations startup catch-up] ${error.message}`));
         if (startVnstockEodJob({ cacheService, logger })) {
           logger.info(`[Scheduler] Vnstock EOD job initialized (${process.env.VNSTOCK_EOD_CRON || '5 15 * * 1-5'})`);
         }
