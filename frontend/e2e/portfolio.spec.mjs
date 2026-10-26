@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test'
 const stocks=[{id:'a',code:'FPT',name:'FPT Corp',price:120000,industry:'technology',volume:1000}]
 const list={success:true,data:stocks,pagination:{page:1,pageSize:25,total:1,totalPages:1}}
 
+test('cash deficit shows dated repair guidance and blocks purchase entry', async ({ page }) => {
+  await boot(page, [], [], [], [], null, [], null, undefined, null, null, { status: 'deficit', balance: 0, available_to_buy: 0, first_deficit: { occurred_at: '2026-10-02T09:00:00Z', amount: 100100 } })
+  const summary = page.locator('#portfolio-panel-overview .portfolio-cash-summary')
+  await expect(summary).toContainText('Thiếu tiền lần đầu')
+  await expect(summary).toContainText('100.100')
+  await page.locator('#portfolio-tab-transactions').click()
+  await expect(page.locator('.transaction-form button[type=submit]')).toBeDisabled()
+})
+
 test('cash is separate and a purchase cannot exceed the available ledger balance', async ({ page }) => {
   await boot(page, [], [], [], [], null, [], null, undefined, null, null, { status: 'available', balance: 100000, available_to_buy: 100000 })
   await expect(page.locator('#portfolio-panel-overview .portfolio-cash-summary')).toContainText('100.000')

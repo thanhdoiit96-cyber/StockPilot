@@ -6,6 +6,8 @@ Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ### Cash-backed portfolio purchases — 2026-10-26
 
+Implemented follow-up: stricter cash evidence validation and first-deficit repair guidance, tested at API/UI boundaries. Corporate-action concurrent mutation audit remains open; no broker settlement inference introduced.
+
 User decision: purchases require valid cash and cash must be displayed separately from stock value. Use recorded deposits/withdrawals, trades including fees and confirmed cash corporate actions; no margin or broker settlement inference. Validate chronological balances for create/update/import purchases under a portfolio lock, fail closed for invalid evidence, and retain legacy records for correction. Display available ledger cash and funding guidance separately in overview/trade form. Prefer one ledger calculator over deriving cash from asset valuations. No migration/provider calls; acceptance covers exact funds, fees, missing funding, future deposits and bulk/edit bypasses. Legacy negative history must be repaired via dated funding rather than silently granted credit.
 
 ### Portfolio UI refinement — 2026-10-26
