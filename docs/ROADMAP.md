@@ -4,9 +4,29 @@ Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ## Nguyên tắc phát triển
 
+### Saved comparison clarity — 2026-10-27
+
+Implemented and verified with populated fixtures: shared timezone-safe labels, swap/reverse behavior and mobile toolbar. Public live history was inspected; private-account visual validation remains explicitly unverified.
+
+For users comparing saved rankings, standardize snapshot labels to Vietnam time in both picker and comparison, keep invalid timestamps explicitly unavailable, and provide one keyboard-accessible swap action rather than requiring two select changes. Explain positive rank delta as movement toward rank 1, not investment return. Preserve existing scores/ranking algorithm and loaded state; no requests, persistence, provider changes or new caching. Acceptance: timezone/invalid-date tests, swap reverses deltas and can be undone, desktop/mobile fit and populated saved workflow pass. Public history can be inspected live; private saved-account data is not available in the browser harness, so use explicit fixtures without claiming live-account verification.
+
+### Ideas summary semantics and empty controls — 2026-10-27
+
+Implemented: truthful displayed-symbol/loaded-history labels, separate measured count in Calibration and conditional saved controls. Build/unit/browser checks passed; live data remains coverage-gated. Follow-up is populated-account review, not additional provider scope.
+
+For investors scanning recommendations, label displayed-symbol counts accurately (not the eligible universe) and show loaded history including pending runs in the summary. The previous measured-run count was already filtered correctly; retain that distinct count in Calibration. Prefer existing loaded data over adding aggregate queries. Omit the saved-picker control group only when no saved records exist; retain the zero saved count, Generate, reset, errors and existing controls once records arrive. No scoring, persistence, provider or request changes. Acceptance: pending history is never called measured, empty picker disappears, populated saved workflows remain usable on desktop/mobile, tests/build pass.
+
+### Cross-page information density — 2026-10-26
+
+Follow-up decision: make Ideas results easier to reach by collapsing only the weight controls initially, while retaining Generate, saved selection and validation feedback. Do not move the entire form behind disclosure or change criteria values. Keep three summary metrics compact on mobile. Acceptance: keyboard expansion preserves modified weights; Generate remains usable collapsed; mobile/desktop layout and existing recommendation workflows pass. No extra requests or financial logic changes.
+
+Implemented and verified across six pages, their primary tabs, Account and forecast evidence. Shared compact headings/spacing and explicit forecast disclosures are built into local preview. Final page/tab audit passes at desktop/mobile/light-tablet widths; live-content review remains a follow-up, not evidence of provider validity. Details and test limitations are in PROJECT_STATUS.
+
+For investors scanning Overview, Market board, Portfolio (five tabs), Detail (four sections/five company tabs), Recommendations (four tabs), Advisor and Account: prioritize metrics, charts and actions over repeated headings/help. Prefer a shared compact heading/spacing scale plus explicit native disclosures for secondary explanations over shrinking all text or hiding risk labels. Keep financial values, table readability, errors, stale/partial/research states and keyboard focus intact. No API/backend changes, new requests, polling or caches; disclosure content stays mounted. Acceptance: browser page/tab inventory at desktop/mobile, measurable heading footprint reduction, no page-level overflow, accessible disclosures, existing targeted UI tests and production build. Mocked screens do not validate live provider data. Do not restart backend during ingestion.
+
 ### Recommendation freshness recovery — 2026-10-26
 
-Implementation and targeted tests/build/browser verification completed. Local coverage remains incomplete (23/10: 114/123); runtime backend restart is pending completion of active 26/10 ingestion. Live recovery/generation remains unverified; next checkpoint is idle-safe restart and read-only readiness/log verification, not a relaxed gate.
+Implementation and targeted tests/build/browser verification completed. Backend restarted on 26/10 after the prior processes had stopped: startup catch-up and live lifecycle API both correctly skip incomplete coverage (26/10: 110/123). Worker/database readiness and UI proxy are healthy. Actual new-snapshot generation remains unverified until coverage is complete; do not relax the gate.
 
 Use the existing complete model-eligible EOD coverage gate for scheduled ingestion, gap retry (including no-gap retries), startup catch-up and lifecycle disclosure. Catch-up reads stored data only and respects RECOMMENDATIONS_AFTER_INGEST; never generate on GET or UI mount. Existing generation keys preserve idempotency. UI distinguishes EOD session from issuance timestamp and names missing coverage rather than promising a new snapshot after every close. No provider expansion or lowered threshold. Acceptance: incomplete coverage skips, retry and startup recover when eligible, duplicate calls do not create new identities, date-only EOD labels, live 23/10 coverage audit and frontend build.
 
@@ -67,7 +87,9 @@ Tiếp tục data evidence, point-in-time availability, out-of-sample validation
 
 Rổ được chọn là [OfficialVN30](VN30_FORECAST_UNIVERSE_DESIGN.md): 30 thành viên theo publication VN30 point-in-time có quyền sử dụng, snapshot bất biến, 30-member/95% EOD gate và shadow evaluation riêng. Không hard-code, scrape không được cấp quyền hoặc suy ra constituent từ index/fixture/turnover hiện có.
 
-OfficialVN30 bị khóa ở chế độ `internal_research_only`: không phát hành công khai/thương mại, không trả constituent qua readiness API và không phát hành forecast. Admin-only manifest ingest hiện chỉ nhận đúng 30 mã cùng HTTPS URL HOSE, canonical hashes và reference quyền; owner-attested pending được ghi rõ, không được hiểu là quyền đã xác minh. `GET /api/stocks/vn30-readiness` vẫn fail-closed với thiếu snapshot/quyền. Bước tiếp theo là nạp công bố HOSE kỳ đang hiệu lực, rồi thêm history/basis gate và forecast shadow. Liquid30 là nghiên cứu defer, không phải fallback tự động và không còn hiển thị trên Overview.
+OfficialVN30 giữ `internal_research_only`, không phát hành công khai/thương mại. Ngày 27/10 đã seal membership HOSE kỳ 7/2026, thêm history/basis/hash gate và chuyển Overview sang `/api/forecast/official-vn30-preview`, không fallback ba mã. Live local đạt 29/30 lịch sử hợp lệ (60 phiên đến 26/10), vượt gate 95%; quyền sử dụng vẫn `owner_attested_pending`. Đây là preview read-only với trọng số prototype cố định, chưa phải shadow issuance hoặc mô hình được kiểm chứng. Tiếp theo: bổ sung listing MCH từ nguồn hợp lệ rồi backfill; xây cohort OfficialVN30 bất biến, outcome 1/5 phiên, mô hình theo horizon và đánh giá độc lập. Không dùng kết quả rổ ba mã để chứng minh độ chính xác. Liquid30 tiếp tục defer.
+
+Checkpoint OfficialVN30 27/10: đã bổ sung MCH từ listing VCI bằng chế độ chỉ định mã và nạp 81 phiên EOD. Coverage preview thực tế nay **30/30**, thay cho 29/30 ở checkpoint trước. Bước bổ sung listing/backfill đã hoàn tất; việc kế tiếp là thiết kế và triển khai shadow issuance/outcome bất biến, không phải hạ gate hoặc thêm provider. Preview chưa tự học và chưa được kiểm chứng độ chính xác.
 
 ### 6. Exit guidance cho vị thế đang nắm giữ — shadow UI hoàn tất, scheduler đóng
 

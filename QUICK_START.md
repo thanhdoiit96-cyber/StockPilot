@@ -51,7 +51,21 @@ Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:4173/api/health'
 
 Kỳ vọng worker trả `ok: true`, backend trả `success: true`, `ready` không báo dependency lỗi, và hai request frontend trả HTTP 200. Mở UI tại <http://127.0.0.1:4173/>. `ready` là bằng chứng local; không phải xác nhận production, scheduler hay dữ liệu provider hoàn chỉnh.
 
-### Forecast LIVE trong môi trường agent/sandbox
+### Forecast OfficialVN30 trên Tổng quan
+
+Overview dùng `/api/forecast/official-vn30-preview?horizon=5` (hoặc `1`), đọc EOD từ database, không gọi provider/worker khi mở trang. Bật `NODE_ENV=development`, `FORECAST_LIVE_PREVIEW=true` ở backend và `VITE_ENABLE_FORECAST_LIVE=true` lúc build frontend. Tên cờ được giữ tương thích; kết quả mới luôn là **nghiên cứu nội bộ**, `live=false`, `synthetic=false`, không phát hành công khai/thương mại.
+
+~~~powershell
+Invoke-RestMethod 'http://127.0.0.1:4173/api/forecast/official-vn30-preview?horizon=5'
+~~~
+
+`official_vn30_preview` cần membership HOSE đã seal, đúng hiệu lực/hash và ít nhất 29/30 mã có 60 phiên EOD cùng lịch đến phiên đã hoàn tất gần nhất. `membership_snapshot_unavailable` nghĩa là thiếu danh sách, không phải thiếu worker; `member_history_coverage_below_threshold` cần kiểm tra/backfill lịch sử. UI không chuyển về FPT/HPG/VHM hoặc fixture. Đủ coverage không có nghĩa dự báo chính xác hoặc tự học.
+
+Chẩn đoán nội bộ từ thư mục `backend`: `node scripts/inspect-official-vn30.cjs` (chỉ đọc). Khi có manifest HOSE đã rà soát, owner local có thể dùng `node scripts/seal-official-vn30.cjs evidence/<manifest>.json --reviewed-internal-research`; script chỉ chạy development, không sửa snapshot cũ. API admin vẫn là đường ingest dịch vụ. Không chép danh sách giả vào manifest để vượt gate. Nguồn, ngày hiệu lực và quyền dùng cần rà soát khi công bố thay đổi.
+
+Nếu ingestion báo `stock <mã> does not exist`, từ thư mục `backend` chạy `node scripts/sync-vnstock-listing.cjs --symbols=MCH` (thay bằng mã cần sửa), rồi backfill EOD bằng luồng hiện có với `VNSTOCK_SYMBOLS`, `VNSTOCK_FROM`, `VNSTOCK_TO` giới hạn rõ. Chế độ chỉ định nhận tối đa 30 mã và chỉ ghi metadata provider hợp lệ; thiếu/không rõ listing sẽ dừng trước khi ghi. Không truyền `--symbols` vẫn chỉ cập nhật các mã đã tồn tại, không tự nhập toàn thị trường. Đây là sửa dữ liệu theo nhu cầu, không phải bước khởi động app định kỳ.
+
+### Probe LIVE cũ trong môi trường agent/sandbox (không dùng bởi Overview)
 
 `/api/forecast/live-preview` cố ý chạy một Python EOD bridge riêng để lấy dữ liệu mới; nó không dùng worker dài hạn. Vì vậy worker `:8787` vẫn healthy nhưng Forecast LIVE có thể trả `503` với `code: "EPERM"` nếu backend được chạy trong một sandbox chặn việc spawn child process. Đây không phải lỗi thiếu package, không cần bật lại worker, và không phải lý do để chuyển sang fixture.
 
