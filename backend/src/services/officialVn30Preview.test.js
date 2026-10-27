@@ -15,6 +15,7 @@ test.each([28, 29, 30])('requires 29 complete histories: %s', count => {
   expect(result.status).toBe(count < 29 ? 'unavailable' : 'official_vn30_preview');
   expect(result).toMatchObject({ live: false, synthetic: false, research_only: true, publication_permitted: false });
   expect(result.current_data).toBeUndefined();
+  expect(result.private_evidence).toBeUndefined();
   if (count < 29) expect(result.probabilities).toBeUndefined();
   else expect(result.probabilities.reduce((sum, p) => sum + p.value, 0)).toBeCloseTo(1, 6);
 });

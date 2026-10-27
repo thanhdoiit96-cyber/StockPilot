@@ -35,6 +35,18 @@ The EOD session must fall inside the snapshot's effective date range. Historical
 
 ## Required next flow
 
+### Shadow issuance foundation — decision 2026-10-27
+
+Implement the owner-local issuance step first, not automatic scoring or a public signal. Reuse the existing immutable `forecast_snapshots` ledger (migration 037 already prevents UPDATE/DELETE) with a new payload version, `synthetic=false`, `research_only=true`, and `live=false`; existing synthetic/live cohort queries exclude this combination. A new table would duplicate an existing ledger without adding isolation value. No schema change is needed; no legacy generation-key function is reused.
+
+Freeze the exact eligible member histories, source hashes, availability timestamps, membership ID/hash, probabilities, model version and horizon. Identity includes contract/provider/model/membership/horizon/as-of; input revision under an existing identity is a conflict, not another opportunity to choose probabilities. A repeatable-read input read and a serialized append transaction protect consistency and retries. Payload hashes are integrity checks, not source authentication.
+
+Prospective issuance is allowed only for the latest completed session and before 09:00 Vietnam time on the next configured trading day (weekends plus existing holiday configuration). All used EOD rows must have been fetched after their session cutoff and fetched/created/updated no later than the captured issuance time; membership must already be ingested. No backdated issuance and no switch to a later target to evade the deadline. Missing calendar/holiday coverage remains an operational limitation; an exchange-certified calendar is required before accuracy claims.
+
+The CLI defaults to dry-run, requires development + `FORECAST_OFFICIAL_SHADOW=true` plus `--write` for insertion, and never calls a provider. UI GET remains read-only, returns no private constituents, and adds no requests. Budget: existing bounded membership/price read, at most 6000 input rows, one indexed identity lookup and one insert, with a 1 MiB payload cap; no polling or cache. Acceptance covers time boundaries, evidence availability, identity conflicts, disabled writes, idempotency and legacy isolation.
+
+Outcome collection/scoring is deliberately deferred: raw unadjusted closes must not be interpreted as total returns across corporate actions. The stored outcome policy is `pending_corporate_action_and_calendar_contract`; this milestone neither produces accuracy scores nor retrains the fixed-weight prototype. Next: specify verified action coverage and calendar, then freeze outcomes without changing origin membership or shifting missing target sessions.
+
 1. Complete written rights verification and retention policy; owner-attested internal scope is already recorded.
 2. Reviewed immutable manifest ingestion is implemented. Review and seal subsequent source changes without editing old snapshots; automated source refresh is not implemented.
 3. The internal preview's 60-session history/basis/provenance gate is implemented. Complete missing member data and preserve those checks for shadow issuance.
@@ -42,6 +54,14 @@ The EOD session must fall inside the snapshot's effective date range. Historical
 5. Require independent out-of-sample evaluation, calibration and audit before any verified forecast release. The read-only internal preview is not that release.
 
 ## UX and performance
+
+### Outcome evidence inspection — decision 2026-10-27
+
+Repository review found no exchange-certified session ledger or whole-universe corporate-action completeness evidence. Portfolio-entered events and company news are not substitutes for a complete action feed; an empty result cannot attest that no action occurred. Therefore add read-only outcome evidence inspection before outcome writes/scoring. This implements useful missing-session diagnosis without inventing an adjustment factor or treating configuration as verified evidence.
+
+For each frozen OfficialVN30 snapshot, derive the exact 1/5 planned sessions using its frozen calendar, require the same origin members on every planned date, and refuse duplicate price conflicts, wrong basis/provenance or evidence fetched before close/after inspection. Never advance the target because a member/date is missing. Even complete prices remain `pending_evidence_review`, scoring disabled, until an independently reviewed action/calendar contract exists. No probabilities, returns or accuracy metrics are produced by inspection.
+
+Owner CLI only, no new UI states or API calls: inspect at most 10 latest snapshots, one bounded date/symbol price query per snapshot, 601-row cap (600 usable, excess fails closed), no provider requests or writes. Output contains IDs/dates/counts, not constituents. The immutable origin evidence remains unchanged. Acceptance: missing intermediate date cannot shift target; fresh/conflicting/basis checks; corrupted/legacy snapshots rejected; empty ledger explicit. Actual outcome persistence and automatic calibration remain deferred.
 
 Overview shows a persistent internal-research/no-public-or-commercial-release label. Missing membership, invalid hashes, stale data or insufficient history produce an explicit unavailable reason; there is no legacy or synthetic fallback. One request per mount/horizon/retry, no provider calls or polling. The old cohort and synthetic timeline are deliberately absent from this panel. Detailed limitations use keyboard-accessible disclosure; membership counts and session remain visible on mobile.
 

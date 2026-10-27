@@ -6,7 +6,7 @@ const { buildLiveForecastPreview } = require('./forecastLivePreview');
 const { vietnamSessionDate } = require('./recommendationPersistence');
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
-function buildOfficialVn30Preview({ snapshot, prices = [], asOf, horizon = 5, now = new Date() }) {
+function buildOfficialVn30Preview({ snapshot, prices = [], asOf, horizon = 5, now = new Date(), includeEvidence = false }) {
   const base = { version: 'official_vn30_preview_v1', universe: 'OfficialVN30', horizon_sessions: horizon, as_of: asOf,
     research_only: true, synthetic: false, live: false, publication_permitted: false, market_accuracy_verified: false,
     distribution: 'internal_research_only', mode: 'internal_research' };
@@ -42,6 +42,8 @@ function buildOfficialVn30Preview({ snapshot, prices = [], asOf, horizon = 5, no
   const rows = included.flatMap(item => item.ordered.map(([date, value]) => ({ instrument: { symbol: item.symbol }, quote: { close: value.close }, observed_at: `${date}T08:00:00.000Z` })));
   const preview = buildLiveForecastPreview({ currentData: { rows, as_of: `${asOf}T08:00:00.000Z`, provider: 'vnstock_stored_eod' }, horizon, modelVersion: 'official-vn30-softmax-prototype-v1' });
   return { ...base, status: 'official_vn30_preview', provider: 'vnstock_stored_eod', coverage,
+    ...(includeEvidence ? { private_evidence: { membership_id: snapshot.id, membership_ingested_at: snapshot.ingested_at, histories: included,
+      availability: prices.filter(row => included.some(item => item.symbol === row.symbol)).map(row => ({ symbol: row.symbol, session_date: row.session_date, source_hash: row.source_hash, fetched_at: row.fetched_at, created_at: row.created_at, updated_at: row.updated_at })) } } : {}),
     membership: { membership_sha256: manifest.membership_sha256, source_sha256: manifest.source_sha256, source_identifier: manifest.source_identifier, effective_from: manifest.effective_from, effective_to: manifest.effective_to },
     rights_verification: snapshot.rights_evidence_ref === 'owner-attested-internal-research-pending' ? 'owner_attested_pending' : 'recorded',
     input_sha256: hash(included), calibrated: false, model_version: preview.model_version,
@@ -50,7 +52,7 @@ function buildOfficialVn30Preview({ snapshot, prices = [], asOf, horizon = 5, no
     notice: 'Internal research only. Uncalibrated fixed-weight prototype; horizons are not independently trained. No public or commercial release.' };
 }
 
-async function readOfficialVn30Preview(models, { horizon = 5, now = new Date() } = {}) {
+async function readOfficialVn30Preview(models, { horizon = 5, now = new Date(), includeEvidence = false } = {}) {
   const asOf = vietnamSessionDate(now);
   return models.sequelize.transaction({ isolationLevel: 'REPEATABLE READ', readOnly: true }, async transaction => {
     const record = await models.IndexMembershipSnapshot.findOne({ where: { index_code: 'VN30', status: 'sealed', effective_from: { [Op.lte]: asOf }, [Op.or]: [{ effective_to: null }, { effective_to: { [Op.gte]: asOf } }] }, include: [{ model: models.IndexMembershipConstituent, as: 'constituents' }], order: [['effective_from', 'DESC'], ['ingested_at', 'DESC']], transaction });
@@ -58,15 +60,15 @@ async function readOfficialVn30Preview(models, { horizon = 5, now = new Date() }
     if (!snapshot) return buildOfficialVn30Preview({ asOf, horizon, now });
     const symbols = snapshot.constituents.map(item => item.symbol);
     if (symbols.length !== 30) return buildOfficialVn30Preview({ snapshot, asOf, horizon, now });
-    const prices = await models.sequelize.query(`SELECT symbol, close, currency, price_unit, is_adjusted, source_hash, session_date::text FROM (
-      SELECT s.code AS symbol, p.close, p.currency, p.price_unit, p.is_adjusted, p.source_hash,
+    const prices = await models.sequelize.query(`SELECT symbol, close, currency, price_unit, is_adjusted, source_hash, session_date::text, fetched_at, created_at, updated_at FROM (
+      SELECT s.code AS symbol, p.close, p.currency, p.price_unit, p.is_adjusted, p.source_hash, p.fetched_at, p.created_at, p.updated_at,
         (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS session_date,
         dense_rank() OVER (PARTITION BY s.code ORDER BY (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date DESC) AS session_rank
       FROM stocks s JOIN stock_prices p ON p.stock_id = s.id
       WHERE s.code IN (:symbols) AND p.provider = 'vnstock' AND p.interval = '1d'
       AND (p.observed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= CAST(:asOf AS date)
     ) history WHERE session_rank <= 60 ORDER BY symbol, session_date, source_hash LIMIT 6001`, { replacements: { symbols, asOf }, type: QueryTypes.SELECT, transaction });
-    return buildOfficialVn30Preview({ snapshot, prices, asOf, horizon, now });
+    return buildOfficialVn30Preview({ snapshot, prices, asOf, horizon, now, includeEvidence });
   });
 }
 module.exports = { buildOfficialVn30Preview, readOfficialVn30Preview };
