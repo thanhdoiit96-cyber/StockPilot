@@ -5,8 +5,10 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const models = require('../src/models');
 const CacheService = require('../src/services/cacheService');
 const { syncStockListings } = require('../src/services/stockListing');
+const { parseListingSymbols, selectRequestedListings } = require('../src/services/scopedListingSelection');
 
 async function main() {
+  const requestedSymbols = parseListingSymbols(process.argv.slice(2));
   const workerUrl = (process.env.VNSTOCK_WORKER_URL || 'http://127.0.0.1:8787').replace(/\/$/, '');
   const source = process.env.VNSTOCK_SOURCE || 'vci';
   const response = await fetch(`${workerUrl}/listing`, {
@@ -20,16 +22,16 @@ async function main() {
   const payload = await response.json();
   if (payload.errors?.length || !Array.isArray(payload.rows) || !payload.rows.length) throw new Error('VCI listing response is empty or contains errors');
 
-  const existing = await models.Stock.findAll({ attributes: ['code'] });
-  const symbols = existing.map(stock => stock.code);
+  const existing = requestedSymbols ? [] : await models.Stock.findAll({ attributes: ['code'] });
+  const symbols = requestedSymbols || existing.map(stock => stock.code);
   const allowed = new Set(symbols.map(code => String(code).toUpperCase()));
-  const matchingRows = payload.rows.filter(row => allowed.has(String(row.symbol || row.code || '').trim().toUpperCase()));
+  const matchingRows = requestedSymbols ? selectRequestedListings(payload.rows, requestedSymbols) : payload.rows.filter(row => allowed.has(String(row.symbol || row.code || '').trim().toUpperCase()));
   const checkedAt = new Date();
   const result = await syncStockListings({ Stock: models.Stock, rows: matchingRows, symbols, checkedAt });
   const cache = new CacheService(models.sequelize);
   await cache.deleteByType('stock');
-  console.log(JSON.stringify({ source, provider_symbols: payload.rows.length, existing_symbols: symbols.length,
-    matched_existing_symbols: matchingRows.length, listing_checked_at: checkedAt.toISOString(), ...result, cache_invalidated: true }, null, 2));
+  console.log(JSON.stringify({ source, mode: requestedSymbols ? 'explicit_symbols' : 'existing_only', provider_symbols: payload.rows.length, selected_symbols: symbols.length,
+    matched_symbols: matchingRows.length, listing_checked_at: checkedAt.toISOString(), ...result, cache_invalidated: true }, null, 2));
 }
 
 main().catch(error => { console.error(error.stack || error); process.exitCode = 1; })
