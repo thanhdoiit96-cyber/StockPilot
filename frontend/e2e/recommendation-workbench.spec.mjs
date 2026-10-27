@@ -77,7 +77,7 @@ test('recommendation criteria rerank the eligible universe and show historical l
     let data = null
     if (path === '/api/stocks') data = [{ id: 'FPT', code: 'FPT', name: 'FPT', price: 120000 }]
     else if (path === '/api/stocks/quotes') data = {}
-    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [] }
+    else if (path === '/api/portfolio') data = { positions: [], recommendation_entries: [], cash: { status: 'available', balance: 1000000, available_to_buy: 1000000 } }
     else if (path === '/api/watchlist') data = []
     else if (path === '/api/auth/me') return route.fulfill({ json: { success: true, user: { email: 'e2e@example.com', role: 'user' } } })
     else if (path === '/api/ai-gate') data = { enabled: false, reasons: [] }
@@ -109,7 +109,22 @@ test('recommendation criteria rerank the eligible universe and show historical l
   await expect(comparison).toContainText('Bớt 1')
   await expect(comparison.locator('tbody')).toContainText('VCB')
   await expect(comparison.locator('tbody')).toContainText('+1')
+  const vcb = comparison.locator('tbody tr').filter({ hasText: 'VCB' })
+  const swap = comparison.getByRole('button', { name: 'Đảo chiều so sánh' })
+  await swap.focus()
+  await page.keyboard.press('Enter')
+  await expect(vcb).toContainText('-1')
+  await expect(comparison.locator('select').first()).toHaveValue('snapshot-new')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await swap.click()
+  await expect(vcb).toContainText('+1')
+  await page.setViewportSize({ width: 1280, height: 900 })
   await page.locator('#recommendation-tab-ideas').click()
+  await expect(page.locator('#recommendation-criteria-controls')).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Tạo đề xuất cá nhân' })).toBeVisible()
+  await page.getByRole('button', { name: 'Mở tiêu chí' }).focus()
+  await page.keyboard.press('Enter')
   await page.locator('.criteria-control input[type="range"]').nth(1).fill('50')
   await page.getByRole('button', { name: 'Tạo đề xuất cá nhân' }).click()
   await expect(page.getByRole('heading', { name: 'Kết quả theo tiêu chí đã chọn' })).toBeVisible()
@@ -132,7 +147,9 @@ test('recommendation criteria rerank the eligible universe and show historical l
   expect(csv).not.toContain('Unsafe')
   const criteriaToggle = page.getByRole('button', { name: 'Mở tiêu chí' })
   await expect(criteriaToggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(page.locator('#recommendation-criteria-form')).toBeHidden()
+  await expect(page.locator('#recommendation-criteria-controls')).toBeHidden()
+  await expect(page.locator('#recommendation-criteria-form')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Tạo đề xuất cá nhân' })).toBeVisible()
   await page.getByText('Xem bằng chứng chấm điểm').click()
   const evidence = page.locator('.recommendation-evidence')
   await expect(evidence).toContainText('personalized_rule_v1')

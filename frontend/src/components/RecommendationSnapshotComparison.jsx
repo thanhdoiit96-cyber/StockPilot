@@ -1,17 +1,17 @@
 import { uiText } from "../services/uiCatalog.mjs";
 import { useEffect, useMemo, useState } from 'react'
 import { compareRecommendationSnapshots } from '../services/recommendationSnapshotComparison.mjs'
+import { savedSnapshotLabel } from '../services/savedSnapshotLabel.mjs'
 
 const CRITERIA_LABELS = {
   trend: 'Xu hướng giá', momentum: 'Động lượng', rsi: 'RSI cân bằng',
   stability: 'An toàn / rủi ro', liquidity: 'Thanh khoản'
 }
-const snapshotLabel = snapshot => `${new Date(snapshot.createdAt).toLocaleString('vi-VN')} · ${snapshot.result?.recommendations?.length || 0} mã`
 const signed = (value, digits = 0) => value == null ? '—' : `${value > 0 ? '+' : ''}${Number(value).toFixed(digits)}`
 
 export default function RecommendationSnapshotComparison({ snapshots = [], language = 'vi' }) {
   const ui = text => uiText(language, text)
-  const snapshotLabel = snapshot => `${new Date(snapshot.createdAt).toLocaleString(language === 'en' ? 'en-US' : 'vi-VN')} · ${snapshot.result?.recommendations?.length || 0} ${ui('mã')}`
+  const snapshotLabel = snapshot => savedSnapshotLabel(snapshot, language)
   const en = language === 'en'
   const text = (vi, english) => en ? english : vi
   const [baseId, setBaseId] = useState('')
@@ -38,6 +38,7 @@ export default function RecommendationSnapshotComparison({ snapshots = [], langu
       <label>{ui("Snapshot gốc")}<select className="app-select" value={baseId} onChange={event => setBaseId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === targetId}>{snapshotLabel(snapshot)}</option>)}</select></label>
       <label>{ui("Snapshot đối chiếu")}<select className="app-select" value={targetId} onChange={event => setTargetId(event.target.value)}>{snapshots.map(snapshot => <option key={snapshot.id} value={snapshot.id} disabled={String(snapshot.id) === baseId}>{snapshotLabel(snapshot)}</option>)}</select></label>
     </div>
+    <div className="snapshot-comparison-toolbar"><small>{text('Giờ Việt Nam · Đổi hạng dương = tiến gần hạng 1, không phải lợi nhuận.', 'Vietnam time · Positive rank change means moving toward rank 1, not investment return.')}</small><button type="button" className="ghost-btn small-btn" disabled={!comparison} onClick={() => { setBaseId(targetId); setTargetId(baseId) }}>{text('Đảo chiều so sánh', 'Swap comparison')}</button></div>
     {comparison ? <>
       <div className="snapshot-comparison-summary" aria-label={ui("Tóm tắt so sánh snapshot")}><span className="chip success">{ui("Thêm")} {comparison.added}</span><span className="chip neutral">{ui("Giữ")} {comparison.retained}</span><span className="chip danger">{ui("Bớt")} {comparison.removed}</span></div>
       <p className="snapshot-criteria-delta">{comparison.criteria.length ? comparison.criteria.map(item => `${CRITERIA_LABELS[item.key] || item.key} ${signed(item.delta)}`).join(' · ') : ui("Trọng số tiêu chí không thay đổi.")}</p>

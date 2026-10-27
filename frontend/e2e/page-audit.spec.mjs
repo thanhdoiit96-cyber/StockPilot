@@ -67,19 +67,41 @@ const pages = [
   ['AI Advisor', '.advisor-page', 'AI Advisor']
 ]
 
-for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
-  test(`all investor pages remain usable on ${viewport.name}`, async ({ page }) => {
+for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }, { name: 'tablet-light', width: 1024, height: 900 }]) {
+  test(`all investor pages remain usable on ${viewport.name}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport)
+    if (viewport.name === 'tablet-light') await page.addInitScript(() => localStorage.setItem('stockpilot-theme', 'light'))
     const auditState = await boot(page)
     for (const [label, surface, heading] of pages) {
       await page.getByRole('button', { name: label, exact: true }).click()
       await expect(page.locator(surface)).toBeVisible()
       await expect(page.locator('.topbar h1')).toHaveText(heading)
+      expect(await page.locator('.topbar h1').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeLessThanOrEqual(24)
       await expect(page.locator('.nav-item.active')).toHaveCount(1)
       await expect(page.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-current', 'page')
       await expect(page.locator('.page-loading-overlay')).toHaveCount(0)
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
       expect(overflow, `${label} should not overflow the viewport`).toBeLessThanOrEqual(1)
+      const tabIds = label === 'Danh mục cá nhân' ? ['portfolio-tab-overview', 'portfolio-tab-transactions', 'portfolio-tab-decisions', 'portfolio-tab-cash', 'portfolio-tab-watchlist']
+        : label === 'Đề xuất' ? ['recommendation-tab-ideas', 'recommendation-tab-history', 'recommendation-tab-saved', 'recommendation-tab-learning']
+          : label === 'Chi tiết mã' ? ['company-tab-profile', 'company-tab-people', 'company-tab-capital', 'company-tab-financials', 'company-tab-news'] : []
+      for (const id of tabIds) {
+        const tab = page.locator(`#${id}`)
+        await tab.click()
+        await expect(tab).toHaveAttribute('aria-selected', 'true')
+        const panelId = await tab.getAttribute('aria-controls')
+        await expect(page.locator(`#${panelId}`)).toBeVisible()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), id).toBeLessThanOrEqual(1)
+        await page.screenshot({ path: testInfo.outputPath(`${id}.png`) })
+      }
+      if (tabIds.length) await page.locator(`#${tabIds[0]}`).click()
+      if (label === 'Chi tiết mã') {
+        for (const button of await page.locator('.detail-section-nav button').all()) {
+          await button.click()
+          await expect(button).toBeVisible()
+        }
+      }
+      await page.screenshot({ path: testInfo.outputPath(`${label}.png`) })
       if (label === 'Tổng quan') await expect(page.locator('.market-breadth-header')).toContainText('4 mã trong vũ trụ · 4/4 mã có quote intraday')
       if (label === 'Bảng giá' && viewport.name === 'mobile') await expect(page.locator('.table-scroll-hint')).toBeVisible()
       if (label === 'Danh mục cá nhân') await expect(page.locator('.allocation-footnote')).toContainText('1/1 mã có quote intraday')
@@ -105,6 +127,12 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       await page.screenshot({ path: `test-results/ui-audit/${viewport.name}-${label.toLowerCase().replaceAll(' ', '-')}.png`, fullPage: true })
     }
     await page.getByRole('button', { name: 'Tài khoản và thông tin cá nhân', exact: true }).click()
+    for (const id of ['profile', 'security']) {
+      await page.locator(`#account-tab-${id}`).click()
+      await expect(page.locator(`#account-panel-${id}`)).toBeVisible()
+      await page.screenshot({ path: testInfo.outputPath(`account-${id}.png`) })
+    }
+    await page.locator('#account-tab-profile').click()
     await page.getByRole('dialog').getByRole('button', { name: 'Đăng xuất', exact: true }).click()
     await expect(page.locator('.auth-page')).toBeVisible()
     await expect(page.getByRole('status')).toHaveText('Bạn đã đăng xuất an toàn.')

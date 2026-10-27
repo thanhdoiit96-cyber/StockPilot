@@ -184,8 +184,8 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
             </div>
           </div>
 
-          <div className="outlook-basis" role="note">
-            <strong>{copy('Cơ sở nhận định', 'Basis for the outlook')}</strong>
+          <details className="outlook-basis secondary-disclosure">
+            <summary>{copy('Cơ sở nhận định', 'Basis for the outlook')}</summary>
             {currentData ? (
               <ul>
                 <li>{copy('Đầu vào: dữ liệu hiện tại từ provider live với các mã FPT, HPG, VHM.', 'Inputs: current live provider data for FPT, HPG, and VHM.')}</li>
@@ -201,7 +201,7 @@ export default function ShortTermOutlook({ language = 'vi', recommendations = []
             ) : (
               <p>{copy('Đang hiển thị fixture cố định vì chưa có artifact research hợp lệ; không có cơ sở để diễn giải như dự báo.', 'Fixed fixtures are shown because no valid research artifact is available; they must not be interpreted as a forecast.')}</p>
             )}
-          </div>
+          </details>
 
           <section className="forecast-evidence" aria-labelledby="forecast-evidence-title">
             <div className="forecast-evidence-heading">

@@ -15,9 +15,13 @@ export default function ForecastDataStatus({ payload, status, retry, language = 
     <dl><div><dt>{text('Dữ liệu chốt đến', 'Data as of')}</dt><dd>{payload.as_of && Number.isFinite(Date.parse(payload.as_of)) ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(payload.as_of)) : '—'}</dd></div>
       <div><dt>{text('Phạm vi đầu vào', 'Input scope')}</dt><dd>{current ? symbols ? `${symbols.length}${requested ? `/${requested.length}` : ''} ${text('mã được dùng', 'symbols used')}` : text('Chưa công bố', 'Not disclosed') : text('Replay mô phỏng', 'Synthetic replay')}</dd></div>
       <div><dt>{text('Tuổi dữ liệu', 'Data age')}</dt><dd>{current && ageKnown ? `${number(age)} ${text('ngày', 'days')}` : '—'}{current && ageKnown && maximum != null && Number.isFinite(Number(maximum)) ? ` / ${text('giới hạn', 'limit')} ${number(maximum)}` : ''}</dd></div></dl>
-    {symbols?.length > 0 && <p>{text('Mã tham gia mô hình', 'Model inputs')}: {symbols.join(', ')}. {text('Phạm vi này không đại diện toàn thị trường.', 'This scope does not represent the whole market.')}</p>}
+    {symbols?.length > 0 && <p>{text('Phạm vi này không đại diện toàn thị trường.', 'This scope does not represent the whole market.')}</p>}
+    {missing.length > 0 && <p>{missing.length} {text('mã chưa đạt điều kiện đầu vào.', 'symbols do not meet input requirements.')}</p>}
+    {(symbols?.length > 0 || missing.length > 0 || scope?.exclusions?.length > 0) && <details className="secondary-disclosure"><summary>{text('Chi tiết mã đầu vào', 'Input symbol details')}</summary>
+    {symbols?.length > 0 && <p>{text('Mã tham gia mô hình', 'Model inputs')}: {symbols.join(', ')}</p>}
     {missing.length > 0 && <p>{text('Chưa đạt điều kiện đầu vào', 'Input requirements not met')}: {missing.join(', ')}</p>}
     {Array.isArray(scope?.exclusions) && scope.exclusions.map(item => <p key={item.symbol}>{item.symbol}: {item.reason === 'conflicting_session_prices' ? text('Giá đóng cửa mâu thuẫn trong cùng ngày.', 'Conflicting closing prices on the same date.') : item.reason === 'invalid_observation_time' ? text('Thời điểm dữ liệu không hợp lệ.', 'Invalid observation time.') : item.reason === 'stale_symbol_date' ? text('Chưa có giá tại ngày chốt dữ liệu.', 'Closing price is missing on the cutoff date.') : item.reason === 'after_as_of_date' ? text('Dữ liệu vượt ngày chốt dự báo.', 'Data extends beyond the forecast cutoff date.') : item.reason === 'insufficient_distinct_dates' ? text('Chưa đủ 21 ngày dữ liệu riêng biệt.', 'Fewer than 21 distinct observation dates.') : text('Dữ liệu chưa đạt điều kiện.', 'Input requirements not met.')}</p>)}
+    </details>}
     {current && <small>{text('Xác suất prototype chưa được hiệu chỉnh và kiểm chứng hiệu quả.', 'Prototype probabilities are not calibrated or performance-validated.')}</small>}
   </div>
 }

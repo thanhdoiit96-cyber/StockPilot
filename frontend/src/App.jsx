@@ -1563,9 +1563,9 @@ function lv() {
               className: "eyebrow accent",
               children: tr("page.overview")
             }), O.jsx("h2", {
-              children: profileLanguage === "en" ? "A compact view of market breadth and its recent direction." : uiTextValue("Nắm bắt nhanh độ rộng và xu hướng gần đây của thị trường.")
+              children: profileLanguage === "en" ? "Market breadth & direction" : "Độ rộng & xu hướng thị trường"
             }), O.jsx("p", {
-              children: profileLanguage === "en" ? "Use the scope controls to compare exchanges and sectors; open the details only when you need the underlying leaders and volume." : uiTextValue("Dùng bộ lọc để so sánh sàn, ngành; chỉ mở chi tiết khi cần xem khối lượng và các mã dẫn dắt.")
+              children: profileLanguage === "en" ? "Compare exchanges and sectors using the filters." : "So sánh sàn và ngành bằng bộ lọc."
             })]
           }), false && O.jsxs("div", {
             className: "overview-hero-actions",
