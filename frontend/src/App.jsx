@@ -8,7 +8,7 @@ import * as O from "react/jsx-runtime";
 import MarketBreadth from "./components/MarketBreadth.jsx";
 import ForeignFlowPanel from "./components/ForeignFlowPanel.jsx";
 import OverviewWatchlistPulse from "./components/OverviewWatchlistPulse.jsx";
-import ShortTermOutlook from "./components/ShortTermOutlook.jsx";
+import ShortTermOutlook from "./components/OfficialVn30Outlook.jsx";
 import PortfolioCashSummary, { purchaseExceedsCash } from "./components/PortfolioCashSummary.jsx";
 import PortfolioAllocation from "./components/PortfolioAllocation.jsx";
 import PortfolioDecisionJournal from "./components/PortfolioDecisionJournal.jsx";

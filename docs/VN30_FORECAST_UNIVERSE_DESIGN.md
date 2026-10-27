@@ -2,7 +2,13 @@
 
 ## Decision
 
-`OfficialVN30` is the selected fixed research basket. It means the 30 constituents in an official, point-in-time VN30 membership publication—not a daily Top 30 by turnover and not a list inferred from price data. The current FPT/HPG/VHM LIVE preview remains a separate three-symbol prototype until this contract, its EOD gate and shadow evaluation are complete.
+### Internal preview implementation decision — 2026-10-27
+
+The user requests the actual OfficialVN30 research path, not a relabelled three-symbol preview. Add a separate development-only database-backed read endpoint and make Overview call only that endpoint. No fallback to FPT/HPG/VHM or turnover ranking. Read sealed, effective membership and at most 60 distinct EOD dates per member (including duplicate rows for conflict checks), with VND/share, unadjusted, positive closes, source hashes, exact latest completed session and at least 29/30 valid member histories. Verify canonical membership/source hashes. Missing membership/history/basis returns an explicit unavailable reason and aggregate coverage, never probabilities. Do not disclose constituents in the response.
+
+Use the existing uncalibrated softmax prototype only as a separately versioned internal research computation; mark `research_only=true`, `synthetic=false`, `live=false`, `publication_permitted=false`, `market_accuracy_verified=false`. This does not claim shadow issuance/evaluation is complete. GET must not persist forecasts or mix old three-symbol outcomes into its cohort. Disable legacy cohort display on this Overview path. Preserve the separate legacy endpoints for explicit developer probes, but no caller in Overview may silently use them. One bounded membership read plus one bounded stored-price read, zero provider calls, no new polling/cache. Tests must cover missing/corrupt/expired membership, duplicate conflicts, stale data, 28/30 versus 29/30 coverage, permissions and no legacy UI fallback.
+
+`OfficialVN30` is the selected fixed research basket: official point-in-time membership, not daily turnover ranking. Overview now uses the dedicated internal preview and never falls back to FPT/HPG/VHM. Legacy three-symbol endpoints remain developer probes only. Independent validation remains required before a verified signal or public release.
 
 This choice prioritizes a stable, explainable universe and avoids ranking the incomplete current EOD market. The alternative `Liquid30` implementation is retained only as deferred research; it no longer drives the Overview UI or forecast roadmap.
 
@@ -29,16 +35,20 @@ The EOD session must fall inside the snapshot's effective date range. Historical
 
 ## Required next flow
 
-1. Approve and configure the membership source, rights and retention policy.
-2. Implement a dedicated source ingest that validates, hashes and seals one new snapshot without modifying past snapshots.
-3. Add 60-session per-member EOD history and price-basis/provenance checks before issuance.
+1. Complete written rights verification and retention policy; owner-attested internal scope is already recorded.
+2. Reviewed immutable manifest ingestion is implemented. Review and seal subsequent source changes without editing old snapshots; automated source refresh is not implemented.
+3. The internal preview's 60-session history/basis/provenance gate is implemented. Complete missing member data and preserve those checks for shadow issuance.
 4. Seal a shadow forecast with its membership/input hashes; attach outcomes after 1/5 distinct provider sessions.
-5. Require independent out-of-sample evaluation, calibration and audit before replacing the Overview prototype.
+5. Require independent out-of-sample evaluation, calibration and audit before any verified forecast release. The read-only internal preview is not that release.
 
 ## UX and performance
 
-Overview shows a persistent “Nghiên cứu nội bộ · không phát hành công khai/hay thương mại” label. Missing membership or rights evidence says exactly that and keeps the FPT/HPG/VHM prototype label; it does not claim insufficient whole-market turnover data. The readiness payload never contains the constituent list. Page navigation makes one local API request and triggers neither provider requests nor polling.
+Overview shows a persistent internal-research/no-public-or-commercial-release label. Missing membership, invalid hashes, stale data or insufficient history produce an explicit unavailable reason; there is no legacy or synthetic fallback. One request per mount/horizon/retry, no provider calls or polling. The old cohort and synthetic timeline are deliberately absent from this panel. Detailed limitations use keyboard-accessible disclosure; membership counts and session remain visible on mobile.
 
 ## Acceptance
 
-Before a forecast/UI switch: authorized source evidence, immutable snapshot ingestion, membership/hash verification, 30-member/95% EOD and history gates, shadow issuance/evaluation and an independent out-of-sample report. A build, fixture or readiness response is not evidence of market accuracy.
+Internal preview: reviewed source, immutable membership and canonical hashes, recorded research scope, 29/30 aligned 60-session histories through the latest completed Vietnam session, valid VND/share basis/provenance, no fallback or constituent disclosure. Shadow issuance/evaluation and independent out-of-sample reporting remain separate pending milestones. A build or preview response is not evidence of accuracy.
+
+### Source reviewed locally, 2026-10-27
+
+The July 2026 HOSE membership PDF was downloaded and page 1 directly reviewed (30 members, excluding reserves). PDF SHA-256 is recorded in the immutable source identifier; `source_sha256` itself remains the canonical metadata hash, not the byte hash. Local source/manifest are ignored evidence, not public repository data. The effective date 2026-08-03 is corroborated by [SSIAM's July 16 ETF notice](https://www.ssi.com.vn/khach-hang-ca-nhan/ban-tin-etf) and [Vietcap's July 15 notice](https://trading.vietcap.com.vn/ai-news/post-detail/mch-tcx-vao-ro-vn30); the constituent PDF does not state it. Publication timestamp uses the end of the publication day conservatively, not a claimed exact release time. Membership has no guessed expiry; subsequent official replacements must be reviewed and sealed. This is a fixed reviewed research basket, not an automatically refreshed index subscription. Owner-attested rights remain pending.

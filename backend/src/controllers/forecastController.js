@@ -8,14 +8,23 @@ const { evaluateLiveForecast } = require('../services/forecastLiveEvaluation');
 const { createVnstockBridgeFetcher } = require('../market-data/adapters/vnstockBridgeFetcher');
 const VnstockEodAdapter = require('../market-data/adapters/VnstockEodAdapter');
 const models = require('../models');
+const { readOfficialVn30Preview } = require('../services/officialVn30Preview');
 const { listForecastSnapshots, buildStoredForecastHistory, readForecastCursor, listForecastCohortRows, buildForecastCohortSummary } = require('../services/forecastSnapshotStore');
 const { listLiveCohortRows, buildLiveCohortSummary } = require('../services/forecastLiveCohort');
 const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 
-function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options), listCohorts = options => listForecastCohortRows(models, options), listLiveCohorts = options => listLiveCohortRows(models, options), currentDataFetcher } = {}) {
+function createForecastController({ env = process.env, loadArtifact, listHistory = options => listForecastSnapshots(models, options), listCohorts = options => listForecastCohortRows(models, options), listLiveCohorts = options => listLiveCohortRows(models, options), currentDataFetcher, officialPreviewReader = options => readOfficialVn30Preview(models, options) } = {}) {
   const router = express.Router();
   const load = loadArtifact || (() => readForecastPreviewArtifact(path.resolve(env.FORECAST_PREVIEW_ARTIFACT || path.resolve(__dirname, '../../evidence/forecast-research-preview.json'))));
   const livePreviewEnabled = env.NODE_ENV === 'development' && env.FORECAST_LIVE_PREVIEW === 'true';
+  router.get('/official-vn30-preview', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    if (!livePreviewEnabled) return res.status(404).json({ success: false, code: 'FORECAST_PREVIEW_DISABLED' });
+    const horizon = Number(req.query.horizon);
+    if (![1, 5].includes(horizon)) return res.status(400).json({ success: false, code: 'INVALID_HORIZON' });
+    try { return res.json({ success: true, data: await officialPreviewReader({ horizon }) }); }
+    catch { return res.status(503).json({ success: false, code: 'OFFICIAL_FORECAST_UNAVAILABLE' }); }
+  });
   const buildCurrentDataFetcher = () => {
     if (typeof currentDataFetcher === 'function') return currentDataFetcher;
     const bridgeFetcher = createVnstockBridgeFetcher({

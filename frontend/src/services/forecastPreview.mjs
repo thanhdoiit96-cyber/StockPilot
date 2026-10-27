@@ -3,6 +3,21 @@ import { isForecastBreadthTarget } from './forecastBreadth.mjs'
 const currentPreviewCache = new Map()
 const CURRENT_PREVIEW_CACHE_TTL_MS = 60_000
 
+export async function fetchOfficialVn30Preview(horizon, { signal } = {}) {
+  if (![1, 5].includes(horizon)) throw new Error('invalid_horizon')
+  if (!isCurrentPreviewEnabled()) return { status: 'unavailable', reason: 'preview_disabled' }
+  const response = await fetch(`/api/forecast/official-vn30-preview?horizon=${horizon}`, { signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
+  if (!response.ok) return { status: 'unavailable', reason: response.status === 404 ? 'preview_disabled' : 'request_failed' }
+  const body = await response.json(), data = body?.data
+  const invalid = { status: 'unavailable', reason: 'invalid_contract' }
+  if (!body.success || data?.version !== 'official_vn30_preview_v1' || data.universe !== 'OfficialVN30' || data.horizon_sessions !== horizon || data.research_only !== true || data.synthetic !== false || data.live !== false || data.publication_permitted !== false || data.market_accuracy_verified !== false || data.mode !== 'internal_research') return invalid
+  if (data.status === 'unavailable') return { ...data, probabilities: undefined }
+  const classes = ['advancing', 'balanced', 'declining']
+  const values = Object.fromEntries((data.probabilities || []).map(item => [item.class, item.value]))
+  if (data.status !== 'official_vn30_preview' || data.coverage?.universe !== 30 || ![29, 30].includes(data.coverage?.observed) || data.coverage?.history_sessions !== 60 || !/^[a-f0-9]{64}$/.test(data.membership?.membership_sha256 || '') || !/^[a-f0-9]{64}$/.test(data.input_sha256 || '') || !isForecastBreadthTarget(data.breadth_target) || !Number.isFinite(Date.parse(data.as_of)) || classes.some(name => !Number.isFinite(values[name]) || values[name] < 0 || values[name] > 1) || Math.abs(classes.reduce((sum, name) => sum + values[name], 0) - 1) > 1e-6) return invalid
+  return { ...data, probabilities: classes.map(name => ({ class: name, value: values[name] })) }
+}
+
 function currentPreviewCacheKey(symbols, horizon) {
   return `${horizon}:${Array.from(new Set(symbols)).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort().join(',') || 'FPT,HPG,VHM'}`
 }
