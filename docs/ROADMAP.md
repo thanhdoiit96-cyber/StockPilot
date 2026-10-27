@@ -4,6 +4,10 @@ Cập nhật: 2026-10-22. Lịch sử roadmap và checkpoint đã thay thế đ�
 
 ## Nguyên tắc phát triển
 
+### Overview forecast hierarchy — 2026-10-27
+
+Completed results-first OfficialVN30 card: compact date/coverage, technical disclosure, clear refresh/retry/loading states and theme-correct background. Research/uncalibrated/scope notices stay visible; no winning-scenario emphasis or model changes. Unit, production build and desktop/mobile/light-theme fixture checks passed; running local preview serves the new bundle. Next: inspect populated recommendation/portfolio workflows before further density changes, without expanding provider scope. Evidence and limitations are in PROJECT_STATUS.
+
 ### Saved comparison clarity — 2026-10-27
 
 Implemented and verified with populated fixtures: shared timezone-safe labels, swap/reverse behavior and mobile toolbar. Public live history was inspected; private-account visual validation remains explicitly unverified.
@@ -89,7 +93,9 @@ Rổ được chọn là [OfficialVN30](VN30_FORECAST_UNIVERSE_DESIGN.md): 30 th
 
 OfficialVN30 giữ `internal_research_only`, không phát hành công khai/thương mại. Ngày 27/10 đã seal membership HOSE kỳ 7/2026, thêm history/basis/hash gate và chuyển Overview sang `/api/forecast/official-vn30-preview`, không fallback ba mã. Live local đạt 29/30 lịch sử hợp lệ (60 phiên đến 26/10), vượt gate 95%; quyền sử dụng vẫn `owner_attested_pending`. Đây là preview read-only với trọng số prototype cố định, chưa phải shadow issuance hoặc mô hình được kiểm chứng. Tiếp theo: bổ sung listing MCH từ nguồn hợp lệ rồi backfill; xây cohort OfficialVN30 bất biến, outcome 1/5 phiên, mô hình theo horizon và đánh giá độc lập. Không dùng kết quả rổ ba mã để chứng minh độ chính xác. Liquid30 tiếp tục defer.
 
-Checkpoint OfficialVN30 27/10: đã bổ sung MCH từ listing VCI bằng chế độ chỉ định mã và nạp 81 phiên EOD. Coverage preview thực tế nay **30/30**, thay cho 29/30 ở checkpoint trước. Bước bổ sung listing/backfill đã hoàn tất; việc kế tiếp là thiết kế và triển khai shadow issuance/outcome bất biến, không phải hạ gate hoặc thêm provider. Preview chưa tự học và chưa được kiểm chứng độ chính xác.
+Checkpoint OfficialVN30 27/10: MCH listing/backfill hoàn tất, preview đạt **30/30**. Đã triển khai nền tảng shadow issuance bất biến bằng CLI owner-local, mặc định dry-run, ghi cần cờ riêng + `--write`. Nó tách khỏi legacy cohort, giữ input/membership/model/horizon và chặn ghi sau khi phiên kế tiếp mở cửa. Dry-run thực tế hôm nay bị chặn đúng deadline; chưa ghi snapshot thật. **Outcome collection/scoring còn chờ** hợp đồng corporate action và lịch giao dịch đã xác minh; chưa nối scheduler hoặc huấn luyện mô hình. Mốc tiếp theo: hoàn thiện contract đó rồi thêm outcome bất biến và trạng thái cohort, không hạ gate hoặc thêm provider.
+
+Đã bổ sung CLI kiểm tra bằng chứng outcome chỉ đọc: đúng phiên đích và thành viên đã đóng băng, không dời phiên khi thiếu giá. Database local hiện `no_shadow_snapshots`; chưa có kết quả thật để đánh giá. Đủ giá chỉ chuyển sang `pending_evidence_review`, không mở scoring. Còn chờ dữ liệu lịch/corporate action đã xác minh và bản shadow phát hành đúng thời hạn trước khi triển khai outcome append.
 
 ### 6. Exit guidance cho vị thế đang nắm giữ — shadow UI hoàn tất, scheduler đóng
 

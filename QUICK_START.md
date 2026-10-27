@@ -53,6 +53,8 @@ Kỳ vọng worker trả `ok: true`, backend trả `success: true`, `ready` khô
 
 ### Forecast OfficialVN30 trên Tổng quan
 
+UI ở cổng `4173` theo hướng dẫn này là **Vite preview phục vụ bundle đã build trong `frontend/dist`**, không phải dev source server (`5173`). Tên bundle hiện tại nằm ở thẻ `<script type="module">` trong `frontend/dist/index.html`; có thể đối chiếu với HTML tải từ `http://127.0.0.1:4173/`. `npm.cmd run check:bundle` kiểm tra cấu trúc bundle, không xác nhận độ chính xác dự báo. Build dùng asset tối ưu không đồng nghĩa đã triển khai production hoặc forecast được cấp quyền phát hành. Nếu tab trình duyệt còn giữ bản cũ sau rebuild, tải lại trang; tên/hash runtime đã kiểm tra gần nhất được ghi trong PROJECT_STATUS.
+
 Overview dùng `/api/forecast/official-vn30-preview?horizon=5` (hoặc `1`), đọc EOD từ database, không gọi provider/worker khi mở trang. Bật `NODE_ENV=development`, `FORECAST_LIVE_PREVIEW=true` ở backend và `VITE_ENABLE_FORECAST_LIVE=true` lúc build frontend. Tên cờ được giữ tương thích; kết quả mới luôn là **nghiên cứu nội bộ**, `live=false`, `synthetic=false`, không phát hành công khai/thương mại.
 
 ~~~powershell
@@ -64,6 +66,16 @@ Invoke-RestMethod 'http://127.0.0.1:4173/api/forecast/official-vn30-preview?hori
 Chẩn đoán nội bộ từ thư mục `backend`: `node scripts/inspect-official-vn30.cjs` (chỉ đọc). Khi có manifest HOSE đã rà soát, owner local có thể dùng `node scripts/seal-official-vn30.cjs evidence/<manifest>.json --reviewed-internal-research`; script chỉ chạy development, không sửa snapshot cũ. API admin vẫn là đường ingest dịch vụ. Không chép danh sách giả vào manifest để vượt gate. Nguồn, ngày hiệu lực và quyền dùng cần rà soát khi công bố thay đổi.
 
 Nếu ingestion báo `stock <mã> does not exist`, từ thư mục `backend` chạy `node scripts/sync-vnstock-listing.cjs --symbols=MCH` (thay bằng mã cần sửa), rồi backfill EOD bằng luồng hiện có với `VNSTOCK_SYMBOLS`, `VNSTOCK_FROM`, `VNSTOCK_TO` giới hạn rõ. Chế độ chỉ định nhận tối đa 30 mã và chỉ ghi metadata provider hợp lệ; thiếu/không rõ listing sẽ dừng trước khi ghi. Không truyền `--symbols` vẫn chỉ cập nhật các mã đã tồn tại, không tự nhập toàn thị trường. Đây là sửa dữ liệu theo nhu cầu, không phải bước khởi động app định kỳ.
+
+### Lưu shadow OfficialVN30 (owner local, mặc định chỉ kiểm tra)
+
+Từ thư mục `backend`, chạy `node scripts/issue-official-vn30-shadow.cjs --horizon=5` (hoặc `1`). Lệnh mặc định dry-run, không gọi provider và không ghi database. `dry_run_ready` nghĩa là đủ điều kiện ghi; `not_issued` kèm lý do và exit code 2 nghĩa là chưa ghi. `prospective_issuance_window_closed` nghĩa là đã qua thời hạn, không phải cần cài lại hoặc restart worker.
+
+Chỉ ghi sau khi có EOD của phiên vừa hoàn tất và **trước 09:00 giờ Việt Nam của phiên kế tiếp**, với lịch nghỉ cấu hình chính xác. Dữ liệu và membership phải có sẵn tại thời điểm chạy. Khi chủ động ghi, đặt `$env:FORECAST_OFFICIAL_SHADOW='true'` trong terminal development rồi thêm `--write`; xóa biến terminal bằng `Remove-Item Env:FORECAST_OFFICIAL_SHADOW` sau khi dùng. Template luôn để cờ này `false`; không có scheduler tự ghi. Không chỉnh đồng hồ hoặc lùi `as_of` để vượt deadline.
+
+Snapshot lưu bằng chứng nội bộ, không trả constituents qua UI. Nó chưa chấm kết quả, chưa tự huấn luyện và không thay đổi preview trên trang Tổng quan. Outcome còn chờ hợp đồng lịch giao dịch/corporate action; không dùng giá chưa điều chỉnh để tự kết luận lợi nhuận hay độ chính xác.
+
+Sau khi có shadow, chạy `node scripts/inspect-official-vn30-outcomes.cjs` từ `backend` để kiểm tra dữ liệu kết quả (chỉ đọc, không cần cờ ghi). `no_shadow_snapshots` = chưa có bản ghi OfficialVN30; `target_session_not_closed` = chưa đóng phiên đích; `frozen_target_prices_missing` = còn thiếu giá tại đúng phiên/thành viên gốc; `pending_evidence_review` = đủ giá nhưng vẫn chờ xác minh lịch và corporate action. Công cụ không tự dời ngày đích, không lấy cohort ba mã cũ và không tạo điểm đánh giá.
 
 ### Probe LIVE cũ trong môi trường agent/sandbox (không dùng bởi Overview)
 
