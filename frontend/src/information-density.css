@@ -1,4 +1,33 @@
 /* Reading hierarchy: compact navigation and explanations, unchanged financial values. */
+.main-panel .official-outlook { padding: 18px; background: var(--panel); color: var(--text); }
+.official-outlook-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.main-panel .official-outlook-title h2 { margin: 0; }
+.official-outlook-title .chip { font-size: .75rem; }
+.official-outlook .outlook-horizons { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-soft); }
+.official-outlook .outlook-horizons button { min-height: 44px; margin: 0; }
+.official-outlook .outlook-horizons button[aria-pressed="true"] { color: var(--text); background: var(--panel); border-color: var(--border); font-weight: 650; }
+.official-outlook .outlook-compact-cell { background: var(--panel-soft); padding: 14px; gap: 8px; }
+.official-outlook .outlook-compact-cell span { font-size: .8125rem; line-height: 1.4; }
+.official-outlook .outlook-compact-cell strong { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+.main-panel .official-outlook .forecast-data-status { background: transparent; border: 0; border-radius: 0; margin: 10px 0; padding: 0; gap: 8px 16px; }
+.official-outlook .forecast-data-status dl { display: flex; flex-wrap: wrap; width: auto; flex: 1 1 220px; gap: 8px 20px; }
+.official-outlook .forecast-data-status dl > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.official-outlook .forecast-data-status dt { font-size: .8125rem; }
+.official-outlook .forecast-data-status dd { margin: 0; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.official-outlook .forecast-data-status p { flex: 1 1 240px; width: auto; font-size: .875rem; }
+.official-outlook .forecast-data-status button { min-height: 44px; }
+.official-outlook .official-outlook-caution { font-size: .8125rem; line-height: 1.5; margin: 8px 0; color: var(--muted); }
+.main-panel .official-outlook .outlook-basis { padding: 0; border: 0; background: transparent; }
+.official-outlook .outlook-basis > summary { min-height: 44px; }
+.official-outlook-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.official-outlook-footer > span { color: var(--muted); font-size: .8125rem; }
+.official-outlook-footer button { min-height: 44px; }
+@media (max-width: 480px) {
+  .main-panel .official-outlook { padding: 14px; }
+  .official-outlook .outlook-compact-grid { gap: 6px; }
+  .official-outlook .outlook-compact-cell { padding: 10px 8px; }
+  .official-outlook .outlook-compact-cell span { min-height: 2.8em; }
+}
 .snapshot-comparison-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 8px 0 12px; }
 .snapshot-comparison-toolbar small { color: var(--muted); flex: 1 1 240px; line-height: 1.5; }
 .snapshot-comparison-toolbar button { flex-shrink: 0; }
